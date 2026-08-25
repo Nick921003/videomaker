@@ -46,8 +46,8 @@ video_engine/
 ├── render_slides.py    畫投影片，順便量測每個元素落點
 ├── generate_actions.py lesson → actions.json（LLM，內含驗證閘）
 ├── validate.py         編排驗證閘
+├── storyboard.py       審稿分鏡表（排在語音合成前，改稿不用重跑 TTS）
 ├── synth.py            語音合成 + 驗收重試
-├── storyboard.py       出片前的審稿分鏡表
 ├── compile_timeline.py 時間軸 + 字幕
 ├── render_video.py     逐格合成 + FFmpeg 封裝
 ├── prompts/  schema/  themes/  materials/  examples/

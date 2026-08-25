@@ -7,8 +7,8 @@
 	.venv/bin/python video_engine/run.py <教材> --from synth     從某階段續跑
 	.venv/bin/python video_engine/run.py <教材> --until storyboard  產完分鏡表就停，等人審稿
 
-階段：lesson → slides → actions → validate → synth → storyboard → timeline → video
-審稿建議停在 storyboard，確認講稿沒問題再往下跑，因為改講稿只要重生那一段。
+階段：lesson → slides → actions → validate → storyboard → synth → timeline → video
+審稿停在 storyboard——它排在語音合成前面，這時候改講稿不用重跑 TTS。
 """
 import json
 import os
