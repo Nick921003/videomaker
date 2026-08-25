@@ -27,13 +27,14 @@
 ## 需要什麼
 
 * **Python 3.10+**、**FFmpeg**、**Noto Sans CJK** 字型
+* 教材可以是 `.md`、`.txt` 或 `.pptx`（`.pptx` 走 `python-pptx` 抽文字與講者備忘稿）
 * **一個 GPT-SoVITS 服務**跑在 `:9880`，提供聲音克隆。它是獨立專案，本專案只透過 HTTP 呼叫，
   端點與參考音訊寫在 `.env`（見 `.env.example`）
 * **一把 LLM 金鑰**（Anthropic／OpenAI／Google 任一，或本機 OpenAI 相容端點）
 
 ```bash
 uv venv .venv && uv pip install --python .venv/bin/python \
-  numpy scipy pillow fonttools anthropic google-genai openai
+  numpy scipy pillow fonttools anthropic google-genai openai python-pptx
 ```
 
 ## 目錄
