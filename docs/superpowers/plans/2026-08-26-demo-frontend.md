@@ -1003,6 +1003,10 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `video_engine/validate.py`（以 subprocess 呼叫）
+> **注意**：`revalidate` 在驗證器本身崩潰時會丟 `RuntimeError`（而不是回傳空陣列）。
+> 空陣列是「通過」的訊號，若驗證器崩掉也回空陣列，壞稿會被當成好稿放行——
+> 閘就被靜默關掉了。Task 7 的呼叫端必須接住這個例外並當成驗證失敗處理。
+
 - Produces:
   - `read_segments(actions_path) -> list[dict]`，每則 `{"slide_id": str, "idx": int, "text": str}`。`idx` 是該投影片 `actions` 陣列中的索引。
   - `write_segments(actions_path, segments) -> None`
@@ -1487,7 +1491,12 @@ class Handler(BaseHTTPRequestHandler):
 			shutil.copy(_job.actions_path, _job.actions_backup)   # 每次都重新備份
 			_job.has_backup = True
 			write_segments(_job.actions_path, segs)
-			errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
+			try:
+				errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
+			except RuntimeError as e:
+				# 驗證器本身炸了。不能當成「通過」放行——那正是這個閘存在的理由
+				shutil.copy(_job.actions_backup, _job.actions_path)
+				errs = [f"驗證器沒跑起來：{e}"]
 			if errs:
 				# 一律還原。壞稿絕不能進 TTS——這是驗證閘存在的理由
 				shutil.copy(_job.actions_backup, _job.actions_path)
