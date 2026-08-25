@@ -8,6 +8,14 @@ sys.path.insert(0, ROOT)
 import serve
 
 
+def _rm(path):
+	"""清掉測試落地的暫存檔，檔案已經不在（例如上一步就砍過）也不算錯"""
+	try:
+		os.remove(path)
+	except FileNotFoundError:
+		pass
+
+
 class TestServeHelpers(unittest.TestCase):
 	def test_TTS_探測_連不上要回_False(self):
 		self.assertFalse(serve.tts_ready("http://127.0.0.1:1", timeout=0.5))
@@ -46,6 +54,7 @@ class TestMultipart(unittest.TestCase):
 		import make_pptx
 		src = os.path.join(ROOT, "tests/fixtures/_mp_check.pptx")
 		make_pptx.make(src, [("標題", ["內容"])])
+		self.addCleanup(_rm, src)      # 斷言失敗也要清，不能等到最後才砍
 		with open(src, "rb") as f:
 			blob = f.read()
 		_, got, _ = serve.parse_multipart(
@@ -54,9 +63,8 @@ class TestMultipart(unittest.TestCase):
 		dst = os.path.join(ROOT, "tests/fixtures/_mp_out.pptx")
 		with open(dst, "wb") as f:
 			f.write(got)
+		self.addCleanup(_rm, dst)
 		zipfile.ZipFile(dst).testzip()      # 解不開會丟例外
-		os.remove(src)
-		os.remove(dst)
 
 
 class TestReviewTimer(unittest.TestCase):
@@ -87,6 +95,21 @@ class TestReviewTimer(unittest.TestCase):
 		src = inspect.getsource(serve._review_timer)
 		self.assertIn("threading.Thread", src)
 		self.assertNotIn("with _lock", src)
+
+
+class TestGuard(unittest.TestCase):
+	def test_背景執行緒炸掉要轉_failed_不能永遠卡在_running(self):
+		# 模擬 subprocess.Popen 炸 FileNotFoundError 之類的情境：
+		# runner 一被呼叫就炸，_pump 連第一個事件都收不到
+		from jobstate import Job
+
+		def exploding_runner(stage_from, stage_to):
+			raise RuntimeError("模擬 runner 炸掉")
+
+		job = Job("m.md", "/tmp/out", None, exploding_runner, clock=lambda: 1000.0)
+		serve._guard(job, job.start)
+		self.assertEqual(job.status, "failed")
+		self.assertTrue(job.error)
 
 
 if __name__ == "__main__":

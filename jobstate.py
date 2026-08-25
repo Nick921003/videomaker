@@ -41,7 +41,6 @@ class Job:
 		self.lesson_path = None
 		self.video_path = None
 		self.retried = False
-		self.has_backup = False
 		self.notice = None
 
 	@property

@@ -50,12 +50,25 @@ def tts_ready(url=TTS_URL, timeout=3.0):
 	"""GPT-SoVITS 沒開是現場最常見的翻車點，收件前先探。
 	404 也算活著——只要 TCP 通、HTTP 有回應就行"""
 	try:
-		urllib.request.urlopen(url, timeout=timeout)
-		return True
+		with urllib.request.urlopen(url, timeout=timeout):
+			return True
 	except urllib.error.HTTPError:
 		return True
 	except Exception:
 		return False
+
+
+def _guard(job, fn, *args):
+	"""執行緒裡炸掉的話，狀態要留下痕跡。
+
+	沒有這層的話，job 會永遠停在 running，之後每個上傳都吃 409——
+	現場等於整台停擺，而且畫面上看不出發生了什麼事。
+	"""
+	try:
+		fn(*args)
+	except Exception as e:
+		job.status = "failed"
+		job.error = f"{type(e).__name__}: {e}"
 
 
 def real_runner(material, sec):
@@ -191,7 +204,7 @@ class Handler(BaseHTTPRequestHandler):
 				return self._json(400, {"error": str(e)})
 			_job_id += 1
 			_job = Job(md, OUT, sec, real_runner(md, sec))
-			threading.Thread(target=_start_job, args=(_job,), daemon=True).start()
+			threading.Thread(target=_guard, args=(_job, _start_job, _job), daemon=True).start()
 		self._json(201, {"job_id": _job_id})
 
 	def _approve(self):
@@ -207,7 +220,6 @@ class Handler(BaseHTTPRequestHandler):
 		notice = None
 		if segs:
 			shutil.copy(_job.actions_path, _job.actions_backup)   # 每次都重新備份
-			_job.has_backup = True
 			write_segments(_job.actions_path, segs)
 			try:
 				errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
@@ -221,13 +233,13 @@ class Handler(BaseHTTPRequestHandler):
 				if not _job.retried:
 					_job.retried = True
 					_job.status = "awaiting_review"      # 放回審稿，重開一輪倒數
-					_job.review_deadline = time.time() + REVIEW_SEC
+					_job.review_deadline = _job.clock() + REVIEW_SEC
 					threading.Thread(target=_review_timer, args=(_job,), daemon=True).start()
 					return self._json(400, {"errors": errs,
 						"deadline": _job.review_deadline})
 				notice = "講稿兩次都沒通過驗證，已改用原稿繼續"
 		_job.notice = notice
-		threading.Thread(target=_job.resume, daemon=True).start()
+		threading.Thread(target=_guard, args=(_job, _job.resume), daemon=True).start()
 		self._json(200, {"ok": True, "notice": notice})
 
 
@@ -249,7 +261,7 @@ def _review_timer(job):
 		if job.review_expired():
 			if job.claim():
 				job.notice = "倒數結束，沒有人反對，已用原稿繼續"
-				threading.Thread(target=job.resume, daemon=True).start()
+				threading.Thread(target=_guard, args=(job, job.resume), daemon=True).start()
 			return
 		time.sleep(0.5)
 
