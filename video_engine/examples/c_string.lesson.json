@@ -1,0 +1,245 @@
+{
+	"lesson_id": "c_string",
+	"title": "C 語言字串基礎",
+	"slides": [
+		{
+			"id": "p1",
+			"role": "hook",
+			"note": "強調 C 沒有字串型態，等號指定與長度少留一格是兩個最常見災難。",
+			"elements": [
+				{
+					"id": "p1_title",
+					"type": "title",
+					"text": "為什麼 name = \"Alice\" 不對？"
+				},
+				{
+					"id": "p1_sub",
+					"type": "subtitle",
+					"text": "從 Python 轉過來最常踩的兩個坑"
+				},
+				{
+					"id": "p1_a",
+					"type": "bullet",
+					"text": "C 沒有字串型態，name 只是字元陣列的起點"
+				},
+				{
+					"id": "p1_b",
+					"type": "bullet",
+					"text": "等號指定到的是位址，不是內容",
+					"hidden": true
+				},
+				{
+					"id": "p1_c",
+					"type": "callout",
+					"text": "char name[5] 存 Alice，結束字元沒地方放，印出亂碼",
+					"hidden": true
+				},
+				{
+					"id": "p1_fig",
+					"type": "figure",
+					"kind": "compare",
+					"left": {
+						"title": "Python",
+						"items": [
+							"name = \"Alice\"",
+							"有字串型態",
+							"長度自動管理"
+						]
+					},
+					"right": {
+						"title": "C",
+						"items": [
+							"char name[32]",
+							"只是字元陣列",
+							"要自己留一格"
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "p2",
+			"role": "concept",
+			"note": "重點是哨兵 \\0 的存在，以及容量與長度是兩件事。",
+			"elements": [
+				{
+					"id": "p2_title",
+					"type": "title",
+					"text": "字串就是收尾的字元陣列"
+				},
+				{
+					"id": "p2_sub",
+					"type": "subtitle",
+					"text": "結束字元 \\0 是所有標準函式的哨兵"
+				},
+				{
+					"id": "p2_a",
+					"type": "bullet",
+					"text": "字串是 char 陣列，結尾多放一個 \\0"
+				},
+				{
+					"id": "p2_b",
+					"type": "bullet",
+					"text": "沒有哨兵，函式會一路讀到陣列外面",
+					"hidden": true
+				},
+				{
+					"id": "p2_c",
+					"type": "callout",
+					"text": "存 n 個字，陣列至少要 n 加一格",
+					"hidden": true
+				},
+				{
+					"id": "p2_fig",
+					"type": "figure",
+					"kind": "boxes",
+					"items": [
+						"A",
+						"l",
+						"i",
+						"c",
+						"\\0"
+					],
+					"right": {
+						"title": "",
+						"items": []
+					}
+				}
+			]
+		},
+		{
+			"id": "p3",
+			"role": "concept",
+			"note": "把容量與長度的差別講清楚，為走讀頁的 strlen 鋪路。",
+			"elements": [
+				{
+					"id": "p3_title",
+					"type": "title",
+					"text": "容量不等於長度"
+				},
+				{
+					"id": "p3_sub",
+					"type": "subtitle",
+					"text": "一個是宣告的格數，一個是哨兵前的字元數"
+				},
+				{
+					"id": "p3_a",
+					"type": "bullet",
+					"text": "容量是你宣告的陣列格數"
+				},
+				{
+					"id": "p3_b",
+					"type": "callout",
+					"text": "長度是哨兵前面有幾個字元",
+					"hidden": true
+				},
+				{
+					"id": "p3_fig",
+					"type": "figure",
+					"kind": "compare",
+					"left": {
+						"title": "容量",
+						"items": [
+							"char name[32]",
+							"宣告時決定",
+							"32 格"
+						]
+					},
+					"right": {
+						"title": "長度",
+						"items": [
+							"strlen(name)",
+							"看哨兵位置",
+							"5 個字"
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "p4",
+			"role": "walkthrough",
+			"note": "分四步走讀：宣告容量、複製內容、量長度、印出。強調第五行是容量、第六行不能用等號、第七行量到五。",
+			"elements": [
+				{
+					"id": "p4_title",
+					"type": "title",
+					"text": "宣告、複製、量長度"
+				},
+				{
+					"id": "p4_sub",
+					"type": "subtitle",
+					"text": "四個步驟把字串放進陣列並印出"
+				},
+				{
+					"id": "p4_code",
+					"type": "code",
+					"lang": "c",
+					"lines": [
+						"#include <stdio.h>",
+						"#include <string.h>",
+						"",
+						"int main() {",
+						"    char name[32];",
+						"    strcpy(name, \"Alice\");",
+						"    printf(\"%s 共 %d 個字\\n\",",
+						"           name, (int)strlen(name));",
+						"    return 0;",
+						"}"
+					]
+				}
+			]
+		},
+		{
+			"id": "p5",
+			"role": "pitfall",
+			"note": "收在等號比較的錯誤上，並回扣留一格與用函式操作兩個結論。",
+			"elements": [
+				{
+					"id": "p5_title",
+					"type": "title",
+					"text": "等號不能指定，也不能比較"
+				},
+				{
+					"id": "p5_sub",
+					"type": "subtitle",
+					"text": "字串操作一律交給標準函式"
+				},
+				{
+					"id": "p5_a",
+					"type": "bullet",
+					"text": "用等號比較，比到的是兩塊記憶體的位址"
+				},
+				{
+					"id": "p5_b",
+					"type": "bullet",
+					"text": "位址永遠不相等，要用字串比較函式",
+					"hidden": true
+				},
+				{
+					"id": "p5_c",
+					"type": "callout",
+					"text": "陣列長度永遠記得留一格給結束字元",
+					"hidden": true
+				},
+				{
+					"id": "p5_fig",
+					"type": "figure",
+					"kind": "steps",
+					"items": [
+						"宣告容量",
+						"複製內容",
+						"量出長度",
+						"印出結果"
+					]
+				}
+			]
+		}
+	],
+	"voice": {
+		"model": "wang_teacher_v3",
+		"speed_factor": 0.95,
+		"text_lang": "zh",
+		"text_split_method": "cut5"
+	}
+}

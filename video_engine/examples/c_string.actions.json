@@ -1,0 +1,195 @@
+{
+	"lesson_id": "c_string",
+	"slides": [
+		{
+			"slide_id": "p1",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p1_fig:l1"
+				},
+				{
+					"type": "speech",
+					"text": "大家寫習慣 Python 之後，常常會直覺寫出 name 等於雙引號 Alice。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_a"
+				},
+				{
+					"type": "speech",
+					"text": "但是在 C 語言裡完全沒有字串型態，變數名稱其實只是字元陣列的記憶體起點。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_b"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_c"
+				},
+				{
+					"type": "speech",
+					"text": "如果直接用等號指定、或是長度少留一格，就會印出亂碼甚至當機。"
+				}
+			]
+		},
+		{
+			"slide_id": "p2",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p2_fig:i5"
+				},
+				{
+					"type": "speech",
+					"text": "在 C 語言裡，字串就是連續的字元陣列，但結尾一定要放一個反斜線零。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_b"
+				},
+				{
+					"type": "laser",
+					"target": "p2_b"
+				},
+				{
+					"type": "speech",
+					"text": "這個反斜線零就像哨兵，少了它，處理字串的函式就會一路往後讀到亂碼。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_c"
+				},
+				{
+					"type": "speech",
+					"text": "所以要放五個字母的名字，陣列容量至少要宣告六格才裝得下。"
+				}
+			]
+		},
+		{
+			"slide_id": "p3",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p3_fig:l1"
+				},
+				{
+					"type": "speech",
+					"text": "延續剛剛的概念，陣列的容量是你在宣告時就決定的總格數。"
+				},
+				{
+					"type": "reveal",
+					"target": "p3_b"
+				},
+				{
+					"type": "laser",
+					"target": "p3_fig:r1"
+				},
+				{
+					"type": "speech",
+					"text": "而字串長度則是從開頭數到哨兵之前，實際放了幾個有效字元。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_fig:r3"
+				},
+				{
+					"type": "speech",
+					"text": "就算容量宣告了三十二格，放進五個字母時，長度依然只算五個字。"
+				}
+			]
+		},
+		{
+			"slide_id": "p4",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p4_code:L5"
+				},
+				{
+					"type": "speech",
+					"text": "第五行我們先宣告三十二格的字元陣列，準備好足夠的空間。"
+				},
+				{
+					"type": "camera",
+					"target": "p4_code:L6-L8",
+					"scale": 1.3
+				},
+				{
+					"type": "laser",
+					"target": "p4_code:L6"
+				},
+				{
+					"type": "speech",
+					"text": "第六行不能直接用等號，要呼叫字串複製函式，把名字寫進陣列裡。"
+				},
+				{
+					"type": "laser",
+					"target": "p4_code:L7-L8"
+				},
+				{
+					"type": "camera",
+					"reset": true
+				},
+				{
+					"type": "speech",
+					"text": "最後用計算長度函式量出五個字，並把字串與長度一起印出來。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p4_code:L1-L2"
+				},
+				{
+					"type": "speech",
+					"text": "記得引入字串標頭檔，這些操作函式才能正常運作。"
+				}
+			]
+		},
+		{
+			"slide_id": "p5",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p5_a"
+				},
+				{
+					"type": "speech",
+					"text": "最後提醒大家，在 C 語言中不能用兩個等號比較字串，因為比到的只是記憶體位址。"
+				},
+				{
+					"type": "reveal",
+					"target": "p5_b"
+				},
+				{
+					"type": "laser",
+					"target": "p5_b"
+				},
+				{
+					"type": "speech",
+					"text": "兩塊記憶體位址不同永遠不相等，比對內容請一律使用字串比較函式。"
+				},
+				{
+					"type": "reveal",
+					"target": "p5_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p5_c"
+				},
+				{
+					"type": "speech",
+					"text": "牢記宣告時多留一格給結束字元，並交給標準函式處理，字串操作就不會踩雷了！"
+				}
+			]
+		}
+	]
+}
