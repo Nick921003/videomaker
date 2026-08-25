@@ -1,0 +1,637 @@
+<title>王老師微課程引擎</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+
+<style>
+	:root {
+		--ground: #F5F6F8;
+		--surface: #FFFFFF;
+		--surface-2: #EBEEF2;
+		--ink: #161B22;
+		--ink-soft: #59636F;
+		--rule: #D5DAE1;
+		--accent: #A8701A;
+		--accent-wash: #F2E7D2;
+		--c-type: #16748A;
+		--c-var: #2C7F52;
+		--c-call: #9E3A7C;
+		--warn: #A93226;
+		--shadow: 0 1px 2px rgba(22, 27, 34, .06), 0 8px 24px rgba(22, 27, 34, .05);
+	}
+	@media (prefers-color-scheme: dark) {
+		:root:not([data-theme="light"]) {
+			--ground: #0F1318;
+			--surface: #161B22;
+			--surface-2: #1E242D;
+			--ink: #E3E7ED;
+			--ink-soft: #939DAB;
+			--rule: #2B323C;
+			--accent: #E5A94B;
+			--accent-wash: #33291A;
+			--c-type: #4FBBD4;
+			--c-var: #5FC28A;
+			--c-call: #DE7CBC;
+			--warn: #E8705F;
+			--shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+		}
+	}
+	:root[data-theme="dark"] {
+		--ground: #0F1318;
+		--surface: #161B22;
+		--surface-2: #1E242D;
+		--ink: #E3E7ED;
+		--ink-soft: #939DAB;
+		--rule: #2B323C;
+		--accent: #E5A94B;
+		--accent-wash: #33291A;
+		--c-type: #4FBBD4;
+		--c-var: #5FC28A;
+		--c-call: #DE7CBC;
+		--warn: #E8705F;
+		--shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+	}
+
+	body {
+		background: var(--ground);
+		color: var(--ink);
+		font-family: "Noto Sans TC", "PingFang TC", system-ui, sans-serif;
+		font-size: 16px;
+		line-height: 1.75;
+		margin: 0;
+		padding: 0 24px 96px;
+		-webkit-font-smoothing: antialiased;
+	}
+	.wrap {
+		max-width: 780px;
+		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	header.masthead {
+		padding: 72px 0 40px;
+		border-bottom: 2px solid var(--ink);
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+	.kicker {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 12px;
+		letter-spacing: .16em;
+		text-transform: uppercase;
+		color: var(--accent);
+	}
+	h1 {
+		font-size: clamp(34px, 6vw, 52px);
+		font-weight: 900;
+		line-height: 1.12;
+		letter-spacing: -.01em;
+		margin: 0;
+		text-wrap: balance;
+	}
+	.standfirst {
+		font-size: 18px;
+		color: var(--ink-soft);
+		margin: 0;
+		max-width: 60ch;
+	}
+	.meta {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 12px;
+		color: var(--ink-soft);
+		display: flex;
+		flex-wrap: wrap;
+		gap: 18px;
+	}
+
+	section {
+		padding: 44px 0 4px;
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+	section + section { border-top: 1px solid var(--rule); }
+	h2 {
+		font-size: 25px;
+		font-weight: 700;
+		margin: 0;
+		line-height: 1.3;
+		display: flex;
+		align-items: baseline;
+		gap: 12px;
+	}
+	h2 .num {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--accent);
+		letter-spacing: .08em;
+	}
+	h3 {
+		font-size: 17px;
+		font-weight: 700;
+		margin: 10px 0 0;
+	}
+	p { margin: 0; max-width: 66ch; }
+	strong { font-weight: 700; }
+	code {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: .88em;
+		background: var(--surface-2);
+		padding: .12em .38em;
+		border-radius: 3px;
+	}
+	ul, ol { margin: 0; padding-left: 1.25em; display: flex; flex-direction: column; gap: 7px; max-width: 66ch; }
+	li::marker { color: var(--ink-soft); }
+
+	figure {
+		margin: 12px 0;
+		background: var(--surface);
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		box-shadow: var(--shadow);
+		overflow-x: auto;
+		padding: 22px 22px 0;
+	}
+	figure svg { display: block; max-width: 100%; height: auto; min-width: 520px; }
+	figcaption {
+		font-size: 13.5px;
+		color: var(--ink-soft);
+		border-top: 1px solid var(--rule);
+		margin: 18px -22px 0;
+		padding: 12px 22px;
+		line-height: 1.6;
+	}
+	figcaption b { color: var(--ink); font-weight: 600; }
+
+	.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); }
+	table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 460px; }
+	th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+	thead th {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 11.5px;
+		letter-spacing: .1em;
+		text-transform: uppercase;
+		color: var(--ink-soft);
+		font-weight: 500;
+		background: var(--surface-2);
+	}
+	tbody tr:last-child td { border-bottom: none; }
+	td.mono, th.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
+
+	.callout {
+		background: var(--accent-wash);
+		border-left: 3px solid var(--accent);
+		padding: 14px 18px;
+		border-radius: 0 4px 4px 0;
+		font-size: 15px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.callout .label {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 11px;
+		letter-spacing: .14em;
+		text-transform: uppercase;
+		color: var(--accent);
+	}
+
+	pre {
+		background: var(--surface);
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		padding: 14px 16px;
+		overflow-x: auto;
+		margin: 0;
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 13px;
+		line-height: 1.65;
+	}
+	pre code { background: none; padding: 0; font-size: inherit; }
+
+	.files { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); }
+	.file { display: flex; gap: 14px; padding: 11px 16px; border-bottom: 1px solid var(--rule); align-items: baseline; }
+	.file:last-child { border-bottom: none; }
+	.file .path { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; color: var(--accent); white-space: nowrap; }
+	.file .what { font-size: 14px; color: var(--ink-soft); }
+
+	.opts { display: flex; flex-direction: column; gap: 12px; }
+	.opt { border: 1px solid var(--rule); border-radius: 4px; padding: 16px 18px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
+	.opt.pick { border-color: var(--accent); border-width: 2px; }
+	.opt .tag { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+	.opt.pick .tag { color: var(--accent); }
+	.opt h4 { margin: 0; font-size: 16px; font-weight: 700; }
+	.opt p { font-size: 14.5px; color: var(--ink-soft); }
+
+	svg text { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+	svg .zh { font-family: "Noto Sans TC", system-ui, sans-serif; }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+	<div class="kicker">BridgeAI · 影音生產架構提案</div>
+	<h1>王老師微課程引擎</h1>
+	<p class="standfirst">把「一頁一張圖一段音檔」的換頁片，改成語意驅動的動作序列——換教材不用改程式碼，動畫自己跟著跑。</p>
+	<div class="meta">
+		<span>2026-08-24</span>
+		<span>已取代 generate_v3_master_videos.py</span>
+		<span>設計參考 OpenMAIC（MIT）</span>
+	</div>
+</header>
+
+<section>
+	<h2><span class="num">01</span>問題在哪</h2>
+	<p>現在的腳本能出片，但<strong>內容、編排、幾何三件事寫在同一支檔案裡</strong>。投影片內容是寫死的 dict，動畫時間是手排的順序，座標是常數（<code>code_base_y=310, line_height=42</code>）。換一份教材，三層都要重改一次——所以做不出「任意教材自動出片」。</p>
+
+	<figure>
+		<svg viewBox="0 0 900 330" role="img" aria-label="現況把內容、編排、幾何綁在一支腳本裡；新架構拆成三份資料，由編譯器合成">
+			<defs>
+				<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+					<polygon points="0,0 10,5 0,10" fill="currentColor"/>
+				</marker>
+				<marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+					<polygon points="0,0 10,5 0,10" fill="var(--accent)"/>
+				</marker>
+			</defs>
+
+			<text x="24" y="24" font-size="12" fill="currentColor" opacity=".55">現況</text>
+			<rect x="24" y="38" width="330" height="196" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+			<text x="40" y="62" font-size="12.5" fill="currentColor">generate_v3_master_videos.py</text>
+			<rect x="44" y="76" width="290" height="42" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".35"/>
+			<text class="zh" x="60" y="102" font-size="13" fill="currentColor">內容　投影片 dict 寫死在程式裡</text>
+			<rect x="44" y="126" width="290" height="42" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".35"/>
+			<text class="zh" x="60" y="152" font-size="13" fill="currentColor">編排　動畫順序手排</text>
+			<rect x="44" y="176" width="290" height="42" rx="3" fill="var(--accent-wash)" stroke="var(--accent)"/>
+			<text class="zh" x="60" y="202" font-size="13" fill="var(--accent)">幾何　座標常數 LayoutAnchorEngine</text>
+			<line x1="189" y1="234" x2="189" y2="268" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)"/>
+			<text class="zh" x="189" y="290" font-size="12.5" fill="currentColor" text-anchor="middle">MP4</text>
+			<text class="zh" x="189" y="314" font-size="12" fill="var(--warn)" text-anchor="middle">換教材 → 三層都要改</text>
+
+			<line x1="392" y1="38" x2="392" y2="314" stroke="currentColor" stroke-opacity=".2" stroke-dasharray="3 4"/>
+
+			<text x="430" y="24" font-size="12" fill="var(--accent)" opacity=".9">新架構</text>
+			<rect x="430" y="60" width="176" height="40" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".35"/>
+			<text x="446" y="79" font-size="12" fill="currentColor">lesson.json</text>
+			<text class="zh" x="446" y="93" font-size="10.5" fill="currentColor" opacity=".6">內容　人／LLM 寫</text>
+			<rect x="430" y="112" width="176" height="40" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".35"/>
+			<text x="446" y="131" font-size="12" fill="currentColor">actions.json</text>
+			<text class="zh" x="446" y="145" font-size="10.5" fill="currentColor" opacity=".6">編排　LLM 產</text>
+			<rect x="430" y="164" width="176" height="40" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".35"/>
+			<text x="446" y="183" font-size="12" fill="currentColor">layout.json</text>
+			<text class="zh" x="446" y="197" font-size="10.5" fill="currentColor" opacity=".6">幾何　繪製器自動吐</text>
+
+			<path d="M606 80 H 664 V 128" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+			<path d="M606 132 H 664" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+			<path d="M606 184 H 664 V 140" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+			<rect x="676" y="106" width="126" height="56" rx="3" fill="none" stroke="var(--accent)" stroke-width="1.8"/>
+			<text class="zh" x="739" y="130" font-size="13" fill="var(--accent)" text-anchor="middle">編譯器</text>
+			<text x="739" y="148" font-size="10.5" fill="var(--accent)" text-anchor="middle" opacity=".8">timeline.json</text>
+			<line x1="739" y1="162" x2="739" y2="268" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)"/>
+			<text class="zh" x="739" y="290" font-size="12.5" fill="currentColor" text-anchor="middle">MP4</text>
+			<text class="zh" x="739" y="314" font-size="12" fill="var(--accent)" text-anchor="middle">換教材 → 只改 lesson.json</text>
+		</svg>
+		<figcaption><b>差別只有一個：幾何從「人寫的常數」變成「機器量出來的表」。</b>編排層一旦不碰座標，就能被 LLM 自動生成。</figcaption>
+	</figure>
+</section>
+
+<section>
+	<h2><span class="num">02</span>三層契約</h2>
+	<p>三份 JSON，各有唯一的作者，誰都不准跨界。這是整個架構唯一要守住的規矩。</p>
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>層</th><th>檔案</th><th>由誰產</th><th>禁止出現</th></tr></thead>
+			<tbody>
+				<tr><td>內容</td><td class="mono">lesson.json</td><td>人 / LLM</td><td>座標、時間、動畫</td></tr>
+				<tr><td>編排</td><td class="mono">actions.json</td><td>LLM</td><td>座標、秒數</td></tr>
+				<tr><td>幾何</td><td class="mono">layout.json</td><td>繪製器（自動）</td><td>手改（一律重繪）</td></tr>
+			</tbody>
+		</table>
+	</div>
+	<p>已經建好的草稿：</p>
+	<div class="files">
+		<div class="file"><span class="path">schema/lesson.schema.json</span><span class="what">投影片元素；程式碼元素逐行可定址</span></div>
+		<div class="file"><span class="path">schema/actions.schema.json</span><span class="what">六種動作：speech / spotlight / laser / reveal / camera / pause</span></div>
+		<div class="file"><span class="path">schema/layout.schema.json</span><span class="what">element ref → 實測 bbox</span></div>
+		<div class="file"><span class="path">prompts/slide_actions.system.md</span><span class="what">動作編排 prompt，含中英大小寫發音規則</span></div>
+		<div class="file"><span class="path">examples/c_struct.*.json</span><span class="what">C 結構體範例，已通過 target 解析驗證</span></div>
+	</div>
+</section>
+
+<section>
+	<h2><span class="num">03</span>完整管線與工具</h2>
+	<p>八個階段，每段一個工具、一個產物。除了第 2、4 段要花 LLM 額度，其餘全在本機跑。</p>
+
+	<figure>
+		<svg viewBox="0 0 900 620" role="img" aria-label="八階段管線：教材、內容結構化、繪製、動作編排、語音合成、逐字對齊、時間軸編譯、影音封裝">
+			<defs>
+				<marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+					<polygon points="0,0 10,5 0,10" fill="currentColor"/>
+				</marker>
+			</defs>
+
+			<text x="24" y="20" font-size="11" fill="currentColor" opacity=".5">階段</text>
+			<text x="470" y="20" font-size="11" fill="currentColor" opacity=".5">工具</text>
+			<text x="700" y="20" font-size="11" fill="currentColor" opacity=".5">產物</text>
+
+			<g>
+				<rect x="24" y="32" width="400" height="48" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+				<text class="zh" x="44" y="62" font-size="14" fill="currentColor">1　教材輸入</text>
+				<text class="zh" x="470" y="55" font-size="12" fill="currentColor" opacity=".75">Markdown / PPTX / 知識點</text>
+				<text x="700" y="70" font-size="11.5" fill="currentColor" opacity=".55">—</text>
+				<line x1="224" y1="80" x2="224" y2="98" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+			</g>
+			<g>
+				<rect x="24" y="102" width="400" height="48" rx="3" fill="var(--accent-wash)" stroke="var(--accent)"/>
+				<text class="zh" x="44" y="132" font-size="14" fill="var(--accent)">2　內容結構化</text>
+				<text class="zh" x="470" y="125" font-size="12" fill="var(--accent)">LLM（Claude）</text>
+				<text x="700" y="132" font-size="11.5" fill="currentColor" opacity=".7">lesson.json</text>
+				<line x1="224" y1="150" x2="224" y2="168" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+			</g>
+			<g>
+				<rect x="24" y="172" width="400" height="48" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+				<text class="zh" x="44" y="202" font-size="14" fill="currentColor">3　投影片繪製</text>
+				<text class="zh" x="470" y="195" font-size="12" fill="currentColor" opacity=".75">Pillow + Noto Sans CJK</text>
+				<text x="700" y="195" font-size="11.5" fill="currentColor" opacity=".7">slide.png</text>
+				<text x="700" y="212" font-size="11.5" fill="var(--c-type)">layout.json</text>
+				<line x1="224" y1="220" x2="224" y2="238" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+			</g>
+			<g>
+				<rect x="24" y="242" width="400" height="48" rx="3" fill="var(--accent-wash)" stroke="var(--accent)"/>
+				<text class="zh" x="44" y="272" font-size="14" fill="var(--accent)">4　動作編排</text>
+				<text class="zh" x="470" y="265" font-size="12" fill="var(--accent)">LLM + slide_actions prompt</text>
+				<text x="700" y="272" font-size="11.5" fill="currentColor" opacity=".7">actions.json</text>
+				<line x1="224" y1="290" x2="224" y2="308" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+			</g>
+			<g>
+				<rect x="24" y="312" width="400" height="48" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+				<text class="zh" x="44" y="342" font-size="14" fill="currentColor">5　語音合成</text>
+				<text class="zh" x="470" y="335" font-size="12" fill="currentColor" opacity=".75">GPT-SoVITS 王老師 3.0 · :9880</text>
+				<text x="700" y="335" font-size="11.5" fill="currentColor" opacity=".7">speech_*.wav</text>
+				<text x="700" y="352" font-size="11.5" fill="var(--c-var)">durations</text>
+				<line x1="224" y1="360" x2="224" y2="378" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+			</g>
+			<g>
+				<rect x="24" y="382" width="400" height="48" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+				<text class="zh" x="44" y="412" font-size="14" fill="currentColor">6　逐字對齊</text>
+				<text class="zh" x="470" y="405" font-size="12" fill="currentColor" opacity=".75">whisper-gpu venv（large-v3）</text>
+				<text x="700" y="412" font-size="11.5" fill="currentColor" opacity=".7">word_timings</text>
+				<line x1="224" y1="430" x2="224" y2="448" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+			</g>
+			<g>
+				<rect x="24" y="452" width="400" height="48" rx="3" fill="none" stroke="var(--accent)" stroke-width="1.8"/>
+				<text class="zh" x="44" y="482" font-size="14" fill="var(--accent)">7　時間軸編譯</text>
+				<text class="zh" x="470" y="475" font-size="12" fill="currentColor" opacity=".75">純函式 Python，無 GPU 無瀏覽器</text>
+				<text x="700" y="475" font-size="11.5" fill="currentColor" opacity=".7">timeline.json</text>
+				<text x="700" y="492" font-size="11.5" fill="var(--c-call)">subtitles.srt</text>
+				<line x1="224" y1="500" x2="224" y2="518" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+			</g>
+			<g>
+				<rect x="24" y="522" width="400" height="48" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+				<text class="zh" x="44" y="552" font-size="14" fill="currentColor">8　影音封裝</text>
+				<text class="zh" x="470" y="545" font-size="12" fill="currentColor" opacity=".75">overlay 繪製 + FFmpeg</text>
+				<text x="700" y="552" font-size="11.5" fill="currentColor" opacity=".7">1080p MP4</text>
+			</g>
+			<text class="zh" x="24" y="600" font-size="12" fill="currentColor" opacity=".6">階段 7 是新增的：把「算時間」從「畫東西」裡抽出來，才能單獨測試。</text>
+		</svg>
+		<figcaption><b>金色兩段是唯一需要 LLM 的地方</b>；階段 3 順手吐出 layout.json 是整條線能自動化的關鍵。</figcaption>
+	</figure>
+
+	<div class="callout">
+		<span class="label">關鍵改動</span>
+		<div>繪製器不再只回傳 PNG，而是<strong>同時回傳每個元素畫在哪</strong>。你的繪製程式本來就知道這件事，現在只是把它寫出來。</div>
+	</div>
+</section>
+
+<section>
+	<h2><span class="num">04</span>動畫怎麼找到位置</h2>
+	<p>LLM 只會寫 <code>"target": "s2_code:L4-L6"</code>。座標是編譯期查表得到的，換版面、換字級都不用碰 actions.json。</p>
+
+	<figure>
+		<svg viewBox="0 0 900 250" role="img" aria-label="動作只寫元素代號，編譯器查 layout 表換成座標，再交給繪製器畫聚光燈">
+			<defs>
+				<marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+					<polygon points="0,0 10,5 0,10" fill="currentColor"/>
+				</marker>
+			</defs>
+
+			<rect x="20" y="52" width="230" height="96" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+			<text x="36" y="44" font-size="11.5" fill="currentColor" opacity=".6">actions.json</text>
+			<text x="36" y="86" font-size="12" fill="currentColor">{ "type": "spotlight",</text>
+			<text x="36" y="106" font-size="12" fill="var(--accent)">　"target": "s2_code:L4-L6" }</text>
+			<text class="zh" x="36" y="134" font-size="11.5" fill="currentColor" opacity=".55">沒有任何 x / y</text>
+
+			<line x1="250" y1="100" x2="322" y2="100" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar3)"/>
+			<text class="zh" x="286" y="90" font-size="11.5" fill="currentColor" text-anchor="middle" opacity=".7">查表</text>
+
+			<rect x="330" y="52" width="220" height="96" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+			<text x="346" y="44" font-size="11.5" fill="currentColor" opacity=".6">layout.json（繪製器實測）</text>
+			<text x="346" y="86" font-size="12" fill="var(--accent)">"s2_code:L4-L6":</text>
+			<text x="346" y="106" font-size="12" fill="currentColor">{ x:170 y:396 w:742 h:96 }</text>
+			<text class="zh" x="346" y="134" font-size="11.5" fill="currentColor" opacity=".55">畫的時候量的，不是猜的</text>
+
+			<line x1="550" y1="100" x2="622" y2="100" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar3)"/>
+			<text class="zh" x="586" y="90" font-size="11.5" fill="currentColor" text-anchor="middle" opacity=".7">上遮罩</text>
+
+			<rect x="630" y="40" width="250" height="140" rx="3" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".3"/>
+			<rect x="630" y="40" width="250" height="140" rx="3" fill="currentColor" opacity=".28"/>
+			<rect x="654" y="92" width="202" height="40" rx="2" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/>
+			<text x="666" y="107" font-size="10.5" fill="currentColor">float score;</text>
+			<text x="666" y="124" font-size="10.5" fill="currentColor">} Student;</text>
+			<text class="zh" x="755" y="200" font-size="11.5" fill="currentColor" text-anchor="middle" opacity=".7">聚光燈落在正確的行上</text>
+
+			<text class="zh" x="20" y="230" font-size="12" fill="var(--warn)">元素被刪掉時：編譯器不會爆掉，記一筆 unresolved 診斷、略過該動畫。</text>
+		</svg>
+		<figcaption><b>語意引用取代像素常數。</b>行範圍語法 <code>:L4-L6</code> 是為程式碼走讀加的——這是 OpenMAIC 沒有、你必須有的東西。</figcaption>
+	</figure>
+</section>
+
+<section>
+	<h2><span class="num">05</span>時間軸怎麼算</h2>
+	<p>動作分兩種：<strong>阻塞</strong>的佔時間，<strong>非阻塞</strong>的只是觸發。speech 的長度直接取合成出來的音檔長度，所以講稿一改，後面全部自動位移——沒有任何手寫時間碼。</p>
+
+	<figure>
+		<svg viewBox="0 0 900 290" role="img" aria-label="時間軸展開圖：語音排成一列決定總長，聚光燈與雷射疊在上方，鏡頭推近後回正">
+			<line x1="90" y1="238" x2="860" y2="238" stroke="currentColor" stroke-opacity=".35"/>
+			<g font-size="10.5" fill="currentColor" opacity=".55">
+				<text x="90" y="256" text-anchor="middle">0s</text>
+				<text x="282" y="256" text-anchor="middle">4</text>
+				<text x="474" y="256" text-anchor="middle">8</text>
+				<text x="666" y="256" text-anchor="middle">12</text>
+				<text x="858" y="256" text-anchor="middle">16</text>
+			</g>
+
+			<text class="zh" x="20" y="76" font-size="12" fill="currentColor" opacity=".7">camera</text>
+			<rect x="243" y="60" width="384" height="20" rx="2" fill="none" stroke="var(--c-call)" stroke-dasharray="4 3"/>
+			<text x="255" y="75" font-size="10.5" fill="var(--c-call)">推近 s2_code:L1-L5</text>
+			<text x="640" y="75" font-size="10.5" fill="var(--c-call)">reset</text>
+
+			<text class="zh" x="20" y="116" font-size="12" fill="currentColor" opacity=".7">laser</text>
+			<rect x="410" y="100" width="58" height="20" rx="2" fill="var(--c-var)" opacity=".85"/>
+			<rect x="700" y="100" width="58" height="20" rx="2" fill="var(--c-var)" opacity=".85"/>
+			<text x="474" y="115" font-size="10" fill="currentColor" opacity=".6">1.2s 後自動消</text>
+
+			<text class="zh" x="20" y="156" font-size="12" fill="currentColor" opacity=".7">spotlight</text>
+			<rect x="90" y="140" width="153" height="20" rx="2" fill="var(--c-type)" opacity=".8"/>
+			<rect x="243" y="140" width="230" height="20" rx="2" fill="var(--c-type)" opacity=".55"/>
+			<rect x="627" y="140" width="233" height="20" rx="2" fill="var(--c-type)" opacity=".8"/>
+			<text x="100" y="155" font-size="10" fill="currentColor">s2_title</text>
+			<text x="253" y="155" font-size="10" fill="currentColor">s2_code:L1-L5</text>
+			<text x="637" y="155" font-size="10" fill="currentColor">s2_code:L7</text>
+
+			<text class="zh" x="20" y="200" font-size="12" fill="var(--accent)">speech</text>
+			<rect x="90" y="184" width="153" height="24" rx="2" fill="var(--accent)" opacity=".9"/>
+			<rect x="247" y="184" width="216" height="24" rx="2" fill="var(--accent)" opacity=".9"/>
+			<rect x="467" y="184" width="156" height="24" rx="2" fill="var(--accent)" opacity=".9"/>
+			<rect x="627" y="184" width="233" height="24" rx="2" fill="var(--accent)" opacity=".9"/>
+			<text x="96" y="201" font-size="10" fill="var(--surface)">3.2s</text>
+			<text x="253" y="201" font-size="10" fill="var(--surface)">4.5s</text>
+			<text x="473" y="201" font-size="10" fill="var(--surface)">3.3s</text>
+			<text x="633" y="201" font-size="10" fill="var(--surface)">4.9s</text>
+			<text class="zh" x="90" y="226" font-size="10.5" fill="currentColor" opacity=".55">阻塞：長度＝實際音檔長度，總片長由這一排決定</text>
+
+			<text class="zh" x="20" y="30" font-size="12" fill="currentColor" opacity=".75">同一頁投影片內的 12 個動作</text>
+			<line x1="90" y1="40" x2="90" y2="238" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="2 4"/>
+			<line x1="860" y1="40" x2="860" y2="238" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="2 4"/>
+			<text class="zh" x="880" y="284" font-size="11" fill="currentColor" text-anchor="end" opacity=".6">頁尾：所有未結束的效果一律 clamp 收掉</text>
+		</svg>
+		<figcaption><b>畫面不換頁，注意力在動。</b>一頁 17 秒裡焦點換了 5 次、鏡頭推近一次——這就是跟 PPT 換頁的差別。</figcaption>
+	</figure>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>常數</th><th class="mono">值</th><th>意義</th></tr></thead>
+			<tbody>
+				<tr><td>LASER_MS</td><td class="mono">1200</td><td>雷射點停留後自動消失</td></tr>
+				<tr><td>REVEAL_MS</td><td class="mono">320</td><td>元素淡入，之後持續顯示</td></tr>
+				<tr><td>CAMERA_MS</td><td class="mono">600</td><td>鏡頭推近／回正的過場</td></tr>
+				<tr><td>SPOTLIGHT_HOLD</td><td class="mono">→ next</td><td>持續到下一個 spotlight 或頁尾</td></tr>
+				<tr><td>FRAGMENT_GAP</td><td class="mono">120</td><td>語音片段之間的換氣間隔（沿用現值）</td></tr>
+			</tbody>
+		</table>
+	</div>
+</section>
+
+<section>
+	<h2><span class="num">06</span>兩道驗證閘</h2>
+	<p>自動化最怕的是「產出爛東西但流程說成功」。兩個閘門擋在管線裡。</p>
+	<h3>閘一：編排驗證（階段 4 之後）</h3>
+	<ul>
+		<li>每個 <code>target</code> 都要能在 lesson.json 解析到，程式碼行號不得越界</li>
+		<li>每頁 ≥ 3 個動作、≥ 2 段 speech——只有一段就是換頁片，退回重生</li>
+		<li>所有 <code>hidden</code> 元素都要有對應的 reveal</li>
+		<li>推近過的鏡頭必須在頁尾前 reset</li>
+	</ul>
+	<h3>閘二：語音驗收（階段 5 之後）</h3>
+	<p>AR 模型沒有時長約束，卡住是架構本質不是壞掉。把 <code>rework/v3_stability.py</code> 的 <code>analyse()</code> 接進合成迴圈：長度落在預期區間外、出現 &gt;1.5s 異常靜音、偵測到重複，就重跑，上限三次。</p>
+	<div class="callout">
+		<span class="label">放對位置</span>
+		<div>驗收要接在<strong>合成函式裡</strong>，不是接在出片腳本裡。這樣所有呼叫端都自動受保護，不必每支腳本各接一次。</div>
+	</div>
+</section>
+
+<section>
+	<h2><span class="num">07</span>實作現況</h2>
+	<p>三階段遷移已全部完成，以 C 結構體微課程實測通過。每一步都是獨立腳本，可以單獨重跑。</p>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>腳本</th><th>做什麼</th><th class="mono">實測耗時</th></tr></thead>
+			<tbody>
+				<tr><td class="mono">render_slides.py</td><td>畫投影片，同時吐出實測幾何</td><td class="mono">2 秒</td></tr>
+				<tr><td class="mono">validate.py</td><td>編排驗證閘：target 解析、動作密度、hidden 覆蓋</td><td class="mono">&lt;1 秒</td></tr>
+				<tr><td class="mono">synth.py</td><td>語音合成＋驗收重試，逐段快取</td><td class="mono">70 秒／18 段</td></tr>
+				<tr><td class="mono">storyboard.py</td><td>審稿分鏡表，出片前給人看</td><td class="mono">2 秒</td></tr>
+				<tr><td class="mono">compile_timeline.py</td><td>時間軸編譯＋字幕</td><td class="mono">&lt;1 秒</td></tr>
+				<tr><td class="mono">render_video.py</td><td>逐格合成＋FFmpeg 封裝</td><td class="mono">50 秒／92 秒片長</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3>效果語彙</h3>
+	<p>全部是 numpy／Pillow 的逐格像素運算，顏色一律取自 <code>themes/*.json</code>。</p>
+	<ul>
+		<li><b>螢光筆</b>　正片疊底刷過文字重點，其餘內容維持全亮——取代早期「一塊亮其他全暗」的作法</li>
+		<li><b>程式碼淡出</b>　只在程式碼卡內生效，未聚焦的行往底色淡出，目標行全亮＋左側範圍括號</li>
+		<li><b>底線畫出</b>　5px 由左往右，端點圓點，1.2 秒後淡出</li>
+		<li><b>左移淡入</b>　hidden 元素平移 26px 進場</li>
+		<li><b>鏡頭推近</b>　裁切放大至 1.4x，須明確 reset</li>
+		<li><b>交叉淡化</b>　換頁 350ms</li>
+	</ul>
+	<div class="callout">
+		<span class="label">已移除</span>
+		<div>整頁緩慢推近（Ken Burns）。連續次像素縮放會讓中文字與程式碼反覆重取樣發糊，且純粹是位元率浪費——移除後同樣內容檔案由 8.1 MB 降到 3.4 MB、渲染時間由 95 秒降到 48 秒。</div>
+	</div>
+</section>
+
+<section>
+	<h2><span class="num">08</span>聲音的三條硬規則</h2>
+	<p>都是實測撞出來的，違反任一條就會產生雜音或誤判。</p>
+
+	<h3>一　不要讓英文被切成孤立片段</h3>
+	<p>API 的 <code>cut5</code> 會在「、」硬切。<code>「 float ，」</code> 單獨送進 AR 模型實測產生 <b>8.46 秒、峰值 0.02</b> 的近無聲雜訊。25–60 字的講稿一律 <code>cut0</code> 整句送，超長才自己切，且每段保證含中文上下文。</p>
+
+	<h3>二　靜音偵測不能只用相對門檻</h3>
+	<p>原本用「峰值的 2%」判定靜音。AR 失控產生的雜訊振幅約 0.02，除以該段峰值 0.9 等於 2.2%，剛好高於門檻而被算成「有聲音」，2.7 秒的垃圾整段漏抓。必須同時加絕對門檻（逐框 RMS &lt; 0.015），修齊也要用逐框 RMS 而非單點振幅。</p>
+
+	<h3>三　講稿不要出現逐字母唸的英文</h3>
+	<p>訓練語料 317 條裡含英文的 30 條全是單字或詞組，<b>沒有任何一條是逐字母唸的</b>。「Bridge AI」實測產生 1.2 秒的氣音——能量在、勉強聽得懂，所以能量檢測與 ASR 回讀都抓不到，只能靠講稿規避。畫面保留英文，講稿改中文說法。</p>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>校準值</th><th class="mono">數值</th><th>怎麼來的</th></tr></thead>
+			<tbody>
+				<tr><td>語速</td><td class="mono">6.35 字/秒</td><td>18 段實測中位數，範圍 4.2–8.3</td></tr>
+				<tr><td>含停頓語速</td><td class="mono">5.5 字/秒</td><td>525 字 → 95 秒，供片長預估</td></tr>
+				<tr><td>絕對靜音門檻</td><td class="mono">RMS 0.015</td><td>雜訊 0.005、正常語音 0.15</td></tr>
+				<tr><td>重試命中率</td><td class="mono">3/18</td><td>與 v3 穩定度測試的 17% 吻合</td></tr>
+			</tbody>
+		</table>
+	</div>
+</section>
+
+<section>
+	<h2><span class="num">09</span>Repo：Monorepo</h2>
+	<p>已決定走 monorepo——影音引擎與 TTS 訓練同一個 repo。現況是上游 fork：origin 指著 <code>RVC-Boss/GPT-SoVITS</code>，1050 個 commit 裡只有 1 個是自己的，<code>.git</code> 僅 15 MB，歷史不構成負擔。</p>
+
+	<div class="tablewrap">
+		<table>
+			<thead><tr><th>形狀</th><th>做法</th><th>代價</th></tr></thead>
+			<tbody>
+				<tr>
+					<td><b>甲（建議）</b></td>
+					<td>上游留在 root 不動；自己的東西集中兩處：<code>video_engine/</code> 與 <code>tts_lab/</code></td>
+					<td>搬的都是自己寫的散檔，絕對路徑照舊可跑；上游修補仍能 pull</td>
+				</tr>
+				<tr>
+					<td>乙</td>
+					<td>真的分成 <code>engine/</code> 與 <code>tts/</code>，上游整包搬進 tts/</td>
+					<td>26 支腳本的硬編路徑要全改；之後每次 merge 上游都會大量衝突</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p>形狀甲的目錄長相：</p>
+	<pre><code>GPT-SoVITS/            ← repo root（上游程式碼原地不動）
+├── GPT_SoVITS/        上游推論與訓練核心
+├── video_engine/      影音引擎：schema / prompts / compiler / renderer
+├── tts_lab/           自己的訓練資產：auto_train_*.py、rework/、資料集工具
+└── output_videos/     產出（不進版控）</code></pre>
+
+	<h3>Remote 切換</h3>
+	<p>上游改名保留，origin 換成自己的遠端，之後仍可 <code>git fetch upstream</code> 取上游修補：</p>
+	<pre><code>git remote rename origin upstream
+git remote add origin git@github.com:&lt;你的帳號&gt;/bridgeai-teacher.git</code></pre>
+
+	<div class="callout">
+		<span class="label">尚未執行</span>
+		<div>remote 變更、搬檔、push 都還沒動。<code>video_engine/</code> 只是新增檔案，沒有碰到任何既有程式碼。</div>
+	</div>
+</section>
+
+</div>

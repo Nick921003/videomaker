@@ -1,0 +1,174 @@
+{
+	"lesson_id": "c_struct",
+	"slides": [
+		{
+			"slide_id": "p1",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p1_title"
+				},
+				{
+					"type": "speech",
+					"text": "同學好，如果今天要管理一百位學生的成績，在還沒學會結構體之前，通常會怎麼做呢？"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_fig:l1"
+				},
+				{
+					"type": "speech",
+					"text": "我們會開姓名、成績等多個獨立陣列，但只要一做排序，所有陣列就必須同步搬動。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_b"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_c"
+				},
+				{
+					"type": "speech",
+					"text": "只要漏搬一個，資料就錯位了。明明是同一個學生，資料卻完全散開在各處。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_fig:r1"
+				},
+				{
+					"type": "speech",
+					"text": "為了解決這個問題，我們可以用 struct 把資料打包，接下來就來看看怎麼做。"
+				}
+			]
+		},
+		{
+			"slide_id": "p2",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p2_a"
+				},
+				{
+					"type": "speech",
+					"text": "結構體定義主要分成三個部分，宣告語法、裡面的成員列表，以及自訂的型態別名。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_b"
+				},
+				{
+					"type": "laser",
+					"target": "p2_fig:i1"
+				},
+				{
+					"type": "laser",
+					"target": "p2_fig:i2"
+				},
+				{
+					"type": "speech",
+					"text": "像這樣把字串姓名與整數成績打包在一起，成員可以放各種不同型態。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_c"
+				},
+				{
+					"type": "speech",
+					"text": "定義好別名之後，就能像一般型態那樣直接宣告變數，管理上清楚又安全。"
+				}
+			]
+		},
+		{
+			"slide_id": "p3",
+			"actions": [
+				{
+					"type": "camera",
+					"target": "p3_code:L4-L7",
+					"scale": 1.2
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L4-L7"
+				},
+				{
+					"type": "speech",
+					"text": "首先在第四行到第七行，我們定義了名為 Student 的結構體型態，裡面包含字串姓名與整數成績。"
+				},
+				{
+					"type": "laser",
+					"target": "p3_code:L10"
+				},
+				{
+					"type": "speech",
+					"text": "進入主函式後，第十行直接用這個型態宣告出第一個學生變數。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L11-L12"
+				},
+				{
+					"type": "speech",
+					"text": "接著透過點運算子存取成員，字串要用字串複製函式放進去，成績則可以直接給值。"
+				},
+				{
+					"type": "camera",
+					"reset": true
+				},
+				{
+					"type": "laser",
+					"target": "p3_code:L13"
+				},
+				{
+					"type": "speech",
+					"text": "最後在第十三行印出兩個成員的內容，就能完整輸出學生的打包資料囉。"
+				}
+			]
+		},
+		{
+			"slide_id": "p4",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p4_a"
+				},
+				{
+					"type": "speech",
+					"text": "大家常誤以為定義型態就會佔空間，其實要真正宣告變數才會分配記憶體。"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_b"
+				},
+				{
+					"type": "laser",
+					"target": "p4_b"
+				},
+				{
+					"type": "speech",
+					"text": "另外大括號結尾的分號千萬不能漏掉，這是最常見的編譯錯誤。"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p4_c"
+				},
+				{
+					"type": "speech",
+					"text": "總結來說，善用 struct 打包資料，是邁向模組化設計最重要的一步。"
+				}
+			]
+		}
+	]
+}

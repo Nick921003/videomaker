@@ -1,0 +1,70 @@
+diff --git a/GPT_SoVITS/prepare_datasets/1-get-text.py b/GPT_SoVITS/prepare_datasets/1-get-text.py
+index 8d83e79..c14744a 100644
+--- a/GPT_SoVITS/prepare_datasets/1-get-text.py
++++ b/GPT_SoVITS/prepare_datasets/1-get-text.py
+@@ -18,6 +18,7 @@ version = os.environ.get("version", None)
+ import traceback
+ import os.path
+ from text.cleaner import clean_text
++from text.mixed_frontend import get_phones_and_bert_train
+ from transformers import AutoModelForMaskedLM, AutoTokenizer
+ from tools.my_utils import clean_path
+ 
+@@ -84,18 +85,26 @@ if os.path.exists(txt_path) == False:
+         return phone_level_feature.T
+ 
+     def process(data, res):
++        bert_dtype = torch.float16 if is_half else torch.float32
+         for name, text, lan in data:
+             try:
+                 name = clean_path(name)
+                 name = os.path.basename(name)
+                 print(name)
+-                phones, word2ph, norm_text = clean_text(text.replace("%", "-").replace("￥", ","), lan, version)
+                 path_bert = "%s/%s.pt" % (bert_dir, name)
+-                if os.path.exists(path_bert) == False and lan == "zh":
+-                    bert_feature = get_bert_feature(norm_text, word2ph)
+-                    assert bert_feature.shape[-1] == len(phones)
+-                    # torch.save(bert_feature, path_bert)
+-                    my_save(bert_feature, path_bert)
++                if lan == "zh":
++                    # 中英混合：先切分再逐段 g2p，避免中文前端吃掉拉丁字母
++                    phones, bert_feature, norm_text = get_phones_and_bert_train(
++                        text, lan, version, get_bert_feature, dtype=bert_dtype
++                    )
++                    word2ph = None
++                    if os.path.exists(path_bert) == False:
++                        # torch.save(bert_feature, path_bert)
++                        my_save(bert_feature, path_bert)
++                else:
++                    phones, word2ph, norm_text = clean_text(
++                        text.replace("%", "-").replace("￥", ","), lan, version
++                    )
+                 phones = " ".join(phones)
+                 # res.append([name,phones])
+                 res.append([name, phones, word2ph, norm_text])
+diff --git a/GPT_SoVITS/text/engdict-hot.rep b/GPT_SoVITS/text/engdict-hot.rep
+index b926830..b8c6cbf 100644
+--- a/GPT_SoVITS/text/engdict-hot.rep
++++ b/GPT_SoVITS/text/engdict-hot.rep
+@@ -1,3 +1,18 @@
+ CHATGPT CH AE1 T JH IY1 P IY1 T IY1
+ JSON JH EY1 S AH0 N
+-CONDA K AA1 N D AH0
+\ No newline at end of file
++CONDA K AA1 N D AH0
++DKT D IY1 K EY1 T IY1
++AST EY1 EH1 S T IY1
++SRCML EH1 S AA1 R S IY1 EH1 M EH1 L
++API EY1 P IY1 AY1
++LLM EH1 L EH1 L EH1 M
++CNN S IY1 EH1 N EH1 N
++RNN AA1 R EH1 N EH1 N
++NLP EH1 N EH1 L P IY1
++GRU JH IY1 AA1 R Y UW1
++INT IH1 N T
++CHAR CH AA1 R
++TYPEDEF T AY1 P D EH2 F
++NULL N AH1 L
++ARRAY AH0 R EY1
++ENUM IY1 N AH2 M

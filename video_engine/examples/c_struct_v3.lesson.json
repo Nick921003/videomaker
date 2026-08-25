@@ -1,0 +1,79 @@
+{
+	"lesson_id": "c_struct_v3",
+	"title": "C 語言結構體基礎",
+	"voice": {
+		"model": "wang_teacher_v3",
+		"speed_factor": 0.95,
+		"text_lang": "zh",
+		"text_split_method": "cut5"
+	},
+	"slides": [
+		{
+			"id": "p1",
+			"role": "hook",
+			"note": "從「100 位學生資料怎麼宣告」的痛點切入，帶出 struct",
+			"elements": [
+				{ "id": "p1_title", "type": "title", "text": "C 語言結構體基礎" },
+				{ "id": "p1_sub", "type": "subtitle", "text": "struct 與 typedef 定義 — BridgeAI 微課程" },
+				{ "id": "p1_pain", "type": "bullet", "text": "痛點：要記錄 100 位學生的姓名與三科成績，該怎麼宣告？" },
+				{ "id": "p1_old", "type": "bullet", "text": "傳統做法：宣告 5 個獨立陣列，容易錯位且難以維護", "hidden": true },
+				{ "id": "p1_fix", "type": "callout", "text": "核心解法：用 struct 把不同型態的資料打包成單一實體", "hidden": true }
+			]
+		},
+		{
+			"id": "p2",
+			"role": "concept",
+			"note": "語法結構拆解：typedef struct 的三個部分",
+			"elements": [
+				{ "id": "p2_title", "type": "title", "text": "如何定義與宣告 struct？" },
+				{ "id": "p2_sub", "type": "subtitle", "text": "將分散的變數打包為有意義的複合型態" },
+				{ "id": "p2_syntax", "type": "bullet", "text": "語法：typedef struct { 成員列表 } 別名;" },
+				{ "id": "p2_member", "type": "bullet", "text": "成員變數：可包含 char、int、float 等任意基礎型態", "hidden": true },
+				{ "id": "p2_inst", "type": "bullet", "text": "實例宣告：可直接用別名 Student 宣告變數 s1", "hidden": true }
+			]
+		},
+		{
+			"id": "p3",
+			"role": "walkthrough",
+			"note": "四步走讀：定義型態、宣告實體、點運算子存取、印出結果",
+			"elements": [
+				{ "id": "p3_title", "type": "title", "text": "程式碼實戰走讀" },
+				{ "id": "p3_sub", "type": "subtitle", "text": "定義 Student 結構體並使用點運算子存取成員" },
+				{
+					"id": "p3_code",
+					"type": "code",
+					"lang": "c",
+					"lines": [
+						"#include <stdio.h>",
+						"#include <string.h>",
+						"",
+						"typedef struct {",
+						"    char name[32];",
+						"    int score;",
+						"} Student;",
+						"",
+						"int main() {",
+						"    Student s1;",
+						"    strcpy(s1.name, \"Alice\");",
+						"    s1.score = 95;",
+						"    printf(\"學生: %s, 成績: %d\\n\", s1.name, s1.score);",
+						"    return 0;",
+						"}"
+					]
+				}
+			]
+		},
+		{
+			"id": "p4",
+			"role": "pitfall",
+			"note": "兩個迷思加總結。原稿的 Emoji 已改為文字前綴，避免字型缺字",
+			"elements": [
+				{ "id": "p4_title", "type": "title", "text": "常見迷思與課堂總結" },
+				{ "id": "p4_sub", "type": "subtitle", "text": "新手最常踩坑的三個重點回顧" },
+				{ "id": "p4_m1", "type": "bullet", "text": "迷思 1：宣告 struct 只是定義新型態，不會立刻佔用記憶體" },
+				{ "id": "p4_m2", "type": "bullet", "text": "迷思 2：結構體大括號結尾的分號絕對不能漏掉", "hidden": true },
+				{ "id": "p4_sum", "type": "callout", "text": "總結：善用 struct 打包資料，是寫出模組化程式的基石", "hidden": true }
+			]
+		}
+	]
+}

@@ -1,0 +1,38 @@
+{
+	"name": "warm",
+	"label": "暖色文青",
+	"canvas": {
+		"bg": "#F4EDE2"
+	},
+	"card": {
+		"fill": "#FBF7F0",
+		"edge": "#DFD2BF",
+		"width": 2
+	},
+	"text": {
+		"title": "#3B322A",
+		"subtitle": "#A0673F",
+		"bullet": "#4B4238",
+		"callout": "#B85C38"
+	},
+	"code": {
+		"bg": "#EFE6D8",
+		"edge": "#DCCDB6",
+		"normal": "#423931",
+		"keyword": "#3D6B7D",
+		"preproc": "#8A5A7A"
+	},
+	"effects": {
+		"dim": "#2A231C",
+		"laser": "#B85C38",
+		"spotlight_border": "#B85C38",
+		"highlight": "#F2D9A0",
+		"underline": "#B85C38",
+		"code_fade": "#EFE6D8"
+	},
+	"figure": {
+		"fill": "#FBF3E4",
+		"edge": "#C9A87C",
+		"alt": "#EADCC4"
+	}
+}

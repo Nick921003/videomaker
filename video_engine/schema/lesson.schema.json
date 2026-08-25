@@ -1,0 +1,260 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "bridgeai/lesson.schema.json",
+	"title": "BridgeAI Lesson — 內容層",
+	"description": "只描述教材語意。嚴禁出現任何像素座標；座標由繪製器輸出的 layout.json 提供。",
+	"type": "object",
+	"required": [
+		"lesson_id",
+		"title",
+		"slides"
+	],
+	"additionalProperties": false,
+	"properties": {
+		"lesson_id": {
+			"type": "string",
+			"pattern": "^[a-z0-9_]+$"
+		},
+		"title": {
+			"type": "string"
+		},
+		"voice": {
+			"type": "object",
+			"description": "TTS 預設參數，可被單一 speech 動作覆寫",
+			"additionalProperties": false,
+			"properties": {
+				"model": {
+					"type": "string",
+					"default": "wang_teacher_v3"
+				},
+				"speed_factor": {
+					"type": "number",
+					"default": 0.95
+				},
+				"text_lang": {
+					"type": "string",
+					"const": "zh"
+				},
+				"text_split_method": {
+					"type": "string",
+					"default": "cut5"
+				}
+			}
+		},
+		"slides": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"$ref": "#/$defs/slide"
+			}
+		}
+	},
+	"$defs": {
+		"slide": {
+			"type": "object",
+			"required": [
+				"id",
+				"elements"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"type": "string",
+					"pattern": "^[a-z0-9_]+$"
+				},
+				"role": {
+					"description": "教學位置，供 prompt 決定語氣",
+					"enum": [
+						"hook",
+						"concept",
+						"walkthrough",
+						"pitfall",
+						"summary"
+					]
+				},
+				"note": {
+					"type": "string",
+					"description": "給 LLM 的補充說明，不會顯示在畫面上"
+				},
+				"elements": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"$ref": "#/$defs/element"
+					}
+				}
+			}
+		},
+		"element": {
+			"oneOf": [
+				{
+					"$ref": "#/$defs/textElement"
+				},
+				{
+					"$ref": "#/$defs/codeElement"
+				},
+				{
+					"$ref": "#/$defs/imageElement"
+				},
+				{
+					"$ref": "#/$defs/figureElement"
+				}
+			]
+		},
+		"textElement": {
+			"type": "object",
+			"required": [
+				"id",
+				"type",
+				"text"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"type": "string",
+					"pattern": "^[a-z0-9_]+$"
+				},
+				"type": {
+					"enum": [
+						"title",
+						"subtitle",
+						"bullet",
+						"callout"
+					]
+				},
+				"text": {
+					"type": "string"
+				},
+				"hidden": {
+					"type": "boolean",
+					"default": false,
+					"description": "true = 進場時不顯示，需由 reveal 動作帶出（逐條浮現，破除換頁感）"
+				}
+			}
+		},
+		"codeElement": {
+			"type": "object",
+			"required": [
+				"id",
+				"type",
+				"lang",
+				"lines"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"type": "string",
+					"pattern": "^[a-z0-9_]+$"
+				},
+				"type": {
+					"const": "code"
+				},
+				"lang": {
+					"type": "string",
+					"default": "c"
+				},
+				"lines": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"description": "逐行原始碼，行號自 1 起。動作可用 code_id:L4 或 code_id:L4-L6 指向行範圍"
+				}
+			}
+		},
+		"imageElement": {
+			"type": "object",
+			"required": [
+				"id",
+				"type",
+				"src"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"type": "string",
+					"pattern": "^[a-z0-9_]+$"
+				},
+				"type": {
+					"const": "image"
+				},
+				"src": {
+					"type": "string"
+				},
+				"alt": {
+					"type": "string"
+				},
+				"hidden": {
+					"type": "boolean",
+					"default": false
+				}
+			}
+		},
+		"figureElement": {
+			"type": "object",
+			"description": "示意圖。由繪製器畫出來，不是外部圖片；每個項目都可被動作單獨指到（p1_fig:i2）",
+			"required": [
+				"id",
+				"type",
+				"kind"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"id": {
+					"type": "string",
+					"pattern": "^[a-z0-9_]+$"
+				},
+				"type": {
+					"const": "figure"
+				},
+				"kind": {
+					"enum": [
+						"boxes",
+						"compare",
+						"steps"
+					],
+					"description": "boxes＝一排標籤方塊（記憶體配置、結構成員）；compare＝左右對照（前後、優劣）；steps＝流程箭頭"
+				},
+				"caption": {
+					"type": "string"
+				},
+				"items": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"description": "boxes 與 steps 用"
+				},
+				"left": {
+					"$ref": "#/$defs/figureSide"
+				},
+				"right": {
+					"$ref": "#/$defs/figureSide"
+				},
+				"hidden": {
+					"type": "boolean",
+					"default": false
+				}
+			}
+		},
+		"figureSide": {
+			"type": "object",
+			"required": [
+				"title",
+				"items"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"title": {
+					"type": "string"
+				},
+				"items": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				}
+			}
+		}
+	}
+}

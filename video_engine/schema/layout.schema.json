@@ -1,0 +1,51 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "bridgeai/layout.schema.json",
+	"title": "BridgeAI Layout — 幾何層（機器產出，不可手改）",
+	"description": "繪製器畫完投影片後，把每個 element id（含程式碼逐行）實際落點吐出來。編排層永遠不碰這份檔案，只有編譯器查表。",
+	"type": "object",
+	"required": ["lesson_id", "canvas", "slides"],
+	"additionalProperties": false,
+	"properties": {
+		"lesson_id": { "type": "string" },
+		"canvas": {
+			"type": "object",
+			"required": ["width", "height"],
+			"properties": {
+				"width": { "type": "integer", "default": 1920 },
+				"height": { "type": "integer", "default": 1080 }
+			}
+		},
+		"slides": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["slide_id", "png", "boxes"],
+				"additionalProperties": false,
+				"properties": {
+					"slide_id": { "type": "string" },
+					"png": { "type": "string", "description": "已繪製的 1080p 底圖路徑" },
+					"boxes": {
+						"type": "object",
+						"description": "key 為 element ref（如 s3_code:L4-L6），value 為實測 bbox",
+						"additionalProperties": { "$ref": "#/$defs/box" }
+					}
+				}
+			}
+		}
+	},
+	"$defs": {
+		"box": {
+			"type": "object",
+			"required": ["x", "y", "w", "h"],
+			"additionalProperties": false,
+			"properties": {
+				"x": { "type": "number" },
+				"y": { "type": "number" },
+				"w": { "type": "number" },
+				"h": { "type": "number" },
+				"baseline": { "type": "number", "description": "文字基線，供雷射點位微調" }
+			}
+		}
+	}
+}

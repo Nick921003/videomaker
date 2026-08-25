@@ -1,0 +1,38 @@
+{
+	"name": "dark",
+	"label": "深色（v3 舊版）",
+	"canvas": {
+		"bg": "#141821"
+	},
+	"card": {
+		"fill": "#1C2330",
+		"edge": "#37445C",
+		"width": 2
+	},
+	"text": {
+		"title": "#FFFFFF",
+		"subtitle": "#78B4FF",
+		"bullet": "#E6EBF5",
+		"callout": "#FFBE50"
+	},
+	"code": {
+		"bg": "#0C0F16",
+		"edge": "#283246",
+		"normal": "#F0F0F0",
+		"keyword": "#64C8FF",
+		"preproc": "#D28CF0"
+	},
+	"effects": {
+		"dim": "#000000",
+		"laser": "#FF3B30",
+		"spotlight_border": "#FFBE50",
+		"highlight": "#3A4256",
+		"underline": "#FFBE50",
+		"code_fade": "#0C0F16"
+	},
+	"figure": {
+		"fill": "#1E2634",
+		"edge": "#4A5A78",
+		"alt": "#2A3346"
+	}
+}

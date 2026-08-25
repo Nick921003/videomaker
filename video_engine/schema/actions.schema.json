@@ -1,0 +1,111 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "bridgeai/actions.schema.json",
+	"title": "BridgeAI Actions — 編排層（LLM 產出）",
+	"description": "一頁投影片 = 一串交錯的動作與講稿。只能引用 lesson.json 既有的 element id，永遠不寫座標、不寫時間碼。",
+	"type": "object",
+	"required": ["lesson_id", "slides"],
+	"additionalProperties": false,
+	"properties": {
+		"lesson_id": { "type": "string" },
+		"slides": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["slide_id", "actions"],
+				"additionalProperties": false,
+				"properties": {
+					"slide_id": { "type": "string" },
+					"actions": {
+						"type": "array",
+						"minItems": 3,
+						"description": "少於 3 個動作的頁面會被驗證器擋下——那就是 PPT 換頁",
+						"items": { "$ref": "#/$defs/action" }
+					}
+				}
+			}
+		}
+	},
+	"$defs": {
+		"elementRef": {
+			"type": "string",
+			"pattern": "^[a-z0-9_]+(:L[0-9]+(-L[0-9]+)?)?$",
+			"description": "元素 id，或程式碼行範圍：code_id:L4 / code_id:L4-L6"
+		},
+		"action": {
+			"oneOf": [
+				{ "$ref": "#/$defs/speech" },
+				{ "$ref": "#/$defs/spotlight" },
+				{ "$ref": "#/$defs/laser" },
+				{ "$ref": "#/$defs/reveal" },
+				{ "$ref": "#/$defs/camera" },
+				{ "$ref": "#/$defs/pause" }
+			]
+		},
+		"speech": {
+			"type": "object",
+			"description": "阻塞動作。時長取實際 TTS 音檔長度，不由 LLM 指定",
+			"required": ["type", "text"],
+			"additionalProperties": false,
+			"properties": {
+				"type": { "const": "speech" },
+				"text": { "type": "string", "minLength": 1 },
+				"speed_factor": { "type": "number", "minimum": 0.7, "maximum": 1.3 }
+			}
+		},
+		"spotlight": {
+			"type": "object",
+			"description": "非阻塞。聚光並壓暗其餘畫面，持續到下一個 spotlight 或頁尾（編譯器自動 clamp）",
+			"required": ["type", "target"],
+			"additionalProperties": false,
+			"properties": {
+				"type": { "const": "spotlight" },
+				"target": { "$ref": "#/$defs/elementRef" },
+				"dim": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.55 }
+			}
+		},
+		"laser": {
+			"type": "object",
+			"description": "非阻塞。短暫指點（預設 1.2 秒後自動消失）",
+			"required": ["type", "target"],
+			"additionalProperties": false,
+			"properties": {
+				"type": { "const": "laser" },
+				"target": { "$ref": "#/$defs/elementRef" },
+				"color": { "type": "string", "default": "#ff3b30" }
+			}
+		},
+		"reveal": {
+			"type": "object",
+			"description": "非阻塞。把 hidden 元素淡入帶出，之後持續顯示",
+			"required": ["type", "target"],
+			"additionalProperties": false,
+			"properties": {
+				"type": { "const": "reveal" },
+				"target": { "$ref": "#/$defs/elementRef" }
+			}
+		},
+		"camera": {
+			"type": "object",
+			"description": "非阻塞。鏡頭推近／回正，破除靜止畫面的換頁感",
+			"required": ["type"],
+			"additionalProperties": false,
+			"properties": {
+				"type": { "const": "camera" },
+				"target": { "$ref": "#/$defs/elementRef" },
+				"scale": { "type": "number", "minimum": 1.0, "maximum": 2.0, "default": 1.35 },
+				"reset": { "type": "boolean", "default": false, "description": "true 時忽略 target，鏡頭回到全景" }
+			}
+		},
+		"pause": {
+			"type": "object",
+			"description": "阻塞。留白，讓觀眾消化畫面",
+			"required": ["type", "ms"],
+			"additionalProperties": false,
+			"properties": {
+				"type": { "const": "pause" },
+				"ms": { "type": "integer", "minimum": 100, "maximum": 3000 }
+			}
+		}
+	}
+}

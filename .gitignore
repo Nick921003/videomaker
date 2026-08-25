@@ -1,0 +1,12 @@
+# 產出
+video_engine/out/
+
+# 環境與金鑰
+.venv/
+.env
+__pycache__/
+*.pyc
+
+# 工具本機狀態
+.claude/
+.serena/

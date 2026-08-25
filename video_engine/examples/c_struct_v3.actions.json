@@ -1,0 +1,202 @@
+{
+	"lesson_id": "c_struct_v3",
+	"slides": [
+		{
+			"slide_id": "p1",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p1_title"
+				},
+				{
+					"type": "speech",
+					"text": "大家好，歡迎來到今天的知識點微課程。我們要學的是 C 語言的結構體，也就是 struct"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_pain"
+				},
+				{
+					"type": "speech",
+					"text": "先想一個狀況，如果要記錄一百位學生的姓名跟三科成績，你會怎麼宣告"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_old"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_old"
+				},
+				{
+					"type": "speech",
+					"text": "一般做法是開五個獨立陣列，姓名一個，每一科各一個。資料一多就很容易錯位"
+				},
+				{
+					"type": "pause",
+					"ms": 400
+				},
+				{
+					"type": "reveal",
+					"target": "p1_fix"
+				},
+				{
+					"type": "laser",
+					"target": "p1_fix"
+				},
+				{
+					"type": "speech",
+					"text": "今天的解法就是 struct ，把不同型態的資料打包成一個實體"
+				}
+			]
+		},
+		{
+			"slide_id": "p2",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p2_title"
+				},
+				{
+					"type": "speech",
+					"text": "接下來看 struct 到底怎麼定義"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_syntax"
+				},
+				{
+					"type": "speech",
+					"text": "語法分成三段，先寫 typedef struct ，中間大括號放成員列表，最後給它一個別名"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_member"
+				},
+				{
+					"type": "speech",
+					"text": "成員可以是 char 、 int 、 float ，任何基礎型態都能放進去"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_inst"
+				},
+				{
+					"type": "laser",
+					"target": "p2_inst"
+				},
+				{
+					"type": "speech",
+					"text": "取好別名之後，Student 就跟 int 一樣好用，可以直接拿來宣告變數"
+				}
+			]
+		},
+		{
+			"slide_id": "p3",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p3_title"
+				},
+				{
+					"type": "speech",
+					"text": "我們直接看一段完整的範例"
+				},
+				{
+					"type": "camera",
+					"target": "p3_code:L4-L7",
+					"scale": 1.4
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L4-L7"
+				},
+				{
+					"type": "speech",
+					"text": "這四行在定義新的資料型態，把姓名跟成績包在一起"
+				},
+				{
+					"type": "laser",
+					"target": "p3_code:L7"
+				},
+				{
+					"type": "speech",
+					"text": "注意最後這一行的別名 Student ，還有結尾的分號"
+				},
+				{
+					"type": "camera",
+					"reset": true
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L10"
+				},
+				{
+					"type": "speech",
+					"text": "這裡才是真正宣告一個學生變數，到這一步才配到記憶體"
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L11-L12"
+				},
+				{
+					"type": "speech",
+					"text": "接著用點運算子填資料，先複製姓名字串，再指定成績"
+				},
+				{
+					"type": "laser",
+					"target": "p3_code:L13"
+				},
+				{
+					"type": "speech",
+					"text": "最後印出結果，姓名跟成績都從同一個變數裡拿出來"
+				}
+			]
+		},
+		{
+			"slide_id": "p4",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p4_title"
+				},
+				{
+					"type": "speech",
+					"text": "最後幫大家整理兩個最常踩的坑"
+				},
+				{
+					"type": "spotlight",
+					"target": "p4_m1"
+				},
+				{
+					"type": "speech",
+					"text": "第一個，定義 struct 只是畫設計圖，沒有宣告變數就不會佔記憶體"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_m2"
+				},
+				{
+					"type": "laser",
+					"target": "p4_m2"
+				},
+				{
+					"type": "speech",
+					"text": "第二個，大括號結尾的分號不能漏，漏掉編譯就過不了"
+				},
+				{
+					"type": "pause",
+					"ms": 300
+				},
+				{
+					"type": "reveal",
+					"target": "p4_sum"
+				},
+				{
+					"type": "speech",
+					"text": "善用 struct 把資料打包，程式會清楚很多。我們下一個單元見"
+				}
+			]
+		}
+	]
+}

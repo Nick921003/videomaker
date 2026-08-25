@@ -1,0 +1,162 @@
+{
+	"lesson_id": "c_struct",
+	"slides": [
+		{
+			"slide_id": "p1",
+			"actions": [
+				{
+					"type": "laser",
+					"target": "p1_title"
+				},
+				{
+					"type": "speech",
+					"text": "同學好，如果要記錄全班一百位同學的姓名和成績，傳統做法必須宣告多個獨立陣列。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_b"
+				},
+				{
+					"type": "laser",
+					"target": "p1_fig:l2"
+				},
+				{
+					"type": "speech",
+					"text": "當你要按照成績排序時，所有陣列都得同步搬移，只要漏搬一個，資料就完全錯位了。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_fig:r1"
+				},
+				{
+					"type": "speech",
+					"text": "本質問題就在於資料散落各處。這時候我們就需要用 struct 把相關資料整合成一個包裹。"
+				}
+			]
+		},
+		{
+			"slide_id": "p2",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p2_a"
+				},
+				{
+					"type": "speech",
+					"text": "我們來看語法。用 typedef struct 把不同型態的資料集合在一起，最後取一個自訂的型態名稱。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_b"
+				},
+				{
+					"type": "laser",
+					"target": "p2_fig:i1"
+				},
+				{
+					"type": "laser",
+					"target": "p2_fig:i2"
+				},
+				{
+					"type": "speech",
+					"text": "裡面的成員非常彈性，可以放姓名陣列，也可以放成績整數，全部打包成一個整體。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_c"
+				},
+				{
+					"type": "speech",
+					"text": "定義完成後，這個別名就能像一般整數型態一樣，直接拿來宣告變數了。"
+				}
+			]
+		},
+		{
+			"slide_id": "p3",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p3_code:L4-L7"
+				},
+				{
+					"type": "speech",
+					"text": "我們先看到上方，用 typedef 定義出名為 Student 的結構體型態。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L10"
+				},
+				{
+					"type": "speech",
+					"text": "進入主函式後，直接拿自訂型態名稱來宣告出學生變數。"
+				},
+				{
+					"type": "camera",
+					"target": "p3_code:L11-L12",
+					"scale": 1.25
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L11-L12"
+				},
+				{
+					"type": "speech",
+					"text": "接著透過點運算子，分別把姓名和成績填入結構成員中。"
+				},
+				{
+					"type": "camera",
+					"reset": true
+				},
+				{
+					"type": "laser",
+					"target": "p3_code:L13"
+				},
+				{
+					"type": "speech",
+					"text": "最後直接印出這兩個欄位的內容，就完成基本的讀寫操作了。"
+				}
+			]
+		},
+		{
+			"slide_id": "p4",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p4_a"
+				},
+				{
+					"type": "speech",
+					"text": "最後提醒大家，光是定義型態並不會分配記憶體，直到真正宣告變數才會佔用空間。"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_b"
+				},
+				{
+					"type": "laser",
+					"target": "p4_b"
+				},
+				{
+					"type": "speech",
+					"text": "另外定義結構體時，大括號後面的分號是語法規定，千萬別漏掉了。"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p4_c"
+				},
+				{
+					"type": "speech",
+					"text": "學會用 struct 打包資料，是寫出整潔且模組化程式的第一步，大家回去要多加練習喔！"
+				}
+			]
+		}
+	]
+}
