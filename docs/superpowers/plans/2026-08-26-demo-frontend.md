@@ -295,10 +295,33 @@ def extract_text(path):
 Run: `.venv/bin/python -m unittest tests.test_ingest -v`
 Expected: `Ran 10 tests` 全部 OK
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: 更新 README 的安裝指令**
+
+新增依賴要反映在安裝說明上，不然接手的人裝完會缺套件。
+把 `README.md` 的：
 
 ```bash
-git add video_engine/ingest.py tests/
+uv venv .venv && uv pip install --python .venv/bin/python \\
+  numpy scipy pillow fonttools anthropic google-genai openai
+```
+
+改成：
+
+```bash
+uv venv .venv && uv pip install --python .venv/bin/python \\
+  numpy scipy pillow fonttools anthropic google-genai openai python-pptx
+```
+
+並在「需要什麼」清單的 `Python 3.10+` 那一行後面補一句：
+
+```
+* 教材可以是 `.md`、`.txt` 或 `.pptx`（`.pptx` 走 `python-pptx` 抽文字與講者備忘稿）
+```
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add video_engine/ingest.py tests/ README.md
 git commit -m "feat(ingest): 教材檔案抽成純文字，支援 pptx
 
 投影片順序與備忘稿歸屬交給 python-pptx：兩者在 OOXML 裡都隔了一層 rels
@@ -589,7 +612,19 @@ def run(script, args, label, interpreter=None, stage=None):
 		run("render_video.py", [lesson, out_dir], "階段 7　影格渲染與封裝", stage="video")
 ```
 
-**注意**：上面 `storyboard` 與 `synth` 的順序與標籤已經是 Task 4 要的結果，這一步一起寫掉，Task 4 只負責改 `STAGES` 常數與驗證。
+**注意**：上面把 `storyboard` 的 if 區塊排到 `synth` 前面，但 `STAGES` 常數在 Task 4 才改。
+中間狀態會不一致——`want()` 是用 `STAGES.index` 算範圍，if 區塊順序決定實際執行順序，
+兩者不同步時 `--until storyboard` 會連 `synth` 一起跑掉。
+
+**所以這一步必須連 `STAGES` 一起改**，把 Task 4 Step 1 的常數修改一併做完：
+
+```python
+# storyboard 排在 synth 前面：分鏡表不需要音檔（storyboard.py 的 durations.json 是選用的），
+# 前移之後改講稿不必重跑 TTS，代價從 51 秒降到零
+STAGES = ["lesson", "slides", "actions", "validate", "storyboard", "synth", "timeline", "video"]
+```
+
+Task 4 因此只剩 docstring、README 與驗證，不再有常數修改。
 
 - [ ] **Step 4: 跑測試確認通過**
 
@@ -620,21 +655,11 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 **為什麼可以前移**：`storyboard.py:46` 是 `json.load(...) if os.path.exists(dur_path) else {}`。音檔時長只影響分鏡表上的秒數欄位，沒有它照樣產得出來。前移之後，改講稿不必重跑 TTS。
 
-- [ ] **Step 1: 改 STAGES 常數**
+- [ ] **Step 1: 確認 STAGES 常數已在 Task 3 改完**
 
-把 `video_engine/run.py` 的：
-
-```python
-STAGES = ["lesson", "slides", "actions", "validate", "synth", "storyboard", "timeline", "video"]
-```
-
-改成：
-
-```python
-# storyboard 排在 synth 前面：分鏡表不需要音檔（storyboard.py 的 durations.json 是選用的），
-# 前移之後改講稿不必重跑 TTS，代價從 51 秒降到零
-STAGES = ["lesson", "slides", "actions", "validate", "storyboard", "synth", "timeline", "video"]
-```
+Run: `grep -n 'STAGES = ' video_engine/run.py`
+Expected: 順序是 `validate`, `storyboard`, `synth`——Task 3 已經連常數一起改了。
+若不是，先照 Task 3 的「注意」段補上再繼續。
 
 - [ ] **Step 2: 改 docstring**
 
