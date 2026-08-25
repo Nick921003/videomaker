@@ -710,10 +710,20 @@ cp video_engine/out/c_string/layout.json /tmp/sb_test/
 
 Expected: 退出碼 0，`/tmp/sb_test/storyboard.html` 存在
 
-- [ ] **Step 4: 回歸——完整管線順序正確**
+- [ ] **Step 4: 回歸——階段順序正確**
 
-Run: `.venv/bin/python video_engine/run.py video_engine/materials/c_string.md --from slides --until storyboard`
-Expected: 依序印出 `階段 3`、`階段 4`、`階段 4.5`、`階段 5　審稿分鏡表`，不出現語音合成
+**起點必須是 `validate`，不可以是 `slides`。** 從 `slides` 起跑會經過 `actions` 階段，
+那會呼叫付費 LLM，而且會覆寫已經 commit 的 `video_engine/examples/c_string.actions.json`。
+從 `validate` 起跑一樣能證明順序，而且免費、無副作用。
+
+Run: `.venv/bin/python video_engine/run.py video_engine/materials/c_string.md --from validate --until storyboard`
+Expected: 依序印出 `階段 4.5　編排驗證`、`階段 5　審稿分鏡表` 兩個階段，
+**不出現語音合成**（那是 `--until storyboard` 前移之後最關鍵的行為改變）
+
+- [ ] **Step 4.5: 確認沒有副作用**
+
+Run: `git status --short video_engine/examples/`
+Expected: 無輸出。回歸步驟不該動到任何已 commit 的產物
 
 - [ ] **Step 5: 更新 README**
 
