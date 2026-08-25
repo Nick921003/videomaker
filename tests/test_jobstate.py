@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -88,6 +89,30 @@ class TestJob(unittest.TestCase):
 		j.start()
 		j.claim()
 		self.assertNotEqual(j.status, "awaiting_review")
+
+	def test_claim_多執行緒同時搶只有一個贏(self):
+		# 順序呼叫兩次的測試把 _claim_lock 拿掉仍全綠，代表沒迴歸保護。
+		# 用 Barrier 讓 8 條執行緒同一瞬間進 claim() 才能測到，防止鎖失效
+		for _ in range(50):
+			j = Job("m.md", "/tmp/out", 110, fake_runner(ALL))
+			j.start()
+			barrier = threading.Barrier(8)
+			results = []
+
+			def worker():
+				barrier.wait()  # 同步所有執行緒
+				results.append(j.claim())
+
+			threads = [threading.Thread(target=worker) for _ in range(8)]
+			for t in threads:
+				t.start()
+			for t in threads:
+				t.join()
+
+			# 恰好一個搶到
+			self.assertEqual(sum(results), 1)
+			# 狀態確實翻了
+			self.assertEqual(j.status, "running")
 
 
 if __name__ == "__main__":
