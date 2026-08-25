@@ -343,6 +343,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: Task 1 的 `extract_text`、`SUPPORTED`、`lesson_id_for`
+- Produces: `next_free(path: str) -> str`，同名不覆寫的下一個可用路徑（`deck.md` → `deck_2.md`）。Task 7 的上傳落地共用這一條。
 - Produces: `resolve_material(path: str, materials_dir: str) -> str`，回傳實際要餵給管線的 `.md` 路徑。`.md` 直接原路徑回傳（**冪等**）；其他格式抽成文字後落地成 `<stem>.md`，同名加序號不覆寫。
 
 > **重要：`resolve_material` 對 `.md` 必須冪等。** 服務層會把管線拆成兩段呼叫
@@ -367,7 +368,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures"))
 
 import make_pptx
-from run import resolve_material
+from run import next_free, resolve_material
 
 
 class TestResolveMaterial(unittest.TestCase):
@@ -384,7 +385,7 @@ class TestResolveMaterial(unittest.TestCase):
 
 	def test_pptx_落地成同名_md(self):
 		p = os.path.join(self.dir, "deck.pptx")
-		make_pptx.make(p, [["標題", "重點"]])
+		make_pptx.make(p, [("標題", ["重點"])])
 		out = resolve_material(p, self.materials)
 		self.assertEqual(out, os.path.join(self.materials, "deck.md"))
 		self.assertIn("標題", open(out, encoding="utf-8").read())
@@ -401,10 +402,18 @@ class TestResolveMaterial(unittest.TestCase):
 	def test_同名不覆寫要加序號(self):
 		open(os.path.join(self.materials, "deck.md"), "w", encoding="utf-8").write("舊的")
 		p = os.path.join(self.dir, "deck.pptx")
-		make_pptx.make(p, [["新的"]])
+		make_pptx.make(p, [("新的", ["內容"])])
 		out = resolve_material(p, self.materials)
 		self.assertEqual(out, os.path.join(self.materials, "deck_2.md"))
 		self.assertEqual(open(os.path.join(self.materials, "deck.md"), encoding="utf-8").read(), "舊的")
+
+	def test_next_free_連續佔用會往後找(self):
+		for name in ("a.md", "a_2.md"):
+			open(os.path.join(self.materials, name), "w", encoding="utf-8").write("x")
+		self.assertEqual(next_free(os.path.join(self.materials, "a.md")),
+			os.path.join(self.materials, "a_3.md"))
+		self.assertEqual(next_free(os.path.join(self.materials, "b.md")),
+			os.path.join(self.materials, "b.md"))
 
 
 if __name__ == "__main__":
@@ -421,19 +430,31 @@ Expected: FAIL，`ImportError: cannot import name 'resolve_material'`
 在 `video_engine/run.py` 的 `run()` 函式**之後**、`main()` 之前插入：
 
 ```python
+def next_free(path):
+	"""同名不覆寫：deck.md 已存在就給 deck_2.md。
+
+	上傳的原始檔與抽出來的 .md 都走這一條。兩邊命名規則不一致的話，
+	原始檔被覆寫、抽出來的卻變成 deck_2.md，lesson_id 跟著變成 deck_2，
+	materials/ 與 examples/ 會留下一堆對不上的孤兒檔。
+	"""
+	if not os.path.exists(path):
+		return path
+	stem, ext = os.path.splitext(path)
+	n = 2
+	while os.path.exists(f"{stem}_{n}{ext}"):
+		n += 1
+	return f"{stem}_{n}{ext}"
+
+
 def resolve_material(path, materials_dir):
 	"""非 .md 的來源先抽成純文字落地，手上才有引擎實際讀到的東西可以對照。
-	同名不覆寫——產出可以重生，教材不行"""
+	.md 進來原樣出去（冪等）——服務層會分兩段呼叫，第二段不能又落地一次"""
 	if os.path.splitext(path)[1].lower() == ".md":
 		return path
 	text = ingest.extract_text(path)
-	stem = os.path.splitext(os.path.basename(path))[0]
-	out = os.path.join(materials_dir, f"{stem}.md")
-	n = 2
-	while os.path.exists(out):
-		out = os.path.join(materials_dir, f"{stem}_{n}.md")
-		n += 1
 	os.makedirs(materials_dir, exist_ok=True)
+	stem = os.path.splitext(os.path.basename(path))[0]
+	out = next_free(os.path.join(materials_dir, f"{stem}.md"))
 	open(out, "w", encoding="utf-8").write(text)
 	return out
 ```
@@ -472,7 +493,7 @@ import ingest
 - [ ] **Step 4: 跑測試確認通過**
 
 Run: `.venv/bin/python -m unittest tests.test_run_material -v`
-Expected: `Ran 4 tests` 全部 OK
+Expected: `Ran 6 tests` 全部 OK
 
 - [ ] **Step 5: 回歸——既有 .md 路徑不能壞**
 
@@ -738,7 +759,9 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
   - `Job.pct` → 0–100 整數
   - `Job.events` → `list[dict]`，累積的事件
   - `Job.start()` → 跑到 `awaiting_review` 為止
-  - `Job.approve(segments)` → 續跑到 `done`。`segments` 為空陣列代表未修改
+  - `Job.claim() -> bool` → **把 `awaiting_review` 原子地翻成 `running`**。搶到回 `True`，沒搶到回 `False`。倒數計時器與使用者送出會同時搶，只有一個能贏
+  - `Job.resume()` → 審稿後續跑到 `done`。呼叫前必須先 `claim()` 成功
+  - `Job.approve(segments)` → `claim()` + `resume()` 的便利包裝，搶不到就丟 `RuntimeError`
   - `Job.review_deadline` → 進入 `awaiting_review` 時的截止時間戳（`clock() + 60`）
   - `Job.review_expired()` → `bool`
 - Produces: `STAGE_WEIGHT` dict，總和 100
@@ -822,6 +845,23 @@ class TestJob(unittest.TestCase):
 		with self.assertRaises(RuntimeError):
 			j.approve([])
 
+	def test_claim_只有一個搶得到(self):
+		# 倒數計時器與使用者送出會同時搶。兩邊都成功的話，
+		# 會有兩條執行緒同時跑語音合成與渲染，檔案互相蓋掉
+		j = Job("m.md", "/tmp/out", 110, fake_runner(ALL))
+		j.start()
+		self.assertTrue(j.claim())
+		self.assertFalse(j.claim())
+		self.assertEqual(j.status, "running")
+
+	def test_claim_成功後狀態立刻是_running_不等執行緒(self):
+		# 狀態必須在 claim() 回來的當下就翻好。若等到子執行緒裡才翻，
+		# 中間那段空窗期計時器會看到還是 awaiting_review 而重複觸發
+		j = Job("m.md", "/tmp/out", 110, fake_runner(ALL))
+		j.start()
+		j.claim()
+		self.assertNotEqual(j.status, "awaiting_review")
+
 
 if __name__ == "__main__":
 	unittest.main()
@@ -842,6 +882,7 @@ Expected: FAIL，`ModuleNotFoundError: No module named 'jobstate'`
 
 runner 是注入的，所以這支可以完全離線測試——不用真的跑三分鐘的管線。
 """
+import threading
 import time
 
 # 權重照實測配（c_string.md：810 字 → 5 頁 98 秒影片，總計 167 秒）。
@@ -868,6 +909,7 @@ class Job:
 		self.done_stages = set()
 		self.review_deadline = None
 		self.error = None
+		self._claim_lock = threading.Lock()
 
 	@property
 	def pct(self):
@@ -896,21 +938,38 @@ class Job:
 	def review_expired(self):
 		return self.review_deadline is not None and self.clock() > self.review_deadline
 
-	def approve(self, segments):
-		"""segments 為空代表沒改。回寫與重驗由呼叫端在進來之前做完"""
-		if self.status != "awaiting_review":
-			raise RuntimeError(f"目前是 {self.status}，不能核可")
-		self.status = "running"
+	def claim(self):
+		"""把 awaiting_review 原子地翻成 running，搶到回 True。
+
+		倒數計時器與使用者送出會同時搶這個位子。狀態必須在這裡就翻好，
+		不能等到子執行緒進 resume() 才翻——中間那段空窗期，計時器會看到
+		狀態還是 awaiting_review 而重複觸發，兩條執行緒同時跑合成與渲染。
+		"""
+		with self._claim_lock:
+			if self.status != "awaiting_review":
+				return False
+			self.status = "running"
+			return True
+
+	def resume(self):
+		"""審稿後續跑。呼叫前必須先 claim() 成功"""
 		if not self._pump(*AFTER_REVIEW):
 			return
 		self.status = "done"
 		self.stage = None
+
+	def approve(self, segments):
+		"""claim + resume 的便利包裝。segments 為空代表沒改，
+		回寫與重驗由呼叫端在進來之前做完"""
+		if not self.claim():
+			raise RuntimeError(f"目前是 {self.status}，不能核可")
+		self.resume()
 ```
 
 - [ ] **Step 4: 跑測試確認通過**
 
 Run: `.venv/bin/python -m unittest tests.test_jobstate -v`
-Expected: `Ran 7 tests` 全部 OK
+Expected: `Ran 9 tests` 全部 OK
 
 - [ ] **Step 5: Commit**
 
@@ -1160,25 +1219,33 @@ class TestMultipart(unittest.TestCase):
 
 
 class TestReviewTimer(unittest.TestCase):
-	def test_逾時後_approve_要被擋掉而不是靜默丟棄修改(self):
-		# 計時器推進後狀態不再是 awaiting_review，此時送出必須拿到明確錯誤。
-		# 舊版在 _approve 裡判逾時，網路延遲一秒就把人改好的稿靜默丟掉
+	def setUp(self):
+		self.now = [1000.0]
+
+	def _job(self):
 		from jobstate import Job
 
 		def runner(a, b):
 			yield {"event": "stage_start", "stage": a}
 			yield {"event": "stage_end", "stage": a, "sec": 0.1}
 
-		now = [1000.0]
-		j = Job("m.md", "/tmp/out", 110, runner, clock=lambda: now[0])
+		return Job("m.md", "/tmp/out", 110, runner, clock=lambda: self.now[0])
+
+	def test_計時器搶走之後_使用者送出要拿到明確錯誤而不是被靜默丟棄(self):
+		j = self._job()
 		j.start()
-		self.assertEqual(j.status, "awaiting_review")
-		now[0] = 1061.0
-		self.assertTrue(j.review_expired())
-		j.approve([])                        # 計時器代勞
+		self.now[0] = 1061.0
+		self.assertTrue(j.claim())           # 計時器搶到
+		self.assertFalse(j.claim())          # 使用者這時才送出，必須被擋下
 		self.assertNotEqual(j.status, "awaiting_review")
-		with self.assertRaises(RuntimeError):
-			j.approve([])                    # 第二次一定要炸，不能默默吃掉
+
+	def test_計時器不可在持鎖狀態下同步跑管線(self):
+		# _review_timer 若同步呼叫 resume()，會跑滿 90 秒的語音合成與影格渲染。
+		# 期間握著 _lock 的話，所有進來的 POST 全部卡死，服務形同當機
+		import inspect
+		src = inspect.getsource(serve._review_timer)
+		self.assertIn("threading.Thread", src)
+		self.assertNotIn("with _lock", src)
 
 
 if __name__ == "__main__":
@@ -1217,7 +1284,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "vid
 
 from ingest import SUPPORTED
 from jobstate import REVIEW_SEC, Job
-from run import resolve_material
+from run import next_free, resolve_material
 from script_gate import read_segments, revalidate, write_segments
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1266,10 +1333,14 @@ def real_runner(material, sec):
 		saw_fail = False
 		for line in p.stderr:
 			line = line.strip()
-			if line.startswith("{"):
+			if not line.startswith("{"):
+				continue
+			try:
 				ev = json.loads(line)
-				saw_fail = saw_fail or ev["event"] == "stage_fail"
-				yield ev
+			except json.JSONDecodeError:
+				continue      # 底層套件的警告訊息也可能以 { 開頭，不能讓它炸掉整條 runner
+			saw_fail = saw_fail or ev.get("event") == "stage_fail"
+			yield ev
 		p.wait()
 		# run.py 若是被 SyntaxError、MemoryError 這類炸掉的，根本來不及印事件。
 		# 沒有這一條的話 job 會永遠停在 running，前端進度條卡死
@@ -1317,25 +1388,34 @@ class Handler(BaseHTTPRequestHandler):
 		self.send_header("Content-Type", "text/event-stream")
 		self.send_header("Cache-Control", "no-cache")
 		self.end_headers()
-		seen = 0
+		seen, last_state = 0, None
 		while True:
 			if not _job:
 				break
-			while seen < len(_job.events):
-				ev = dict(_job.events[seen])
-				ev.update(status=_job.status, pct=_job.pct)
-				self.wfile.write(f"data: {json.dumps(ev, ensure_ascii=False)}\n\n".encode())
-				self.wfile.flush()
-				seen += 1
-			if _job.status in ("done", "failed", "awaiting_review"):
-				tail = {"event": "state", "status": _job.status, "pct": _job.pct,
-					"stage": _job.stage, "error": _job.error,
-					"deadline": _job.review_deadline}
-				self.wfile.write(f"data: {json.dumps(tail, ensure_ascii=False)}\n\n".encode())
-				self.wfile.flush()
-				if _job.status != "awaiting_review":
-					break
+			try:
+				while seen < len(_job.events):
+					ev = dict(_job.events[seen])
+					ev.update(status=_job.status, pct=_job.pct)
+					self._push(ev)
+					seen += 1
+				if _job.status in ("done", "failed", "awaiting_review"):
+					state = {"event": "state", "status": _job.status, "pct": _job.pct,
+						"stage": _job.stage, "error": _job.error,
+						"deadline": _job.review_deadline}
+					# 只在真的變了才推。審稿那 60 秒狀態不會動，
+					# 無條件推的話會在倒數期間送出 150 個一模一樣的封包
+					if state != last_state:
+						self._push(state)
+						last_state = state
+					if _job.status != "awaiting_review":
+						break
+			except (BrokenPipeError, ConnectionResetError, OSError):
+				break     # 瀏覽器關掉或重整，安靜收工，不要噴 traceback
 			threading.Event().wait(0.4)
+
+	def _push(self, obj):
+		self.wfile.write(f"data: {json.dumps(obj, ensure_ascii=False)}\n\n".encode())
+		self.wfile.flush()
 ```
 
 `do_POST` 處理 `/jobs` 與 `/jobs/{id}/approve`：
@@ -1365,7 +1445,10 @@ class Handler(BaseHTTPRequestHandler):
 			if not allowed(name):
 				return self._json(400, {"error": f"不支援 {name}，只吃 {'、'.join(SUPPORTED)}"})
 			os.makedirs(MATERIALS, exist_ok=True)
-			raw = os.path.join(MATERIALS, name)
+			# 原始檔也要走「同名加序號」，跟 resolve_material 一致。
+			# 若這裡覆寫、那裡加序號，deck.pptx 被蓋掉但抽出來的變成 deck_2.md，
+			# lesson_id 跟著變成 deck_2，materials/ 與 examples/ 留下一堆孤兒
+			raw = next_free(os.path.join(MATERIALS, name))
 			open(raw, "wb").write(blob)
 			# 收件當下就落地成 .md，之後兩段 run.py 一律只傳這個路徑。
 			# 若兩段都傳 .pptx，第二段會因為 deck.md 已存在而產生 deck_2.md，
@@ -1383,29 +1466,31 @@ class Handler(BaseHTTPRequestHandler):
 		length = int(self.headers.get("Content-Length", 0))
 		payload = json.loads(self.rfile.read(length) or b"{}")
 		segs = payload.get("segments") or []
-		with _lock:
-			# 這裡刻意不看 review_expired()。倒數由後端計時器負責推進，
-			# 只要狀態還是 awaiting_review 就代表計時器還沒動手，使用者的修改一定算數。
-			# 舊版在這裡判逾時，網路延遲一秒就會把人改好的稿靜默丟掉
-			if not _job or _job.status != "awaiting_review":
-				return self._json(409, {"error": "倒數已到，已用原稿繼續合成"})
-			notice = None
-			if segs:
-				if not os.path.exists(_job.actions_backup):
-					shutil.copy(_job.actions_path, _job.actions_backup)
-				write_segments(_job.actions_path, segs)
-				errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
-				if errs:
-					# 一律還原。壞稿絕不能進 TTS——這是驗證閘存在的理由
-					shutil.copy(_job.actions_backup, _job.actions_path)
-					if not _job.retried:
-						_job.retried = True
-						_job.review_deadline = time.time() + REVIEW_SEC
-						return self._json(400, {"errors": errs,
-							"deadline": _job.review_deadline})
-					notice = "講稿兩次都沒通過驗證，已改用原稿繼續"
-			_job.notice = notice
-			threading.Thread(target=_job.approve, args=([],), daemon=True).start()
+		# 這裡刻意不看 review_expired()。倒數由計時器負責推進，claim() 誰搶到算誰的。
+		# 舊版在這裡判逾時，網路延遲一秒就把人改好的稿靜默丟掉
+		if not _job or not _job.claim():
+			return self._json(409, {"error": "倒數已到，已用原稿繼續合成"})
+		# claim 成功＝狀態已是 running，計時器不會再插手。
+		# 重驗要開 subprocess（約 0.3 秒），不放在 _lock 裡
+		notice = None
+		if segs:
+			shutil.copy(_job.actions_path, _job.actions_backup)   # 每次都重新備份
+			_job.has_backup = True
+			write_segments(_job.actions_path, segs)
+			errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
+			if errs:
+				# 一律還原。壞稿絕不能進 TTS——這是驗證閘存在的理由
+				shutil.copy(_job.actions_backup, _job.actions_path)
+				if not _job.retried:
+					_job.retried = True
+					_job.status = "awaiting_review"      # 放回審稿，重開一輪倒數
+					_job.review_deadline = time.time() + REVIEW_SEC
+					threading.Thread(target=_review_timer, args=(_job,), daemon=True).start()
+					return self._json(400, {"errors": errs,
+						"deadline": _job.review_deadline})
+				notice = "講稿兩次都沒通過驗證，已改用原稿繼續"
+		_job.notice = notice
+		threading.Thread(target=_job.resume, daemon=True).start()
 		self._json(200, {"ok": True, "notice": notice})
 ```
 
@@ -1420,13 +1505,17 @@ def _start_job(job):
 
 def _review_timer(job):
 	"""後端自己的倒數。瀏覽器關掉、網路斷了、人走開了，job 都不能永遠卡在
-	awaiting_review——那會讓之後每一個上傳都吃 409，現場等於整台停擺"""
+	awaiting_review——那會讓之後每一個上傳都吃 409，現場等於整台停擺。
+
+	絕對不可以在這裡同步呼叫 resume()：它會跑滿語音合成與影格渲染（90 秒以上）。
+	若那時還握著 _lock，期間所有 POST 都會卡在 with _lock 上，服務形同當機。
+	claim() 已經原子地把狀態翻成 running，計時器不必也不該再持 _lock。
+	"""
 	while job.status == "awaiting_review":
 		if job.review_expired():
-			with _lock:
-				if job.status == "awaiting_review":   # 再確認一次，避免跟使用者送出打架
-					job.notice = "倒數結束，沒有人反對，已用原稿繼續"
-					job.approve([])
+			if job.claim():
+				job.notice = "倒數結束，沒有人反對，已用原稿繼續"
+				threading.Thread(target=job.resume, daemon=True).start()
 			return
 		time.sleep(0.5)
 
@@ -1474,6 +1563,7 @@ if __name__ == "__main__":
 		self.lesson_path = None
 		self.video_path = None
 		self.retried = False
+		self.has_backup = False
 		self.notice = None
 ```
 
@@ -1486,6 +1576,10 @@ if __name__ == "__main__":
 		self.actions_path = os.path.join(base, "examples", f"{stem}.actions.json")
 		self.actions_backup = self.actions_path + ".orig"
 		self.video_path = os.path.join(self.out_dir, stem, f"{stem}.mp4")
+		# 上一輪跑剩的 .orig 一定要清掉。留著的話，這一輪若用「檔案已存在就不備份」
+		# 的判斷會跳過備份，之後還原會把上一次的舊講稿蓋回來——而且是靜默的
+		if os.path.exists(self.actions_backup):
+			os.remove(self.actions_backup)
 ```
 
 `jobstate.py` 頂端補：
@@ -1702,6 +1796,23 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 產一份只有第 2、4 頁有備忘稿的簡報，拆開來 `notesSlide1.xml` 屬於 slide2、
 `notesSlide2.xml` 屬於 slide4。原計畫會把備忘稿掛錯頁，而且這種錯只有真實檔案
 才會觸發，正是現場 Demo 最不能出的事。守依賴數量守到這裡就過頭了。
+
+---
+
+## 對抗審查第二輪（AGY，2026-08-26）
+
+第一輪的修正本身引入了新的並行缺陷。第二輪專門查「修正有沒有修出新問題」。
+
+| 指控 | 裁決 | 處置 |
+| :--- | :--- | :--- |
+| `_review_timer` 在持有 `_lock` 的情況下**同步**呼叫 `job.approve()`，而 approve 會跑滿 90 秒的語音合成與渲染 → 整個服務鎖死兩分鐘 | **成立，HIGH。第一輪修正自己造成的** | Task 5 新增 `claim()`／`resume()`；計時器改成 `claim()` 成功後起背景執行緒，完全不碰 `_lock` |
+| `_approve` 起執行緒後才在子執行緒裡把狀態翻成 `running`，空窗期計時器會搶進來 → 兩條管線同時跑 | **成立，HIGH。同樣是第一輪造成的** | `claim()` 在回傳前就原子地翻好狀態；兩邊都只能有一個搶到 |
+| `actions_backup` 用「檔案是否存在」判斷要不要備份，上一輪殘留的 `.orig` 會讓還原倒回舊講稿 | **成立，MEDIUM** | `Job.start()` 清掉殘留的 `.orig`；備份改成無條件覆寫 |
+| SSE 在審稿那 60 秒每 0.4 秒重推一次相同的 `state`（150 個無效封包）；且斷線時 `write` 拋例外沒接，終端機狂噴 traceback | **成立，MEDIUM** | 只在 `state` 真的變動時才推；`write`／`flush` 包 `BrokenPipeError`／`ConnectionResetError`／`OSError` 後安靜收工 |
+| `json.loads` 沒有防護，底層套件印出以 `{` 開頭的非 JSON 會炸掉 runner，job 永遠卡在 `running` | **成立，LOW** | 包 `JSONDecodeError` 後 `continue` |
+| 上傳覆寫原始檔、但 `resolve_material` 加序號，兩邊命名規則矛盾，產生孤兒檔與 `lesson_id` 漂移 | **成立，LOW** | 命名邏輯抽成 Task 2 的 `next_free`，上傳與抽取共用同一條 |
+
+第一輪的兩項修正經第二輪確認正確且無副作用：`python-pptx` 關係鏈解析、multipart 精確切尾。
 
 ---
 
