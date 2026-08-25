@@ -13,8 +13,22 @@
 ## Global Constraints
 
 - 縮排一律 **Tab（4 格）**。註解用**中文**，密度跟隨專案既有慣例（引擎目前是「每個函式一句 docstring 說明為什麼」，不逐行註解）。
-- **零新增執行期依賴。** 服務層、`.pptx` 解析、測試全部走 stdlib。
-- **偏離 spec（需審查者裁決）**：spec 第「元件與職責」節寫 `.pptx` 用 `python-pptx`。本計畫改用 stdlib `zipfile` + `xml.etree`。理由：`.pptx` 是 OOXML zip，抽文字只需撈 `<a:t>` 節點，約 30 行；引入套件違反專案「依賴很省」的既有調性。代價：`python-pptx` 對表格、群組圖形、SmartArt 的處理較完整，stdlib 版只保證抽得到一般文字框與備忘稿。若審查者認為代價過高，改回 `python-pptx` 只影響 Task 1。
+- **只新增一個執行期依賴：`python-pptx`**（純 Python，無二進位輪子）。服務層與測試全部走 stdlib。
+  安裝：`uv pip install --python .venv/bin/python python-pptx`
+
+  > **修訂紀錄（AGY 對抗審查後）**：本計畫初版打算用 stdlib `zipfile` + `xml.etree` 解析
+  > `.pptx` 以維持零依賴。**該決定已撤回**，因為經實測證偽：
+  >
+  > 用 `python-pptx` 產一份 5 頁、只在第 2 和第 4 頁放備忘稿的簡報，拆開檔案後得到
+  > `notesSlide1.xml` 屬於 **slide2**、`notesSlide2.xml` 屬於 **slide4**——
+  > 備忘稿檔名編號與投影片編號**不對應**，關聯藏在 `ppt/slides/_rels/slideN.xml.rels`。
+  > 同一份檔案的播放順序也不是檔名順序，而是 `presentation.xml` 的 `<p:sldIdLst>`
+  > 經 `presentation.xml.rels` 解析 `r:id`（實測 r:id 依序是 rId7、rId8、**rId10**、rId11、rId12，
+  > 中間跳號，證明間接層真實存在）。
+  >
+  > 照初版寫法，第 2 頁的備忘稿會被掛到第 1 頁。這種錯在合成的測試檔上看不出來，
+  > 只有真實簡報會觸發——正是現場 Demo 最不能發生的失敗型態。
+  > `python-pptx` 的 `prs.slides` 與 `slide.notes_slide` 直接給出正確結果。
 - **測試用 stdlib `unittest`**，不引 pytest（專案 venv 無 pytest，無 `pyproject.toml`）。測試放 `tests/`，用 `.venv/bin/python -m unittest` 跑。
 - 前端色票**只能**用以下值，禁用純白 `#FFFFFF` 與純黑 `#000000`：
 
@@ -41,58 +55,62 @@
 - Create: `video_engine/ingest.py`
 - Create: `tests/__init__.py`（空檔）
 - Create: `tests/test_ingest.py`
-- Create: `tests/fixtures/make_pptx.py`（產測試用的最小 `.pptx`）
+- Create: `tests/fixtures/__init__.py`（空檔）
+- Create: `tests/fixtures/make_pptx.py`
 
 **Interfaces:**
-- Produces: `extract_text(path: str) -> str`。丟 `.md`／`.txt` 回原文；丟 `.pptx` 回組好的 markdown 文字。副檔名不支援時丟 `ValueError`；`.pptx` 抽不到任何文字時丟 `ValueError`。
-- Produces: `SUPPORTED = (".md", ".txt", ".pptx")`，供 Task 6 的白名單使用。
+- Produces: `extract_text(path: str) -> str`。`.md`／`.txt` 回原文；`.pptx` 回組好的 markdown。副檔名不支援或抽不到文字時丟 `ValueError`。
+- Produces: `SUPPORTED = (".md", ".txt", ".pptx")`
+- Produces: `lesson_id_for(path: str) -> str`。教材路徑 → lesson_id。**`run.py` 與服務層共用這一份**，兩邊各算一次遲早走鐘。
 
-- [ ] **Step 1: 寫產生測試 fixture 的小工具**
+- [ ] **Step 1: 裝依賴**
 
-`.pptx` 是 OOXML zip，用 stdlib 就能組一份最小的出來，不需要真的簡報檔。
+```bash
+uv pip install --python .venv/bin/python python-pptx
+```
 
-建立 `tests/fixtures/make_pptx.py`：
+Expected: 安裝成功。驗證：`.venv/bin/python -c "import pptx; print(pptx.__version__)"` 印出版本號
+
+- [ ] **Step 2: 寫產生測試簡報的工具**
+
+**用 `python-pptx` 產測試檔，不要手工組 XML。** 手工組出來的假 XML 沒有
+`presentation.xml` 的 `sldIdLst`、沒有 `_rels` 關聯鏈，測不出真實簡報的陷阱——
+而那正是這個 Task 最需要防的東西。
+
+建立 `tests/fixtures/__init__.py`（空檔）與 `tests/fixtures/make_pptx.py`：
 
 ```python
 #!/usr/bin/env python3
-"""產生測試用的最小 .pptx。
+"""產測試用的簡報。
 
-.pptx 是 OOXML：一個 zip，投影片文字在 ppt/slides/slideN.xml 的 <a:t> 節點，
-備忘稿在 ppt/notesSlides/notesSlideN.xml。測試只需要這兩種檔案存在且格式正確，
-不需要 PowerPoint 開得起來的完整簡報。
+用 python-pptx 產，不手工組 XML：手工檔案沒有 presentation.xml 的播放順序表
+與 _rels 關聯鏈，測不出「備忘稿檔名編號 != 投影片編號」這類真實陷阱。
 """
-import zipfile
-
-A = "http://schemas.openxmlformats.org/drawingml/2006/main"
-P = "http://schemas.openxmlformats.org/presentationml/2006/main"
-
-
-def _slide_xml(paragraphs):
-	body = "".join(
-		f'<a:p><a:r><a:t>{p}</a:t></a:r></a:p>' for p in paragraphs
-	)
-	return (f'<?xml version="1.0" encoding="UTF-8"?>'
-		f'<p:sld xmlns:p="{P}" xmlns:a="{A}"><p:cSld><p:spTree>'
-		f'<p:sp><p:txBody>{body}</p:txBody></p:sp>'
-		f'</p:spTree></p:cSld></p:sld>')
+from pptx import Presentation
 
 
 def make(path, slides, notes=None):
-	"""slides 是 [[段落, 段落], ...]；notes 是 {投影片編號(1起): 備忘稿文字}"""
+	"""slides 是 [(標題, [內文, ...]), ...]；notes 是 {投影片編號(1 起): 備忘稿}"""
 	notes = notes or {}
-	with zipfile.ZipFile(path, "w") as z:
-		z.writestr("[Content_Types].xml", '<?xml version="1.0"?><Types/>')
-		for i, paras in enumerate(slides, start=1):
-			z.writestr(f"ppt/slides/slide{i}.xml", _slide_xml(paras))
-		for i, text in notes.items():
-			z.writestr(f"ppt/notesSlides/notesSlide{i}.xml", _slide_xml([text]))
+	prs = Presentation()
+	for i, (title, bullets) in enumerate(slides, start=1):
+		slide = prs.slides.add_slide(prs.slide_layouts[1])
+		slide.shapes.title.text = title
+		slide.placeholders[1].text = "\n".join(bullets)
+		if i in notes:
+			slide.notes_slide.notes_text_frame.text = notes[i]
+	prs.save(path)
 
 
-if __name__ == "__main__":
-	make("sample.pptx", [["標題", "重點一"]], {1: "這裡是備忘稿"})
+def make_blank(path, pages=1):
+	"""沒有任何文字的簡報，用來測「全是圖」的失敗路徑"""
+	prs = Presentation()
+	for _ in range(pages):
+		prs.slides.add_slide(prs.slide_layouts[6])   # 空白版面
+	prs.save(path)
 ```
 
-- [ ] **Step 2: 寫失敗的測試**
+- [ ] **Step 3: 寫失敗的測試**
 
 建立 `tests/__init__.py`（空檔）與 `tests/test_ingest.py`：
 
@@ -102,11 +120,12 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "video_engine"))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures"))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "video_engine"))
+sys.path.insert(0, os.path.join(ROOT, "tests/fixtures"))
 
 import make_pptx
-from ingest import SUPPORTED, extract_text
+from ingest import SUPPORTED, extract_text, lesson_id_for
 
 
 class TestExtractText(unittest.TestCase):
@@ -126,29 +145,40 @@ class TestExtractText(unittest.TestCase):
 		open(p, "w", encoding="utf-8").write("純文字")
 		self.assertEqual(extract_text(p), "純文字")
 
-	def test_pptx_每頁文字都要在且照頁序(self):
+	def test_pptx_每頁都在且照播放順序(self):
 		p = self.path("a.pptx")
-		make_pptx.make(p, [["第一頁標題", "第一頁重點"], ["第二頁標題"]])
+		make_pptx.make(p, [(f"第{i}頁標題", [f"第{i}頁內容"]) for i in range(1, 6)])
 		out = extract_text(p)
-		self.assertIn("第一頁標題", out)
-		self.assertIn("第一頁重點", out)
-		self.assertIn("第二頁標題", out)
-		self.assertLess(out.index("第一頁標題"), out.index("第二頁標題"))
+		for i in range(1, 6):
+			self.assertIn(f"第{i}頁標題", out)
+		self.assertLess(out.index("第1頁標題"), out.index("第5頁標題"))
 
-	def test_pptx_備忘稿要抽出來(self):
+	def test_標題不會重複出現在內文列(self):
+		# slide.shapes 每次迭代都給新的 proxy 物件，用 `is` 比對會失效，
+		# 標題會同時被當成標題和內文各印一次
 		p = self.path("a.pptx")
-		make_pptx.make(p, [["標題"]], {1: "這句只在備忘稿裡"})
-		self.assertIn("這句只在備忘稿裡", extract_text(p))
+		make_pptx.make(p, [("唯一標題", ["內容"])])
+		self.assertEqual(extract_text(p).count("唯一標題"), 1)
 
-	def test_pptx_投影片超過九頁要照數字排序不是字串排序(self):
+	def test_備忘稿要掛在正確的頁_不是照檔名編號(self):
+		# 這是本 Task 最重要的一則。只有第 2、4 頁有備忘稿時，
+		# 檔案裡是 notesSlide1.xml（屬於 slide2）與 notesSlide2.xml（屬於 slide4）。
+		# 照檔名編號對應會把第 2 頁的備忘稿掛到第 1 頁。
 		p = self.path("a.pptx")
-		make_pptx.make(p, [[f"第{i}頁"] for i in range(1, 12)])
+		make_pptx.make(p,
+			[(f"第{i}頁標題", [f"第{i}頁內容"]) for i in range(1, 6)],
+			{2: "這句屬於第二頁", 4: "這句屬於第四頁"})
 		out = extract_text(p)
-		self.assertLess(out.index("第9頁"), out.index("第10頁"))
+		pages = out.split("## 第 ")
+		self.assertNotIn("備忘稿", pages[1])
+		self.assertIn("這句屬於第二頁", pages[2])
+		self.assertNotIn("備忘稿", pages[3])
+		self.assertIn("這句屬於第四頁", pages[4])
+		self.assertNotIn("備忘稿", pages[5])
 
-	def test_pptx_全是圖沒有文字要丟錯(self):
+	def test_全是圖沒有文字要丟錯(self):
 		p = self.path("a.pptx")
-		make_pptx.make(p, [[]])
+		make_pptx.make_blank(p)
 		with self.assertRaises(ValueError):
 			extract_text(p)
 
@@ -162,16 +192,28 @@ class TestExtractText(unittest.TestCase):
 		self.assertEqual(SUPPORTED, (".md", ".txt", ".pptx"))
 
 
+class TestLessonId(unittest.TestCase):
+	def test_英數檔名維持既有行為(self):
+		self.assertEqual(lesson_id_for("/x/c_string.md"), "c_string")
+		self.assertEqual(lesson_id_for("/x/C-Struct Combo.pptx"), "c_struct_combo")
+
+	def test_中文檔名不會全部壓成底線互撞(self):
+		a = lesson_id_for("/x/測試教材.pptx")
+		b = lesson_id_for("/x/另一份教材.pptx")
+		self.assertNotEqual(a, b)
+		self.assertRegex(a, r"^[a-z0-9_]+$")
+
+
 if __name__ == "__main__":
 	unittest.main()
 ```
 
-- [ ] **Step 3: 跑測試確認失敗**
+- [ ] **Step 4: 跑測試確認失敗**
 
 Run: `.venv/bin/python -m unittest tests.test_ingest -v`
-Expected: FAIL，錯誤是 `ModuleNotFoundError: No module named 'ingest'`
+Expected: FAIL，`ModuleNotFoundError: No module named 'ingest'`
 
-- [ ] **Step 4: 寫實作**
+- [ ] **Step 5: 寫實作**
 
 建立 `video_engine/ingest.py`：
 
@@ -183,50 +225,56 @@ Expected: FAIL，錯誤是 `ModuleNotFoundError: No module named 'ingest'`
 沒有任何 markdown 解析。所以支援新格式就是在最前面多一道抽取，
 後面七個階段一行都不用改。
 """
+import hashlib
 import os
 import re
-import zipfile
-from xml.etree import ElementTree as ET
 
 SUPPORTED = (".md", ".txt", ".pptx")
 
-# OOXML 的 drawingml 命名空間，投影片上所有文字都在這底下的 <a:t>
-_A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
-_SLIDE_RE = re.compile(r"^ppt/slides/slide(\d+)\.xml$")
-_NOTES_RE = re.compile(r"^ppt/notesSlides/notesSlide(\d+)\.xml$")
 
-
-def _paragraphs(xml_bytes):
-	"""一個 <a:p> 是一段。同段裡可能被切成多個 <a:t>（換字型就會斷），要接回去"""
-	root = ET.fromstring(xml_bytes)
-	out = []
-	for para in root.iter(_A + "p"):
-		text = "".join(t.text or "" for t in para.iter(_A + "t")).strip()
-		if text:
-			out.append(text)
-	return out
+def lesson_id_for(path):
+	"""教材路徑 → lesson_id。run.py 與服務層共用這一份，各算一次遲早走鐘"""
+	stem = os.path.splitext(os.path.basename(path))[0].lower()
+	slug = re.sub(r"[^a-z0-9_]", "_", stem).strip("_")
+	# 中文檔名會被整串壓成底線，不同檔案全部撞在同一個 id 上。
+	# 退化時改用原檔名的雜湊，至少能區分
+	if not slug.replace("_", ""):
+		return "material_" + hashlib.sha1(stem.encode("utf-8")).hexdigest()[:8]
+	return slug
 
 
 def _pptx_text(path):
-	"""每頁第一段當標題，其餘當內容，備忘稿另外標出來。
-	備忘稿常常是老師真正想講的話，比投影片上的關鍵字有用"""
-	with zipfile.ZipFile(path) as z:
-		names = z.namelist()
-		slides = sorted(
-			((int(m.group(1)), n) for n in names for m in [_SLIDE_RE.match(n)] if m))
-		notes = {int(m.group(1)): n for n in names for m in [_NOTES_RE.match(n)] if m}
-		blocks = []
-		for num, name in slides:
-			paras = _paragraphs(z.read(name))
-			if not paras:
+	"""每頁抓標題、內文與備忘稿。
+
+	投影片順序、備忘稿歸屬都交給 python-pptx——這兩件事在檔案裡都隔了
+	一層 rels 間接，照檔名編號硬對會張冠李戴。備忘稿常常是老師真正想講的話，
+	比投影片上的關鍵字有用。
+	"""
+	from pptx import Presentation
+
+	blocks = []
+	for num, slide in enumerate(Presentation(path).slides, start=1):
+		title = slide.shapes.title
+		# 用 shape_id 比對，不能用 is：slide.shapes 每次迭代都給新的 proxy 物件
+		title_id = title.shape_id if title is not None else None
+		head = title.text.strip() if title is not None and title.has_text_frame else ""
+		lines = []
+		for shape in slide.shapes:
+			if shape.shape_id == title_id or not shape.has_text_frame:
 				continue
-			lines = [f"## 第 {num} 頁：{paras[0]}"]
-			lines += [f"- {p}" for p in paras[1:]]
-			if num in notes:
-				said = _paragraphs(z.read(notes[num]))
-				if said:
-					lines.append("備忘稿：" + " ".join(said))
-			blocks.append("\n".join(lines))
+			for para in shape.text_frame.paragraphs:
+				text = "".join(r.text for r in para.runs).strip()
+				if text:
+					lines.append(text)
+		if not (head or lines):
+			continue
+		block = [f"## 第 {num} 頁：{head}" if head else f"## 第 {num} 頁"]
+		block += [f"- {line}" for line in lines]
+		if slide.has_notes_slide:
+			said = slide.notes_slide.notes_text_frame.text.strip()
+			if said:
+				block.append("備忘稿：" + " ".join(said.split()))
+		blocks.append("\n".join(block))
 	if not blocks:
 		raise ValueError("這份簡報沒有文字層，抽不出任何內容")
 	return "\n\n".join(blocks)
@@ -242,20 +290,22 @@ def extract_text(path):
 	return open(path, encoding="utf-8").read()
 ```
 
-- [ ] **Step 5: 跑測試確認通過**
+- [ ] **Step 6: 跑測試確認通過**
 
 Run: `.venv/bin/python -m unittest tests.test_ingest -v`
-Expected: `Ran 8 tests` 全部 OK
+Expected: `Ran 10 tests` 全部 OK
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add video_engine/ingest.py tests/
 git commit -m "feat(ingest): 教材檔案抽成純文字，支援 pptx
 
-pptx 走 stdlib zipfile + xml.etree 撈 <a:t>，不引 python-pptx——
-引擎的輸入契約本來就是純文字，抽取只需要 30 行。備忘稿一起抽出來，
-那常常是老師真正想講的話。
+投影片順序與備忘稿歸屬交給 python-pptx：兩者在 OOXML 裡都隔了一層 rels
+間接，照檔名編號硬對會把第 2 頁的備忘稿掛到第 1 頁。測試檔也用 python-pptx
+產——手工組的假 XML 沒有 rels 關聯鏈，測不出這個陷阱。
+
+lesson_id 的計算集中在這裡，run.py 與服務層共用。
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
@@ -269,8 +319,16 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Test: `tests/test_run_material.py`
 
 **Interfaces:**
-- Consumes: Task 1 的 `extract_text`、`SUPPORTED`
-- Produces: `resolve_material(path: str, materials_dir: str) -> str`，回傳實際要餵給管線的 `.md` 路徑。`.md` 直接原路徑回傳；其他格式抽成文字後落地成 `<stem>.md`，同名加序號不覆寫。
+- Consumes: Task 1 的 `extract_text`、`SUPPORTED`、`lesson_id_for`
+- Produces: `resolve_material(path: str, materials_dir: str) -> str`，回傳實際要餵給管線的 `.md` 路徑。`.md` 直接原路徑回傳（**冪等**）；其他格式抽成文字後落地成 `<stem>.md`，同名加序號不覆寫。
+
+> **重要：`resolve_material` 對 `.md` 必須冪等。** 服務層會把管線拆成兩段呼叫
+> `run.py`（跑到 `storyboard` → 審稿 → `synth` 到 `video`）。若兩段都傳 `.pptx`，
+> 第二段會看到第一段落地的 `deck.md` 已存在而產生 `deck_2.md`，接著去找不存在的
+> `examples/deck_2.lesson.json` 直接崩潰——**所有 `.pptx` 任務在核可後 100% 失敗**。
+>
+> 解法在兩邊各一半：這裡保證 `.md` 進來原樣出去；Task 7 的 `serve.py` 在**收件當下**
+> 就落地一次，之後兩段呼叫一律只傳落地後的 `.md`。
 
 - [ ] **Step 1: 寫失敗的測試**
 
@@ -307,6 +365,15 @@ class TestResolveMaterial(unittest.TestCase):
 		out = resolve_material(p, self.materials)
 		self.assertEqual(out, os.path.join(self.materials, "deck.md"))
 		self.assertIn("標題", open(out, encoding="utf-8").read())
+
+	def test_md_冪等_連呼叫兩次都回原路徑(self):
+		# 服務層會分兩段呼叫 run.py，第二段若又落地一次就會產生 deck_2.md
+		# 導致後續找不到 examples/deck.lesson.json
+		p = os.path.join(self.dir, "a.md")
+		open(p, "w", encoding="utf-8").write("內容")
+		self.assertEqual(resolve_material(p, self.materials), p)
+		self.assertEqual(resolve_material(p, self.materials), p)
+		self.assertEqual(os.listdir(self.materials), [])
 
 	def test_同名不覆寫要加序號(self):
 		open(os.path.join(self.materials, "deck.md"), "w", encoding="utf-8").write("舊的")
@@ -355,6 +422,18 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ingest
 ```
 
+把 `main()` 裡這一行：
+
+```python
+	lesson_id = re.sub(r"[^a-z0-9_]", "_", os.path.splitext(os.path.basename(material))[0].lower())
+```
+
+改成呼叫共用函式（服務層要算出同一個 id 才找得到產物）：
+
+```python
+	lesson_id = ingest.lesson_id_for(material)
+```
+
 在 `main()` 中，把這一行：
 
 ```python
@@ -370,7 +449,7 @@ import ingest
 - [ ] **Step 4: 跑測試確認通過**
 
 Run: `.venv/bin/python -m unittest tests.test_run_material -v`
-Expected: `Ran 3 tests` 全部 OK
+Expected: `Ran 4 tests` 全部 OK
 
 - [ ] **Step 5: 回歸——既有 .md 路徑不能壞**
 
@@ -1021,6 +1100,62 @@ class TestServeHelpers(unittest.TestCase):
 		self.assertEqual(serve.safe_name("a b/c.pptx"), "c.pptx")
 
 
+class TestMultipart(unittest.TestCase):
+	def _body(self, blob, boundary=b"XBOUND"):
+		return (b"--" + boundary + b"\r\n"
+			b'Content-Disposition: form-data; name="file"; filename="a.pptx"\r\n'
+			b"Content-Type: application/octet-stream\r\n\r\n"
+			+ blob + b"\r\n--" + boundary + b"--\r\n")
+
+	def test_二進位內容一個位元組都不能少(self):
+		# .pptx 是 zip，結尾本來就可能有 0x0D / 0x0A / 0x2D。
+		# 舊版用 rstrip(b"\r\n-") 去尾會把這些真實資料吃掉，解壓時炸 BadZipFile
+		blob = bytes([0x50, 0x4B, 0x05, 0x06]) + b"\x00" * 8 + b"\r\n--\r\n-"
+		name, got, sec = serve.parse_multipart(
+			self._body(blob), "multipart/form-data; boundary=XBOUND")
+		self.assertEqual(name, "a.pptx")
+		self.assertEqual(got, blob)
+
+	def test_真的_pptx_過一輪還解得開(self):
+		import sys as _s
+		_s.path.insert(0, os.path.join(ROOT, "tests/fixtures"))
+		import zipfile
+		import make_pptx
+		src = os.path.join(ROOT, "tests/fixtures/_mp_check.pptx")
+		make_pptx.make(src, [("標題", ["內容"])])
+		blob = open(src, "rb").read()
+		_, got, _ = serve.parse_multipart(
+			self._body(blob), "multipart/form-data; boundary=XBOUND")
+		self.assertEqual(got, blob)
+		dst = os.path.join(ROOT, "tests/fixtures/_mp_out.pptx")
+		open(dst, "wb").write(got)
+		zipfile.ZipFile(dst).testzip()      # 解不開會丟例外
+		os.remove(src)
+		os.remove(dst)
+
+
+class TestReviewTimer(unittest.TestCase):
+	def test_逾時後_approve_要被擋掉而不是靜默丟棄修改(self):
+		# 計時器推進後狀態不再是 awaiting_review，此時送出必須拿到明確錯誤。
+		# 舊版在 _approve 裡判逾時，網路延遲一秒就把人改好的稿靜默丟掉
+		from jobstate import Job
+
+		def runner(a, b):
+			yield {"event": "stage_start", "stage": a}
+			yield {"event": "stage_end", "stage": a, "sec": 0.1}
+
+		now = [1000.0]
+		j = Job("m.md", "/tmp/out", 110, runner, clock=lambda: now[0])
+		j.start()
+		self.assertEqual(j.status, "awaiting_review")
+		now[0] = 1061.0
+		self.assertTrue(j.review_expired())
+		j.approve([])                        # 計時器代勞
+		self.assertNotEqual(j.status, "awaiting_review")
+		with self.assertRaises(RuntimeError):
+			j.approve([])                    # 第二次一定要炸，不能默默吃掉
+
+
 if __name__ == "__main__":
 	unittest.main()
 ```
@@ -1045,16 +1180,19 @@ Expected: FAIL，`ModuleNotFoundError: No module named 'serve'`
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
+import time
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "video_engine"))
 
 from ingest import SUPPORTED
-from jobstate import Job
+from jobstate import REVIEW_SEC, Job
+from run import resolve_material
 from script_gate import read_segments, revalidate, write_segments
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1100,11 +1238,18 @@ def real_runner(material, sec):
 			args += ["--sec", str(sec)]
 		p = subprocess.Popen(args, stdout=subprocess.DEVNULL,
 			stderr=subprocess.PIPE, text=True, bufsize=1)
+		saw_fail = False
 		for line in p.stderr:
 			line = line.strip()
 			if line.startswith("{"):
-				yield json.loads(line)
+				ev = json.loads(line)
+				saw_fail = saw_fail or ev["event"] == "stage_fail"
+				yield ev
 		p.wait()
+		# run.py 若是被 SyntaxError、MemoryError 這類炸掉的，根本來不及印事件。
+		# 沒有這一條的話 job 會永遠停在 running，前端進度條卡死
+		if p.returncode != 0 and not saw_fail:
+			yield {"event": "stage_fail", "stage": stage_to, "code": p.returncode}
 	return runner
 ```
 
@@ -1129,8 +1274,9 @@ class Handler(BaseHTTPRequestHandler):
 		if self.path.endswith("/events"):
 			return self._events()
 		if self.path.endswith("/script"):
-			if not _job:
-				return self._json(404, {"error": "沒有進行中的工作"})
+			# 只有進審稿階段才有 actions_path，早打會拿 None 去開檔案
+			if not _job or _job.status != "awaiting_review":
+				return self._json(409, {"error": "現在不在審稿階段"})
 			return self._json(200, {"segments": read_segments(_job.actions_path),
 				"deadline": _job.review_deadline})
 		if self.path.endswith("/video"):
@@ -1196,27 +1342,46 @@ class Handler(BaseHTTPRequestHandler):
 			os.makedirs(MATERIALS, exist_ok=True)
 			raw = os.path.join(MATERIALS, name)
 			open(raw, "wb").write(blob)
+			# 收件當下就落地成 .md，之後兩段 run.py 一律只傳這個路徑。
+			# 若兩段都傳 .pptx，第二段會因為 deck.md 已存在而產生 deck_2.md，
+			# 然後去找不存在的 examples/deck_2.lesson.json 直接崩潰
+			try:
+				md = resolve_material(raw, MATERIALS)
+			except ValueError as e:
+				return self._json(400, {"error": str(e)})
 			_job_id += 1
-			_job = Job(raw, OUT, sec, real_runner(raw, sec))
-			_job.actions_path = None      # start() 之後才知道
+			_job = Job(md, OUT, sec, real_runner(md, sec))
 			threading.Thread(target=_start_job, args=(_job,), daemon=True).start()
 		self._json(201, {"job_id": _job_id})
 
 	def _approve(self):
-		if not _job or _job.status != "awaiting_review":
-			return self._json(409, {"error": "現在不在審稿階段"})
 		length = int(self.headers.get("Content-Length", 0))
 		payload = json.loads(self.rfile.read(length) or b"{}")
 		segs = payload.get("segments") or []
-		if segs and not _job.review_expired():
-			write_segments(_job.actions_path, segs)
-			errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
-			if errs and not _job.retried:
-				_job.retried = True
-				_job.review_deadline = _job.clock() + 60
-				return self._json(400, {"errors": errs})
-		threading.Thread(target=lambda: _job.approve(segs), daemon=True).start()
-		self._json(200, {"ok": True})
+		with _lock:
+			# 這裡刻意不看 review_expired()。倒數由後端計時器負責推進，
+			# 只要狀態還是 awaiting_review 就代表計時器還沒動手，使用者的修改一定算數。
+			# 舊版在這裡判逾時，網路延遲一秒就會把人改好的稿靜默丟掉
+			if not _job or _job.status != "awaiting_review":
+				return self._json(409, {"error": "倒數已到，已用原稿繼續合成"})
+			notice = None
+			if segs:
+				if not os.path.exists(_job.actions_backup):
+					shutil.copy(_job.actions_path, _job.actions_backup)
+				write_segments(_job.actions_path, segs)
+				errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
+				if errs:
+					# 一律還原。壞稿絕不能進 TTS——這是驗證閘存在的理由
+					shutil.copy(_job.actions_backup, _job.actions_path)
+					if not _job.retried:
+						_job.retried = True
+						_job.review_deadline = time.time() + REVIEW_SEC
+						return self._json(400, {"errors": errs,
+							"deadline": _job.review_deadline})
+					notice = "講稿兩次都沒通過驗證，已改用原稿繼續"
+			_job.notice = notice
+			threading.Thread(target=_job.approve, args=([],), daemon=True).start()
+		self._json(200, {"ok": True, "notice": notice})
 ```
 
 `_start_job` 與 `parse_multipart` 補在模組層：
@@ -1224,18 +1389,39 @@ class Handler(BaseHTTPRequestHandler):
 ```python
 def _start_job(job):
 	job.start()
+	if job.status == "awaiting_review":
+		threading.Thread(target=_review_timer, args=(job,), daemon=True).start()
+
+
+def _review_timer(job):
+	"""後端自己的倒數。瀏覽器關掉、網路斷了、人走開了，job 都不能永遠卡在
+	awaiting_review——那會讓之後每一個上傳都吃 409，現場等於整台停擺"""
+	while job.status == "awaiting_review":
+		if job.review_expired():
+			with _lock:
+				if job.status == "awaiting_review":   # 再確認一次，避免跟使用者送出打架
+					job.notice = "倒數結束，沒有人反對，已用原稿繼續"
+					job.approve([])
+			return
+		time.sleep(0.5)
 
 
 def parse_multipart(body, ctype):
 	"""只解析我們自己前端送的兩個欄位：file 與 sec。
-	不用 cgi 模組——Python 3.13 已經移除它"""
-	boundary = ctype.split("boundary=")[-1].strip().encode()
+	不用 cgi 模組——Python 3.13 已經移除它。
+
+	去尾必須精確切掉那兩個 CRLF 位元組，不能用 rstrip(b"\r\n-")：
+	.pptx 是二進位 zip，結尾本來就可能有 0x0D／0x0A／0x2D，
+	rstrip 會把檔案結構吃掉，解壓時炸 BadZipFile。
+	"""
+	boundary = ctype.split("boundary=")[-1].strip().strip('"').encode()
 	name, blob, sec = "", b"", None
 	for part in body.split(b"--" + boundary):
 		if b"\r\n\r\n" not in part:
 			continue
 		head, data = part.split(b"\r\n\r\n", 1)
-		data = data.rstrip(b"\r\n-")
+		if data.endswith(b"\r\n"):     # 每個 part 結尾固定是一組 CRLF，只砍這兩個位元組
+			data = data[:-2]
 		h = head.decode("utf-8", "replace")
 		if 'name="file"' in h:
 			name = h.split('filename="')[1].split('"')[0]
@@ -1259,29 +1445,41 @@ if __name__ == "__main__":
 
 ```python
 		self.actions_path = None
+		self.actions_backup = None
 		self.lesson_path = None
 		self.video_path = None
 		self.retried = False
+		self.notice = None
 ```
 
 並在 `Job.start()` 成功進入 `awaiting_review` 之前，依 `material_path` 算出三個路徑：
 
 ```python
-		import re
-		stem = re.sub(r"[^a-z0-9_]", "_",
-			os.path.splitext(os.path.basename(self.material_path))[0].lower())
+		stem = ingest.lesson_id_for(self.material_path)
 		base = os.path.dirname(os.path.dirname(os.path.abspath(self.material_path)))
 		self.lesson_path = os.path.join(base, "examples", f"{stem}.lesson.json")
 		self.actions_path = os.path.join(base, "examples", f"{stem}.actions.json")
+		self.actions_backup = self.actions_path + ".orig"
 		self.video_path = os.path.join(self.out_dir, stem, f"{stem}.mp4")
 ```
 
-（`jobstate.py` 頂端補 `import os`。）
+`jobstate.py` 頂端補：
+
+```python
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "video_engine"))
+import ingest
+```
+
+**不可以在 `jobstate.py` 裡自己重寫一份 slug 正規化。** `run.py` 與這裡各算一份的話，
+中文檔名一邊算成 `____`、一邊算成雜湊，就會找不到 `lesson.json`。
 
 - [ ] **Step 4: 跑測試確認通過**
 
 Run: `.venv/bin/python -m unittest tests.test_serve -v`
-Expected: `Ran 3 tests` 全部 OK
+Expected: `Ran 6 tests` 全部 OK
 
 - [ ] **Step 5: 補跑 Task 5 的測試確認沒改壞**
 
@@ -1457,10 +1655,36 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ---
 
+## 對抗審查結論（AGY，2026-08-26）
+
+原始報告：`/tmp/agy_review_out.txt`。逐條驗證後的處置：
+
+| 指控 | 我的裁決 | 處置 |
+| :--- | :--- | :--- |
+| PPTX 播放順序與備忘稿歸屬不能照檔名編號 | **成立，有實測鐵證** | Task 1 全部重寫，改用 `python-pptx` |
+| 分兩段呼叫 `run.py` 導致 ingest 重複執行、`.pptx` 核可後必崩 | **成立** | Task 2 保證 `.md` 冪等；Task 7 收件當下就落地，之後只傳 `.md` |
+| 審稿逾時競態：修改被靜默丟棄；且後端沒有計時器會永久卡死 | **成立** | Task 7 新增 `_review_timer` 執行緒；`_approve` 不再判逾時，狀態仍是 `awaiting_review` 就一定算數，否則回明確 409 |
+| `rstrip(b"\r\n-")` 損毀二進位上傳 | **成立** | Task 7 改成精確切掉尾端一組 CRLF，並加二進位完整性測試 |
+| 重試旗標變成略過驗證的開關，壞稿會進 TTS | **成立，而且比報告說的更嚴重**——原實作連「用原稿繼續」都沒做到，是拿壞稿繼續 | Task 7 改成驗證失敗一律還原備份，壞稿絕不進 TTS |
+| `run.py` 崩潰不印事件 → SSE 殭屍串流 | **成立** | Task 7 的 `real_runner` 檢查退出碼，必要時補發 `stage_fail` |
+| PPTX 標題判定受 z-order 影響 | **成立** | 改用 `python-pptx` 的 `slide.shapes.title` 直接解決 |
+| `/script` 在 `actions_path` 為 `None` 時爆炸 | **成立** | Task 7 加狀態守衛，非審稿階段回 409 |
+| 中文檔名路徑失步（宣稱 `run.py` 未正規化） | **機制描述有誤**——`run.py:48` 本來就有正規化，兩邊算法一致 | 但**相鄰的真問題成立**：中文檔名會被整串壓成底線互撞。Task 1 新增共用的 `lesson_id_for`，退化時改用雜湊 |
+| 建議改成單一背景行程 + `threading.Event` 暫停 | **不採納** | 那需要把 `run.py` 改成可匯入、可暫停，動到引擎本體。收件時落地一次已經解掉真正的問題，兩次 subprocess 的額外成本約 0.3 秒 ×2 |
+| 合成的測試 XML 失真，測不出真實陷阱 | **成立** | 測試檔改用 `python-pptx` 產，帶完整 `presentation.xml` 與 `_rels` |
+
+被推翻的自家決定：**stdlib 解析 `.pptx`**。理由不是「AGY 說的」，是實測——
+產一份只有第 2、4 頁有備忘稿的簡報，拆開來 `notesSlide1.xml` 屬於 slide2、
+`notesSlide2.xml` 屬於 slide4。原計畫會把備忘稿掛錯頁，而且這種錯只有真實檔案
+才會觸發，正是現場 Demo 最不能出的事。守依賴數量守到這裡就過頭了。
+
+---
+
 ## 自審紀錄
 
 **Spec 覆蓋**：逐節對照——架構（Task 5–7）、元件與職責（Task 1–4、7、8）、檔案落地與命名（Task 2）、HTTP 介面契約（Task 7）、Job 狀態機（Task 5）、審稿閘（Task 6、7、8）、進度權重（Task 5）、視覺規範（Task 8 + Global Constraints）、錯誤處理（Task 7）、測試（Task 1、2、5、6、7、9）。無遺漏。
 
-**已知偏離**：`.pptx` 解析改用 stdlib（見 Global Constraints，待審查者裁決）。
+**已知偏離**：無。初版的 stdlib `.pptx` 偏離已於對抗審查後撤回。
+唯一新增依賴 `python-pptx` 與 spec 一致。
 
-**型別一致性**：`extract_text`／`SUPPORTED`（T1）→ T2、T7 使用；`Job`／`STAGE_WEIGHT`（T5）→ T7 使用；`read_segments`／`write_segments`／`revalidate`（T6）→ T7 使用。Task 7 額外要求 T5 的 `Job` 補四個欄位，已在該步驟寫明。
+**型別一致性**：`extract_text`／`SUPPORTED`／`lesson_id_for`（T1）→ T2、T5、T7 使用；`Job`／`STAGE_WEIGHT`（T5）→ T7 使用；`read_segments`／`write_segments`／`revalidate`（T6）→ T7 使用。Task 7 額外要求 T5 的 `Job` 補四個欄位，已在該步驟寫明。
