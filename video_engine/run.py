@@ -10,6 +10,7 @@
 階段：lesson → slides → actions → validate → synth → storyboard → timeline → video
 審稿建議停在 storyboard，確認講稿沒問題再往下跑，因為改講稿只要重生那一段。
 """
+import json
 import os
 import subprocess
 import sys
@@ -21,16 +22,31 @@ import ingest
 HERE = os.path.dirname(os.path.abspath(__file__))
 # 本專案不含 torch／gradio，所以 LLM SDK 與繪製依賴共用一個 venv 不會衝突
 PY = LLM_PY = os.path.join(os.path.dirname(HERE), ".venv/bin/python")
-STAGES = ["lesson", "slides", "actions", "validate", "synth", "storyboard", "timeline", "video"]
+# storyboard 排在 synth 前面：分鏡表不需要音檔（storyboard.py 的 durations.json 是選用的），
+# 前移之後改講稿不必重跑 TTS，代價從 51 秒降到零
+STAGES = ["lesson", "slides", "actions", "validate", "storyboard", "synth", "timeline", "video"]
 
 
-def run(script, args, label, interpreter=None):
+JSON_EVENTS = False
+
+
+def event(**kw):
+	"""機器可讀的進度事件走 stderr，人看的中文輸出走 stdout，兩邊互不干擾"""
+	if JSON_EVENTS:
+		print(json.dumps(kw, ensure_ascii=False), file=sys.stderr, flush=True)
+
+
+def run(script, args, label, interpreter=None, stage=None):
 	t0 = time.time()
 	print(f"\n\033[1m▶ {label}\033[0m")
+	event(event="stage_start", stage=stage)
 	r = subprocess.run([interpreter or PY, os.path.join(HERE, script)] + args)
 	if r.returncode != 0:
+		event(event="stage_fail", stage=stage, code=r.returncode)
 		raise SystemExit(f"\n{label} 失敗（回傳碼 {r.returncode}），停在這裡")
-	print(f"  ── {time.time() - t0:.0f} 秒")
+	sec = time.time() - t0
+	event(event="stage_end", stage=stage, sec=round(sec, 1))
+	print(f"  ── {sec:.0f} 秒")
 
 
 def next_free(path):
@@ -76,6 +92,8 @@ def main():
 	start = STAGES.index(opt("--from", "lesson"))
 	stop = STAGES.index(opt("--until", "video"))
 	sec = opt("--sec")
+	global JSON_EVENTS
+	JSON_EVENTS = "--json-events" in argv
 
 	lesson_id = ingest.lesson_id_for(material)
 	lesson = os.path.join(HERE, "examples", f"{lesson_id}.lesson.json")
@@ -92,22 +110,22 @@ def main():
 		return start <= i <= stop
 
 	if want("lesson"):
-		run("generate_lesson.py", [material, lesson], "階段 2　教材結構化（LLM）", LLM_PY)
+		run("generate_lesson.py", [material, lesson], "階段 2　教材結構化（LLM）", LLM_PY, stage="lesson")
 	if want("slides"):
-		run("render_slides.py", [lesson, out_dir], "階段 3　投影片繪製與量測")
+		run("render_slides.py", [lesson, out_dir], "階段 3　投影片繪製與量測", stage="slides")
 	if want("actions"):
 		run("generate_actions.py", [lesson, actions] + (["--sec", sec] if sec else []),
-			"階段 4　動作編排（LLM，內含驗證閘）", LLM_PY)
+			"階段 4　動作編排（LLM，內含驗證閘）", LLM_PY, stage="actions")
 	if want("validate"):
-		run("validate.py", [lesson, actions] + ([sec] if sec else []), "階段 4.5　編排驗證")
-	if want("synth"):
-		run("synth.py", [lesson, actions, out_dir], "階段 5　語音合成與驗收重試")
+		run("validate.py", [lesson, actions] + ([sec] if sec else []), "階段 4.5　編排驗證", stage="validate")
 	if want("storyboard"):
-		run("storyboard.py", [lesson, actions, out_dir], "階段 5.5　審稿分鏡表")
+		run("storyboard.py", [lesson, actions, out_dir], "階段 5　審稿分鏡表", stage="storyboard")
+	if want("synth"):
+		run("synth.py", [lesson, actions, out_dir], "階段 5.5　語音合成與驗收重試", stage="synth")
 	if want("timeline"):
-		run("compile_timeline.py", [lesson, actions, out_dir], "階段 6　時間軸編譯")
+		run("compile_timeline.py", [lesson, actions, out_dir], "階段 6　時間軸編譯", stage="timeline")
 	if want("video"):
-		run("render_video.py", [lesson, out_dir], "階段 7　影格渲染與封裝")
+		run("render_video.py", [lesson, out_dir], "階段 7　影格渲染與封裝", stage="video")
 
 	print(f"\n\033[1m全部完成，共 {time.time() - t0:.0f} 秒\033[0m")
 	print(f"產出目錄　{out_dir}")
