@@ -67,4 +67,5 @@ def extract_text(path):
 		raise ValueError(f"不支援的格式 {ext}，只吃 {'、'.join(SUPPORTED)}")
 	if ext == ".pptx":
 		return _pptx_text(path)
-	return open(path, encoding="utf-8").read()
+	with open(path, encoding="utf-8") as f:
+		return f.read()

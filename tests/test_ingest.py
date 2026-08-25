@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -14,18 +15,21 @@ from ingest import SUPPORTED, extract_text, lesson_id_for
 class TestExtractText(unittest.TestCase):
 	def setUp(self):
 		self.dir = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, self.dir)
 
 	def path(self, name):
 		return os.path.join(self.dir, name)
 
 	def test_md_原文照回(self):
 		p = self.path("a.md")
-		open(p, "w", encoding="utf-8").write("# 標題\n\n內文一行")
+		with open(p, "w", encoding="utf-8") as f:
+			f.write("# 標題\n\n內文一行")
 		self.assertEqual(extract_text(p), "# 標題\n\n內文一行")
 
 	def test_txt_原文照回(self):
 		p = self.path("a.txt")
-		open(p, "w", encoding="utf-8").write("純文字")
+		with open(p, "w", encoding="utf-8") as f:
+			f.write("純文字")
 		self.assertEqual(extract_text(p), "純文字")
 
 	def test_pptx_每頁都在且照播放順序(self):
@@ -67,7 +71,8 @@ class TestExtractText(unittest.TestCase):
 
 	def test_不支援的副檔名要丟錯(self):
 		p = self.path("a.pdf")
-		open(p, "w", encoding="utf-8").write("x")
+		with open(p, "w", encoding="utf-8") as f:
+			f.write("x")
 		with self.assertRaises(ValueError):
 			extract_text(p)
 
