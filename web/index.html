@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>VideoMaker 現場展示系統</title>
+	<style>
+		/* 視覺設計規範色票 */
+		:root {
+			--bg-page: #F4EDE2;
+			--bg-card: #FBF7F0;
+			--border-card: #DFD2BF;
+			--text-primary: #3B322A;
+			--text-secondary: #4B4238;
+			--accent: #B85C38;
+			--completed: #A0673F;
+			--bg-editor: #EFE6D8;
+			--border-editor: #DCCDB6;
+			--bg-warning: #F2D9A0;
+		}
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body { background: var(--bg-page); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; line-height: 1.5; min-height: 100dvh; padding: 1.5rem 1rem; }
+		.container { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
+		header { text-align: center; }
+		h1 { font-size: 1.75rem; color: var(--text-primary); font-weight: 700; margin-bottom: 0.25rem; }
+		.subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+		.card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 1.25rem; }
+		.progress-bar-track { background: var(--bg-editor); border: 1px solid var(--border-card); border-radius: 999px; height: 10px; overflow: hidden; margin: 0.75rem 0; }
+		.progress-bar-fill { background: var(--accent); height: 100%; width: 0%; transition: width 0.4s ease; }
+		.pipeline-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); }
+		.pipeline-pct { font-weight: 700; color: var(--accent); }
+		.stage-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+		@media (max-width: 600px) { .stage-grid { grid-template-columns: repeat(2, 1fr); } }
+		.stage-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.5rem 0.6rem; display: flex; flex-direction: column; gap: 0.2rem; }
+		.stage-card.status-running { border-color: var(--accent); animation: pulse 1.6s infinite ease-in-out; }
+		.stage-card.status-running .stage-name { color: var(--accent); }
+		.stage-card.status-done { border-color: var(--completed); background: var(--bg-editor); }
+		.stage-card.status-done .stage-name { color: var(--completed); }
+		.stage-card.status-failed { border-color: var(--accent); background: var(--bg-warning); }
+		.stage-head { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-secondary); }
+		.stage-name { font-size: 0.85rem; font-weight: 600; }
+		.stage-badge { font-size: 0.7rem; padding: 0.05rem 0.35rem; border-radius: 4px; border: 1px solid var(--border-card); background: var(--bg-editor); color: var(--text-secondary); width: fit-content; }
+		@keyframes pulse { 0%, 100% { border-color: var(--accent); } 50% { border-color: var(--border-card); } }
+		@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+		.dropzone { border: 2px dashed var(--border-card); border-radius: 10px; padding: 2rem 1rem; text-align: center; cursor: pointer; background: var(--bg-card); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+		.dropzone.dragover { border-color: var(--accent); background: var(--bg-editor); }
+		.dropzone-title { font-size: 1.05rem; font-weight: 600; }
+		.dropzone-desc { font-size: 0.8rem; color: var(--text-secondary); }
+		.pills { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; }
+		.pill { font-size: 0.7rem; padding: 0.15rem 0.45rem; border-radius: 4px; background: var(--bg-editor); border: 1px solid var(--border-editor); color: var(--text-secondary); }
+		.form-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; }
+		.form-group { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+		input[type="number"] { background: var(--bg-editor); border: 1px solid var(--border-editor); border-radius: 6px; padding: 0.35rem 0.5rem; color: var(--text-primary); width: 85px; }
+		input[type="number"]:focus { outline: none; border-color: var(--accent); }
+		.btn { padding: 0.55rem 1.25rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+		.btn-primary { background: var(--accent); color: var(--bg-card); border-color: var(--accent); }
+		.btn-primary:hover:not(:disabled) { opacity: 0.9; }
+		.btn-secondary { background: var(--bg-editor); color: var(--text-primary); border-color: var(--border-card); }
+		.btn-secondary:hover:not(:disabled) { background: var(--border-card); }
+		.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+		.countdown-banner { background: var(--bg-warning); border: 1px solid var(--border-card); border-radius: 8px; padding: 1rem; text-align: center; }
+		.countdown-timer { font-size: 2rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+		.countdown-verbatim { font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+		.review-slide-group { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+		.slide-title { font-size: 0.9rem; font-weight: 600; color: var(--completed); border-bottom: 1px solid var(--border-card); padding-bottom: 0.2rem; }
+		.script-textarea { background: var(--bg-editor); border: 1px solid var(--border-editor); border-radius: 6px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem; padding: 0.5rem; width: 100%; min-height: 60px; resize: vertical; }
+		.script-textarea:focus { outline: none; border-color: var(--accent); }
+		.alert-box { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 8px; padding: 0.75rem 1rem; color: var(--accent); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; }
+		.notice-box { background: var(--bg-warning); border: 1px solid var(--border-card); border-radius: 8px; padding: 0.75rem 1rem; color: var(--accent); font-size: 0.85rem; font-weight: 600; width: 100%; }
+		.video-wrapper { display: flex; flex-direction: column; gap: 0.75rem; align-items: center; }
+		video { width: 100%; max-height: 420px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--text-primary); }
+		.action-bar { display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap; margin-top: 0.75rem; }
+		.file-info { font-size: 0.85rem; color: var(--accent); font-weight: 600; word-break: break-all; }
+		.hidden { display: none !important; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<!-- 頁首標題區 -->
+		<header>
+			<h1>VideoMaker 現場展示系統</h1>
+			<div class="subtitle">教材一鍵生成 1080p 教學影片・八階段透明可視流程</div>
+		</header>
+
+		<!-- 八階段全域流程條 -->
+		<section class="card" id="pipeline-panel">
+			<div class="pipeline-header">
+				<div>處理進度</div>
+				<div class="pipeline-pct" id="pipeline-pct-label">0%</div>
+			</div>
+			<div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill"></div></div>
+			<div class="stage-grid">
+				<div class="stage-card status-not-started" id="stage-lesson"><div class="stage-head"><span>1. 教材結構化</span><span>25%</span></div><div class="stage-name">lesson</div><div class="stage-badge" id="badge-lesson">未開始</div></div>
+				<div class="stage-card status-not-started" id="stage-slides"><div class="stage-head"><span>2. 投影片繪製</span><span>1%</span></div><div class="stage-name">slides</div><div class="stage-badge" id="badge-slides">未開始</div></div>
+				<div class="stage-card status-not-started" id="stage-actions"><div class="stage-head"><span>3. 動作編排</span><span>19%</span></div><div class="stage-name">actions</div><div class="stage-badge" id="badge-actions">未開始</div></div>
+				<div class="stage-card status-not-started" id="stage-validate"><div class="stage-head"><span>4. 編排驗證</span><span>1%</span></div><div class="stage-name">validate</div><div class="stage-badge" id="badge-validate">未開始</div></div>
+				<div class="stage-card status-not-started" id="stage-storyboard"><div class="stage-head"><span>5. 審稿分鏡表</span><span>0%</span></div><div class="stage-name">storyboard</div><div class="stage-badge" id="badge-storyboard">未開始</div></div>
+				<div class="stage-card status-not-started" id="stage-synth"><div class="stage-head"><span>6. 語音合成</span><span>30%</span></div><div class="stage-name">synth</div><div class="stage-badge" id="badge-synth">未開始</div></div>
+				<div class="stage-card status-not-started" id="stage-timeline"><div class="stage-head"><span>7. 時間軸編譯</span><span>0%</span></div><div class="stage-name">timeline</div><div class="stage-badge" id="badge-timeline">未開始</div></div>
+				<div class="stage-card status-not-started" id="stage-video"><div class="stage-head"><span>8. 影格渲染</span><span>24%</span></div><div class="stage-name">video</div><div class="stage-badge" id="badge-video">未開始</div></div>
+			</div>
+		</section>
+
+		<!-- 畫面 1：上傳教材 -->
+		<main class="card" id="screen-upload">
+			<div class="dropzone" id="dropzone">
+				<input type="file" id="file-input" class="hidden" accept=".md,.txt,.pptx">
+				<div class="dropzone-title">拖放教材檔案至此，或點擊選取</div>
+				<div class="dropzone-desc">自動結構化、繪製投影片、編排動畫並合成語音影片</div>
+				<div class="pills"><span class="pill">.md 繁簡 Markdown</span><span class="pill">.txt 純文字教材</span><span class="pill">.pptx 簡報備忘稿</span><span class="pill">上限 5 MB</span></div>
+				<div id="selected-file-display" class="file-info hidden"></div>
+			</div>
+			<div class="form-row">
+				<div class="form-group">
+					<label for="sec-input">預期影片長度（秒）：</label>
+					<input type="number" id="sec-input" min="30" max="600" value="110" placeholder="110">
+				</div>
+				<button type="button" class="btn btn-primary" id="btn-submit-upload" disabled>開始生成影片</button>
+			</div>
+			<div id="upload-error" class="alert-box hidden" style="margin-top: 0.75rem;"></div>
+		</main>
+
+		<!-- 畫面 2：生成中 -->
+		<section class="card hidden" id="screen-running">
+			<div style="text-align: center; padding: 1.5rem 0;"><h2 style="font-size: 1.2rem; color: var(--accent); margin-bottom: 0.4rem;" id="running-stage-title">管線執行中...</h2><p style="color: var(--text-secondary); font-size: 0.85rem;">正在依序執行八階段流水線，抵達審稿閘時將暫停供確認講稿。</p></div>
+		</section>
+
+		<!-- 畫面 3：審稿閘 -->
+		<section class="card hidden" id="screen-review">
+			<div class="countdown-banner"><div class="countdown-timer" id="countdown-clock">60</div><div class="countdown-verbatim">倒數歸零就直接繼續，沒有人反對視同確認</div></div>
+			<div id="review-validation-errors" class="alert-box hidden" style="margin-top: 0.75rem;"><div style="font-weight: 700;">講稿未通過驗證閘，請修正後重試（倒數已重設）：</div><ul id="review-error-list" style="padding-left: 1.25rem; font-size: 0.85rem;"></ul></div>
+			<div id="script-segments-container" style="margin-top: 0.75rem;"></div>
+			<div class="action-bar"><button type="button" class="btn btn-secondary" id="btn-review-skip">維持原稿繼續</button><button type="button" class="btn btn-primary" id="btn-review-approve">確認講稿並繼續</button></div>
+		</section>
+
+		<!-- 畫面 4：生成完成 -->
+		<section class="card hidden" id="screen-done">
+			<div class="video-wrapper">
+				<div style="text-align: center;"><h2 style="font-size: 1.25rem; color: var(--completed); margin-bottom: 0.2rem;">教學影片生成完畢！</h2><div class="subtitle">已封裝為 1080p MP4 影片</div></div>
+				<div id="done-notice" class="notice-box hidden"></div>
+				<video id="video-player" controls preload="metadata"></video>
+				<div class="action-bar" style="width: 100%;"><button type="button" class="btn btn-secondary" id="btn-new-job">製作下一部影片</button><a href="/jobs/0/video" id="btn-download-video" class="btn btn-primary" download>下載 MP4 影片</a></div>
+			</div>
+		</section>
+
+		<!-- 畫面 5：失敗畫面 -->
+		<section class="card hidden" id="screen-failed">
+			<div class="alert-box"><h2 style="font-size: 1.15rem; font-weight: 700;" id="failed-title">工作執行失敗</h2><div id="failed-reason" style="font-weight: 600;"></div></div>
+			<div class="action-bar"><button type="button" class="btn btn-secondary" id="btn-failed-restart">返回上傳頁面</button></div>
+		</section>
+	</div>
+
+	<script>
+		/* 八階段定義與中文名稱權重 */
+		const STAGES = [
+			{ id: 'lesson', name: '教材結構化', weight: 25 },
+			{ id: 'slides', name: '投影片繪製', weight: 1 },
+			{ id: 'actions', name: '動作編排', weight: 19 },
+			{ id: 'validate', name: '編排驗證', weight: 1 },
+			{ id: 'storyboard', name: '審稿分鏡表', weight: 0 },
+			{ id: 'synth', name: '語音合成', weight: 30 },
+			{ id: 'timeline', name: '時間軸編譯', weight: 0 },
+			{ id: 'video', name: '影格渲染', weight: 24 }
+		];
+
+		/* 全域狀態管理 */
+		const state = { jobId: null, status: 'idle', pct: 0, currentStage: null, stageStatus: {}, eventSource: null, reviewDeadline: null, reviewTimer: null, originalSegments: [], notice: null, selectedFile: null };
+
+		/* 初始化階段狀態 */
+		function initStageStatus() {
+			STAGES.forEach(function(s) { state.stageStatus[s.id] = 'not-started'; });
+			updatePipelineView();
+		}
+
+		/* 切換畫面顯示 */
+		function showScreen(screenId) {
+			['screen-upload', 'screen-running', 'screen-review', 'screen-done', 'screen-failed'].forEach(function(id) {
+				const el = document.getElementById(id);
+				if (el) el.classList.toggle('hidden', id !== screenId);
+			});
+		}
+
+		/* 更新進度條與各階段視覺狀態 */
+		function updatePipelineView() {
+			const fill = document.getElementById('progress-fill');
+			const pctLabel = document.getElementById('pipeline-pct-label');
+			if (fill) fill.style.width = state.pct + '%';
+			if (pctLabel) pctLabel.textContent = state.pct + '%';
+			STAGES.forEach(function(s) {
+				const card = document.getElementById('stage-' + s.id);
+				const badge = document.getElementById('badge-' + s.id);
+				const st = state.stageStatus[s.id] || 'not-started';
+				if (card) card.className = 'stage-card status-' + st;
+				if (badge) badge.textContent = st === 'running' ? '進行中' : (st === 'done' ? '已完成' : (st === 'failed' ? '失敗' : '未開始'));
+			});
+		}
+
+		/* 訂閱 Server-Sent Events 事件串流 */
+		function subscribeEvents(jobId) {
+			if (state.eventSource) { state.eventSource.close(); state.eventSource = null; }
+			const es = new EventSource('/jobs/' + jobId + '/events');
+			state.eventSource = es;
+			es.onmessage = function(e) {
+				try { handleServerEvent(JSON.parse(e.data)); } catch (err) { console.warn('解析 SSE 訊息失敗', err); }
+			};
+			es.onerror = function(err) { console.warn('SSE 串流連線狀態變更', err); };
+		}
+
+		/* 處理後端推播事件 */
+		function handleServerEvent(ev) {
+			if (typeof ev.pct === 'number') state.pct = ev.pct;
+			if (ev.event === 'stage_start') {
+				state.stageStatus[ev.stage] = 'running';
+				state.currentStage = ev.stage;
+				const titleEl = document.getElementById('running-stage-title');
+				const stObj = STAGES.find(function(s) { return s.id === ev.stage; });
+				if (titleEl && stObj) titleEl.textContent = '進行中：' + stObj.name + ' (' + ev.stage + ')';
+				updatePipelineView();
+			} else if (ev.event === 'stage_end') {
+				state.stageStatus[ev.stage] = 'done';
+				updatePipelineView();
+			} else if (ev.event === 'stage_fail') {
+				state.stageStatus[ev.stage] = 'failed';
+				updatePipelineView();
+				handleJobFailed(ev.stage, '階段 ' + ev.stage + ' 執行失敗（錯誤碼 ' + (ev.code || '') + '）');
+			} else if (ev.event === 'state') {
+				state.status = ev.status;
+				if (ev.status === 'awaiting_review') openReviewScreen(ev.deadline);
+				else if (ev.status === 'done') openDoneScreen();
+				else if (ev.status === 'failed') handleJobFailed(ev.stage || state.currentStage || '系統', ev.error || '工作執行失敗');
+				else if (ev.status === 'running') showScreen('screen-running');
+			}
+		}
+
+		/* 載入講稿並開啟審稿畫面 */
+		function openReviewScreen(deadline) {
+			showScreen('screen-review');
+			fetch('/jobs/' + state.jobId + '/script')
+				.then(function(res) {
+					if (!res.ok) throw new Error('無法載入講稿');
+					return res.json();
+				})
+				.then(function(data) {
+					state.originalSegments = data.segments || [];
+					renderScriptSegments(state.originalSegments);
+					startReviewCountdown(data.deadline || deadline);
+				})
+				.catch(function(err) {
+					console.error('拉取講稿失敗', err);
+					startReviewCountdown(deadline);
+				});
+		}
+
+		/* 依投影片分組渲染講稿文字框 */
+		function renderScriptSegments(segments) {
+			const container = document.getElementById('script-segments-container');
+			if (!container) return;
+			container.innerHTML = '';
+			const grouped = {};
+			segments.forEach(function(seg) {
+				if (!grouped[seg.slide_id]) grouped[seg.slide_id] = [];
+				grouped[seg.slide_id].push(seg);
+			});
+			Object.keys(grouped).forEach(function(slideId, idx) {
+				const groupEl = document.createElement('div');
+				groupEl.className = 'review-slide-group';
+				const titleEl = document.createElement('div');
+				titleEl.className = 'slide-title';
+				titleEl.textContent = '投影片 ' + (idx + 1) + ' (' + slideId + ')';
+				groupEl.appendChild(titleEl);
+				grouped[slideId].forEach(function(seg) {
+					const itemEl = document.createElement('div');
+					itemEl.style.cssText = 'display:flex; flex-direction:column; gap:0.25rem; margin-top:0.4rem;';
+					const labelEl = document.createElement('div');
+					labelEl.style.cssText = 'font-size:0.75rem; color:var(--text-secondary);';
+					labelEl.textContent = '旁白段落 #' + (seg.idx + 1);
+					const textarea = document.createElement('textarea');
+					textarea.className = 'script-textarea';
+					textarea.value = seg.text;
+					textarea.dataset.slideId = seg.slide_id;
+					textarea.dataset.idx = seg.idx;
+					itemEl.appendChild(labelEl);
+					itemEl.appendChild(textarea);
+					groupEl.appendChild(itemEl);
+				});
+				container.appendChild(groupEl);
+			});
+		}
+
+		/* 啟動審稿 60 秒倒數計時器 */
+		function startReviewCountdown(deadlineUnixSec) {
+			if (state.reviewTimer) clearInterval(state.reviewTimer);
+			state.reviewDeadline = deadlineUnixSec;
+			function tick() {
+				const clockEl = document.getElementById('countdown-clock');
+				if (!state.reviewDeadline) return;
+				const remain = Math.max(0, Math.ceil(state.reviewDeadline - (Date.now() / 1000)));
+				if (clockEl) clockEl.textContent = remain;
+				if (remain <= 0) {
+					clearInterval(state.reviewTimer);
+					state.reviewTimer = null;
+					showScreen('screen-running');
+					const runningTitle = document.getElementById('running-stage-title');
+					if (runningTitle) runningTitle.textContent = '倒數結束，使用原稿繼續合成...';
+				}
+			}
+			tick();
+			state.reviewTimer = setInterval(tick, 500);
+		}
+
+		/* 收集已編輯的講稿段落 */
+		function collectEditedSegments() {
+			const textareas = document.querySelectorAll('.script-textarea');
+			const current = [];
+			textareas.forEach(function(ta) {
+				current.push({ slide_id: ta.dataset.slideId, idx: parseInt(ta.dataset.idx, 10), text: ta.value });
+			});
+			let hasChanged = current.length !== state.originalSegments.length;
+			if (!hasChanged) {
+				for (let i = 0; i < current.length; i++) {
+					if (current[i].text !== state.originalSegments[i].text) { hasChanged = true; break; }
+				}
+			}
+			return hasChanged ? current : [];
+		}
+
+		/* 送出講稿審查核可 */
+		function submitApproval(segments) {
+			const btnApprove = document.getElementById('btn-review-approve');
+			const btnSkip = document.getElementById('btn-review-skip');
+			if (btnApprove) btnApprove.disabled = true;
+			if (btnSkip) btnSkip.disabled = true;
+			fetch('/jobs/' + state.jobId + '/approve', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ segments: segments })
+			})
+			.then(function(res) {
+				return res.json().then(function(data) { return { status: res.status, data: data }; });
+			})
+			.then(function(result) {
+				if (btnApprove) btnApprove.disabled = false;
+				if (btnSkip) btnSkip.disabled = false;
+				if (result.status === 200) {
+					if (result.data.notice) state.notice = result.data.notice;
+					if (state.reviewTimer) clearInterval(state.reviewTimer);
+					showScreen('screen-running');
+				} else if (result.status === 400) {
+					const errBox = document.getElementById('review-validation-errors');
+					const errList = document.getElementById('review-error-list');
+					if (errBox && errList) {
+						errList.innerHTML = '';
+						(result.data.errors || []).forEach(function(msg) {
+							const li = document.createElement('li');
+							li.textContent = msg;
+							errList.appendChild(li);
+						});
+						errBox.classList.remove('hidden');
+					}
+					if (result.data.deadline) startReviewCountdown(result.data.deadline);
+				} else if (result.status === 409) {
+					if (state.reviewTimer) clearInterval(state.reviewTimer);
+					showScreen('screen-running');
+				}
+			})
+			.catch(function(err) {
+				if (btnApprove) btnApprove.disabled = false;
+				if (btnSkip) btnSkip.disabled = false;
+				console.error('審查核可請求失敗', err);
+			});
+		}
+
+		/* 開啟完成畫面並載入影片 */
+		function openDoneScreen() {
+			if (state.eventSource) { state.eventSource.close(); state.eventSource = null; }
+			if (state.reviewTimer) { clearInterval(state.reviewTimer); state.reviewTimer = null; }
+			showScreen('screen-done');
+			const videoPlayer = document.getElementById('video-player');
+			const downloadBtn = document.getElementById('btn-download-video');
+			const noticeBox = document.getElementById('done-notice');
+			const videoUrl = '/jobs/' + state.jobId + '/video';
+			if (videoPlayer) { videoPlayer.src = videoUrl; videoPlayer.load(); }
+			if (downloadBtn) downloadBtn.href = videoUrl;
+			if (noticeBox) {
+				if (state.notice) {
+					noticeBox.textContent = state.notice;
+					noticeBox.classList.remove('hidden');
+				} else {
+					noticeBox.classList.add('hidden');
+				}
+			}
+		}
+
+		/* 處理失敗流程畫面 */
+		function handleJobFailed(stage, errMsg) {
+			if (state.eventSource) { state.eventSource.close(); state.eventSource = null; }
+			if (state.reviewTimer) { clearInterval(state.reviewTimer); state.reviewTimer = null; }
+			showScreen('screen-failed');
+			const titleEl = document.getElementById('failed-title');
+			const reasonEl = document.getElementById('failed-reason');
+			if (titleEl) titleEl.textContent = (stage || '管線') + ' 階段失敗';
+			if (reasonEl) reasonEl.textContent = errMsg || '生成過程發生錯誤';
+		}
+
+		/* 重設狀態回初始畫面 */
+		function resetToUpload() {
+			if (state.eventSource) { state.eventSource.close(); state.eventSource = null; }
+			if (state.reviewTimer) { clearInterval(state.reviewTimer); state.reviewTimer = null; }
+			state.jobId = null; state.status = 'idle'; state.pct = 0; state.currentStage = null; state.notice = null; state.selectedFile = null;
+			const fileInput = document.getElementById('file-input');
+			const fileDisplay = document.getElementById('selected-file-display');
+			const submitBtn = document.getElementById('btn-submit-upload');
+			const uploadErr = document.getElementById('upload-error');
+			const videoPlayer = document.getElementById('video-player');
+			if (fileInput) fileInput.value = '';
+			if (fileDisplay) { fileDisplay.textContent = ''; fileDisplay.classList.add('hidden'); }
+			if (submitBtn) submitBtn.disabled = true;
+			if (uploadErr) { uploadErr.textContent = ''; uploadErr.classList.add('hidden'); }
+			if (videoPlayer) { videoPlayer.removeAttribute('src'); videoPlayer.load(); }
+			initStageStatus();
+			showScreen('screen-upload');
+		}
+
+		/* DOM 初始化綁定 */
+		document.addEventListener('DOMContentLoaded', function() {
+			initStageStatus();
+			showScreen('screen-upload');
+			const dropzone = document.getElementById('dropzone');
+			const fileInput = document.getElementById('file-input');
+			const fileDisplay = document.getElementById('selected-file-display');
+			const submitBtn = document.getElementById('btn-submit-upload');
+			const secInput = document.getElementById('sec-input');
+			const uploadErr = document.getElementById('upload-error');
+
+			if (dropzone && fileInput) {
+				dropzone.addEventListener('click', function() { fileInput.click(); });
+				dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.classList.add('dragover'); });
+				dropzone.addEventListener('dragleave', function(e) { e.preventDefault(); dropzone.classList.remove('dragover'); });
+				dropzone.addEventListener('drop', function(e) {
+					e.preventDefault();
+					dropzone.classList.remove('dragover');
+					if (e.dataTransfer.files && e.dataTransfer.files.length > 0) handleFileSelect(e.dataTransfer.files[0]);
+				});
+				fileInput.addEventListener('change', function() {
+					if (fileInput.files && fileInput.files.length > 0) handleFileSelect(fileInput.files[0]);
+				});
+			}
+
+			function handleFileSelect(file) {
+				state.selectedFile = file;
+				if (fileDisplay) {
+					fileDisplay.textContent = '已選取：' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+					fileDisplay.classList.remove('hidden');
+				}
+				if (submitBtn) submitBtn.disabled = false;
+				if (uploadErr) uploadErr.classList.add('hidden');
+			}
+
+			if (submitBtn) {
+				submitBtn.addEventListener('click', function() {
+					if (!state.selectedFile) return;
+					submitBtn.disabled = true;
+					if (uploadErr) uploadErr.classList.add('hidden');
+					const formData = new FormData();
+					formData.append('file', state.selectedFile);
+					const sec = secInput ? secInput.value.trim() : '110';
+					if (sec) formData.append('sec', sec);
+
+					fetch('/jobs', { method: 'POST', body: formData })
+						.then(function(res) {
+							return res.json().then(function(data) { return { status: res.status, data: data }; });
+						})
+						.then(function(result) {
+							if (result.status === 201) {
+								state.jobId = result.data.job_id;
+								state.status = 'running';
+								initStageStatus();
+								showScreen('screen-running');
+								subscribeEvents(state.jobId);
+							} else {
+								submitBtn.disabled = false;
+								if (uploadErr) {
+									uploadErr.textContent = result.data.error || '建立工作失敗';
+									uploadErr.classList.remove('hidden');
+								}
+							}
+						})
+						.catch(function(err) {
+							submitBtn.disabled = false;
+							if (uploadErr) {
+								uploadErr.textContent = '連線服務失敗，請確認 serve.py 已啟動';
+								uploadErr.classList.remove('hidden');
+							}
+						});
+				});
+			}
+
+			const btnApprove = document.getElementById('btn-review-approve');
+			if (btnApprove) {
+				btnApprove.addEventListener('click', function() {
+					const edited = collectEditedSegments();
+					submitApproval(edited);
+				});
+			}
+			const btnSkip = document.getElementById('btn-review-skip');
+			if (btnSkip) btnSkip.addEventListener('click', function() { submitApproval([]); });
+			const btnNewJob = document.getElementById('btn-new-job');
+			if (btnNewJob) btnNewJob.addEventListener('click', resetToUpload);
+			const btnRestart = document.getElementById('btn-failed-restart');
+			if (btnRestart) btnRestart.addEventListener('click', resetToUpload);
+		});
+	</script>
+</body>
+</html>
