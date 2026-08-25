@@ -11,6 +11,9 @@
   底線畫出　雷射改成由左往右畫出的底線，比細線明顯
   左移淡入　reveal 從左側平移進場
   交叉淡化　換頁不硬切
+  掃描線　　程式碼首次走讀時一道光等速掃過，表示「正在逐行讀」
+  退場淡出　所有強調效果收尾都淡掉，不再瞬間消失
+  依序進場　同時觸發的多個 reveal 由上到下錯開，不會整塊蹦出來
 """
 import json
 import os
@@ -19,24 +22,90 @@ import sys
 import time
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image
 from scipy.io import wavfile
 
-HL_WIPE_MS = 380      # 螢光筆刷過的時間
-DIM_IN_MS = 420       # 程式碼區域壓暗的淡入
-UL_WIPE_MS = 260      # 底線畫出
-REVEAL_SHIFT = 26     # 左移淡入的位移
-TRANS_MS = 350        # 換頁交叉淡化
-UL_H = 5
+from motion import (CAMERA_MS, DIM_IN_MS, EXIT_RATIO, HL_WIPE_MS, SCAN_MS,
+	TRANS_MS, UL_WIPE_MS)
+
+REVEAL_SHIFT = 30     # 左移淡入的位移；再大就是動作疲勞，再小就看不出方向
+UL_H = 6              # 底線中段最寬處
+REVEAL_OVERSHOOT = 0.05   # 落位過衝，紙感材質上限（教學內容偏穩重，不用彈性材質的 15–25%）
+CAM_OVERSHOOT = 0.02      # 鏡頭推近的過衝，像真的攝影機推到定位再回穩
+SCAN_ALPHA = 0.30     # 掃描線最濃處
+SCAN_TAIL = 46        # 掃描線拖尾長度（像素）        # 掃描線拖尾長度（像素）
 
 
-def ease_out(p):
-	return 1.0 if p >= 1 else 1 - pow(2, -10 * p)
+def _bezier(x1, y1, x2, y2):
+	"""標準 cubic-bezier，牛頓法解 t 再取 y"""
+	def curve(a, b, t):
+		u = 1 - t
+		return 3 * u * u * t * a + 3 * u * t * t * b + t * t * t
+
+	def f(p):
+		p = max(0.0, min(1.0, p))
+		if p <= 0 or p >= 1:
+			return p
+		t = p
+		for _ in range(6):
+			dx = curve(x1, x2, t) - p
+			if abs(dx) < 1e-5:
+				break
+			d = 3 * (1 - t) ** 2 * x1 + 6 * (1 - t) * t * (x2 - x1) + 3 * t * t * (1 - x2)
+			if abs(d) < 1e-6:
+				break
+			t = max(0.0, min(1.0, t - dx / d))
+		return curve(y1, y2, t)
+	return f
 
 
-def ease_in_out(p):
-	p = max(0.0, min(1.0, p))
-	return 3 * p * p - 2 * p * p * p
+# 進場用 ease-out、退場用 ease-in、畫面內位移用 ease-in-out——三者不可互換，
+# 混用就是「動起來很機械」的來源。數值取自 Material Design 3 的標準曲線。
+ease_enter = _bezier(0.05, 0.7, 0.1, 1)    # 進場：一開始就衝出去，尾巴慢慢收
+ease_exit = _bezier(0.3, 0, 1, 1)          # 退場：慢慢起步，最後加速離開
+ease_move = _bezier(0.2, 0, 0, 1)          # 畫面內位移：鏡頭、換頁
+
+
+_BACK_C1 = {}
+
+
+def back_c1(overshoot):
+	"""解出 back-out 的係數 c1，讓峰值恰好是 1 + overshoot。
+	峰值 = 4c1³ / (27(c1+1)²)，沒有漂亮的解析解，用二分法算一次就快取起來"""
+	if overshoot not in _BACK_C1:
+		lo, hi = 0.0, 10.0
+		for _ in range(60):
+			mid = (lo + hi) / 2
+			if 4 * mid ** 3 / (27 * (mid + 1) ** 2) < overshoot:
+				lo = mid
+			else:
+				hi = mid
+		_BACK_C1[overshoot] = (lo + hi) / 2
+	return _BACK_C1[overshoot]
+
+
+def back_out(p, overshoot):
+	"""落位過衝：衝過頭一點再回穩，峰值 1 + overshoot。等速停死會很死板"""
+	c1 = back_c1(overshoot)
+	q = max(0.0, min(1.0, p)) - 1
+	return 1 + (c1 + 1) * q ** 3 + c1 * q ** 2
+
+
+def exit_alpha(t, end_ms, in_ms):
+	"""效果收尾：退場時長 = 進場的 70%，不再瞬間消失"""
+	out_ms = in_ms * EXIT_RATIO
+	left = end_ms - t
+	if left >= out_ms:
+		return 1.0
+	return max(0.0, 1 - ease_exit(1 - left / out_ms))
+
+
+def blend(frame, y0, y1, x0, x1, col, a):
+	"""把一塊純色以 a 疊上去；a < 1 用混色而不是硬蓋，效果才淡得掉"""
+	if y1 <= y0 or x1 <= x0 or a <= 0:
+		return
+	dst = frame[y0:y1, x0:x1].astype(np.float32)
+	frame[y0:y1, x0:x1] = (dst * (1 - a) + col * a).astype(np.uint8)
 
 
 def rgb(hex_str):
@@ -68,84 +137,126 @@ def build_audio(timeline, out_wav):
 	return sr, len(track) / sr
 
 
-def apply_reveals(frame, full, scene, t):
-	"""hidden 元素從左側平移淡入"""
+def apply_reveals(frame, full, scene, t, canvas_w):
+	"""hidden 元素從左側平移淡入。位移帶微幅過衝，透明度不過衝——
+	亮度衝過頭會變成閃一下。同時觸發的多個元素在編譯期就錯開了（見 compile_timeline）"""
 	for r in scene["reveals"]:
 		if t < r["start_ms"]:
 			continue
-		p = ease_out(min(1.0, (t - r["start_ms"]) / r["ms"])) if r["ms"] else 1.0
+		raw = min(1.0, (t - r["start_ms"]) / r["ms"]) if r["ms"] else 1.0
+		a = ease_enter(raw)
+		pos = back_out(raw, REVEAL_OVERSHOOT)
 		b = r["box"]
 		x, y, w, h = b["x"], b["y"], b["w"], b["h"]
-		shift = int(REVEAL_SHIFT * (1 - p))
-		dx = max(0, x - shift)
+		shift = int(round(REVEAL_SHIFT * (1 - pos)))
+		dx = min(max(0, x - shift), max(0, canvas_w - w))
 		patch = full[y:y + h, x:x + w].astype(np.float32)
 		dst = frame[y:y + h, dx:dx + w]
 		if dst.shape[:2] != patch.shape[:2]:
 			continue
-		frame[y:y + h, dx:dx + w] = (dst.astype(np.float32) * (1 - p) + patch * p).astype(np.uint8)
+		frame[y:y + h, dx:dx + w] = (dst.astype(np.float32) * (1 - a) + patch * a).astype(np.uint8)
 	return frame
 
 
-def apply_highlight(frame, box, t, start_ms, hl):
-	"""螢光筆：正片疊底刷過重點，深色文字仍然清楚"""
-	p = ease_out(min(1.0, (t - start_ms) / HL_WIPE_MS))
-	b = box
+def apply_highlight(frame, eff, t, hl):
+	"""螢光筆：正片疊底刷過重點，深色文字仍然清楚。收尾用退場曲線淡掉"""
+	b = eff["box"]
+	p = ease_enter(min(1.0, (t - eff["start_ms"]) / HL_WIPE_MS))
+	out = exit_alpha(t, eff["end_ms"], HL_WIPE_MS)
 	w = int(b["w"] * p)
-	if w <= 0:
+	if w <= 0 or out <= 0:
 		return frame
 	region = frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + w].astype(np.float32)
-	tint = np.array(hl, dtype=np.float32) / 255.0
+	tint = 1 - (1 - np.array(hl, dtype=np.float32) / 255.0) * out
 	frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + w] = np.clip(region * tint, 0, 255).astype(np.uint8)
 	return frame
 
 
+def apply_scan(frame, region, start_ms, t, col, out):
+	"""掃描線：等速由上往下掃過整塊程式碼一趟，帶漸層拖尾。
+	等速是命門——加了緩動會讀成「有人在拖進度條」，而不是「機器在讀」。
+	只掃程式碼區塊內，漏出去就變成掃整個畫面。"""
+	prog = (t - start_ms) / SCAN_MS
+	if prog < 0 or prog > 1:
+		return frame
+	rx, ry, rw, rh = region["x"], region["y"], region["w"], region["h"]
+	head = min(ry + int(prog * rh), ry + rh)
+	top = max(ry, head - SCAN_TAIL)
+	edge = min(1.0, prog / 0.12) * min(1.0, (1 - prog) / 0.12)
+	c = np.array(col, dtype=np.float32)
+	if head > top:
+		rows = np.arange(top, head, dtype=np.float32)
+		a = ((rows - top) / max(1.0, head - top)) ** 2 * SCAN_ALPHA * out * edge
+		strip = frame[top:head, rx:rx + rw].astype(np.float32)
+		a3 = a[:, None, None]
+		frame[top:head, rx:rx + rw] = (strip * (1 - a3) + c * a3).astype(np.uint8)
+	blend(frame, head, min(head + 2, ry + rh), rx, rx + rw, c, SCAN_ALPHA * 1.6 * out * edge)
+	return frame
+
+
 def apply_code_focus(frame, eff, t, fade_rgb, border_rgb):
-	"""程式碼走讀：未聚焦的行往底色淡出（不是壓黑），目標行保持原亮度並加左側色條"""
-	p = min(1.0, (t - eff["start_ms"]) / DIM_IN_MS)
+	"""程式碼走讀：未聚焦的行往底色淡出（不是壓黑），目標行保持原亮度並加左側範圍括號。
+	該頁第一次進入走讀時，另有一道掃描線掃過整塊程式碼——程式碼本身全程靜止，只有光在動"""
 	region = eff.get("region")
-	b = eff["box"]
 	if not region:
 		return frame
+	p = min(1.0, (t - eff["start_ms"]) / DIM_IN_MS)
+	out = exit_alpha(t, eff["end_ms"], DIM_IN_MS)
+	if out <= 0:
+		return frame
+	b = eff["box"]
 	rx, ry, rw, rh = region["x"], region["y"], region["w"], region["h"]
 	keep = frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]].copy()
 	patch = frame[ry:ry + rh, rx:rx + rw].astype(np.float32)
 	fade = np.array(fade_rgb, dtype=np.float32)
-	a = eff.get("dim", 0.62) * ease_out(p)
+	a = eff.get("dim", 0.62) * ease_enter(p) * out
 	frame[ry:ry + rh, rx:rx + rw] = (patch * (1 - a) + fade * a).astype(np.uint8)
 	frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]] = keep
+	if eff.get("scan"):
+		frame = apply_scan(frame, region, eff.get("scan_at", eff["start_ms"]), t, border_rgb, out)
 	# 左側範圍括號：豎線由上往下畫出，上下各一短勾標出涵蓋幾行
-	col = np.array(border_rgb, dtype=np.uint8)
+	col = np.array(border_rgb, dtype=np.float32)
 	bx = max(0, b["x"] - 16)
-	grow = ease_out(p)
+	grow = ease_enter(p)
 	spine = int(b["h"] * grow)
-	if spine > 0:
-		frame[b["y"]:b["y"] + spine, bx:bx + 4] = col
+	blend(frame, b["y"], b["y"] + spine, bx, bx + 4, col, out)
 	if grow > 0.85:
 		tick = int(14 * (grow - 0.85) / 0.15)
-		frame[b["y"]:b["y"] + 4, bx:bx + tick] = col
-		frame[b["y"] + b["h"] - 4:b["y"] + b["h"], bx:bx + tick] = col
+		blend(frame, b["y"], b["y"] + 4, bx, bx + tick, col, out)
+		blend(frame, b["y"] + b["h"] - 4, b["y"] + b["h"], bx, bx + tick, col, out)
 	return frame
 
 
-def apply_underline(img, eff, t, col):
-	"""雷射改成底線由左往右畫出，收尾淡出"""
-	span = max(1, eff["end_ms"] - eff["start_ms"])
-	life = (t - eff["start_ms"]) / span
-	fade = 1.0 if life < 0.72 else max(0.0, (1 - life) / 0.28)
-	if fade <= 0:
-		return img
+def apply_underline(frame, eff, t, col):
+	"""馬克筆底線：貼著字底由左往右一筆畫出。中段最寬、首尾略細、邊緣輕微毛糙，
+	這三件事讓它讀起來像人拿筆劃的，而不是 CSS 畫的框線。
+	沒有筆尖圓點——那是裝飾雜訊，不帶任何教學資訊。"""
 	b = eff["box"]
-	p = ease_out(min(1.0, (t - eff["start_ms"]) / UL_WIPE_MS))
-	w = int(b["w"] * p)
-	y = b["y"] + b["h"] - UL_H
-	d = ImageDraw.Draw(img, "RGBA")
-	d.rectangle([b["x"], y, b["x"] + w, y + UL_H], fill=col + (int(255 * fade),))
-	if p >= 1:
-		r = 9
-		cx = b["x"] + b["w"]
-		d.ellipse([cx - r, y + UL_H // 2 - r, cx + r, y + UL_H // 2 + r],
-			fill=col + (int(230 * fade),))
-	return img
+	pad = eff.get("pad", 0)
+	total = max(1, b["w"] - pad * 2)
+	p = ease_enter(min(1.0, (t - eff["start_ms"]) / UL_WIPE_MS))
+	out = exit_alpha(t, eff["end_ms"], UL_WIPE_MS)
+	w = int(total * p)
+	if w <= 0 or out <= 0:
+		return frame
+	x0 = b["x"] + pad
+	cy = b["y"] + b["h"] - pad + 1      # 貼著文字底部，離遠了會讀成分隔線
+	hgt = UL_H + 3
+	y0 = int(cy - hgt / 2)
+	if y0 < 0 or y0 + hgt > frame.shape[0] or x0 + w > frame.shape[1]:
+		return frame
+	xs = np.arange(w, dtype=np.float32)
+	u = np.clip(xs / max(1.0, total - 1), 0, 1)
+	# clip 是必要的：float32 的 π 略大於真值，u=1 時 sin 會是極小負數，開根號變 NaN
+	half = UL_H / 2 * (0.6 + 0.4 * np.clip(np.sin(np.pi * u), 0, 1) ** 0.5)
+	rough = 0.35 * (np.sin(xs * 0.9) + np.sin(xs * 0.31))      # 太糙會讀成故障
+	center = hgt / 2 + rough * 0.5
+	rows = np.arange(hgt, dtype=np.float32)[:, None]
+	a = np.clip(half + rough - np.abs(rows - center) + 0.5, 0, 1) * out
+	strip = frame[y0:y0 + hgt, x0:x0 + w].astype(np.float32)
+	c = np.array(col, dtype=np.float32)
+	frame[y0:y0 + hgt, x0:x0 + w] = (strip * (1 - a[:, :, None]) + c * a[:, :, None]).astype(np.uint8)
+	return frame
 
 
 def zoom(img, cx, cy, scale, canvas):
@@ -155,17 +266,20 @@ def zoom(img, cx, cy, scale, canvas):
 	vw, vh = W / scale, H / scale
 	x0 = min(max(0, cx - vw / 2), W - vw)
 	y0 = min(max(0, cy - vh / 2), H - vh)
-	return img.resize((W, H), Image.BILINEAR, box=(x0, y0, x0 + vw, y0 + vh))
+	# LANCZOS 而不是 BILINEAR：推近時中文字與等寬程式碼的筆畫才不會糊掉
+	return img.resize((W, H), Image.LANCZOS, box=(x0, y0, x0 + vw, y0 + vh))
 
 
 def apply_camera(img, cam, t, canvas):
-	p = ease_in_out((t - cam["start_ms"]) / cam["ms"]) if cam["ms"] else 1.0
+	p = ease_move((t - cam["start_ms"]) / cam["ms"]) if cam["ms"] else 1.0
 	W, H = canvas["width"], canvas["height"]
 	if cam["box"] is None:
 		return zoom(img, W / 2, H / 2, 1 + (cam.get("from_scale", 1.35) - 1) * (1 - p), canvas)
 	b = cam["box"]
+	# 推近帶微幅過衝：推到定位再回穩，比等速停住像真的攝影機
+	q = back_out((t - cam["start_ms"]) / cam["ms"], CAM_OVERSHOOT) if cam["ms"] else 1.0
 	return zoom(img, b["x"] + b["w"] / 2, b["y"] + b["h"] / 2,
-		1 + (cam["scale"] - 1) * p, canvas)
+		1 + (cam["scale"] - 1) * q, canvas)
 
 
 def active(items, t):
@@ -219,31 +333,30 @@ def main():
 		scene = timeline["scenes"][idx]
 		base, full = pages[scene["slide_id"]]
 		frame = base.copy()
-		frame = apply_reveals(frame, full, scene, t)
+		frame = apply_reveals(frame, full, scene, t, W)
 
 		for eff in active([e for e in scene["effects"] if e["type"] == "spotlight"], t):
 			if eff.get("style") == "code":
 				frame = apply_code_focus(frame, eff, t, fade_rgb, bar_rgb)
 			else:
-				frame = apply_highlight(frame, eff["box"], t, eff["start_ms"], hl_rgb)
+				frame = apply_highlight(frame, eff, t, hl_rgb)
 
-		img = Image.fromarray(frame)
 		for eff in active([e for e in scene["effects"] if e["type"] == "laser"], t):
-			img = apply_underline(img, eff, t, ul_rgb)
+			frame = apply_underline(frame, eff, t, ul_rgb)
 
+		# 沒有鏡頭動作就完全不進 PIL 重取樣：連續次像素縮放會讓中文字與程式碼發糊
 		cams = active(scene["camera"], t)
 		if cams:
-			img = apply_camera(img, cams[-1], t, canvas)
-		# 沒有鏡頭動作就維持靜止：連續次像素縮放會讓中文字與程式碼一直重取樣發糊
-
-		arr = np.asarray(img).copy()
+			arr = np.asarray(apply_camera(Image.fromarray(frame), cams[-1], t, canvas)).copy()
+		else:
+			arr = frame
 
 		# 換頁交叉淡化：記住上一頁最後一格，新頁前 TRANS_MS 內混合
 		if idx != last_idx:
 			trans_from, trans_until = last_frame, t + TRANS_MS
 			last_idx = idx
 		if trans_from is not None and t < trans_until:
-			a = ease_out(1 - (trans_until - t) / TRANS_MS)
+			a = ease_move(1 - (trans_until - t) / TRANS_MS)
 			arr = (trans_from.astype(np.float32) * (1 - a) + arr.astype(np.float32) * a).astype(np.uint8)
 		last_frame = arr
 

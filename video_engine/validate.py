@@ -20,6 +20,11 @@ CHARS_PER_SEC = 5.5   # 含換氣與段間停頓的實測值（525 字 → 95 �
 # 這些直接唸出來 TTS 會出事，講稿要用口語說法
 RAW_FUNCS = re.compile(r"\b(strcpy|strlen|strcmp|printf|scanf|malloc|free|sizeof|fopen|fclose)\b", re.I)
 MAX_CAMERA = 2
+BLOCKING = {"speech", "pause"}
+# 節奏閘：一段語音配一個視覺重點。同時動太多處，觀眾來不及看，畫面就顯得吵
+MAX_BEATS = 2          # 兩段語音之間的強調動作，超過提醒
+HARD_BEATS = 4         # 超過即為錯誤
+MAX_REVEAL_BURST = 5   # 一次連續帶出的 hidden 元素上限（錯開後仍看得清的數量）
 
 MIN_ACTIONS = 3
 MIN_SPEECH = 2
@@ -108,6 +113,23 @@ def check_slide(slide, idx):
 		errs.append(f"程式碼頁只有 {focused_code} 個聚焦動作，少於 {MIN_CODE_FOCUS}，走讀不完整")
 	if idx["code_len"] and not any(a["type"] == "camera" for a in acts):
 		errs.append("程式碼頁沒有鏡頭推近，字太小看不清楚")
+
+	beats, burst = 0, 0
+	for a in acts:
+		if a["type"] in BLOCKING:
+			beats, burst = 0, 0
+			continue
+		if a["type"] == "reveal":
+			burst += 1
+			if burst == MAX_REVEAL_BURST + 1:
+				warns.append(f"一口氣 reveal 超過 {MAX_REVEAL_BURST} 個元素，畫面會整塊蹦出來")
+			continue
+		burst = 0
+		beats += 1
+		if beats == HARD_BEATS + 1:
+			errs.append(f"兩段語音之間有 {beats} 個強調動作，畫面同時在動太多處")
+		elif beats == MAX_BEATS + 1:
+			warns.append(f"兩段語音之間有 {beats} 個強調動作，建議一段語音配一個視覺重點")
 
 	cams = sum(1 for a in acts if a["type"] == "camera" and not a.get("reset"))
 	if cams > MAX_CAMERA:

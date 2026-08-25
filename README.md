@@ -63,5 +63,7 @@ patches/                對 GPT-SoVITS 的修改備份（中英分段對齊前�
 | 投影片結構規則 | `video_engine/prompts/lesson_content.system.md` |
 | 什麼算不合格 | `video_engine/validate.py`（比改 prompt 有效，模型會被打回重做） |
 | 用哪個模型 | `video_engine/llm.py`，或 `VIDEO_ENGINE_LLM=google:gemini-3.7-flash` |
+| 動起來好不好看 | `video_engine/render_video.py` 的緩動與時長常數，規格見 [`docs/MOTION_SPEC.md`](docs/MOTION_SPEC.md) |
 
-架構全貌見 [`docs/ARCHITECTURE.html`](docs/ARCHITECTURE.html)，接手看 [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md)。
+架構全貌見 [`docs/ARCHITECTURE.html`](docs/ARCHITECTURE.html)，接手看 [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md)，
+動態規格（緩動曲線、時長分級、效果語彙的存廢判定）見 [`docs/MOTION_SPEC.md`](docs/MOTION_SPEC.md)。
