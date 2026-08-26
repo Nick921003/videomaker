@@ -15,9 +15,9 @@ from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont
 
 from layout import (
-	BULLET_MAX_W, BULLET_STEP, CENTER_X, CODE_BOX, CODE_X, CODE_Y0,
-	CONTENT_BOX, FIG_GAP, FIG_MAX_W, FIG_ROW_H, H, HEADER_BOX, SUB_Y,
-	TITLE_Y, W, code_metrics, fig_height, regions_for,
+	CENTER_X, CODE_BOX, CODE_X, CODE_Y0, CONTENT_BOX, FIG_GAP, FIG_MAX_W,
+	FIG_ROW_H, H, HEADER_BOX, SUB_Y, TITLE_Y, W, bullet_metrics, code_metrics,
+	fig_height, regions_for,
 )
 
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
@@ -90,11 +90,19 @@ def ink_box(draw, xy, text, font, anchor=None):
 	return {"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0, "baseline": y1}
 
 
-def draw_centered(targets, measure, text, y, font, color):
-	"""以畫布中線置中，回傳實測墨水框"""
+def draw_text_block(targets, measure, text, y, font, color, region=None, align="center"):
+	"""在指定區域內畫一行文字。
+
+	align="center" 沿用舊行為（畫布中線 + "ma" 錨點），"left" 錨在區域左緣。
+	region 只有靠左時會用到——標題與副標永遠置中於 HEADER_BOX，不吃區域
+	"""
+	if align == "left" and region:
+		x, anchor = region["x"], "la"
+	else:
+		x, anchor = CENTER_X, "ma"
 	for d in targets:
-		d.text((CENTER_X, y), text, font=font, fill=color, anchor="ma")
-	return ink_box(measure, (CENTER_X, y), text, font, anchor="ma")
+		d.text((x, y), text, font=font, fill=color, anchor=anchor)
+	return ink_box(measure, (x, y), text, font, anchor=anchor)
 
 
 def draw_figure(targets, measure, el, th, top, guard):
@@ -186,6 +194,9 @@ def render_slide(slide, guard, th, out_dir, idx):
 	reg = regions_for(slide, idx - 1)      # idx 從 1 起算，版型用 0 起算的頁次
 	bullet_y = reg["text"]["y"]
 	fig_y = reg["figure"]["y"] if reg["figure"] else bullet_y
+	# 條列計數不分 hidden，字級／行距才會跟 layout.py 那邊算出同一個值
+	n_bullets = sum(1 for e in slide["elements"] if e["type"] in ("bullet", "callout"))
+	bullet_step, bullet_size = bullet_metrics(n_bullets)
 
 	for el in slide["elements"]:
 		eid, etype = el["id"], el["type"]
@@ -195,19 +206,20 @@ def render_slide(slide, guard, th, out_dir, idx):
 		if etype == "title":
 			text = guard.sanitize(el["text"])
 			font = fit_font(df, text, CJK_FONT, 54, 1600)
-			boxes[eid] = draw_centered(targets, df, text, TITLE_Y, font, th["text"]["title"])
+			boxes[eid] = draw_text_block(targets, df, text, TITLE_Y, font, th["text"]["title"])
 
 		elif etype == "subtitle":
 			text = guard.sanitize(el["text"])
 			font = fit_font(df, text, CJK_FONT, 30, 1600)
-			boxes[eid] = draw_centered(targets, df, text, SUB_Y, font, th["text"]["subtitle"])
+			boxes[eid] = draw_text_block(targets, df, text, SUB_Y, font, th["text"]["subtitle"])
 
 		elif etype in ("bullet", "callout"):
 			text = guard.sanitize(el["text"])
-			font = fit_font(df, text, CJK_FONT, 38, BULLET_MAX_W)
+			font = fit_font(df, text, CJK_FONT, bullet_size, reg["text"]["w"])
 			color = th["text"]["callout"] if etype == "callout" else th["text"]["bullet"]
-			boxes[eid] = draw_centered(targets, df, text, bullet_y, font, color)
-			bullet_y += BULLET_STEP
+			boxes[eid] = draw_text_block(targets, df, text, bullet_y, font, color,
+				reg["text"], reg["text_align"])
+			bullet_y += bullet_step
 
 		elif etype == "code":
 			step, size = code_metrics(len(el["lines"]))

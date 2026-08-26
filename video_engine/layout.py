@@ -30,6 +30,10 @@ FIG_CAPTION_H = 46
 # 這個內距一直存在，只是以前藏在 fit_font 的寬度上限裡沒有名字
 CARD_PAD_X = (CONTENT_BOX[2] - CONTENT_BOX[0] - BULLET_MAX_W) // 2
 
+COL_GAP = 60
+COL_PAD = 40
+SPLIT_MAX_BULLETS = 6      # 半欄高 660，(6-1)*120+48 = 648 剛好放得下
+
 
 def bullet_metrics(n):
 	"""依條數決定行距與字級，跟 code_metrics 同一個形狀。
@@ -67,6 +71,25 @@ def fig_height(el):
 	return FIG_ROW_H + cap
 
 
+def pick_variant(slide):
+	"""版型由內容組成推導，不由教材指定，也不隨機。
+
+	一堂課的序列固定是 compare → boxes → code → steps，四種內容配四種幾何，
+	同一堂課內自然就不重複——不需要靠頁次輪替製造變化。
+	image 與多張圖一律退回 stack：前者是寫死座標貼上去的、不吃區域，
+	後者在只切出一塊圖區的版型裡會整個疊在一起
+	"""
+	els = slide["elements"]
+	if any(e["type"] == "code" for e in els):
+		return "code"
+	if any(e["type"] == "image" for e in els):
+		return "stack"
+	figs = [e for e in els if e["type"] == "figure"]
+	if len(figs) != 1:
+		return "stack"
+	return "stage" if figs[0]["kind"] == "compare" else "split"
+
+
 def _stack(slide, index):
 	"""現況版位原樣搬進區域框架。之後更花俏的版型判斷容量不夠時，
 	降級也是呼叫這個函式，所以獨立出來而不是塞在 regions_for 裡"""
@@ -77,10 +100,11 @@ def _stack(slide, index):
 	n_bullets = sum(1 for e in els if e["type"] in ("bullet", "callout"))
 	figs = [e for e in els if e["type"] == "figure"]
 
-	# 這裡刻意用固定的 BULLET_STEP，不用 bullet_metrics。
-	# render_slide 的繪製迴圈這一步也是以 BULLET_STEP 遞增，兩邊必須算同一個值，
-	# 否則 7 條以上就分歧（738 vs 768）。自適應行距由後續 Task 在兩處同時換上
-	bullets_h = (n_bullets - 1) * BULLET_STEP + 48 if n_bullets else 0
+	# 兩邊都要用 bullet_metrics 的自適應行距：render_slide 的繪製迴圈這一步
+	# 這個 Task 起也改用同一個函式算 step，兩邊才會算出同一個值，
+	# 只改一邊的話 7 條以上就分歧（738 vs 768）
+	step, _ = bullet_metrics(n_bullets)
+	bullets_h = (n_bullets - 1) * step + 48 if n_bullets else 0
 	figs_h = sum(fig_height(f) + 40 for f in figs)
 	block_h = bullets_h + figs_h
 	top = (CONTENT_BOX[1] + (CONTENT_BOX[3] - CONTENT_BOX[1] - block_h) // 2
@@ -100,11 +124,31 @@ def _stack(slide, index):
 
 
 def regions_for(slide, index):
-	"""這一頁的哪塊區域給誰。index 是頁次（0 起算），供之後需要鏡像的版型使用。
+	"""這一頁的哪塊區域給誰。index 是頁次（0 起算），split 用它決定文字放左還是放右。
 
 	title／subtitle 不在回傳值裡——它們永遠畫在 HEADER_BOX，
 	那是換頁交叉淡化時唯一不動的錨點。
-	目前只有 stack 一種版型；之後版型選擇邏輯會插在這裡，
-	容量算不下時降級也回頭呼叫 _stack
+	版型由 pick_variant 依內容組成決定；目前只有 split 有自己的幾何切法，
+	其餘（stack／code／stage）暫時都沿用 _stack，split 容量算不下時也降級回 _stack
 	"""
-	return _stack(slide, index)
+	if pick_variant(slide) != "split":
+		return _stack(slide, index)
+
+	els = slide["elements"]
+	# 條列計數不分 hidden，理由跟 _stack 一樣：base 與 full 兩張圖版位要一致
+	n_bullets = sum(1 for e in els if e["type"] in ("bullet", "callout"))
+
+	x0, y0, x1, y1 = CONTENT_BOX
+	col_w = (x1 - x0 - 2 * COL_PAD - COL_GAP) // 2
+	left = rect(x0 + COL_PAD, y0 + COL_PAD, x0 + COL_PAD + col_w, y1 - COL_PAD)
+	right = rect(x0 + COL_PAD + col_w + COL_GAP, y0 + COL_PAD, x1 - COL_PAD, y1 - COL_PAD)
+	if n_bullets > SPLIT_MAX_BULLETS:
+		return _stack(slide, index)      # 半欄放不下就退回整幅
+	text_left = index % 2 == 0           # 偶數頁文字在左，同課同 kind 的兩頁才不會長一樣
+	return {
+		"variant": "split",
+		"text": left if text_left else right,
+		"text_align": "left",
+		"figure": right if text_left else left,
+		"code": None,
+	}
