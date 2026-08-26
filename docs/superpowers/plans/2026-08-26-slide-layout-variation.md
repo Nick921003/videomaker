@@ -304,8 +304,11 @@ def regions_for(slide, index):
 	n_bullets = sum(1 for e in els if e["type"] in ("bullet", "callout"))
 	figs = [e for e in els if e["type"] == "figure"]
 
-	step, _ = bullet_metrics(n_bullets)
-	bullets_h = (n_bullets - 1) * step + 48 if n_bullets else 0
+	# 這裡刻意用固定的 BULLET_STEP，不用 bullet_metrics。
+	# render_slide 的繪製迴圈這一步還是以 BULLET_STEP 遞增，兩邊必須算同一個值，
+	# 否則 7 條以上就分歧（738 vs 768），逐像素不變的承諾在那個區間破功。
+	# 自適應行距由 Task 3A 在兩處同時換上
+	bullets_h = (n_bullets - 1) * BULLET_STEP + 48 if n_bullets else 0
 	figs_h = sum(fig_height(f) + 40 for f in figs)
 	block_h = bullets_h + figs_h
 	top = (CONTENT_BOX[1] + (CONTENT_BOX[3] - CONTENT_BOX[1] - block_h) // 2
@@ -547,6 +550,19 @@ def draw_text_block(targets, measure, text, y, font, color, region=None, align="
 - `fit_font` 的寬度上限由寫死的 `BULLET_MAX_W` 改成 `reg["text"]["w"]`
 - 呼叫改成 `draw_text_block(targets, df, text, bullet_y, font, color, reg["text"], reg["text_align"])`
 - 字級起始值與 `bullet_y` 的遞增量改用 `bullet_metrics(n_bullets)` 回傳的 `size` 與 `step`
+
+**這一步必須與 `layout.py` 的 `_stack()` 同時改。** Task 2 的 `_stack()` 用的是固定 `BULLET_STEP`，因為當時繪製迴圈也是固定的；現在繪製改成自適應，`_stack()` 的 `bullets_h` 也要跟著改成 `bullet_metrics` 的 `step`。**只改一邊，7 條以上的頁面版位就會對不上**（`_stack` 算 738、迴圈實際畫 768），而條列會從內容卡下緣溢出。
+
+加一則測試把這件事釘住：
+
+```python
+	def test_版位高度與繪製遞增量必須同源(self):
+		# 只改一邊的話 7 條就分歧：_stack 算 738、繪製迴圈實際走 768
+		for n in (3, 7, 12):
+			step, _ = L.bullet_metrics(n)
+			r = L.regions_for(slide(n_bullets=n), 0)
+			self.assertEqual(r["text"]["h"], (n - 1) * step + 48, f"{n} 條")
+```
 
 **變數名是 `reg` 不是 `region`**（Task 2 Step 5 定的）。`reg["text"]["w"]` 在 `stack` 時等於 `BULLET_MAX_W`（Task 2 已加測試保證），所以 `stack` 頁的字級不會變。
 
