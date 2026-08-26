@@ -1,0 +1,364 @@
+{
+	"lesson_id": "c_struct",
+	"canvas": {
+		"width": 1920,
+		"height": 1080
+	},
+	"theme": "warm",
+	"slides": [
+		{
+			"slide_id": "p1",
+			"png": "FIXTURE/video_engine/out/c_struct/slide_01_base.png",
+			"png_full": "FIXTURE/video_engine/out/c_struct/slide_01_full.png",
+			"boxes": {
+				"p1_title": {
+					"x": 744,
+					"y": 96,
+					"w": 432,
+					"h": 53,
+					"baseline": 149
+				},
+				"p1_sub": {
+					"x": 750,
+					"y": 157,
+					"w": 420,
+					"h": 30,
+					"baseline": 187
+				},
+				"p1_a": {
+					"x": 652,
+					"y": 278,
+					"w": 617,
+					"h": 40,
+					"baseline": 318
+				},
+				"p1_b": {
+					"x": 637,
+					"y": 398,
+					"w": 646,
+					"h": 40,
+					"baseline": 438
+				},
+				"p1_c": {
+					"x": 618,
+					"y": 518,
+					"w": 684,
+					"h": 40,
+					"baseline": 558
+				},
+				"p1_fig:l1": {
+					"x": 230,
+					"y": 658,
+					"w": 700,
+					"h": 62
+				},
+				"p1_fig:l2": {
+					"x": 230,
+					"y": 732,
+					"w": 700,
+					"h": 62
+				},
+				"p1_fig:l3": {
+					"x": 230,
+					"y": 806,
+					"w": 700,
+					"h": 62
+				},
+				"p1_fig:l4": {
+					"x": 230,
+					"y": 880,
+					"w": 700,
+					"h": 62
+				},
+				"p1_fig:r1": {
+					"x": 990,
+					"y": 658,
+					"w": 700,
+					"h": 62
+				},
+				"p1_fig:r2": {
+					"x": 990,
+					"y": 732,
+					"w": 700,
+					"h": 62
+				},
+				"p1_fig:r3": {
+					"x": 990,
+					"y": 806,
+					"w": 700,
+					"h": 62
+				},
+				"p1_fig": {
+					"x": 230,
+					"y": 594,
+					"w": 1460,
+					"h": 360
+				}
+			}
+		},
+		{
+			"slide_id": "p2",
+			"png": "FIXTURE/video_engine/out/c_struct/slide_02_base.png",
+			"png_full": "FIXTURE/video_engine/out/c_struct/slide_02_full.png",
+			"boxes": {
+				"p2_title": {
+					"x": 741,
+					"y": 95,
+					"w": 439,
+					"h": 54,
+					"baseline": 149
+				},
+				"p2_sub": {
+					"x": 780,
+					"y": 157,
+					"w": 360,
+					"h": 30,
+					"baseline": 187
+				},
+				"p2_a": {
+					"x": 562,
+					"y": 406,
+					"w": 796,
+					"h": 41,
+					"baseline": 447
+				},
+				"p2_b": {
+					"x": 579,
+					"y": 526,
+					"w": 763,
+					"h": 40,
+					"baseline": 566
+				},
+				"p2_c": {
+					"x": 621,
+					"y": 646,
+					"w": 677,
+					"h": 40,
+					"baseline": 686
+				},
+				"p2_fig:i1": {
+					"x": 587,
+					"y": 722,
+					"w": 360,
+					"h": 104
+				},
+				"p2_fig:i2": {
+					"x": 973,
+					"y": 722,
+					"w": 360,
+					"h": 104
+				},
+				"p2_fig": {
+					"x": 587,
+					"y": 722,
+					"w": 746,
+					"h": 104
+				}
+			}
+		},
+		{
+			"slide_id": "p3",
+			"png": "FIXTURE/video_engine/out/c_struct/slide_03_base.png",
+			"png_full": "FIXTURE/video_engine/out/c_struct/slide_03_full.png",
+			"boxes": {
+				"p3_title": {
+					"x": 825,
+					"y": 96,
+					"w": 270,
+					"h": 53,
+					"baseline": 149
+				},
+				"p3_sub": {
+					"x": 735,
+					"y": 157,
+					"w": 450,
+					"h": 30,
+					"baseline": 187
+				},
+				"p3_code:L1": {
+					"x": 170,
+					"y": 310,
+					"w": 253.296875,
+					"h": 42,
+					"baseline": 352
+				},
+				"p3_code:L2": {
+					"x": 170,
+					"y": 352,
+					"w": 265.484375,
+					"h": 42,
+					"baseline": 394
+				},
+				"p3_code:L3": {
+					"x": 170,
+					"y": 394,
+					"w": 40,
+					"h": 42,
+					"baseline": 436
+				},
+				"p3_code:L4": {
+					"x": 170,
+					"y": 436,
+					"w": 211.265625,
+					"h": 42,
+					"baseline": 478
+				},
+				"p3_code:L5": {
+					"x": 170,
+					"y": 478,
+					"w": 234.25,
+					"h": 42,
+					"baseline": 520
+				},
+				"p3_code:L6": {
+					"x": 170,
+					"y": 520,
+					"w": 152.5625,
+					"h": 42,
+					"baseline": 562
+				},
+				"p3_code:L7": {
+					"x": 170,
+					"y": 562,
+					"w": 136.484375,
+					"h": 42,
+					"baseline": 604
+				},
+				"p3_code:L8": {
+					"x": 170,
+					"y": 604,
+					"w": 40,
+					"h": 42,
+					"baseline": 646
+				},
+				"p3_code:L9": {
+					"x": 170,
+					"y": 646,
+					"w": 152.703125,
+					"h": 42,
+					"baseline": 688
+				},
+				"p3_code:L10": {
+					"x": 170,
+					"y": 688,
+					"w": 181.515625,
+					"h": 42,
+					"baseline": 730
+				},
+				"p3_code:L11": {
+					"x": 170,
+					"y": 730,
+					"w": 369.3125,
+					"h": 42,
+					"baseline": 772
+				},
+				"p3_code:L12": {
+					"x": 170,
+					"y": 772,
+					"w": 209.6875,
+					"h": 42,
+					"baseline": 814
+				},
+				"p3_code:L13": {
+					"x": 170,
+					"y": 814,
+					"w": 735.859375,
+					"h": 42,
+					"baseline": 856
+				},
+				"p3_code:L14": {
+					"x": 170,
+					"y": 856,
+					"w": 144.96875,
+					"h": 42,
+					"baseline": 898
+				},
+				"p3_code:L15": {
+					"x": 170,
+					"y": 898,
+					"w": 40,
+					"h": 42,
+					"baseline": 940
+				},
+				"p3_code": {
+					"x": 130,
+					"y": 280,
+					"w": 1660,
+					"h": 660
+				}
+			}
+		},
+		{
+			"slide_id": "p4",
+			"png": "FIXTURE/video_engine/out/c_struct/slide_04_base.png",
+			"png_full": "FIXTURE/video_engine/out/c_struct/slide_04_full.png",
+			"boxes": {
+				"p4_title": {
+					"x": 771,
+					"y": 96,
+					"w": 378,
+					"h": 52,
+					"baseline": 148
+				},
+				"p4_sub": {
+					"x": 825,
+					"y": 157,
+					"w": 270,
+					"h": 31,
+					"baseline": 188
+				},
+				"p4_a": {
+					"x": 656,
+					"y": 406,
+					"w": 608,
+					"h": 40,
+					"baseline": 446
+				},
+				"p4_b": {
+					"x": 675,
+					"y": 526,
+					"w": 570,
+					"h": 38,
+					"baseline": 564
+				},
+				"p4_c": {
+					"x": 630,
+					"y": 646,
+					"w": 660,
+					"h": 40,
+					"baseline": 686
+				},
+				"p4_fig:i1": {
+					"x": 180,
+					"y": 722,
+					"w": 345,
+					"h": 104
+				},
+				"p4_fig:i2": {
+					"x": 585,
+					"y": 722,
+					"w": 345,
+					"h": 104
+				},
+				"p4_fig:i3": {
+					"x": 990,
+					"y": 722,
+					"w": 345,
+					"h": 104
+				},
+				"p4_fig:i4": {
+					"x": 1395,
+					"y": 722,
+					"w": 345,
+					"h": 104
+				},
+				"p4_fig": {
+					"x": 180,
+					"y": 722,
+					"w": 1560,
+					"h": 104
+				}
+			}
+		}
+	]
+}

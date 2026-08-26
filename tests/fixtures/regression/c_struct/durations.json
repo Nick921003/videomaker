@@ -1,0 +1,302 @@
+{
+	"p1#1": {
+		"digest": "1977ebfbc7d6",
+		"text": "同學好，如果今天要管理一百位學生的成績，在還沒學會結構體之前，通常會怎麼做呢？",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p1_01_1977ebfbc7d6.wav",
+		"duration": 6.82,
+		"voiced": 5.42,
+		"max_gap": 0.48,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#4": {
+		"digest": "977c120d757a",
+		"text": "姓名加三科成績，你得開五個獨立陣列。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p1_04_977c120d757a.wav",
+		"duration": 3.64,
+		"voiced": 2.78,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#6": {
+		"digest": "07182ffadead",
+		"text": "要排序的時候，五個陣列都得同步搬動，一個沒對上就錯位。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p1_06_07182ffadead.wav",
+		"duration": 4.82,
+		"voiced": 3.82,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#8": {
+		"digest": "b80c96fc595e",
+		"text": "傳進函式也麻煩，一次要傳五個參數，改一次就要動好幾個地方。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p1_08_b80c96fc595e.wav",
+		"duration": 5.64,
+		"voiced": 4.02,
+		"max_gap": 0.52,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#11": {
+		"digest": "9c9e33803852",
+		"text": "明明是同一個學生的資料，在程式裡卻是散的，這就是我們要解決的痛點。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p1_11_9c9e33803852.wav",
+		"duration": 5.86,
+		"voiced": 4.8,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p2#1": {
+		"digest": "66e8b438d156",
+		"text": "結構體定義主要分成三個部分，宣告語法、裡面的成員列表，以及自訂的型態別名。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p2_01_66e8b438d156.wav",
+		"duration": 6.6,
+		"voiced": 5.32,
+		"max_gap": 0.0,
+		"tries": 2,
+		"accepted": true
+	},
+	"p2#3": {
+		"digest": "c97cf313c3ba",
+		"text": "不同型態的欄位，合成單一的複合型態。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p2_03_c97cf313c3ba.wav",
+		"duration": 3.08,
+		"voiced": 2.4,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p2#5": {
+		"digest": "8944a7ac07af",
+		"text": "像這樣把字串姓名與整數成績打包在一起，成員可以放各種不同型態。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p2_05_8944a7ac07af.wav",
+		"duration": 6.6,
+		"voiced": 4.9,
+		"max_gap": 0.5,
+		"tries": 1,
+		"accepted": true
+	},
+	"p2#7": {
+		"digest": "eadddf9113d7",
+		"text": "成員可以是字元、整數、浮點數，也可以放陣列。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p2_07_eadddf9113d7.wav",
+		"duration": 4.24,
+		"voiced": 3.18,
+		"max_gap": 0.46,
+		"tries": 1,
+		"accepted": true
+	},
+	"p2#9": {
+		"digest": "893ca0344cd4",
+		"text": "取好別名之後，它就跟 int 一樣，能直接拿來宣告變數。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p2_09_893ca0344cd4.wav",
+		"duration": 4.66,
+		"voiced": 3.84,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#1": {
+		"digest": "8ca16bfeeca8",
+		"text": "延續剛剛講的語法，這裡先定義型態，大括號裡放姓名和成績兩個成員。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p3_01_8ca16bfeeca8.wav",
+		"duration": 5.8,
+		"voiced": 4.72,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#3": {
+		"digest": "9bb52018a2fa",
+		"text": "接著在主程式裡宣告第一個學生變數，這時候記憶體就配置好了。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p3_03_9bb52018a2fa.wav",
+		"duration": 5.8,
+		"voiced": 4.38,
+		"max_gap": 0.52,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#5": {
+		"digest": "509ee1a48d9f",
+		"text": "字串不能直接用等號賦值，要用字串複製函式；成績是整數，用點運算子直接指定。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p3_05_509ee1a48d9f.wav",
+		"duration": 6.55,
+		"voiced": 5.04,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#7": {
+		"digest": "e91ccc2a061a",
+		"text": "最後印出結果，一樣用點運算子，把兩個成員取出來。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p3_07_e91ccc2a061a.wav",
+		"duration": 4.36,
+		"voiced": 3.56,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#2": {
+		"digest": "f79986e2d5a7",
+		"text": "最後我們看三個最常踩的坑。第一個，定義型態本身不佔記憶體，宣告變數之後才真的配置空間。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p4_02_f79986e2d5a7.wav",
+		"duration": 8.4,
+		"voiced": 6.78,
+		"max_gap": 0.0,
+		"tries": 2,
+		"accepted": true
+	},
+	"p4#5": {
+		"digest": "bcfe609f0118",
+		"text": "第二個，大括號結尾那個分號絕對不能漏，漏掉就會編譯錯誤。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p4_05_bcfe609f0118.wav",
+		"duration": 5.36,
+		"voiced": 3.9,
+		"max_gap": 0.56,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#8": {
+		"digest": "8b20c230c23f",
+		"text": "第三個，字元陣列成員不能用等號賦值，要改用字串複製函式。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p4_08_8b20c230c23f.wav",
+		"duration": 5.08,
+		"voiced": 4.08,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#11": {
+		"digest": "83c9cc74c43a",
+		"text": "把相關資料打包成一個整體，就是模組化程式的基石。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p4_11_83c9cc74c43a.wav",
+		"duration": 4.52,
+		"voiced": 3.64,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#13": {
+		"digest": "b1a8c1a68bf7",
+		"text": "這三個迷思記起來，寫 struct 就會順很多，今天就到這裡。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p4_13_b1a8c1a68bf7.wav",
+		"duration": 4.16,
+		"voiced": 3.38,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#3": {
+		"digest": "fcc6f4a2cd9d",
+		"text": "我們會開姓名、成績等多個獨立陣列，但只要一做排序，所有陣列就必須同步搬動。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p1_03_fcc6f4a2cd9d.wav",
+		"duration": 6.68,
+		"voiced": 5.3,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#7": {
+		"digest": "aeafe2ff1658",
+		"text": "只要漏搬一個，資料就錯位了。明明是同一個學生，資料卻完全散開在各處。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p1_07_aeafe2ff1658.wav",
+		"duration": 6.03,
+		"voiced": 4.84,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#9": {
+		"digest": "637d94d345ff",
+		"text": "為了解決這個問題，我們可以用 struct 把資料打包，接下來就來看看怎麼做。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p1_09_637d94d345ff.wav",
+		"duration": 5.62,
+		"voiced": 4.52,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p2#8": {
+		"digest": "46f3ef1f0789",
+		"text": "定義好別名之後，就能像一般型態那樣直接宣告變數，管理上清楚又安全。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p2_08_46f3ef1f0789.wav",
+		"duration": 6.76,
+		"voiced": 5.4,
+		"max_gap": 0.48,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#2": {
+		"digest": "aaa40a64c66b",
+		"text": "首先在第四行到第七行，我們定義了名為 Student 的結構體型態，裡面包含字串姓名與整數成績。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p3_02_aaa40a64c66b.wav",
+		"duration": 7.59,
+		"voiced": 6.42,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#4": {
+		"digest": "4d36ddd10166",
+		"text": "進入主函式後，第十行直接用這個型態宣告出第一個學生變數。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p3_04_4d36ddd10166.wav",
+		"duration": 5.62,
+		"voiced": 4.7,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#6": {
+		"digest": "60bdf4da165e",
+		"text": "接著透過點運算子存取成員，字串要用字串複製函式放進去，成績則可以直接給值。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p3_06_60bdf4da165e.wav",
+		"duration": 8.68,
+		"voiced": 6.74,
+		"max_gap": 0.72,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#9": {
+		"digest": "be9b65455a37",
+		"text": "最後在第十三行印出兩個成員的內容，就能完整輸出學生的打包資料囉。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p3_09_be9b65455a37.wav",
+		"duration": 6.98,
+		"voiced": 5.34,
+		"max_gap": 0.58,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#1": {
+		"digest": "6f989d998190",
+		"text": "大家常誤以為定義型態就會佔空間，其實要真正宣告變數才會分配記憶體。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p4_01_6f989d998190.wav",
+		"duration": 6.18,
+		"voiced": 5.04,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#4": {
+		"digest": "1bc7ff5b2a04",
+		"text": "另外大括號結尾的分號千萬不能漏掉，這是最常見的編譯錯誤。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p4_04_1bc7ff5b2a04.wav",
+		"duration": 5.92,
+		"voiced": 4.44,
+		"max_gap": 0.44,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#7": {
+		"digest": "25b8129617fd",
+		"text": "總結來說，善用 struct 打包資料，是邁向模組化設計最重要的一步。",
+		"wav": "FIXTURE/video_engine/out/c_struct/audio/p4_07_25b8129617fd.wav",
+		"duration": 5.68,
+		"voiced": 4.6,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	}
+}

@@ -1,0 +1,162 @@
+{
+	"p1#1": {
+		"digest": "0974e29023d7",
+		"text": "大家寫習慣 Python 之後，常常會直覺寫出 name 等於雙引號 Alice。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p1_01_0974e29023d7.wav",
+		"duration": 5.92,
+		"voiced": 4.8,
+		"max_gap": 0.44,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#3": {
+		"digest": "18502950dff9",
+		"text": "但是在 C 語言裡完全沒有字串型態，變數名稱其實只是字元陣列的記憶體起點。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p1_03_18502950dff9.wav",
+		"duration": 6.82,
+		"voiced": 5.76,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p1#7": {
+		"digest": "af6aec184d62",
+		"text": "如果直接用等號指定、或是長度少留一格，就會印出亂碼甚至當機。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p1_07_af6aec184d62.wav",
+		"duration": 5.5,
+		"voiced": 4.38,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p2#1": {
+		"digest": "288bbddd9da8",
+		"text": "在 C 語言裡，字串就是連續的字元陣列，但結尾一定要放一個反斜線零。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p2_01_288bbddd9da8.wav",
+		"duration": 7.6,
+		"voiced": 5.84,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p2#4": {
+		"digest": "ccdea5e9d3de",
+		"text": "這個反斜線零就像哨兵，少了它，處理字串的函式就會一路往後讀到亂碼。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p2_04_ccdea5e9d3de.wav",
+		"duration": 6.66,
+		"voiced": 5.42,
+		"max_gap": 0.42,
+		"tries": 2,
+		"accepted": true
+	},
+	"p2#7": {
+		"digest": "166d87cbf9d8",
+		"text": "所以要放五個字母的名字，陣列容量至少要宣告六格才裝得下。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p2_07_166d87cbf9d8.wav",
+		"duration": 5.97,
+		"voiced": 4.92,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#1": {
+		"digest": "4749558f3383",
+		"text": "延續剛剛的概念，陣列的容量是你在宣告時就決定的總格數。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p3_01_4749558f3383.wav",
+		"duration": 5.26,
+		"voiced": 4.4,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#4": {
+		"digest": "a02b5d6e853a",
+		"text": "而字串長度則是從開頭數到哨兵之前，實際放了幾個有效字元。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p3_04_a02b5d6e853a.wav",
+		"duration": 5.6,
+		"voiced": 4.84,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p3#6": {
+		"digest": "d43f65242796",
+		"text": "就算容量宣告了三十二格，放進五個字母時，長度依然只算五個字。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p3_06_d43f65242796.wav",
+		"duration": 6.2,
+		"voiced": 4.32,
+		"max_gap": 0.7,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#1": {
+		"digest": "9cbc4de03e37",
+		"text": "第五行我們先宣告三十二格的字元陣列，準備好足夠的空間。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p4_01_9cbc4de03e37.wav",
+		"duration": 5.1,
+		"voiced": 4.02,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#4": {
+		"digest": "beef549b9843",
+		"text": "第六行不能直接用等號，要呼叫字串複製函式，把名字寫進陣列裡。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p4_04_beef549b9843.wav",
+		"duration": 5.3,
+		"voiced": 4.34,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#7": {
+		"digest": "6fa949ecf3ea",
+		"text": "最後用計算長度函式量出五個字，並把字串與長度一起印出來。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p4_07_6fa949ecf3ea.wav",
+		"duration": 6.12,
+		"voiced": 4.9,
+		"max_gap": 0.54,
+		"tries": 1,
+		"accepted": true
+	},
+	"p4#9": {
+		"digest": "aa809218c674",
+		"text": "記得引入字串標頭檔，這些操作函式才能正常運作。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p4_09_aa809218c674.wav",
+		"duration": 5.84,
+		"voiced": 4.2,
+		"max_gap": 0.9,
+		"tries": 1,
+		"accepted": true
+	},
+	"p5#1": {
+		"digest": "3d6455c051db",
+		"text": "最後提醒大家，在 C 語言中不能用兩個等號比較字串，因為比到的只是記憶體位址。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p5_01_3d6455c051db.wav",
+		"duration": 6.76,
+		"voiced": 5.6,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	},
+	"p5#4": {
+		"digest": "7afa1d25c375",
+		"text": "兩塊記憶體位址不同永遠不相等，比對內容請一律使用字串比較函式。",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p5_04_7afa1d25c375.wav",
+		"duration": 6.52,
+		"voiced": 4.94,
+		"max_gap": 0.56,
+		"tries": 1,
+		"accepted": true
+	},
+	"p5#7": {
+		"digest": "21f705e2ad91",
+		"text": "牢記宣告時多留一格給結束字元，並交給標準函式處理，字串操作就不會踩雷了！",
+		"wav": "FIXTURE/video_engine/out/c_string/audio/p5_07_21f705e2ad91.wav",
+		"duration": 6.78,
+		"voiced": 5.48,
+		"max_gap": 0.0,
+		"tries": 1,
+		"accepted": true
+	}
+}
