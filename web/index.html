@@ -128,7 +128,7 @@
 		<!-- 畫面 3：審稿閘 -->
 		<section class="card hidden" id="screen-review">
 			<div class="countdown-banner"><div class="countdown-timer" id="countdown-clock">60</div><div class="countdown-verbatim">倒數歸零就直接繼續，沒有人反對視同確認</div></div>
-			<div id="review-validation-errors" class="alert-box hidden" style="margin-top: 0.75rem;"><div style="font-weight: 700;">講稿未通過驗證閘，請修正後重試（倒數已重設）：</div><ul id="review-error-list" style="padding-left: 1.25rem; font-size: 0.85rem;"></ul></div>
+			<div id="review-validation-errors" class="alert-box hidden" style="margin-top: 0.75rem;"><div style="font-weight: 700;" id="review-error-title">講稿未通過驗證閘，請修正後重試（倒數已重設）：</div><ul id="review-error-list" style="padding-left: 1.25rem; font-size: 0.85rem;"></ul></div>
 			<div id="script-segments-container" style="margin-top: 0.75rem;"></div>
 			<div class="action-bar"><button type="button" class="btn btn-secondary" id="btn-review-skip">維持原稿繼續</button><button type="button" class="btn btn-primary" id="btn-review-approve">確認講稿並繼續</button></div>
 		</section>
@@ -145,7 +145,7 @@
 
 		<!-- 畫面 5：失敗畫面 -->
 		<section class="card hidden" id="screen-failed">
-			<div class="alert-box"><h2 style="font-size: 1.15rem; font-weight: 700;" id="failed-title">工作執行失敗</h2><div id="failed-reason" style="font-weight: 600;"></div></div>
+			<div class="alert-box"><h2 style="font-size: 1.15rem; font-weight: 700;" id="failed-title">工作執行失敗</h2><div id="failed-reason" style="font-weight: 600; white-space: pre-line;"></div></div>
 			<div class="action-bar"><button type="button" class="btn btn-secondary" id="btn-failed-restart">返回上傳頁面</button></div>
 		</section>
 	</div>
@@ -164,7 +164,7 @@
 		];
 
 		/* 全域狀態管理 */
-		const state = { jobId: null, status: 'idle', pct: 0, currentStage: null, stageStatus: {}, eventSource: null, reviewDeadline: null, reviewTimer: null, originalSegments: [], notice: null, selectedFile: null };
+		const state = { jobId: null, status: 'idle', pct: 0, currentStage: null, stageStatus: {}, eventSource: null, reviewDeadline: null, reviewTimer: null, originalSegments: [], notice: null, selectedFile: null, reviewLoaded: false };
 
 		/* 初始化階段狀態 */
 		function initStageStatus() {
@@ -215,6 +215,10 @@
 				const titleEl = document.getElementById('running-stage-title');
 				const stObj = STAGES.find(function(s) { return s.id === ev.stage; });
 				if (titleEl && stObj) titleEl.textContent = '進行中：' + stObj.name + ' (' + ev.stage + ')';
+				if (ev.stage === 'synth') {
+					if (state.reviewTimer) { clearInterval(state.reviewTimer); state.reviewTimer = null; }
+					showScreen('screen-running');
+				}
 				updatePipelineView();
 			} else if (ev.event === 'stage_end') {
 				state.stageStatus[ev.stage] = 'done';
@@ -222,12 +226,11 @@
 			} else if (ev.event === 'stage_fail') {
 				state.stageStatus[ev.stage] = 'failed';
 				updatePipelineView();
-				handleJobFailed(ev.stage, '階段 ' + ev.stage + ' 執行失敗（錯誤碼 ' + (ev.code || '') + '）');
 			} else if (ev.event === 'state') {
 				state.status = ev.status;
 				if (ev.status === 'awaiting_review') openReviewScreen(ev.deadline);
 				else if (ev.status === 'done') openDoneScreen();
-				else if (ev.status === 'failed') handleJobFailed(ev.stage || state.currentStage || '系統', ev.error || '工作執行失敗');
+				else if (ev.status === 'failed') handleJobFailed(ev.stage || state.currentStage || '系統', ev.error || ('階段 ' + (ev.stage || state.currentStage || '系統') + ' 執行失敗'));
 				else if (ev.status === 'running') showScreen('screen-running');
 			}
 		}
@@ -235,6 +238,13 @@
 		/* 載入講稿並開啟審稿畫面 */
 		function openReviewScreen(deadline) {
 			showScreen('screen-review');
+			if (state.reviewLoaded) {
+				if (deadline) startReviewCountdown(deadline);
+				return;
+			}
+			state.reviewLoaded = true;
+			const errBox = document.getElementById('review-validation-errors');
+			if (errBox) errBox.classList.add('hidden');
 			fetch('/jobs/' + state.jobId + '/script')
 				.then(function(res) {
 					if (!res.ok) throw new Error('無法載入講稿');
@@ -348,6 +358,8 @@
 				} else if (result.status === 400) {
 					const errBox = document.getElementById('review-validation-errors');
 					const errList = document.getElementById('review-error-list');
+					const errTitle = document.getElementById('review-error-title');
+					if (errTitle) errTitle.textContent = '講稿未通過驗證閘，請修正後重試（倒數已重設）：';
 					if (errBox && errList) {
 						errList.innerHTML = '';
 						(result.data.errors || []).forEach(function(msg) {
@@ -361,12 +373,35 @@
 				} else if (result.status === 409) {
 					if (state.reviewTimer) clearInterval(state.reviewTimer);
 					showScreen('screen-running');
+				} else {
+					const errBox = document.getElementById('review-validation-errors');
+					const errList = document.getElementById('review-error-list');
+					const errTitle = document.getElementById('review-error-title');
+					if (errTitle) errTitle.textContent = '送出審查失敗：';
+					if (errBox && errList) {
+						errList.innerHTML = '';
+						const li = document.createElement('li');
+						li.textContent = (result.data && result.data.error) || '伺服器處理審查請求時發生錯誤';
+						errList.appendChild(li);
+						errBox.classList.remove('hidden');
+					}
 				}
 			})
 			.catch(function(err) {
 				if (btnApprove) btnApprove.disabled = false;
 				if (btnSkip) btnSkip.disabled = false;
 				console.error('審查核可請求失敗', err);
+				const errBox = document.getElementById('review-validation-errors');
+				const errList = document.getElementById('review-error-list');
+				const errTitle = document.getElementById('review-error-title');
+				if (errTitle) errTitle.textContent = '送出審查失敗：';
+				if (errBox && errList) {
+					errList.innerHTML = '';
+					const li = document.createElement('li');
+					li.textContent = '網路連線異常，審查請求未送達，請重試';
+					errList.appendChild(li);
+					errBox.classList.remove('hidden');
+				}
 			});
 		}
 
@@ -398,8 +433,9 @@
 			showScreen('screen-failed');
 			const titleEl = document.getElementById('failed-title');
 			const reasonEl = document.getElementById('failed-reason');
-			if (titleEl) titleEl.textContent = (stage || '管線') + ' 階段失敗';
-			if (reasonEl) reasonEl.textContent = errMsg || '生成過程發生錯誤';
+			const stageName = stage || state.currentStage || '管線';
+			if (titleEl) titleEl.textContent = stageName + ' 階段失敗';
+			if (reasonEl) reasonEl.textContent = errMsg || ('階段 ' + stageName + ' 執行失敗');
 		}
 
 		/* 重設狀態回初始畫面 */
@@ -407,6 +443,7 @@
 			if (state.eventSource) { state.eventSource.close(); state.eventSource = null; }
 			if (state.reviewTimer) { clearInterval(state.reviewTimer); state.reviewTimer = null; }
 			state.jobId = null; state.status = 'idle'; state.pct = 0; state.currentStage = null; state.notice = null; state.selectedFile = null;
+			state.reviewLoaded = false;
 			const fileInput = document.getElementById('file-input');
 			const fileDisplay = document.getElementById('selected-file-display');
 			const submitBtn = document.getElementById('btn-submit-upload');
@@ -474,6 +511,7 @@
 							if (result.status === 201) {
 								state.jobId = result.data.job_id;
 								state.status = 'running';
+								state.reviewLoaded = false;
 								initStageStatus();
 								showScreen('screen-running');
 								subscribeEvents(state.jobId);
