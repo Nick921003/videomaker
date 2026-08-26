@@ -14,21 +14,15 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont
 
+from layout import (
+	BULLET_MAX_W, BULLET_SIZE, BULLET_STEP, BULLET_Y0, CARD_PAD_X, CENTER_X,
+	CODE_BOX, CODE_X, CODE_Y0, CONTENT_BOX, FIG_CAPTION_H, FIG_GAP, FIG_MAX_W,
+	FIG_ROW_H, H, HEADER_BOX, SUB_Y, TITLE_Y, W, bullet_metrics, code_metrics,
+)
+
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
 THEME_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 DEFAULT_THEME = "warm"
-W, H = 1920, 1080
-
-HEADER_BOX = (80, 60, 1840, 200)
-CONTENT_BOX = (80, 240, 1840, 980)
-CODE_BOX = (130, 280, 1790, 940)
-
-TITLE_Y, SUB_Y = 80, 148
-BULLET_Y0, BULLET_STEP = 310, 120
-CENTER_X = W // 2
-BULLET_MAX_W = 1650
-CODE_X, CODE_Y0, CODE_STEP = 170, 310, 42
-CODE_SIZE = 28
 
 
 def rgb(hex_str):
@@ -83,16 +77,6 @@ def fit_font(draw, text, path, size, max_w, floor=24):
 	return ImageFont.truetype(path, floor)
 
 
-def code_metrics(n):
-	"""依行數決定行距與字級，保證 n 行一定關得進 CODE_BOX。
-
-	prompt 允許 8–16 行，但固定 42px 行距在 15 行就剛好貼齊底線、16 行溢出 42px——
-	差一行就爆版。15 行以內回傳原本的 42／28，既有教材的輸出逐像素不變
-	"""
-	step = min(CODE_STEP, (CODE_BOX[3] - CODE_Y0) // max(1, n))
-	return step, max(12, min(CODE_SIZE, round(step * CODE_SIZE / CODE_STEP)))
-
-
 def code_color(line, th):
 	if line.startswith("#"):
 		return th["code"]["preproc"]
@@ -111,12 +95,6 @@ def draw_centered(targets, measure, text, y, font, color):
 	for d in targets:
 		d.text((CENTER_X, y), text, font=font, fill=color, anchor="ma")
 	return ink_box(measure, (CENTER_X, y), text, font, anchor="ma")
-
-
-FIG_MAX_W = 1560
-FIG_ROW_H = 104
-FIG_GAP = 26
-FIG_CAPTION_H = 46
 
 
 def fig_height(el):
