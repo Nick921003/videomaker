@@ -31,11 +31,42 @@ MATERIALS = os.path.join(HERE, "video_engine/materials")
 OUT = os.path.join(HERE, "video_engine/out")
 WEB = os.path.join(HERE, "web")
 MAX_UPLOAD = 5 * 1024 * 1024
+CHUNK = 256 * 1024
 TTS_URL = os.environ.get("TTS_API_URL", "http://127.0.0.1:9880")
 
 _lock = threading.Lock()
 _job = None          # 同時只有一個
 _job_id = 0
+
+
+class BadRange(Exception):
+	"""Range 指到檔案外面，得回 416"""
+
+
+def parse_range(header, size):
+	"""解析 Range: bytes=... 回傳閉區間 (start, end)。
+
+	沒帶或格式壞掉回 None（照 RFC 9110 當成整支要）；指到檔案外面丟 BadRange。
+	只認第一個區間——瀏覽器拉進度條送的就是單一區間
+	"""
+	if not header or not header.startswith("bytes="):
+		return None
+	first, sep, last = header[len("bytes="):].split(",")[0].strip().partition("-")
+	if not sep:
+		return None
+	try:
+		if first:
+			start, end = int(first), int(last) if last else size - 1
+		elif last:
+			start, end = max(0, size - int(last)), size - 1      # bytes=-500：最後 500 個位元組
+		else:
+			return None
+	except ValueError:
+		return None
+	end = min(end, size - 1)
+	if start > end or start >= size:
+		raise BadRange(header)
+	return start, end
 
 
 def allowed(name):
@@ -183,25 +214,89 @@ class Handler(BaseHTTPRequestHandler):
 		self._send(code, json.dumps(obj, ensure_ascii=False).encode("utf-8"))
 
 	def do_GET(self):
-		if self.path == "/":
+		path, _, query = self.path.partition("?")
+		if path == "/":
 			with open(os.path.join(WEB, "index.html"), "rb") as f:
 				html = f.read()
 			return self._send(200, html, "text/html; charset=utf-8")
-		if self.path.endswith("/events"):
+		if path.endswith("/events"):
 			return self._events()
-		if self.path.endswith("/script"):
+		if path.endswith("/script"):
 			# 只有進審稿階段才有 actions_path，早打會拿 None 去開檔案
 			if not _job or _job.status != "awaiting_review":
 				return self._json(409, {"error": "現在不在審稿階段"})
 			return self._json(200, {"segments": read_segments(_job.actions_path),
 				"deadline": _job.review_deadline})
-		if self.path.endswith("/video"):
+		if "/slide/" in path:
+			return self._slide(path.rsplit("/slide/", 1)[1])
+		if path.endswith("/video"):
 			if not _job or _job.status != "done":
 				return self._json(404, {"error": "影片還沒好"})
-			with open(_job.video_path, "rb") as f:
-				data = f.read()
-			return self._send(200, data, "video/mp4")
+			return self._video(_job.video_path, "dl=1" in query)
 		self._json(404, {"error": "找不到"})
+
+	def _slide(self, slide_id):
+		"""把該頁已繪製的投影片端出去。
+
+		審稿的人看不到頁面長什麼樣就只能盲改稿——投影片在 slides 階段就畫好了，
+		那一階段排在審稿閘之前，所以進審稿畫面時圖一定在
+		"""
+		if not _job or not _job.layout_path or not os.path.exists(_job.layout_path):
+			return self._json(404, {"error": "投影片還沒繪製"})
+		with open(_job.layout_path, encoding="utf-8") as f:
+			ids = [s["slide_id"] for s in json.load(f)["slides"]]
+		if slide_id not in ids:
+			return self._json(404, {"error": f"沒有這一頁：{slide_id}"})
+		# 檔名照 render_slides 的生成規則自己算，不採用 layout.json 存的絕對路徑：
+		# 那是產生當下那台機器的路徑，搬過目錄或換一台機器就指到不存在的檔案。
+		# 自己算也順便杜絕了 slide_id 夾路徑元素的可能
+		png = os.path.join(os.path.dirname(_job.layout_path),
+			f"slide_{ids.index(slide_id) + 1:02d}_full.png")
+		if not os.path.exists(png):
+			return self._json(404, {"error": "投影片圖不見了"})
+		with open(png, "rb") as f:
+			return self._send(200, f.read(), "image/png")
+
+	def _video(self, path, as_download):
+		"""帶 Range 的影片回應。
+
+		瀏覽器的 <video> 只要沒收到 Accept-Ranges: bytes 就直接停用拖曳進度條——
+		舊版整支檔案一次回 200，所以片子放得出來、但進度條點不動。
+		拖曳時瀏覽器會大量中止請求，寫到一半斷線是正常現象，不能噴 traceback
+		"""
+		size = os.path.getsize(path)
+		try:
+			rng = parse_range(self.headers.get("Range"), size)
+		except BadRange:
+			self.send_response(416)
+			self.send_header("Content-Range", f"bytes */{size}")
+			self.send_header("Content-Length", "0")
+			self.end_headers()
+			return
+		start, end = rng if rng else (0, size - 1)
+		self.send_response(206 if rng else 200)
+		self.send_header("Content-Type", "video/mp4")
+		self.send_header("Accept-Ranges", "bytes")
+		self.send_header("Content-Length", str(end - start + 1))
+		if rng:
+			self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+		# inline 也要給 filename：<a download> 沒帶檔名時瀏覽器拿網址最後一段命名，
+		# 會存成沒有副檔名的 "video"
+		self.send_header("Content-Disposition",
+			f'{"attachment" if as_download else "inline"}; filename="{os.path.basename(path)}"')
+		self.end_headers()
+		remain = end - start + 1
+		try:
+			with open(path, "rb") as f:
+				f.seek(start)
+				while remain > 0:
+					chunk = f.read(min(CHUNK, remain))
+					if not chunk:
+						break
+					self.wfile.write(chunk)
+					remain -= len(chunk)
+		except (BrokenPipeError, ConnectionResetError, OSError):
+			pass      # 拖曳進度條就是不斷中止舊請求，安靜收工
 
 	def _events(self):
 		"""SSE：把 job 的事件與進度推給前端"""

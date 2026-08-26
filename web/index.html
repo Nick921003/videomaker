@@ -25,6 +25,7 @@
 		h1 { font-size: 1.75rem; color: var(--text-primary); font-weight: 700; margin-bottom: 0.25rem; }
 		.subtitle { color: var(--text-secondary); font-size: 0.9rem; }
 		.card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 1.25rem; }
+		.slide-preview { width: 100%; display: block; border-radius: 8px; border: 1px solid var(--border-card); margin: 0.5rem 0 0.25rem; background: var(--bg-editor); }
 		.progress-bar-track { background: var(--bg-editor); border: 1px solid var(--border-card); border-radius: 999px; height: 10px; overflow: hidden; margin: 0.75rem 0; }
 		.progress-bar-fill { background: var(--accent); height: 100%; width: 0%; transition: width 0.4s ease; }
 		.pipeline-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary); }
@@ -278,12 +279,19 @@
 				titleEl.className = 'slide-title';
 				titleEl.textContent = '投影片 ' + (idx + 1) + ' (' + slideId + ')';
 				groupEl.appendChild(titleEl);
-				grouped[slideId].forEach(function(seg) {
+				/* 看得到頁面才改得動稿。圖在 slides 階段就畫好了，該階段排在審稿閘之前 */
+				const previewEl = document.createElement('img');
+				previewEl.className = 'slide-preview';
+				previewEl.alt = '投影片 ' + (idx + 1) + ' 預覽';
+				previewEl.src = '/jobs/' + state.jobId + '/slide/' + encodeURIComponent(slideId);
+				previewEl.addEventListener('error', function() { previewEl.remove(); });
+				groupEl.appendChild(previewEl);
+				grouped[slideId].forEach(function(seg, segOrder) {
 					const itemEl = document.createElement('div');
 					itemEl.style.cssText = 'display:flex; flex-direction:column; gap:0.25rem; margin-top:0.4rem;';
 					const labelEl = document.createElement('div');
 					labelEl.style.cssText = 'font-size:0.75rem; color:var(--text-secondary);';
-					labelEl.textContent = '旁白段落 #' + (seg.idx + 1);
+					labelEl.textContent = '旁白段落 #' + (segOrder + 1);
 					const textarea = document.createElement('textarea');
 					textarea.className = 'script-textarea';
 					textarea.value = seg.text;
@@ -415,7 +423,7 @@
 			const noticeBox = document.getElementById('done-notice');
 			const videoUrl = '/jobs/' + state.jobId + '/video';
 			if (videoPlayer) { videoPlayer.src = videoUrl; videoPlayer.load(); }
-			if (downloadBtn) downloadBtn.href = videoUrl;
+			if (downloadBtn) downloadBtn.href = videoUrl + '?dl=1';
 			if (noticeBox) {
 				if (state.notice) {
 					noticeBox.textContent = state.notice;

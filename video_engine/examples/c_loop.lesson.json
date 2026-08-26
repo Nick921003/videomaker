@@ -1,0 +1,243 @@
+{
+	"lesson_id": "c_loop",
+	"title": "C 語言迴圈基礎",
+	"slides": [
+		{
+			"id": "p1",
+			"role": "hook",
+			"note": "強調兩個坑都不是語法錯誤，編譯器抓不到，只有結果會告訴你。",
+			"elements": [
+				{
+					"id": "p1_title",
+					"type": "title",
+					"text": "迴圈為什麼常常算錯"
+				},
+				{
+					"id": "p1_sub",
+					"type": "subtitle",
+					"text": "從一加到一百的兩個坑說起"
+				},
+				{
+					"id": "p1_a",
+					"type": "bullet",
+					"text": "手寫一百行加法，沒有人受得了"
+				},
+				{
+					"id": "p1_b",
+					"type": "bullet",
+					"text": "改用迴圈後，答案常常差一點點",
+					"hidden": true
+				},
+				{
+					"id": "p1_c",
+					"type": "callout",
+					"text": "編譯器不會報錯，只有結果會告訴你",
+					"hidden": true
+				},
+				{
+					"id": "p1_fig",
+					"type": "figure",
+					"kind": "compare",
+					"left": {
+						"title": "差一錯誤",
+						"items": [
+							"少加最後一個",
+							"多加不該加的"
+						]
+					},
+					"right": {
+						"title": "無窮迴圈",
+						"items": [
+							"程式停不下來",
+							"只能 Ctrl 加 C"
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "p2",
+			"role": "concept",
+			"note": "重點是三件事的拆解，以及中間那個是繼續條件不是結束條件。",
+			"elements": [
+				{
+					"id": "p2_title",
+					"type": "title",
+					"text": "迴圈只有三件事"
+				},
+				{
+					"id": "p2_sub",
+					"type": "subtitle",
+					"text": "從哪開始、何時繼續、每輪怎麼變"
+				},
+				{
+					"id": "p2_a",
+					"type": "bullet",
+					"text": "for 把三件事寫在同一行，次數已知時好用"
+				},
+				{
+					"id": "p2_b",
+					"type": "bullet",
+					"text": "while 把三件事拆開，適合次數事先不知道",
+					"hidden": true
+				},
+				{
+					"id": "p2_c",
+					"type": "callout",
+					"text": "中間那個是繼續的條件，不是結束的條件",
+					"hidden": true
+				},
+				{
+					"id": "p2_fig",
+					"type": "figure",
+					"kind": "boxes",
+					"items": [
+						"起始",
+						"繼續條件",
+						"每輪的變化"
+					],
+					"left": {},
+					"right": {}
+				}
+			]
+		},
+		{
+			"id": "p3",
+			"role": "walkthrough",
+			"note": "依四步走讀：宣告與歸零、迴圈三段、主體累加、印出結果。特別點出累加器歸零與 sum += i。",
+			"elements": [
+				{
+					"id": "p3_title",
+					"type": "title",
+					"text": "一加到五的完整程式"
+				},
+				{
+					"id": "p3_sub",
+					"type": "subtitle",
+					"text": "四步走讀 for 迴圈"
+				},
+				{
+					"id": "p3_code",
+					"type": "code",
+					"lang": "c",
+					"lines": [
+						"#include <stdio.h>",
+						"",
+						"int main() {",
+						"    int n = 5, sum = 0;",
+						"    for (int i = 1; i <= n; i++) {",
+						"        sum += i;",
+						"    }",
+						"    printf(\"1 加到 %d 等於 %d\\n\", n, sum);",
+						"    return 0;",
+						"}"
+					]
+				}
+			]
+		},
+		{
+			"id": "p4",
+			"role": "concept",
+			"note": "對照兩種情境：加到五要用小於等於，走訪長度五的陣列要用小於。",
+			"elements": [
+				{
+					"id": "p4_title",
+					"type": "title",
+					"text": "為什麼這裡是小於等於"
+				},
+				{
+					"id": "p4_sub",
+					"type": "subtitle",
+					"text": "同一個符號，兩種情境不一樣"
+				},
+				{
+					"id": "p4_a",
+					"type": "bullet",
+					"text": "要從一加到五，五本身要算進去"
+				},
+				{
+					"id": "p4_b",
+					"type": "bullet",
+					"text": "走訪長度五的陣列，索引零到四",
+					"hidden": true
+				},
+				{
+					"id": "p4_c",
+					"type": "callout",
+					"text": "這正是差一錯誤最常見的來源",
+					"hidden": true
+				},
+				{
+					"id": "p4_fig",
+					"type": "figure",
+					"kind": "compare",
+					"left": {
+						"title": "加到 n",
+						"items": [
+							"i = 1 開始",
+							"i <= n"
+						]
+					},
+					"right": {
+						"title": "走訪陣列",
+						"items": [
+							"i = 0 開始",
+							"i < n"
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "p5",
+			"role": "pitfall",
+			"note": "收在無窮迴圈的成因，並回扣次數已知時優先用 for 的理由。",
+			"elements": [
+				{
+					"id": "p5_title",
+					"type": "title",
+					"text": "無窮迴圈與收尾"
+				},
+				{
+					"id": "p5_sub",
+					"type": "subtitle",
+					"text": "忘記更新，條件就永遠成立"
+				},
+				{
+					"id": "p5_a",
+					"type": "bullet",
+					"text": "while 忘了在主體更新條件變數，程式停不下來"
+				},
+				{
+					"id": "p5_b",
+					"type": "bullet",
+					"text": "累加器不歸零，裡面是垃圾值",
+					"hidden": true
+				},
+				{
+					"id": "p5_c",
+					"type": "callout",
+					"text": "次數已知就用 for，更新寫在括號裡不易漏",
+					"hidden": true
+				},
+				{
+					"id": "p5_fig",
+					"type": "figure",
+					"kind": "steps",
+					"items": [
+						"確認起點",
+						"寫繼續條件",
+						"確保會更新",
+						"驗證結果"
+					]
+				}
+			]
+		}
+	],
+	"voice": {
+		"model": "wang_teacher_v3",
+		"speed_factor": 0.95,
+		"text_lang": "zh",
+		"text_split_method": "cut5"
+	}
+}

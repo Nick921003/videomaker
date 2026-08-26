@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import shutil
 import sys
 import threading
 import time
@@ -255,6 +256,158 @@ class TestDrainBody(unittest.TestCase):
 
 		self.assertEqual(handler.responses[0][0], 413)
 		self.assertEqual(handler.rfile.read(), b"", "body 沒讀完的話，收尾關連線會送出 RST")
+
+
+class TestParseRange(unittest.TestCase):
+	def test_一般區間(self):
+		self.assertEqual(serve.parse_range("bytes=0-99", 1000), (0, 99))
+
+	def test_開放結尾要補到檔尾(self):
+		self.assertEqual(serve.parse_range("bytes=500-", 1000), (500, 999))
+
+	def test_倒數區間(self):
+		# bytes=-500 是「最後 500 個位元組」，不是「從 -500 開始」。
+		# 瀏覽器讀 moov 在檔尾的 mp4 時送的就是這種
+		self.assertEqual(serve.parse_range("bytes=-500", 1000), (500, 999))
+
+	def test_超出檔尾要夾回來(self):
+		self.assertEqual(serve.parse_range("bytes=900-99999", 1000), (900, 999))
+
+	def test_沒帶或格式壞掉一律回_None(self):
+		for h in (None, "", "items=0-9", "bytes=abc-def", "bytes=xyz"):
+			self.assertIsNone(serve.parse_range(h, 1000), h)
+
+	def test_指到檔案外面要丟_BadRange(self):
+		with self.assertRaises(serve.BadRange):
+			serve.parse_range("bytes=1000-1200", 1000)
+
+
+class TestVideoRange(unittest.TestCase):
+	"""瀏覽器的 <video> 沒收到 Accept-Ranges: bytes 就直接停用拖曳進度條。
+	這組測試走真的 HTTP，因為壞掉的正是 header 層"""
+
+	def setUp(self):
+		import http.client
+		import tempfile
+		from jobstate import Job
+
+		self.blob = bytes(range(256)) * 40         # 10240 個位元組，內容可驗
+		fd, self.mp4 = tempfile.mkstemp(suffix=".mp4")
+		with os.fdopen(fd, "wb") as f:
+			f.write(self.blob)
+		self.addCleanup(_rm, self.mp4)
+
+		job = Job("m.md", "/tmp/out", None, lambda a, b: iter(()))
+		job.status = "done"
+		job.video_path = self.mp4
+		old_job = serve._job
+		serve._job = job
+		self.addCleanup(setattr, serve, "_job", old_job)
+
+		self.srv = serve.make_server(0)            # 0 = 讓 OS 挑沒被佔用的埠
+		self.addCleanup(self.srv.server_close)
+		threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+		self.addCleanup(self.srv.shutdown)
+		self.port = self.srv.server_address[1]
+		self._conn = http.client.HTTPConnection
+
+	def _get(self, path, headers=None):
+		c = self._conn("127.0.0.1", self.port, timeout=5)
+		try:
+			c.request("GET", path, headers=headers or {})
+			r = c.getresponse()
+			return r.status, dict(r.getheaders()), r.read()
+		finally:
+			c.close()
+
+	def test_整支要_也要宣告支援_Range(self):
+		status, h, body = self._get("/jobs/1/video")
+		self.assertEqual(status, 200)
+		self.assertEqual(h.get("Accept-Ranges"), "bytes",
+			"少了這個 header，Chrome 就把進度條變成不能拖")
+		self.assertEqual(body, self.blob)
+
+	def test_帶_Range_要回_206_且只給那一段(self):
+		status, h, body = self._get("/jobs/1/video", {"Range": "bytes=100-199"})
+		self.assertEqual(status, 206)
+		self.assertEqual(h.get("Content-Range"), f"bytes 100-199/{len(self.blob)}")
+		self.assertEqual(h.get("Content-Length"), "100")
+		self.assertEqual(body, self.blob[100:200])
+
+	def test_倒數區間_讀檔尾的_moov(self):
+		status, h, body = self._get("/jobs/1/video", {"Range": "bytes=-64"})
+		self.assertEqual(status, 206)
+		self.assertEqual(body, self.blob[-64:])
+
+	def test_要不到的區間回_416(self):
+		status, h, body = self._get("/jobs/1/video", {"Range": "bytes=99999-"})
+		self.assertEqual(status, 416)
+		self.assertEqual(h.get("Content-Range"), f"bytes */{len(self.blob)}")
+
+	def test_下載旗標才給_attachment_而且要帶檔名(self):
+		# <a download> 自己沒帶檔名時，瀏覽器拿網址最後一段命名，
+		# 會存成沒有副檔名的 "video"
+		name = os.path.basename(self.mp4)
+		_, h, _ = self._get("/jobs/1/video?dl=1")
+		self.assertEqual(h.get("Content-Disposition"), f'attachment; filename="{name}"')
+		_, h, _ = self._get("/jobs/1/video")
+		self.assertEqual(h.get("Content-Disposition"), f'inline; filename="{name}"')
+
+
+class TestSlidePreview(unittest.TestCase):
+	"""審稿的人看不到投影片就只能盲改稿"""
+
+	def setUp(self):
+		import http.client
+		import tempfile
+		from jobstate import Job
+
+		self.dir = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, self.dir, True)
+		with open(os.path.join(self.dir, "layout.json"), "w", encoding="utf-8") as f:
+			json.dump({"slides": [{"slide_id": "p1"}, {"slide_id": "p2"}]}, f)
+		for i, blob in ((1, b"PNG-p1"), (2, b"PNG-p2")):
+			with open(os.path.join(self.dir, f"slide_{i:02d}_full.png"), "wb") as f:
+				f.write(blob)
+
+		job = Job("m.md", "/tmp/out", None, lambda a, b: iter(()))
+		job.status = "awaiting_review"
+		job.layout_path = os.path.join(self.dir, "layout.json")
+		old_job = serve._job
+		serve._job = job
+		self.addCleanup(setattr, serve, "_job", old_job)
+
+		self.srv = serve.make_server(0)
+		self.addCleanup(self.srv.server_close)
+		threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+		self.addCleanup(self.srv.shutdown)
+		self.port = self.srv.server_address[1]
+		self._conn = http.client.HTTPConnection
+
+	def _get(self, path):
+		c = self._conn("127.0.0.1", self.port, timeout=5)
+		try:
+			c.request("GET", path)
+			r = c.getresponse()
+			return r.status, dict(r.getheaders()), r.read()
+		finally:
+			c.close()
+
+	def test_依_slide_id_取到對應那一頁(self):
+		status, h, body = self._get("/jobs/1/slide/p2")
+		self.assertEqual(status, 200)
+		self.assertEqual(h.get("Content-Type"), "image/png")
+		self.assertEqual(body, b"PNG-p2", "第二頁要對到 slide_02_full.png")
+
+	def test_沒有的頁回_404(self):
+		status, _, _ = self._get("/jobs/1/slide/p9")
+		self.assertEqual(status, 404)
+
+	def test_slide_id_夾路徑元素也偷不到檔案(self):
+		# 檔名是照 layout.json 的順序自己算出來的，不是把 slide_id 拼進路徑，
+		# 所以這種請求只會落在「查不到這個 id」而不是讀到別的檔
+		status, _, _ = self._get("/jobs/1/slide/..%2F..%2F..%2Fetc%2Fpasswd")
+		self.assertEqual(status, 404)
 
 
 if __name__ == "__main__":

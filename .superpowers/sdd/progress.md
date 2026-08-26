@@ -28,3 +28,72 @@ Task 6: complete (commits 49cfdfa..8b7e741, review clean — spec ✅，3 Import
   - temp 目錄沒清理（違反計畫自訂的約束）
   Minor（留給最終審查）：
   - write_segments 對 slide_id/idx 對不上的 segment 靜默略過，呼叫端無從得知
+Task 7: complete (commits f853122..81a3cad, review clean — spec ✅ Approved，2 Important + 3 Minor 全修)
+  Important 已修：
+  - 三個背景執行緒目標無例外防護，炸掉會讓 status 永遠停在 running → 之後每個上傳吃 409，整台停擺。
+    加 _guard 把失敗寫回 job，紅綠已驗
+  - 測試清理在斷言之後才做，斷言失敗就留垃圾檔 → 改 addCleanup
+  Minor 已修：tts_ready 回應未關閉、has_backup 只寫不讀、_approve 未走 job.clock()
+  Minor（留給最終審查）：
+  - real_runner 實作簽章 (material, sec) 與 brief 文字 (material, out_dir, sec) 不一致（功能無害，out_dir 由 run.py 自算）
+  - test_計時器不可在持鎖狀態下同步跑管線 用字串比對驗結構，技法脆弱（brief 自帶）
+Task 8: complete (commit 65e9ff7，AGY 交付 + Claude 收件檢查與邏輯驗證；視覺待使用者確認)
+  七項驗收我自己重跑全過：零純白純黑、零外部資源、倒數警語在、EventSource onerror 有、
+  零空格縮排、八個階段 id 齊、五個端點齊，且引擎檔案未被動
+  Minor（留給最終審查／使用者）：
+  - queued 狀態未處理（job 剛建立那一瞬間）
+  - 倒數用瀏覽器 Date.now() 對比伺服器 deadline，跨機時鐘偏移會失準（本機 demo 無影響）
+Task 9: complete (commits 3e01b8b..8a6a123 + E2E 路徑修正，controller-verified)
+  修掉三個計畫缺陷：
+  - E2E 用舊 fixture 簽章，照原樣跑會在建檔時炸
+  - 回歸檢查 | grep; echo $? 取的是 grep 退出碼且只 pipe stdout → 崩潰時偽裝成通過。
+    改成真的 unittest，紅綠已驗
+  - E2E 硬寫衍生路徑，lesson_id_for 剝底線導致找不到產出（產品是對的，測試錯）
+  付費 E2E 實跑通過：pptx → mp4，1920x1080 h264+aac 57 秒，89.7 秒跑完，清理無孤兒
+全部 9 個 Task 完成。43 個測試（1 個付費 E2E 預設 skip）。
+
+=== 最終全分支審查（opus）完成 ===
+判定：Fix first。6 個 Important 全修 + 2 個被升級的 carried-forward。
+已修：
+- real_runner 扔掉所有 stderr 診斷（spec 第 168 行明文要求，規格→計畫就掉了）
+- 重驗退回會洗掉操作者剛改好的講稿（審稿閘唯一的錯誤恢復路徑摧毀恢復所需的上下文）
+- _approve 的同步段沒被 _guard 保護，例外會讓服務永久卡死
+- 錯誤回應不排空 request body，大檔上傳時 503/409 訊息可能到不了瀏覽器
+- E2E 漏清 examples/*.json 兩個孤兒（examples/ 不在 gitignore 內）
+- test_regression 依賴 gitignore 的本機產物，全新 clone 會 ERROR → 改 skipUnless
+- jobstate.resume() 無前置檢查（approve() 護欄只有測試在用，生產走旁邊）
+- test_serve 用原始碼字串斷言結構，是一則無法失敗的測試 → 改行為測試，紅綠已驗
+
+接受為技術債（審查已逐項裁定，未修）：
+- 衍生路徑佈局在 5 處各自重新編碼（建議日後收斂成 ingest.artifact_paths）
+- stage_fail 後 Popen 未 kill（目前 run.py 自己會死，但不變量守在 Job 而非子行程）
+- serve.py 依賴 urllib.request 的匯入副作用取得 urllib.error
+- SSE catch 的 OSError 過寬，會吞掉區塊內任何 OSError
+- STAGES[].weight 是死資料，且 HTML 標記另有第三份百分比副本
+- 被拒絕的上傳會在 materials/ 留下孤兒
+- 內嵌 <video> 播放器超出 spec 的 YAGNI 清單（唯一一處越界）
+- spec 的 SSE payload 契約已過時，應回填
+- next_free 序號空隙、event(event=) 命名、狀態字串無中心宣告、四個方法缺 docstring
+
+=========================================================
+第二輪：技術債處理
+計畫：docs/superpowers/plans/2026-08-26-tech-debt.md
+分支：feat/demo-frontend（延續，起點 94730fb）
+債 Task 1: complete (commit 5049a5a, controller-verified)
+  子行程生命週期：spawn/reap/kill_children/shutdown。real_runner 的迴圈包進 try/finally，
+  generator 被丟棄時靠 finally 收掉子行程；serve_forever 加收尾。
+  紅綠已驗（kill_children 換成 0 → test_shutdown 變紅 AssertionError: 0 != 1）
+  實作者兩處偏離皆正確：reap 補 p.stderr.close()、測試補 addCleanup(srv.server_close)
+  53 個測試，無 sleep 孤兒殘留
+債 Task 2: complete (commit 25f77de, controller-verified)
+  回歸測試改讀 tests/fixtures/regression/ 的委交 fixture，skipUnless 全移除，兩則現在真的跑。
+  紅綠已驗（關掉 settle_starts → 兩則都紅並印出「settle_starts 沒排開」）
+  過程中擋下一次真實洩漏：c_struct/durations.json 有 16 筆指向 /home/pjw92/projects/GPT-SoVITS，
+  scrub() 只剝本專案 ROOT 認不得跨專案殘留。實作者依指示停下回報而非手改 JSON，
+  改的是產生器不是資料——否則下次重跑又會洩漏一次
+  已對 git blob（非工作區）逐檔查證：四個 fixture 零絕對路徑
+債 Task 3: complete (controller 直接執行——前一個 agent 因 session limit 中斷且未留下改動)
+  SSE 契約逐欄對著 serve.py 核實後改寫（初版 spec 的 msg 欄位根本不存在）
+  內嵌播放器移出 YAGNI 並記下翻轉理由與代價
+  新增「刻意不處理的技術債」節：9 項拒絕理由 + 2 個被推翻的論斷
+技術債三個 Task 全部完成。53 個測試。

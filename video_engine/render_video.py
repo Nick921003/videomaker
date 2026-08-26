@@ -319,7 +319,9 @@ def main():
 		"-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(fps), "-i", "-",
 		"-i", master_wav,
 		"-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
-		"-c:a", "aac", "-b:a", "192k", "-shortest", out_mp4,
+		"-c:a", "aac", "-b:a", "192k", "-shortest",
+		# moov 預設寫在檔尾，瀏覽器得整支拉完才知道時長。搬到檔頭才串得動
+		"-movflags", "+faststart", out_mp4,
 	], stdin=subprocess.PIPE)
 
 	print(f"渲染 {total_frames} 格 @ {fps}fps…")

@@ -39,6 +39,7 @@ class Job:
 		self.actions_path = None
 		self.actions_backup = None
 		self.lesson_path = None
+		self.layout_path = None
 		self.video_path = None
 		self.retried = False
 		self.notice = None
@@ -77,6 +78,7 @@ class Job:
 		self.lesson_path = os.path.join(base, "examples", f"{stem}.lesson.json")
 		self.actions_path = os.path.join(base, "examples", f"{stem}.actions.json")
 		self.actions_backup = self.actions_path + ".orig"
+		self.layout_path = os.path.join(self.out_dir, stem, "layout.json")
 		self.video_path = os.path.join(self.out_dir, stem, f"{stem}.mp4")
 		# 上一輪跑剩的 .orig 一定要清掉。留著的話，這一輪若用「檔案已存在就不備份」
 		# 的判斷會跳過備份，之後還原會把上一次的舊講稿蓋回來——而且是靜默的

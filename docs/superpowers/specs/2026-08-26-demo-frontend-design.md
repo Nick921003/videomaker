@@ -274,3 +274,20 @@ AGY 實作 HTML/CSS，Claude 驗邏輯，視覺交使用者確認。
 
 - 「SSE 的 `try` 只包 `wfile.write`」——**錯**，包住整個內層區塊含 `while` 迴圈
 - 「需要加 `allow_reuse_address = True`」——**錯**，`http.server.HTTPServer` 預設就是 `1`，沒有 TIME_WAIT 問題
+
+---
+
+## 2026-08-26 後續修正：現場實測回饋
+
+首次真人操作（`c_loop.md`）暴露四個問題，全部已修（commit 待補 hash）：
+
+| 問題 | 根因 | 修法 |
+| --- | --- | --- |
+| 影片進度條拖不動 | `/video` 整支回 200，不理 `Range`、不送 `Accept-Ranges`。瀏覽器沒看到該 header 就停用拖曳 | `serve.py` 新增 `parse_range()` 與 `_video()`，支援 206／416，分塊送出 |
+| 同上（次要成因） | ffmpeg 沒下 `-movflags +faststart`，`moov` 寫在檔尾，實測 atom 順序 `ftyp → free → mdat → moov` | `render_video.py` 加上該旗標，實測後變為 `ftyp → moov → free → mdat` |
+| 審稿頁只有講稿、看不到投影片，等於盲改 | **spec 的漏洞**：只設想「講稿要能改」，沒設想「改的人得看得到那一頁」。圖其實早就有——`slides` 階段排在審稿閘之前 | 新增 `GET /jobs/N/slide/<slide_id>`，前端每頁塞一張 `slide_NN_full.png` |
+| 下載的檔案沒有副檔名 | 沒送 `Content-Disposition`，`<a download>` 只好拿網址最後一段命名，存成 `video` | 下載鈕改帶 `?dl=1`，伺服器據此回 `attachment; filename="<lesson_id>.mp4"`，一般播放仍為 `inline` |
+
+順帶修正：審稿頁的「旁白段落 #N」印的是**動作陣列索引**，畫面上會跳成 #2 / #5 / #8（中間夾著 spotlight、reveal）。改為該頁的旁白流水號。
+
+`/slide/` 端點刻意**不採用 `layout.json` 存的絕對路徑**，而是照 `render_slides.py` 的命名規則自行推算檔名——那些路徑是產生當下那台機器的，且同一個問題在 `durations.json` 已經咬過一次（見 memory `durations-json-cross-project-paths`）。自行推算也順帶杜絕了 `slide_id` 夾帶路徑元素的可能。

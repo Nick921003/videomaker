@@ -1,0 +1,199 @@
+{
+	"lesson_id": "c_loop",
+	"slides": [
+		{
+			"slide_id": "p1",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p1_a"
+				},
+				{
+					"type": "speech",
+					"text": "歡迎來到微課程。要從一加到一百，手寫一百行加法肯定沒有人受得了。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_b"
+				},
+				{
+					"type": "laser",
+					"target": "p1_fig:l1"
+				},
+				{
+					"type": "speech",
+					"text": "但改用迴圈後，又常常少加最後一次，或者多跑了一圈。"
+				},
+				{
+					"type": "laser",
+					"target": "p1_fig:r1"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_c"
+				},
+				{
+					"type": "speech",
+					"text": "甚至程式直接停不下來。最麻煩的是編譯器完全不會報錯，只有跑出來的結果會告訴你。"
+				}
+			]
+		},
+		{
+			"slide_id": "p2",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p2_fig:i1"
+				},
+				{
+					"type": "speech",
+					"text": "寫任何迴圈，其實都逃不出這三件事：從哪裡開始、每一輪怎麼變化。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_fig:i2"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_c"
+				},
+				{
+					"type": "speech",
+					"text": "最容易弄錯的是中間這項，它是要不要繼續的條件，不是停下來的條件。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_b"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_a"
+				},
+				{
+					"type": "speech",
+					"text": "搞懂這三件事，不論是寫 for 還是 while 迴圈，都不會再迷失方向。"
+				}
+			]
+		},
+		{
+			"slide_id": "p3",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p3_code:L4"
+				},
+				{
+					"type": "speech",
+					"text": "首先看第四行，宣告上限為五，並把累加變數歸零，避免抓到記憶體殘留值。"
+				},
+				{
+					"type": "camera",
+					"target": "p3_code:L5-L7",
+					"scale": 1.2
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L5"
+				},
+				{
+					"type": "speech",
+					"text": "接著第五行，計數器從一開始，只要小於等於五就持續執行迴圈。"
+				},
+				{
+					"type": "laser",
+					"target": "p3_code:L6"
+				},
+				{
+					"type": "speech",
+					"text": "第六行每次把數值累加進去，跑完五輪後便會跳出迴圈。"
+				},
+				{
+					"type": "camera",
+					"reset": true
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L8"
+				},
+				{
+					"type": "speech",
+					"text": "最後在第八行印出結果，完成整個累加運算。"
+				}
+			]
+		},
+		{
+			"slide_id": "p4",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p4_fig:l2"
+				},
+				{
+					"type": "speech",
+					"text": "大家常常疑惑條件要寫小於還是小於等於。如果要加到五，因為五本身也要算進去，所以條件要寫小於等於。"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_b"
+				},
+				{
+					"type": "spotlight",
+					"target": "p4_fig:r2"
+				},
+				{
+					"type": "speech",
+					"text": "但是走訪長度為五的陣列時，索引是從零算到四，條件就必須改寫成小於五。"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_c"
+				},
+				{
+					"type": "speech",
+					"text": "邊界條件只要差了一點點，就會引發經典的差一錯誤，寫條件時一定要看清起點。"
+				}
+			]
+		},
+		{
+			"slide_id": "p5",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p5_a"
+				},
+				{
+					"type": "laser",
+					"target": "p5_fig:i3"
+				},
+				{
+					"type": "speech",
+					"text": "初學者最常踩的雷，就是寫 while 卻忘了更新變數，導致條件永遠成立而停不下來。"
+				},
+				{
+					"type": "reveal",
+					"target": "p5_b"
+				},
+				{
+					"type": "spotlight",
+					"target": "p5_b"
+				},
+				{
+					"type": "speech",
+					"text": "另外也要記得把累加變數歸零，才不會算進殘留的垃圾值。"
+				},
+				{
+					"type": "reveal",
+					"target": "p5_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p5_c"
+				},
+				{
+					"type": "speech",
+					"text": "只要已知執行次數，優先使用 for 迴圈把設定包在括號裡，就能避開這些常見錯誤。"
+				}
+			]
+		}
+	]
+}
