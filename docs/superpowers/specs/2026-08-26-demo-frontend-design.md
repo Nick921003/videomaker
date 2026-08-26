@@ -22,7 +22,18 @@
 ## 非目標（YAGNI）
 
 登入、多使用者、排隊、部署、Docker、PDF、`.ppt` 舊版二進位格式、
-重生某一頁、線上播放器。這些都不是現場 Demo 需要的，做了就是提前付款。
+重生某一頁。這些都不是現場 Demo 需要的，做了就是提前付款。
+
+### 決策翻轉：內嵌播放器保留（2026-08-26）
+
+「線上播放器」原本列在上面這串非目標裡。實作階段做了，全分支審查後決定**保留**。
+
+理由：現場 Demo 的價值就在「當場看到成品」。跳到下載、開檔案管理員、再開播放器
+會打斷節奏，而那個節奏正是這支工具要展示的東西。
+
+**代價講清楚**：`GET /video` 會把整支 MP4 讀進記憶體，而且不支援 Range 請求。
+現場檔案實測約 3.4 MB，在 localhost 不構成問題。**若日後片長或解析度大幅成長，
+這個決定要重新評估**——一支 20 分鐘的課程影片就不是這樣處理的。
 
 ## 架構
 
@@ -77,10 +88,37 @@ run.py              既有八階段，靠 --from / --until 切成兩段呼叫
 | 方法 | 路徑 | 請求 | 回應 |
 | :--- | :--- | :--- | :--- |
 | POST | `/jobs` | multipart：`file`、`sec`（目標秒數，選用，預設 110） | `201 {job_id}`；忙碌中回 `409`；TTS 未就緒回 `503` |
-| GET | `/jobs/{id}/events` | — | SSE，每則 `{stage, status, pct, msg}` |
+| GET | `/jobs/{id}/events` | — | SSE。見下方「SSE 實際載荷」 |
 | GET | `/jobs/{id}/script` | — | `{segments: [{slide_id, idx, text}]}` |
 | POST | `/jobs/{id}/approve` | `{segments: [...]}`（未修改則傳空陣列） | `200 {ok}` 或 `400 {errors: [...]}` |
 | GET | `/jobs/{id}/video` | — | `video/mp4` |
+
+### SSE 實際載荷
+
+**同一條串流上有兩種形狀**，而且沒有 `msg` 欄位（初版 spec 寫錯，2026-08-26 依
+`serve.py` 實況更正）：
+
+階段事件——由 `run.py --json-events` 產出，`real_runner` 轉發：
+
+```json
+{"event": "stage_start", "stage": "synth"}
+{"event": "stage_end",   "stage": "synth", "sec": 51.2}
+{"event": "stage_fail",  "stage": "synth", "code": 1, "tail": ["...", "..."]}
+```
+
+狀態事件——由服務層自己組，只在 `status` 或 `stage` 真的變動時才推：
+
+```json
+{"event": "state", "status": "awaiting_review", "pct": 46,
+ "stage": "storyboard", "error": null, "deadline": 1787695119.4}
+```
+
+**每一則推出去之前都會補上 `status` 與 `pct`**（`ev.update(status=..., pct=...)`），
+所以階段事件也帶得到這兩個欄位。
+
+`tail` 是失敗階段 stderr 的最後 20 行，經 `job.error` 送到前端顯示——這就是
+下方「錯誤處理」節要求的「顯示階段名稱與 stderr 末 20 行」的落實位置。沒有它的話，
+金鑰過期、額度用盡、語音服務沒開在畫面上長得一模一樣。
 
 ## Job 狀態機
 
@@ -204,3 +242,35 @@ AGY 實作 HTML/CSS，Claude 驗邏輯，視覺交使用者確認。
 3. **審稿閘的 60 秒是猜的**。首次現場實測後再調。
 
 - 2026-08-26 後續修正：整支分支審查揪出的 6 個缺陷全部補上——`stage_fail` 的 stderr 尾段接回 `job.error`（補上本節「階段非零退出」那行原本沒做到的行為）、`_approve` 的同步段加上例外防護、`/jobs` 的 409／503／413 提前回覆前先把 request body 讀乾淨、E2E 測試補上 `examples/` 孤兒檔清理、回歸測試在缺本機管線產物時改成明確 SKIP、計時器鎖測試從原始碼字串比對改成真的行為驗證（commit 待補 hash）
+
+---
+
+## 刻意不處理的技術債（2026-08-26）
+
+全分支審查列出 11 項技術債，交由第二意見以「一個操作者、一台筆電、現場 Demo」的
+定位重新裁決，結論是**只做 3 項、拒絕 9 項**。做掉的三項見
+`docs/superpowers/plans/2026-08-26-tech-debt.md`。
+
+**這節存在的理由**：不記下來的話，下一個讀這份程式碼的人會把同樣的東西重新發現一次、
+重新討論一次，然後可能得到相反的結論。以下是拒絕的項目與**當時的理由**。
+
+拒絕的共同判準：**改動代價落在一個 53 個測試全綠、端到端實證過的系統上，
+而收益說不出具體會避免哪個失敗。「比較乾淨」不是收益。**
+
+| 項目 | 為什麼不做 |
+| :--- | :--- |
+| 衍生路徑佈局（`out/<id>/<id>.mp4` 那組）在 5 處各自重新編碼 | 確實造成過一次真實失敗——E2E 硬寫路徑而 `lesson_id_for` 會剝底線。但那次已改成推導修掉，剩下的重複漂移風險低，而收斂要動 5 個檔 |
+| `stage_fail` 後 `Popen` 未 kill | **後來做了**，見技術債 Task 1。當時判定不做是錯的，Ctrl+C 孤兒讓它升級成真缺陷 |
+| `serve.py` 靠 `urllib.request` 的匯入副作用取得 `urllib.error` | `urllib.request` 一定會匯入 `urllib.error`，純屬形式主義 |
+| SSE 的 `except (BrokenPipeError, ConnectionResetError, OSError)` 過寬 | `OSError` 確實是前兩者的父類、`try` 也確實包住整塊（第二意見說「只包 `wfile.write`」是錯的，已查證）。但那區塊裡只有 `_push` 會丟 `OSError`，實務上抓不到別的 |
+| 前端 `STAGES[].weight` 是死資料，HTML 標記另有第三份百分比副本 | 畫面是好的。改成動態注入等於為了消除重複而增加 DOM 操作 |
+| 被拒絕的上傳在 `materials/` 留下孤兒 | 單人筆電，留下幾個小檔案不造成任何操作失敗 |
+| 內嵌 `<video>` 播放器超出原 YAGNI 清單 | **決定保留**，見上方「決策翻轉」 |
+| spec 的 SSE 契約過時 | **改文件不改程式**，見上方「SSE 實際載荷」 |
+| `write_segments` 對 `slide_id`／`idx` 對不上的 segment 靜默略過 | 這確實是「以訊號缺席推論成功」的形狀，但現行流程觸發不到——segments 來自同一份檔案數秒前的讀取，而 `write_segments` 從不改動結構。真正的風險是未來有人改動作編排的結構 |
+| 雜項拋光（`next_free` 序號空隙測試、`event(event=)` 命名、狀態字串無中心宣告、四個方法缺 docstring） | 純粹是把工作看起來變多 |
+
+另外記錄兩個**被查證推翻的論斷**，免得日後有人照著改：
+
+- 「SSE 的 `try` 只包 `wfile.write`」——**錯**，包住整個內層區塊含 `while` 迴圈
+- 「需要加 `allow_reuse_address = True`」——**錯**，`http.server.HTTPServer` 預設就是 `1`，沒有 TIME_WAIT 問題
