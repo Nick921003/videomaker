@@ -6,6 +6,9 @@ import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PY = os.path.join(ROOT, ".venv/bin/python")
+sys.path.insert(0, os.path.join(ROOT, "video_engine"))
+
+from ingest import lesson_id_for
 
 
 def _remove_file(path):
@@ -39,9 +42,13 @@ class TestEndToEnd(unittest.TestCase):
 		sys.path.insert(0, os.path.join(ROOT, "tests/fixtures"))
 		import make_pptx
 
+		# lesson_id 不能自己硬寫。lesson_id_for 會把頭尾底線剝掉，
+		# _e2e_deck 算出來是 e2e_deck——照檔名硬寫路徑會找不到產出，
+		# 明明管線跑成功了測試卻紅。用管線同一個函式算才不會脫鉤
 		deck = os.path.join(ROOT, "video_engine/materials/_e2e_deck.pptx")
 		landed_md = os.path.join(ROOT, "video_engine/materials/_e2e_deck.md")
-		out_dir = os.path.join(ROOT, "video_engine/out/_e2e_deck")
+		lesson_id = lesson_id_for(deck)
+		out_dir = os.path.join(ROOT, "video_engine/out", lesson_id)
 		# 建檔前先掛 cleanup：斷言中途失敗也不會留下孤兒檔
 		self.addCleanup(_remove_file, deck)
 		self.addCleanup(_remove_file, landed_md)
@@ -54,7 +61,7 @@ class TestEndToEnd(unittest.TestCase):
 		r = subprocess.run([PY, os.path.join(ROOT, "video_engine/run.py"), deck, "--sec", "60"],
 			capture_output=True, text=True, timeout=900)
 		self.assertEqual(r.returncode, 0, r.stdout[-2000:] + r.stderr[-2000:])
-		mp4 = os.path.join(out_dir, "_e2e_deck.mp4")
+		mp4 = os.path.join(out_dir, lesson_id + ".mp4")
 		self.assertTrue(os.path.exists(mp4))
 		self.assertGreater(os.path.getsize(mp4), 100_000)
 		self.assertGreater(_mp4_duration(mp4), 0)
