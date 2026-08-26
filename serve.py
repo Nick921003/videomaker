@@ -72,6 +72,61 @@ def _guard(job, fn, *args):
 		job.error = f"{type(e).__name__}: {e}"
 
 
+_children = set()
+_children_lock = threading.Lock()
+
+
+def spawn(args):
+	"""開子行程並登記。登記是為了 Ctrl+C 時收得掉——
+	執行緒是 daemon 會跟著死，但 Popen 是獨立的 OS 行程不會"""
+	p = subprocess.Popen(args, stdout=subprocess.DEVNULL,
+		stderr=subprocess.PIPE, text=True, bufsize=1)
+	with _children_lock:
+		_children.add(p)
+	return p
+
+
+def reap(p):
+	"""確保子行程死透並解除登記。可以重複呼叫。
+
+	p.wait() 不會關 p.stderr——那是獨立的檔案物件，process 死了它還開著。
+	不在這裡關掉的話，Popen 物件被回收時會噴 ResourceWarning，把測試輸出弄髒
+	"""
+	if p.poll() is None:
+		p.kill()
+		p.wait()
+	if p.stderr:
+		p.stderr.close()
+	with _children_lock:
+		_children.discard(p)
+
+
+def kill_children():
+	"""收掉所有還活著的子行程，回傳收掉幾個"""
+	with _children_lock:
+		alive = list(_children)
+	for p in alive:
+		reap(p)
+	return len(alive)
+
+
+def live_children():
+	with _children_lock:
+		return set(_children)
+
+
+def shutdown(srv):
+	"""收工：先收子行程再關 socket。
+
+	執行緒是 daemon 會跟著行程死，但 Popen 是獨立的 OS 行程不會——
+	不在這裡收掉的話，按了 Ctrl+C 之後管線還在背景跑、還在打 TTS、
+	還在寫檔案，而操作者以為已經停了。
+	"""
+	n = kill_children()
+	srv.server_close()
+	return n
+
+
 def real_runner(material, sec):
 	"""把 run.py --json-events 的 stderr 逐行轉成事件流。
 
@@ -84,31 +139,35 @@ def real_runner(material, sec):
 		args = [PY, RUN, material, "--from", stage_from, "--until", stage_to, "--json-events"]
 		if sec:
 			args += ["--sec", str(sec)]
-		p = subprocess.Popen(args, stdout=subprocess.DEVNULL,
-			stderr=subprocess.PIPE, text=True, bufsize=1)
+		p = spawn(args)
 		saw_fail = False
 		tail = collections.deque(maxlen=20)
-		for line in p.stderr:
-			line = line.strip()
-			if not line.startswith("{"):
-				if line:
-					tail.append(line)
-				continue
-			try:
-				ev = json.loads(line)
-			except json.JSONDecodeError:
-				if line:
-					tail.append(line)      # 底層套件的警告訊息也可能以 { 開頭，不能讓它炸掉整條 runner
-				continue
-			if ev.get("event") == "stage_fail":
-				saw_fail = True
-				ev["tail"] = list(tail)
-			yield ev
-		p.wait()
-		# run.py 若是被 SyntaxError、MemoryError 這類炸掉的，根本來不及印事件。
-		# 沒有這一條的話 job 會永遠停在 running，前端進度條卡死
-		if p.returncode != 0 and not saw_fail:
-			yield {"event": "stage_fail", "stage": stage_to, "code": p.returncode, "tail": list(tail)}
+		try:
+			for line in p.stderr:
+				line = line.strip()
+				if not line.startswith("{"):
+					if line:
+						tail.append(line)
+					continue
+				try:
+					ev = json.loads(line)
+				except json.JSONDecodeError:
+					if line:
+						tail.append(line)      # 底層套件的警告訊息也可能以 { 開頭，不能讓它炸掉整條 runner
+					continue
+				if ev.get("event") == "stage_fail":
+					saw_fail = True
+					ev["tail"] = list(tail)
+				yield ev
+			p.wait()
+			# run.py 若是被 SyntaxError、MemoryError 這類炸掉的，根本來不及印事件。
+			# 沒有這一條的話 job 會永遠停在 running，前端進度條卡死
+			if p.returncode != 0 and not saw_fail:
+				yield {"event": "stage_fail", "stage": stage_to, "code": p.returncode, "tail": list(tail)}
+		finally:
+			# generator 被丟棄時 Python 會在 yield 處丟 GeneratorExit，
+			# finally 照樣執行——子行程就是靠這裡收掉的
+			reap(p)
 	return runner
 
 
@@ -326,5 +385,13 @@ def make_server(port):
 
 if __name__ == "__main__":
 	port = int(sys.argv[1]) if len(sys.argv) > 1 else 8899
+	srv = make_server(port)
 	print(f"開好了：http://127.0.0.1:{port}")
-	make_server(port).serve_forever()
+	try:
+		srv.serve_forever()
+	except KeyboardInterrupt:
+		print("\n收工中…")
+	finally:
+		n = shutdown(srv)
+		if n:
+			print(f"收掉了 {n} 個還在跑的子行程")
