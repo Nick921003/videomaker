@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -119,6 +120,85 @@ class TestBulletBoxMatchesRegionsFor(unittest.TestCase):
 			"最後一條的框跑到 regions_for 算出的文字區域上緣外")
 		self.assertLessEqual(last["y"] + last["h"], text_region["y"] + text_region["h"],
 			"最後一條的框跑到 regions_for 算出的文字區域下緣外")
+
+
+class TestFigureInRegion(unittest.TestCase):
+	"""窄欄裡的 figure 必須改直排，而且每個項目的量測框都要留下——
+	少一個，指到它的動作就靜默失效"""
+
+	def _render(self, kind, items, n_bullets=3):
+		els = [{"id": "p1_title", "type": "title", "text": "測試"}]
+		for i in range(n_bullets):
+			els.append({"id": f"p1_b{i}", "type": "bullet", "text": "條列"})
+		els.append({"id": "p1_fig", "type": "figure", "kind": kind, "items": items})
+		lesson = {"lesson_id": "t", "title": "t",
+			"slides": [{"id": "p1", "elements": els}]}
+		d = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, d, True)
+		path = os.path.join(d, "t.lesson.json")
+		with open(path, "w", encoding="utf-8") as f:
+			json.dump(lesson, f)
+		old = sys.argv
+		sys.argv = ["render_slides.py", path, d]
+		try:
+			self.assertEqual(R.main(), 0)
+		finally:
+			sys.argv = old
+		with open(os.path.join(d, "layout.json"), encoding="utf-8") as f:
+			return json.load(f)["slides"][0]["boxes"]
+
+	def test_每個項目都留下量測框(self):
+		boxes = self._render("boxes", ["甲", "乙", "丙"])
+		for i in (1, 2, 3):
+			self.assertIn(f"p1_fig:i{i}", boxes)
+
+	def test_項目都關在圖區內(self):
+		import layout as L
+		boxes = self._render("steps", ["甲", "乙", "丙", "丁"])
+		reg = L.regions_for({"id": "p1", "elements": [
+			{"id": "p1_title", "type": "title", "text": "t"},
+			{"id": "p1_b0", "type": "bullet", "text": "x"},
+			{"id": "p1_b1", "type": "bullet", "text": "x"},
+			{"id": "p1_b2", "type": "bullet", "text": "x"},
+			{"id": "p1_fig", "type": "figure", "kind": "steps",
+				"items": ["甲", "乙", "丙", "丁"]}]}, 0)["figure"]
+		for i in (1, 2, 3, 4):
+			b = boxes[f"p1_fig:i{i}"]
+			self.assertGreaterEqual(b["x"], reg["x"], f"i{i} 跑到圖區左邊外")
+			self.assertLessEqual(b["x"] + b["w"], reg["x"] + reg["w"], f"i{i} 跑到圖區右邊外")
+			self.assertLessEqual(b["y"] + b["h"], reg["y"] + reg["h"], f"i{i} 跑到圖區下面外")
+
+	def test_窄欄時真的改成直排(self):
+		# 直排的判準：項目之間 y 遞增而 x 相同
+		boxes = self._render("boxes", ["甲", "乙", "丙"])
+		a, b = boxes["p1_fig:i1"], boxes["p1_fig:i2"]
+		self.assertEqual(a["x"], b["x"], "還是橫排")
+		self.assertGreater(b["y"], a["y"])
+
+	def test_compare_頁不會崩潰(self):
+		# compare 分支有四處直接對 top 做整數運算，簽名改了卻沒改內文就會炸
+		els = [{"id": "p1_title", "type": "title", "text": "測試"},
+			{"id": "p1_b0", "type": "bullet", "text": "條列"},
+			{"id": "p1_fig", "type": "figure", "kind": "compare",
+				"left": {"title": "前", "items": ["甲", "乙"]},
+				"right": {"title": "後", "items": ["丙"]}}]
+		lesson = {"lesson_id": "t", "title": "t",
+			"slides": [{"id": "p1", "elements": els}]}
+		d = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, d, True)
+		path = os.path.join(d, "t.lesson.json")
+		with open(path, "w", encoding="utf-8") as f:
+			json.dump(lesson, f)
+		old = sys.argv
+		sys.argv = ["render_slides.py", path, d]
+		try:
+			self.assertEqual(R.main(), 0)
+		finally:
+			sys.argv = old
+		with open(os.path.join(d, "layout.json"), encoding="utf-8") as f:
+			boxes = json.load(f)["slides"][0]["boxes"]
+		for k in ("p1_fig:l1", "p1_fig:l2", "p1_fig:r1"):
+			self.assertIn(k, boxes)
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont
 
 from layout import (
-	CENTER_X, CODE_BOX, CODE_X, CODE_Y0, CONTENT_BOX, FIG_GAP, FIG_MAX_W,
+	CENTER_X, CODE_BOX, CODE_X, CODE_Y0, CONTENT_BOX, FIG_GAP,
 	FIG_ROW_H, H, HEADER_BOX, SUB_Y, TITLE_Y, W, bullet_metrics, code_metrics,
 	count_bullets, fig_height, regions_for,
 )
@@ -109,39 +109,76 @@ def draw_text_block(targets, measure, text, y, font, color, region=None, align="
 	return ink_box(measure, (x, y), text, font, anchor=anchor)
 
 
-def draw_figure(targets, measure, el, th, top, guard):
-	"""畫示意圖。每個項目都量測，動作可以單獨指到 fig_id:i2"""
+def draw_figure(targets, measure, el, th, region, guard):
+	"""畫示意圖。每個項目都量測，動作可以單獨指到 fig_id:i2
+
+	region 取代舊的 top 參數與畫布中線 CENTER_X：split 給窄欄時橫排會放不下，
+	改吃直排；compare 一律在自己拿到的區域內垂直置中，不假設全寬
+	"""
 	fill, edge = th["figure"]["fill"], th["figure"]["edge"]
 	alt, ink = th["figure"]["alt"], th["text"]["bullet"]
 	accent = th["text"]["callout"]
 	boxes, eid, kind = {}, el["id"], el["kind"]
 	items = [guard.sanitize(t) for t in el.get("items", [])]
+	top = region["y"]
+	cx = region["x"] + region["w"] // 2
 
 	if kind in ("boxes", "steps"):
 		n = max(1, len(items))
 		gap = FIG_GAP + (34 if kind == "steps" else 0)   # steps 要留箭頭空間
-		w = min(360, (FIG_MAX_W - gap * (n - 1)) // n)
-		total = w * n + gap * (n - 1)
-		x = CENTER_X - total // 2
-		for i, text in enumerate(items, start=1):
-			font = fit_font(measure, text, CJK_FONT, 30, w - 28, floor=18)
-			for d in targets:
-				d.rounded_rectangle([x, top, x + w, top + FIG_ROW_H], radius=8,
-					fill=fill, outline=edge, width=2)
-				d.text((x + w // 2, top + FIG_ROW_H // 2), text, font=font, fill=ink, anchor="mm")
-				if kind == "steps" and i < n:
-					ax = x + w + gap // 2
-					cy = top + FIG_ROW_H // 2
-					d.polygon([(ax - 11, cy - 11), (ax + 11, cy), (ax - 11, cy + 11)], fill=accent)
-			boxes[f"{eid}:i{i}"] = {"x": x, "y": top, "w": w, "h": FIG_ROW_H}
-			x += w + gap
-		boxes[eid] = {"x": CENTER_X - total // 2, "y": top, "w": total, "h": FIG_ROW_H}
-		bottom = top + FIG_ROW_H
+		need = 360 * n + gap * (n - 1)        # 橫排要的最小寬度
+		vertical = need > region["w"]
+
+		if vertical:
+			# 窄欄放不下橫排，改直排：每格寬頂多 360，水平置中於 cx，
+			# 整塊在區域內垂直置中——這樣才不會貼著區域上緣
+			w = min(360, region["w"])
+			total = FIG_ROW_H * n + gap * (n - 1)
+			x = cx - w // 2
+			y0 = region["y"] + max(0, (region["h"] - total) // 2)
+			y = y0
+			for i, text in enumerate(items, start=1):
+				font = fit_font(measure, text, CJK_FONT, 30, w - 28, floor=18)
+				for d in targets:
+					d.rounded_rectangle([x, y, x + w, y + FIG_ROW_H], radius=8,
+						fill=fill, outline=edge, width=2)
+					d.text((x + w // 2, y + FIG_ROW_H // 2), text, font=font, fill=ink, anchor="mm")
+					if kind == "steps" and i < n:
+						# 直排箭頭改指向下：底邊在上、頂點在下
+						ay = y + FIG_ROW_H + gap // 2
+						d.polygon([(cx - 11, ay - 11), (cx + 11, ay - 11), (cx, ay + 11)], fill=accent)
+				boxes[f"{eid}:i{i}"] = {"x": x, "y": y, "w": w, "h": FIG_ROW_H}
+				y += FIG_ROW_H + gap
+			boxes[eid] = {"x": x, "y": y0, "w": w, "h": total}
+			bottom = y0 + total
+		else:
+			w = min(360, (region["w"] - gap * (n - 1)) // n)
+			total = w * n + gap * (n - 1)
+			x = cx - total // 2
+			for i, text in enumerate(items, start=1):
+				font = fit_font(measure, text, CJK_FONT, 30, w - 28, floor=18)
+				for d in targets:
+					d.rounded_rectangle([x, top, x + w, top + FIG_ROW_H], radius=8,
+						fill=fill, outline=edge, width=2)
+					d.text((x + w // 2, top + FIG_ROW_H // 2), text, font=font, fill=ink, anchor="mm")
+					if kind == "steps" and i < n:
+						ax = x + w + gap // 2
+						cy = top + FIG_ROW_H // 2
+						d.polygon([(ax - 11, cy - 11), (ax + 11, cy), (ax - 11, cy + 11)], fill=accent)
+				boxes[f"{eid}:i{i}"] = {"x": x, "y": top, "w": w, "h": FIG_ROW_H}
+				x += w + gap
+			boxes[eid] = {"x": cx - total // 2, "y": top, "w": total, "h": FIG_ROW_H}
+			bottom = top + FIG_ROW_H
 
 	else:   # compare：左右對照
-		panel_w, mid = 700, 60
-		x0 = CENTER_X - (panel_w * 2 + mid) // 2
-		rows = 0
+		mid = 60
+		panel_w = (region["w"] - mid) // 2
+		# rows 得先算出 h，才能把整塊往區域中央挪
+		rows = max(len(el.get("left", {}).get("items", [])),
+			len(el.get("right", {}).get("items", [])))
+		h = 64 + rows * 74
+		top = region["y"] + max(0, (region["h"] - h) // 2)
+		x0 = cx - (panel_w * 2 + mid) // 2
 		for side, px in ((el.get("left", {}), x0), (el.get("right", {}), x0 + panel_w + mid)):
 			title = guard.sanitize(side.get("title", ""))
 			tf = fit_font(measure, title, CJK_FONT, 28, panel_w - 24, floor=18)
@@ -159,21 +196,19 @@ def draw_figure(targets, measure, el, th, top, guard):
 				boxes[f"{eid}:{'l' if px == x0 else 'r'}{j}"] = {
 					"x": px, "y": y, "w": panel_w, "h": 62}
 				y += 74
-			rows = max(rows, len(side.get("items", [])))
-		h = 64 + rows * 74
 		for d in targets:
 			cy = top + h // 2
-			d.polygon([(CENTER_X - 16, cy - 14), (CENTER_X + 16, cy), (CENTER_X - 16, cy + 14)],
+			d.polygon([(cx - 16, cy - 14), (cx + 16, cy), (cx - 16, cy + 14)],
 				fill=accent)
 		boxes[eid] = {"x": x0, "y": top, "w": panel_w * 2 + mid, "h": h}
 		bottom = top + h
 
 	if el.get("caption"):
 		cap = guard.sanitize(el["caption"])
-		cf = fit_font(measure, cap, CJK_FONT, 26, FIG_MAX_W, floor=18)
+		cf = fit_font(measure, cap, CJK_FONT, 26, region["w"], floor=18)
 		for d in targets:
-			d.text((CENTER_X, bottom + 12), cap, font=cf, fill=th["text"]["subtitle"], anchor="ma")
-		boxes[f"{eid}:caption"] = ink_box(measure, (CENTER_X, bottom + 12), cap, cf, anchor="ma")
+			d.text((cx, bottom + 12), cap, font=cf, fill=th["text"]["subtitle"], anchor="ma")
+		boxes[f"{eid}:caption"] = ink_box(measure, (cx, bottom + 12), cap, cf, anchor="ma")
 	return boxes
 
 
@@ -247,7 +282,13 @@ def render_slide(slide, guard, th, out_dir, idx):
 			boxes[eid] = whole
 
 		elif etype == "figure":
-			boxes.update(draw_figure(targets, df, el, th, fig_y, guard))
+			# 一頁可能有多個 figure 依序往下排，所以只把「剩餘空間」
+			# 交給 draw_figure：高度切到圖區底線，不然直排置中會算到下一格的份
+			fig_region = {
+				"x": reg["figure"]["x"], "y": fig_y, "w": reg["figure"]["w"],
+				"h": reg["figure"]["y"] + reg["figure"]["h"] - fig_y,
+			}
+			boxes.update(draw_figure(targets, df, el, th, fig_region, guard))
 			fig_y += fig_height(el) + 40
 
 		elif etype == "image":
