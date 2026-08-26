@@ -28,6 +28,7 @@ BULLET_Y0, BULLET_STEP = 310, 120
 CENTER_X = W // 2
 BULLET_MAX_W = 1650
 CODE_X, CODE_Y0, CODE_STEP = 170, 310, 42
+CODE_SIZE = 28
 
 
 def rgb(hex_str):
@@ -80,6 +81,16 @@ def fit_font(draw, text, path, size, max_w, floor=24):
 			return font
 		size -= 2
 	return ImageFont.truetype(path, floor)
+
+
+def code_metrics(n):
+	"""依行數決定行距與字級，保證 n 行一定關得進 CODE_BOX。
+
+	prompt 允許 8–16 行，但固定 42px 行距在 15 行就剛好貼齊底線、16 行溢出 42px——
+	差一行就爆版。15 行以內回傳原本的 42／28，既有教材的輸出逐像素不變
+	"""
+	step = min(CODE_STEP, (CODE_BOX[3] - CODE_Y0) // max(1, n))
+	return step, max(12, min(CODE_SIZE, round(step * CODE_SIZE / CODE_STEP)))
 
 
 def code_color(line, th):
@@ -235,12 +246,13 @@ def render_slide(slide, guard, th, out_dir, idx):
 			bullet_y += BULLET_STEP
 
 		elif etype == "code":
-			font = ImageFont.truetype(CJK_FONT, 28)
+			step, size = code_metrics(len(el["lines"]))
+			font = ImageFont.truetype(CJK_FONT, size)
 			x0, y0, x1, y1 = CODE_BOX
 			whole = {"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0}
 			for i, raw in enumerate(el["lines"], start=1):
 				line = guard.sanitize(raw, keep_indent=True)
-				y = CODE_Y0 + (i - 1) * CODE_STEP
+				y = CODE_Y0 + (i - 1) * step
 				if line:
 					for d in targets:
 						d.text((CODE_X, y), line, font=font, fill=code_color(line, th))
@@ -250,8 +262,8 @@ def render_slide(slide, guard, th, out_dir, idx):
 					"x": CODE_X,
 					"y": y,
 					"w": max(width, 40),
-					"h": CODE_STEP,
-					"baseline": y + CODE_STEP,
+					"h": step,
+					"baseline": y + step,
 				}
 			boxes[eid] = whole
 
