@@ -69,13 +69,29 @@ def code_metrics(n):
 	return step, max(12, min(CODE_SIZE, round(step * CODE_SIZE / CODE_STEP)))
 
 
-def fig_height(el):
-	"""先算高度，才能把整塊內容垂直置中。從 render_slides.py 搬過來——這是純算式，不碰 PIL"""
+def fig_vertical(el, width):
+	"""boxes／steps 橫排要多寬、放不下就改直排的判準。draw_figure 跟 fig_height
+	都要問同一題，答案搬來這裡兩邊才會一致——不然一個判橫排、一個算直排的高度，
+	量出來的框跟實際畫的對不上"""
+	n = max(1, len(el.get("items", [])))
+	gap = FIG_GAP + (34 if el["kind"] == "steps" else 0)
+	need = 360 * n + gap * (n - 1)        # 橫排要的最小寬度
+	return need > width
+
+
+def fig_height(el, width):
+	"""先算高度，才能把整塊內容垂直置中，多圖時也靠它知道游標該往下挪多少。
+	width 是這個 figure 實際拿到的畫布寬——boxes／steps 直排時比橫排高得多，
+	沒有寬度就量不出真正會畫出來的高度"""
 	cap = FIG_CAPTION_H if el.get("caption") else 0
 	if el["kind"] == "compare":
 		n = max(len(el.get("left", {}).get("items", [])),
 			len(el.get("right", {}).get("items", [])))
 		return 64 + n * 74 + cap
+	n = max(1, len(el.get("items", [])))
+	if fig_vertical(el, width):
+		gap = FIG_GAP + (34 if el["kind"] == "steps" else 0)
+		return FIG_ROW_H * n + gap * (n - 1) + cap
 	return FIG_ROW_H + cap
 
 
@@ -111,7 +127,8 @@ def _stack(slide, index):
 	# 只改一邊的話 7 條以上就分歧（738 vs 768）
 	step, _ = bullet_metrics(n_bullets)
 	bullets_h = (n_bullets - 1) * step + 48 if n_bullets else 0
-	figs_h = sum(fig_height(f) + 40 for f in figs)
+	# 圖區永遠給滿版寬（CONTENT_BOX 內寬），跟下面 "figure" 那格算出來的區域一致
+	figs_h = sum(fig_height(f, CONTENT_BOX[2] - CONTENT_BOX[0]) + 40 for f in figs)
 	block_h = bullets_h + figs_h
 	top = (CONTENT_BOX[1] + (CONTENT_BOX[3] - CONTENT_BOX[1] - block_h) // 2
 		if block_h else BULLET_Y0)

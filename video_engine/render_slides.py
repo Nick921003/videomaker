@@ -17,7 +17,7 @@ from fontTools.ttLib import TTFont
 from layout import (
 	CENTER_X, CODE_BOX, CODE_X, CODE_Y0, CONTENT_BOX, FIG_GAP,
 	FIG_ROW_H, H, HEADER_BOX, SUB_Y, TITLE_Y, W, bullet_metrics, code_metrics,
-	count_bullets, fig_height, regions_for,
+	count_bullets, fig_height, fig_vertical, regions_for,
 )
 
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
@@ -126,8 +126,9 @@ def draw_figure(targets, measure, el, th, region, guard):
 	if kind in ("boxes", "steps"):
 		n = max(1, len(items))
 		gap = FIG_GAP + (34 if kind == "steps" else 0)   # steps 要留箭頭空間
-		need = 360 * n + gap * (n - 1)        # 橫排要的最小寬度
-		vertical = need > region["w"]
+		# 橫直排判準跟 layout.fig_height 共用同一顆 fig_vertical，
+		# 兩邊各自重算的話量出來的高度會跟實際畫的分岔
+		vertical = fig_vertical(el, region["w"])
 
 		if vertical:
 			# 窄欄放不下橫排，改直排：每格寬頂多 360，水平置中於 cx，
@@ -177,15 +178,17 @@ def draw_figure(targets, measure, el, th, region, guard):
 		rows = max(len(el.get("left", {}).get("items", [])),
 			len(el.get("right", {}).get("items", [])))
 		h = 64 + rows * 74
-		top = region["y"] + max(0, (region["h"] - h) // 2)
+		# panel_top 是垂直置中後的實際起點，跟函式開頭那個「區域頂緣」的 top 是兩碼事，
+		# 同名互相覆蓋只是巧合正確，改個名字讓兩種意思各自有名字
+		panel_top = region["y"] + max(0, (region["h"] - h) // 2)
 		x0 = cx - (panel_w * 2 + mid) // 2
 		for side, px in ((el.get("left", {}), x0), (el.get("right", {}), x0 + panel_w + mid)):
 			title = guard.sanitize(side.get("title", ""))
 			tf = fit_font(measure, title, CJK_FONT, 28, panel_w - 24, floor=18)
 			for d in targets:
-				d.rounded_rectangle([px, top, px + panel_w, top + 52], radius=8, fill=edge)
-				d.text((px + panel_w // 2, top + 26), title, font=tf, fill=fill, anchor="mm")
-			y = top + 64
+				d.rounded_rectangle([px, panel_top, px + panel_w, panel_top + 52], radius=8, fill=edge)
+				d.text((px + panel_w // 2, panel_top + 26), title, font=tf, fill=fill, anchor="mm")
+			y = panel_top + 64
 			for j, raw in enumerate(side.get("items", []), start=1):
 				text = guard.sanitize(raw)
 				f = fit_font(measure, text, CJK_FONT, 26, panel_w - 32, floor=16)
@@ -197,11 +200,11 @@ def draw_figure(targets, measure, el, th, region, guard):
 					"x": px, "y": y, "w": panel_w, "h": 62}
 				y += 74
 		for d in targets:
-			cy = top + h // 2
+			cy = panel_top + h // 2
 			d.polygon([(cx - 16, cy - 14), (cx + 16, cy), (cx - 16, cy + 14)],
 				fill=accent)
-		boxes[eid] = {"x": x0, "y": top, "w": panel_w * 2 + mid, "h": h}
-		bottom = top + h
+		boxes[eid] = {"x": x0, "y": panel_top, "w": panel_w * 2 + mid, "h": h}
+		bottom = panel_top + h
 
 	if el.get("caption"):
 		cap = guard.sanitize(el["caption"])
@@ -235,6 +238,8 @@ def render_slide(slide, guard, th, out_dir, idx):
 	fig_y = reg["figure"]["y"] if reg["figure"] else bullet_y
 	n_bullets = count_bullets(slide)
 	bullet_step, bullet_size = bullet_metrics(n_bullets)
+	# 只有多圖頁才需要游標依序往下排；單圖頁維持原樣整區交給 draw_figure 置中
+	n_figs = sum(1 for e in slide["elements"] if e["type"] == "figure")
 
 	for el in slide["elements"]:
 		eid, etype = el["id"], el["type"]
@@ -282,14 +287,25 @@ def render_slide(slide, guard, th, out_dir, idx):
 			boxes[eid] = whole
 
 		elif etype == "figure":
-			# 一頁可能有多個 figure 依序往下排，所以只把「剩餘空間」
-			# 交給 draw_figure：高度切到圖區底線，不然直排置中會算到下一格的份
-			fig_region = {
-				"x": reg["figure"]["x"], "y": fig_y, "w": reg["figure"]["w"],
-				"h": reg["figure"]["y"] + reg["figure"]["h"] - fig_y,
-			}
+			if n_figs > 1:
+				# 多圖依序往下排：只給它自己會畫出來的高度，不是「剩餘空間」，
+				# 這樣區域內置中就是 no-op，等於接續著上一張排下去，不會蓋到下一張的地盤
+				fig_h = fig_height(el, reg["figure"]["w"])
+				if fig_y < CONTENT_BOX[1] or fig_y + fig_h > CONTENT_BOX[3]:
+					# 疊起來超出內容卡是容量問題，不是排版問題——
+					# 寧可整頁失敗逼上層調教材或版型，也不要默默畫到卡片外
+					raise ValueError(
+						f"{slide['id']} 的 figure {eid} 疊加後超出 CONTENT_BOX："
+						f"y={fig_y} h={fig_h}，卡片可用範圍是 {CONTENT_BOX[1]}–{CONTENT_BOX[3]}"
+					)
+				fig_region = {
+					"x": reg["figure"]["x"], "y": fig_y,
+					"w": reg["figure"]["w"], "h": fig_h,
+				}
+				fig_y += fig_h + 40
+			else:
+				fig_region = reg["figure"]
 			boxes.update(draw_figure(targets, df, el, th, fig_region, guard))
-			fig_y += fig_height(el) + 40
 
 		elif etype == "image":
 			src = el["src"]

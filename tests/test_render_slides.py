@@ -201,5 +201,104 @@ class TestFigureInRegion(unittest.TestCase):
 			self.assertIn(k, boxes)
 
 
+class TestMultiFigureStacking(unittest.TestCase):
+	"""多圖頁必須依序往下排，不能互相覆蓋、也不能跑出 CONTENT_BOX——
+	單圖頁沒有這個問題，它拿到的是整塊 reg["figure"]，不用跟別人搶位置。
+
+	用 compare + boxes（不是兩個都用 boxes/steps）是刻意選擇：compare 不論寬度
+	一律置中，是重現「舊版把每張圖都塞進『剩餘空間』再置中」這個缺陷
+	最小、最不逼近版面極限的方式。純橫排的 boxes／steps 兩張疊在一起反而
+	測不出舊版的 bug——舊版橫排本來就不置中（直接用 region["y"] 當起點），
+	fig_height 對橫排算出來的高度本來就對，cursor 兩邊都不會錯。
+	要用 boxes/steps 逼出這個 bug 得讓其中一張直排，但 5 項 boxes 直排要
+	624px，CONTENT_BOX 只有 740px 高，扣掉間距根本放不下第二張圖——
+	這正是 test_容量超出時明確失敗 要驗的情境。
+	"""
+
+	def _render(self, figs):
+		els = [{"id": "p1_title", "type": "title", "text": "測試"}] + figs
+		lesson = {"lesson_id": "t", "title": "t",
+			"slides": [{"id": "p1", "elements": els}]}
+		d = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, d, True)
+		path = os.path.join(d, "t.lesson.json")
+		with open(path, "w", encoding="utf-8") as f:
+			json.dump(lesson, f)
+		old = sys.argv
+		sys.argv = ["render_slides.py", path, d]
+		try:
+			self.assertEqual(R.main(), 0)
+		finally:
+			sys.argv = old
+		with open(os.path.join(d, "layout.json"), encoding="utf-8") as f:
+			return json.load(f)["slides"][0]["boxes"]
+
+	def test_兩個_figure_元素依序堆疊不重疊(self):
+		figs = [
+			{"id": "p1_figA", "type": "figure", "kind": "compare",
+				"left": {"title": "前", "items": ["甲1", "甲2", "甲3"]},
+				"right": {"title": "後", "items": ["乙1", "乙2", "乙3"]}},
+			{"id": "p1_figB", "type": "figure", "kind": "boxes",
+				"items": ["丙1", "丙2", "丙3"]},
+		]
+		boxes = self._render(figs)
+
+		for k in ("p1_figA:l1", "p1_figA:l2", "p1_figA:l3",
+				"p1_figA:r1", "p1_figA:r2", "p1_figA:r3"):
+			self.assertIn(k, boxes, f"figA 少了 {k}")
+		for i in (1, 2, 3):
+			self.assertIn(f"p1_figB:i{i}", boxes, f"figB 少了 i{i}")
+
+		def overlap(b1, b2):
+			x = b1["x"] < b2["x"] + b2["w"] and b2["x"] < b1["x"] + b1["w"]
+			y = b1["y"] < b2["y"] + b2["h"] and b2["y"] < b1["y"] + b1["h"]
+			return x and y
+
+		a_boxes = {k: v for k, v in boxes.items() if k.startswith("p1_figA")}
+		b_boxes = {k: v for k, v in boxes.items() if k.startswith("p1_figB")}
+		for ka, a in a_boxes.items():
+			for kb, b in b_boxes.items():
+				self.assertFalse(overlap(a, b), f"{ka} 跟 {kb} 重疊了：{a} / {b}")
+
+		for k, b in boxes.items():
+			if not k.startswith("p1_fig"):
+				continue
+			self.assertGreaterEqual(b["x"], 0, f"{k} 跑到畫布左邊外")
+			self.assertGreaterEqual(b["y"], 0, f"{k} 跑到畫布上邊外")
+			self.assertLessEqual(b["x"] + b["w"], L.W, f"{k} 跑到畫布右邊外")
+			self.assertLessEqual(b["y"] + b["h"], L.H, f"{k} 跑到畫布下邊外")
+			self.assertGreaterEqual(b["x"], L.CONTENT_BOX[0], f"{k} 跑到 CONTENT_BOX 左緣外")
+			self.assertGreaterEqual(b["y"], L.CONTENT_BOX[1], f"{k} 跑到 CONTENT_BOX 上緣外")
+			self.assertLessEqual(b["x"] + b["w"], L.CONTENT_BOX[2], f"{k} 跑到 CONTENT_BOX 右緣外")
+			self.assertLessEqual(b["y"] + b["h"], L.CONTENT_BOX[3], f"{k} 跑到 CONTENT_BOX 下緣外")
+
+	def test_容量超出時明確失敗(self):
+		# 5 項 boxes 在 1760px 圖區裡放不下橫排（need=1904>1760），只能直排，
+		# 直排要 624px；CONTENT_BOX 只有 740px 高，扣掉間距跟第二張圖，
+		# 怎麼排都會超出卡片——這是內容量超出容量的問題，不是排版算式的問題，
+		# 應該炸得響亮，不是默默把箱子畫到卡片外
+		figs = [
+			{"id": "p1_figA", "type": "figure", "kind": "boxes",
+				"items": ["甲1", "甲2", "甲3", "甲4", "甲5"]},
+			{"id": "p1_figB", "type": "figure", "kind": "steps",
+				"items": ["乙1", "乙2", "乙3", "乙4"]},
+		]
+		els = [{"id": "p1_title", "type": "title", "text": "測試"}] + figs
+		lesson = {"lesson_id": "t", "title": "t",
+			"slides": [{"id": "p1", "elements": els}]}
+		d = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, d, True)
+		path = os.path.join(d, "t.lesson.json")
+		with open(path, "w", encoding="utf-8") as f:
+			json.dump(lesson, f)
+		old = sys.argv
+		sys.argv = ["render_slides.py", path, d]
+		try:
+			with self.assertRaises(ValueError):
+				R.main()
+		finally:
+			sys.argv = old
+
+
 if __name__ == "__main__":
 	unittest.main()
