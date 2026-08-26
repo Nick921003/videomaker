@@ -25,9 +25,25 @@ def slide(*types, kind=None, n_bullets=0, hidden=()):
 	return {"id": "p1", "elements": els}
 
 
+def two_figs(n_bullets=3, hidden=()):
+	"""兩張圖逼 pick_variant 選 stack：單張非 compare 圖現在走 split（見 layout.pick_variant），
+	要讓 fixture 帶著 figure 又確定落在 stack 分支，只能走「圖數不等於 1」這條路"""
+	sl = slide("figure", n_bullets=n_bullets, hidden=hidden)
+	sl["elements"].append({"id": "p1_fig2", "type": "figure", "kind": "boxes", "items": ["a", "b"]})
+	return sl
+
+
 class TestRegionsStack(unittest.TestCase):
+	def _regions(self, sl, index=0):
+		"""regions_for 只有 split 有自己的分支，其餘都吃 _stack。
+		fixture 選錯分支的話，底下的斷言只是巧合成立——這裡先擋住這種漂移，
+		不管日後 pick_variant 怎麼改，這個類別測的東西永遠是 _stack 本身"""
+		r = L.regions_for(sl, index)
+		self.assertEqual(r["variant"], "stack")
+		return r
+
 	def test_文字區域關在內容卡裡(self):
-		r = L.regions_for(slide("figure", n_bullets=3), 0)
+		r = self._regions(two_figs(n_bullets=3))
 		t = r["text"]
 		self.assertGreaterEqual(t["x"], L.CONTENT_BOX[0])
 		self.assertGreaterEqual(t["y"], L.CONTENT_BOX[1])
@@ -36,30 +52,31 @@ class TestRegionsStack(unittest.TestCase):
 
 	def test_hidden_不影響版位(self):
 		# base 與 full 是同一份版位算出來的。這裡若不同，浮現時裁出來的就是錯位畫面
-		a = L.regions_for(slide("figure", n_bullets=3), 0)
-		b = L.regions_for(slide("figure", n_bullets=3, hidden=(1, 2)), 0)
+		a = self._regions(two_figs(n_bullets=3))
+		b = self._regions(two_figs(n_bullets=3, hidden=(1, 2)))
 		self.assertEqual(a, b)
 
 	def test_stack_文字區寬度必須等於_BULLET_MAX_W(self):
 		# 內容卡內寬是 1760，比 BULLET_MAX_W 寬 110px。這裡若用了內寬，
 		# Task 3A 把 fit_font 上限改讀區域寬時，文字會突然可以貼到卡片邊。
-		# 不能帶 figure：Task 3A 起單張非 compare 圖會走 split，寬度就不是 BULLET_MAX_W 了
-		r = L.regions_for(slide(n_bullets=3), 0)
+		# 不能帶 figure：單張非 compare 圖會走 split，寬度就不是 BULLET_MAX_W 了
+		r = self._regions(slide(n_bullets=3))
 		self.assertEqual(r["text"]["w"], L.BULLET_MAX_W)
 
 	def test_沒有程式碼的頁面_code_區域是_None(self):
-		self.assertIsNone(L.regions_for(slide("figure", n_bullets=3), 0)["code"])
+		r = self._regions(two_figs(n_bullets=3))
+		self.assertIsNone(r["code"])
 
 	def test_有程式碼的頁面_code_區域等於_CODE_BOX(self):
-		r = L.regions_for(slide("code"), 0)
+		r = self._regions(slide("code"))
 		self.assertEqual(r["code"], L.rect(*L.CODE_BOX))
 
 	def test_版位高度與繪製遞增量必須同源(self):
-		# Task 3A 起 _stack 與 render_slide 的繪製迴圈都改吃 bullet_metrics 的自適應
+		# _stack 與 render_slide 的繪製迴圈都改吃 bullet_metrics 的自適應
 		# 行距。只改一邊的話 7 條就分歧：_stack 算 738、繪製迴圈實際走 768
 		for n in (3, 7, 12):
 			step, _ = L.bullet_metrics(n)
-			r = L.regions_for(slide(n_bullets=n), 0)
+			r = self._regions(slide(n_bullets=n))
 			self.assertEqual(r["text"]["h"], (n - 1) * step + 48, f"{n} 條")
 
 
@@ -121,6 +138,14 @@ class TestRegionsSplit(unittest.TestCase):
 			b = r[key]
 			self.assertGreaterEqual(b["x"], L.CONTENT_BOX[0], key)
 			self.assertLessEqual(b["x"] + b["w"], L.CONTENT_BOX[2], key)
+
+	def test_兩欄的_y_也關在內容卡裡(self):
+		# 上面那則只驗 x：COL_PAD 若哪天算 y 算錯，兩欄可能上下溢出內容卡卻沒有測試擋住
+		r = self._r(0)
+		for key in ("text", "figure"):
+			b = r[key]
+			self.assertGreaterEqual(b["y"], L.CONTENT_BOX[1], key)
+			self.assertLessEqual(b["y"] + b["h"], L.CONTENT_BOX[3], key)
 
 	def test_奇偶頁鏡像(self):
 		# 同一堂課出現兩頁同 kind 的 figure 時（c_loop 的 p1 與 p4 都是 compare），

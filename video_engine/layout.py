@@ -46,6 +46,14 @@ def bullet_metrics(n):
 	return step, max(16, min(BULLET_SIZE, round(step * BULLET_SIZE / BULLET_STEP)))
 
 
+def count_bullets(slide):
+	"""條列計數不分 hidden：base 與 full 兩張圖必須算出同一份版位，
+	不然浮現動畫裁出來的框跟已經畫好的底圖對不齊。_stack、regions_for 的
+	split 分支、render_slides 的繪製迴圈三處都要吃同一顆函式，才不會有人
+	改了計數規則卻只改到其中一兩處"""
+	return sum(1 for e in slide["elements"] if e["type"] in ("bullet", "callout"))
+
+
 def rect(x0, y0, x1, y1):
 	"""(x0,y0,x1,y1) → 跟 layout.json 的框同一種形狀，免得兩種座標慣例混用"""
 	return {"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0}
@@ -95,9 +103,7 @@ def _stack(slide, index):
 	降級也是呼叫這個函式，所以獨立出來而不是塞在 regions_for 裡"""
 	els = slide["elements"]
 	has_code = any(e["type"] == "code" for e in els)
-	# 條列計數不分 hidden：base 與 full 必須算出同一份版位，
-	# 不然浮現動畫裁出來的框跟已經畫好的底圖對不齊
-	n_bullets = sum(1 for e in els if e["type"] in ("bullet", "callout"))
+	n_bullets = count_bullets(slide)
 	figs = [e for e in els if e["type"] == "figure"]
 
 	# 兩邊都要用 bullet_metrics 的自適應行距：render_slide 的繪製迴圈這一步
@@ -134,9 +140,7 @@ def regions_for(slide, index):
 	if pick_variant(slide) != "split":
 		return _stack(slide, index)
 
-	els = slide["elements"]
-	# 條列計數不分 hidden，理由跟 _stack 一樣：base 與 full 兩張圖版位要一致
-	n_bullets = sum(1 for e in els if e["type"] in ("bullet", "callout"))
+	n_bullets = count_bullets(slide)
 
 	x0, y0, x1, y1 = CONTENT_BOX
 	col_w = (x1 - x0 - 2 * COL_PAD - COL_GAP) // 2

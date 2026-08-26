@@ -17,7 +17,7 @@ from fontTools.ttLib import TTFont
 from layout import (
 	CENTER_X, CODE_BOX, CODE_X, CODE_Y0, CONTENT_BOX, FIG_GAP, FIG_MAX_W,
 	FIG_ROW_H, H, HEADER_BOX, SUB_Y, TITLE_Y, W, bullet_metrics, code_metrics,
-	fig_height, regions_for,
+	count_bullets, fig_height, regions_for,
 )
 
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
@@ -96,7 +96,11 @@ def draw_text_block(targets, measure, text, y, font, color, region=None, align="
 	align="center" 沿用舊行為（畫布中線 + "ma" 錨點），"left" 錨在區域左緣。
 	region 只有靠左時會用到——標題與副標永遠置中於 HEADER_BOX，不吃區域
 	"""
-	if align == "left" and region:
+	if align == "left":
+		if not region:
+			# 沒有 region 就不知道左緣在哪，call site 明顯是漏傳，
+			# 悄悄退回置中只會讓錯位的畫面看起來像正常輸出
+			raise ValueError("draw_text_block: align=\"left\" 需要 region")
 		x, anchor = region["x"], "la"
 	else:
 		x, anchor = CENTER_X, "ma"
@@ -194,8 +198,7 @@ def render_slide(slide, guard, th, out_dir, idx):
 	reg = regions_for(slide, idx - 1)      # idx 從 1 起算，版型用 0 起算的頁次
 	bullet_y = reg["text"]["y"]
 	fig_y = reg["figure"]["y"] if reg["figure"] else bullet_y
-	# 條列計數不分 hidden，字級／行距才會跟 layout.py 那邊算出同一個值
-	n_bullets = sum(1 for e in slide["elements"] if e["type"] in ("bullet", "callout"))
+	n_bullets = count_bullets(slide)
 	bullet_step, bullet_size = bullet_metrics(n_bullets)
 
 	for el in slide["elements"]:

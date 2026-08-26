@@ -72,5 +72,54 @@ class TestCodeBoxesInsideCard(unittest.TestCase):
 			self.assertLessEqual(b["y"] + b["h"], L.CODE_BOX[3], f"L{i} 跑到卡片下緣外")
 
 
+class TestBulletBoxMatchesRegionsFor(unittest.TestCase):
+	"""layout.py 裡的 test_版位高度與繪製遞增量必須同源 只比對 layout._stack() 跟
+	layout.bullet_metrics() 兩者的回傳值——兩邊現在活在同一個模組，_stack 跟 render_slide
+	的繪製迴圈各自改吃不同行距來源那種歷史分歧（曾經 738 vs 768）不會被那則測試擋住。
+	這裡改跑一次真正的 render_slides.main()，用量出來的實際框去比對 regions_for 的文字區域，
+	才是在驗證兩個檔案真的沒有分岔，不是在複誦同一個模組的算式"""
+
+	def _render_bullets(self, n):
+		lesson = {
+			"lesson_id": "t",
+			"title": "t",
+			"slides": [{
+				"id": "p1",
+				"elements": [
+					{"id": "p1_title", "type": "title", "text": "測試"},
+					{"id": "p1_sub", "type": "subtitle", "text": "s"},
+				] + [
+					{"id": f"p1_b{i}", "type": "bullet", "text": f"項目 {i}"}
+					for i in range(n)
+				],
+			}],
+		}
+		d = tempfile.mkdtemp()
+		self.addCleanup(__import__("shutil").rmtree, d, True)
+		path = os.path.join(d, "t.lesson.json")
+		with open(path, "w", encoding="utf-8") as f:
+			json.dump(lesson, f)
+		old = sys.argv
+		sys.argv = ["render_slides.py", path, d]
+		try:
+			self.assertEqual(R.main(), 0)
+		finally:
+			sys.argv = old
+		with open(os.path.join(d, "layout.json"), encoding="utf-8") as f:
+			boxes = json.load(f)["slides"][0]["boxes"]
+		return boxes, lesson["slides"][0]
+
+	def test_七條時最後一條的實測框落在_regions_for_的文字區域內(self):
+		# 7 條是自適應 step 第一次跟舊固定常數分岔的地方（738 vs 768）
+		n = 7
+		boxes, sl = self._render_bullets(n)
+		last = boxes[f"p1_b{n - 1}"]
+		text_region = L.regions_for(sl, 0)["text"]
+		self.assertGreaterEqual(last["y"], text_region["y"],
+			"最後一條的框跑到 regions_for 算出的文字區域上緣外")
+		self.assertLessEqual(last["y"] + last["h"], text_region["y"] + text_region["h"],
+			"最後一條的框跑到 regions_for 算出的文字區域下緣外")
+
+
 if __name__ == "__main__":
 	unittest.main()
