@@ -102,7 +102,12 @@ class Job:
 			return True
 
 	def resume(self):
-		"""審稿後續跑。呼叫前必須先 claim() 成功"""
+		"""審稿後續跑。呼叫前必須先 claim() 成功（現已強制檢查）"""
+		# claim() 是原子閘，確保倒數計時器與使用者送出只有一個贏。
+		# 若少了這個檢查，第三個呼叫端會跳過 claim() 而兩條執行緒同時
+		# 跑語音合成與影格渲染，把同一批輸出檔案蓋掉
+		if self.status != "running":
+			raise RuntimeError(f"status 是 {self.status}，resume() 前必須先呼叫 claim() 成功")
 		if not self._pump(*AFTER_REVIEW):
 			return
 		self.status = "done"

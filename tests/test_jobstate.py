@@ -114,6 +114,26 @@ class TestJob(unittest.TestCase):
 			# 狀態確實翻了
 			self.assertEqual(j.status, "running")
 
+	def test_沒有先_claim_就_resume_要被擋下來(self):
+		# 沒有 claim() 保護，resume() 會被多執行緒同時呼叫，
+		# 語音合成與影格渲染一起跑，把同一批輸出檔案蓋掉
+		j = Job("m.md", "/tmp/out", 110, fake_runner(ALL))
+		j.start()
+		self.assertEqual(j.status, "awaiting_review")
+
+		# 直接呼叫 resume() 不經過 claim()，應該被擋
+		with self.assertRaises(RuntimeError) as cm:
+			j.resume()
+		self.assertIn("claim()", str(cm.exception))
+
+		# claim() 成功後，resume() 不應該報錯
+		j2 = Job("m.md", "/tmp/out", 110, fake_runner(ALL))
+		j2.start()
+		self.assertTrue(j2.claim())
+		# 這個呼叫不應該拋出例外
+		j2.resume()
+		self.assertEqual(j2.status, "done")
+
 
 if __name__ == "__main__":
 	unittest.main()
