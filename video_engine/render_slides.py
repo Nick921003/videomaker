@@ -15,9 +15,9 @@ from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont
 
 from layout import (
-	BULLET_MAX_W, BULLET_SIZE, BULLET_STEP, BULLET_Y0, CARD_PAD_X, CENTER_X,
-	CODE_BOX, CODE_X, CODE_Y0, CONTENT_BOX, FIG_CAPTION_H, FIG_GAP, FIG_MAX_W,
-	FIG_ROW_H, H, HEADER_BOX, SUB_Y, TITLE_Y, W, bullet_metrics, code_metrics,
+	BULLET_MAX_W, BULLET_STEP, CENTER_X, CODE_BOX, CODE_X, CODE_Y0,
+	CONTENT_BOX, FIG_GAP, FIG_MAX_W, FIG_ROW_H, H, HEADER_BOX, SUB_Y,
+	TITLE_Y, W, code_metrics, fig_height, regions_for,
 )
 
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
@@ -95,15 +95,6 @@ def draw_centered(targets, measure, text, y, font, color):
 	for d in targets:
 		d.text((CENTER_X, y), text, font=font, fill=color, anchor="ma")
 	return ink_box(measure, (CENTER_X, y), text, font, anchor="ma")
-
-
-def fig_height(el):
-	"""先算高度，才能把整塊內容垂直置中"""
-	cap = FIG_CAPTION_H if el.get("caption") else 0
-	if el["kind"] == "compare":
-		n = max(len(el.get("left", {}).get("items", [])), len(el.get("right", {}).get("items", [])))
-		return 64 + n * 74 + cap
-	return FIG_ROW_H + cap
 
 
 def draw_figure(targets, measure, el, th, top, guard):
@@ -191,15 +182,10 @@ def render_slide(slide, guard, th, out_dir, idx):
 		for d in (db, df):
 			d.rectangle(CODE_BOX, fill=th["code"]["bg"], outline=th["code"]["edge"], width=2)
 
-	# 條列與示意圖視為同一塊內容，一起垂直置中於內容卡
-	n_bullets = sum(1 for e in slide["elements"] if e["type"] in ("bullet", "callout"))
-	figs = [e for e in slide["elements"] if e["type"] == "figure"]
-	bullets_h = (n_bullets - 1) * BULLET_STEP + 48 if n_bullets else 0
-	figs_h = sum(fig_height(f) + 40 for f in figs)
-	block_h = bullets_h + figs_h
-	bullet_y = (CONTENT_BOX[1] + (CONTENT_BOX[3] - CONTENT_BOX[1] - block_h) // 2
-		if block_h else BULLET_Y0)
-	fig_y = bullet_y + bullets_h + (40 if bullets_h else 0)
+	# 版位交給 regions_for 算，這裡只取畫圖要用的起點
+	reg = regions_for(slide, idx - 1)      # idx 從 1 起算，版型用 0 起算的頁次
+	bullet_y = reg["text"]["y"]
+	fig_y = reg["figure"]["y"] if reg["figure"] else bullet_y
 
 	for el in slide["elements"]:
 		eid, etype = el["id"], el["type"]

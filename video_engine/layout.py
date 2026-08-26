@@ -55,3 +55,54 @@ def code_metrics(n):
 	"""
 	step = min(CODE_STEP, (CODE_BOX[3] - CODE_Y0) // max(1, n))
 	return step, max(12, min(CODE_SIZE, round(step * CODE_SIZE / CODE_STEP)))
+
+
+def fig_height(el):
+	"""先算高度，才能把整塊內容垂直置中。從 render_slides.py 搬過來——這是純算式，不碰 PIL"""
+	cap = FIG_CAPTION_H if el.get("caption") else 0
+	if el["kind"] == "compare":
+		n = max(len(el.get("left", {}).get("items", [])),
+			len(el.get("right", {}).get("items", [])))
+		return 64 + n * 74 + cap
+	return FIG_ROW_H + cap
+
+
+def _stack(slide, index):
+	"""現況版位原樣搬進區域框架。之後更花俏的版型判斷容量不夠時，
+	降級也是呼叫這個函式，所以獨立出來而不是塞在 regions_for 裡"""
+	els = slide["elements"]
+	has_code = any(e["type"] == "code" for e in els)
+	# 條列計數不分 hidden：base 與 full 必須算出同一份版位，
+	# 不然浮現動畫裁出來的框跟已經畫好的底圖對不齊
+	n_bullets = sum(1 for e in els if e["type"] in ("bullet", "callout"))
+	figs = [e for e in els if e["type"] == "figure"]
+
+	step, _ = bullet_metrics(n_bullets)
+	bullets_h = (n_bullets - 1) * step + 48 if n_bullets else 0
+	figs_h = sum(fig_height(f) + 40 for f in figs)
+	block_h = bullets_h + figs_h
+	top = (CONTENT_BOX[1] + (CONTENT_BOX[3] - CONTENT_BOX[1] - block_h) // 2
+		if block_h else BULLET_Y0)
+
+	return {
+		"variant": "stack",
+		# 左右各留 CARD_PAD_X，寬度才精確等於 BULLET_MAX_W。
+		# 直接用 CONTENT_BOX 的內寬會是 1760，比舊的上限寬 110px，文字會貼到卡片邊
+		"text": rect(CONTENT_BOX[0] + CARD_PAD_X, top,
+			CONTENT_BOX[2] - CARD_PAD_X, top + bullets_h),
+		"text_align": "center",
+		"figure": rect(CONTENT_BOX[0], top + bullets_h + (40 if bullets_h else 0),
+			CONTENT_BOX[2], CONTENT_BOX[3]) if figs else None,
+		"code": rect(*CODE_BOX) if has_code else None,
+	}
+
+
+def regions_for(slide, index):
+	"""這一頁的哪塊區域給誰。index 是頁次（0 起算），供之後需要鏡像的版型使用。
+
+	title／subtitle 不在回傳值裡——它們永遠畫在 HEADER_BOX，
+	那是換頁交叉淡化時唯一不動的錨點。
+	目前只有 stack 一種版型；之後版型選擇邏輯會插在這裡，
+	容量算不下時降級也回頭呼叫 _stack
+	"""
+	return _stack(slide, index)
