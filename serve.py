@@ -6,6 +6,7 @@
 
 用法：.venv/bin/python serve.py [埠號，預設 8899]
 """
+import collections
 import json
 import os
 import shutil
@@ -72,7 +73,13 @@ def _guard(job, fn, *args):
 
 
 def real_runner(material, sec):
-	"""把 run.py --json-events 的 stderr 逐行轉成事件流"""
+	"""把 run.py --json-events 的 stderr 逐行轉成事件流。
+
+	非 JSON 的那些行不是雜訊——sub-stage（validate.py 之類）的 traceback
+	跟 run.py 自己印的 JSON 事件走同一條繼承來的 stderr。舊版整段丟掉的話，
+	operator 只看得到「階段 X 失敗」，過期金鑰、額度用盡、TTS 拒接長得一模一樣。
+	留最後 20 行掛在 stage_fail 事件上，跟著 job.error 一起送到前端
+	"""
 	def runner(stage_from, stage_to):
 		args = [PY, RUN, material, "--from", stage_from, "--until", stage_to, "--json-events"]
 		if sec:
@@ -80,21 +87,28 @@ def real_runner(material, sec):
 		p = subprocess.Popen(args, stdout=subprocess.DEVNULL,
 			stderr=subprocess.PIPE, text=True, bufsize=1)
 		saw_fail = False
+		tail = collections.deque(maxlen=20)
 		for line in p.stderr:
 			line = line.strip()
 			if not line.startswith("{"):
+				if line:
+					tail.append(line)
 				continue
 			try:
 				ev = json.loads(line)
 			except json.JSONDecodeError:
-				continue      # 底層套件的警告訊息也可能以 { 開頭，不能讓它炸掉整條 runner
-			saw_fail = saw_fail or ev.get("event") == "stage_fail"
+				if line:
+					tail.append(line)      # 底層套件的警告訊息也可能以 { 開頭，不能讓它炸掉整條 runner
+				continue
+			if ev.get("event") == "stage_fail":
+				saw_fail = True
+				ev["tail"] = list(tail)
 			yield ev
 		p.wait()
 		# run.py 若是被 SyntaxError、MemoryError 這類炸掉的，根本來不及印事件。
 		# 沒有這一條的話 job 會永遠停在 running，前端進度條卡死
 		if p.returncode != 0 and not saw_fail:
-			yield {"event": "stage_fail", "stage": stage_to, "code": p.returncode}
+			yield {"event": "stage_fail", "stage": stage_to, "code": p.returncode, "tail": list(tail)}
 	return runner
 
 
@@ -175,16 +189,20 @@ class Handler(BaseHTTPRequestHandler):
 
 	def _create(self):
 		global _job, _job_id
+		length = int(self.headers.get("Content-Length", 0))
+		# 409／503／413 都要在回覆前把整個 body 讀乾淨。BaseHTTPRequestHandler
+		# 預設 HTTP/1.0，回應送出後就關連線；receive buffer 裡還有沒讀完的資料的話，
+		# 對端看到的是 RST 不是正常關閉——瀏覽器只會回報「連不上」，
+		# 蓋掉真正的錯誤訊息（例如 TTS 沒開的 503），現場最常見的翻車點反而看不到
+		body = self.rfile.read(length)
 		with _lock:
 			if _job and _job.status in ("queued", "running", "awaiting_review"):
 				return self._json(409, {"error": "已經有一個工作在跑，等它跑完"})
 			if not tts_ready():
 				return self._json(503, {"error": f"語音服務 {TTS_URL} 沒有回應，先把 GPT-SoVITS 開起來"})
-			length = int(self.headers.get("Content-Length", 0))
 			if length > MAX_UPLOAD:
 				return self._json(413, {"error": "檔案超過 5 MB"})
-			name, blob, sec = parse_multipart(self.rfile.read(length),
-				self.headers.get("Content-Type", ""))
+			name, blob, sec = parse_multipart(body, self.headers.get("Content-Type", ""))
 			name = safe_name(name)
 			if not allowed(name):
 				return self._json(400, {"error": f"不支援 {name}，只吃 {'、'.join(SUPPORTED)}"})
@@ -218,26 +236,37 @@ class Handler(BaseHTTPRequestHandler):
 		# claim 成功＝狀態已是 running，計時器不會再插手。
 		# 重驗要開 subprocess（約 0.3 秒），不放在 _lock 裡
 		notice = None
-		if segs:
-			shutil.copy(_job.actions_path, _job.actions_backup)   # 每次都重新備份
-			write_segments(_job.actions_path, segs)
-			try:
-				errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
-			except RuntimeError as e:
-				# 驗證器本身炸了。不能當成「通過」放行——那正是這個閘存在的理由
-				shutil.copy(_job.actions_backup, _job.actions_path)
-				errs = [f"驗證器沒跑起來：{e}"]
-			if errs:
-				# 一律還原。壞稿絕不能進 TTS——這是驗證閘存在的理由
-				shutil.copy(_job.actions_backup, _job.actions_path)
-				if not _job.retried:
-					_job.retried = True
-					_job.status = "awaiting_review"      # 放回審稿，重開一輪倒數
-					_job.review_deadline = _job.clock() + REVIEW_SEC
-					threading.Thread(target=_review_timer, args=(_job,), daemon=True).start()
-					return self._json(400, {"errors": errs,
-						"deadline": _job.review_deadline})
-				notice = "講稿兩次都沒通過驗證，已改用原稿繼續"
+		try:
+			if segs:
+				shutil.copy(_job.actions_path, _job.actions_backup)   # 每次都重新備份
+				write_segments(_job.actions_path, segs)
+				try:
+					errs = revalidate(_job.lesson_path, _job.actions_path, _job.sec)
+				except RuntimeError as e:
+					# 驗證器本身炸了。不能當成「通過」放行——那正是這個閘存在的理由
+					shutil.copy(_job.actions_backup, _job.actions_path)
+					errs = [f"驗證器沒跑起來：{e}"]
+				if errs:
+					# 一律還原。壞稿絕不能進 TTS——這是驗證閘存在的理由
+					shutil.copy(_job.actions_backup, _job.actions_path)
+					if not _job.retried:
+						_job.retried = True
+						_job.status = "awaiting_review"      # 放回審稿，重開一輪倒數
+						_job.review_deadline = _job.clock() + REVIEW_SEC
+						threading.Thread(target=_review_timer, args=(_job,), daemon=True).start()
+						return self._json(400, {"errors": errs,
+							"deadline": _job.review_deadline})
+					notice = "講稿兩次都沒通過驗證，已改用原稿繼續"
+		except Exception as e:
+			# claim() 已經把狀態翻成 running，但這一段是同步跑在 request handler
+			# 裡、沒有 _guard 接住。shutil.copy 找不到 actions_path、revalidate
+			# 裡的 subprocess.run 直譯器路徑錯了炸 FileNotFoundError（只有
+			# RuntimeError 會被上面接住）都會走到這裡。不接住的話狀態永遠停在
+			# running，之後每個上傳都吃 409，現場只能重啟服務——跟 _guard 保護
+			# 背景執行緒是同一個理由，只是這段沒有經過 _guard
+			_job.status = "failed"
+			_job.error = f"{type(e).__name__}: {e}"
+			return self._json(500, {"error": f"核可流程失敗：{_job.error}"})
 		_job.notice = notice
 		threading.Thread(target=_guard, args=(_job, _job.resume), daemon=True).start()
 		self._json(200, {"ok": True, "notice": notice})

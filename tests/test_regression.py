@@ -14,6 +14,29 @@ OUT = os.path.join(ROOT, "video_engine/out")
 SUMMARY_RE = re.compile(r"總長 [\d.]+ 秒，\d+ 個場景")
 
 
+def _missing_input(lesson_id):
+	"""回傳這個 lesson_id 缺的第一個必要檔案路徑，都在的話回傳 None。
+
+	layout.json／durations.json 不在版控裡（.gitignore 排除整個
+	video_engine/out/），乾淨的 clone 上一定沒有，只能靠本機真的跑過一次
+	管線（synth 階段量測語音長度）才會生出來——不是可以簡單補的 fixture。
+	缺了就該讓測試明確 SKIP，而不是留給 shutil.copy 炸出一個看起來像
+	程式錯誤、其實只是「還沒在這台機器跑過管線」的 FileNotFoundError
+	"""
+	lesson = os.path.join(EXAMPLES, f"{lesson_id}.lesson.json")
+	actions = os.path.join(EXAMPLES, f"{lesson_id}.actions.json")
+	layout = os.path.join(OUT, lesson_id, "layout.json")
+	durations = os.path.join(OUT, lesson_id, "durations.json")
+	for path in (lesson, actions, layout, durations):
+		if not os.path.exists(path):
+			return path
+	return None
+
+
+_MISSING_C_STRUCT = _missing_input("c_struct")
+_MISSING_C_STRING = _missing_input("c_string")
+
+
 class TestRegression(unittest.TestCase):
 	"""compile_timeline.py 的回歸檢查：兩個委交的固定案例要編譯乾淨、無警告無錯誤。
 
@@ -52,9 +75,13 @@ class TestRegression(unittest.TestCase):
 			self.assertFalse(stripped.startswith("WARN") or stripped.startswith("ERROR"),
 				f"{lesson_id} 出現診斷：{line}")
 
+	@unittest.skipUnless(_MISSING_C_STRUCT is None,
+		f"缺 {_MISSING_C_STRUCT}——這是跑過一次本機管線（含 synth 語音合成）才會產生的檔案")
 	def test_c_struct_編譯無診斷(self):
 		self._assert_clean("c_struct")
 
+	@unittest.skipUnless(_MISSING_C_STRING is None,
+		f"缺 {_MISSING_C_STRING}——這是跑過一次本機管線（含 synth 語音合成）才會產生的檔案")
 	def test_c_string_編譯無診斷(self):
 		self._assert_clean("c_string")
 

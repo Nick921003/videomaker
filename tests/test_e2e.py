@@ -49,10 +49,16 @@ class TestEndToEnd(unittest.TestCase):
 		landed_md = os.path.join(ROOT, "video_engine/materials/_e2e_deck.md")
 		lesson_id = lesson_id_for(deck)
 		out_dir = os.path.join(ROOT, "video_engine/out", lesson_id)
-		# 建檔前先掛 cleanup：斷言中途失敗也不會留下孤兒檔
+		lesson_json = os.path.join(ROOT, "video_engine/examples", f"{lesson_id}.lesson.json")
+		actions_json = os.path.join(ROOT, "video_engine/examples", f"{lesson_id}.actions.json")
+		# 建檔前先掛 cleanup：斷言中途失敗也不會留下孤兒檔。
+		# lesson.json／actions.json 落在 video_engine/examples/，那個目錄
+		# 沒被 gitignore，漏清的話會被任何一次 git add -A 撿進版控
 		self.addCleanup(_remove_file, deck)
 		self.addCleanup(_remove_file, landed_md)
 		self.addCleanup(_remove_dir, out_dir)
+		self.addCleanup(_remove_file, lesson_json)
+		self.addCleanup(_remove_file, actions_json)
 
 		make_pptx.make(deck, [
 			("C 語言的布林值", ["C89 沒有 bool 型態", "非零即真，零為假"]),

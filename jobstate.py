@@ -57,6 +57,14 @@ class Job:
 			elif ev["event"] == "stage_fail":
 				self.status = "failed"
 				self.error = f"{ev['stage']} 失敗（回傳碼 {ev.get('code')}）"
+				# tail 是 sub-stage 沒被吃掉的 stderr 診斷（LLM 金鑰過期、額度用盡、
+				# TTS 拒接看起來都只是「失敗」，接上這段才分得出來）。
+				# 走同一個 error 欄位是因為 SSE 的 state 事件只帶 error，不會另外帶 tail
+				tail = ev.get("tail")
+				if tail:
+					if isinstance(tail, (list, tuple)):
+						tail = "\n".join(tail)
+					self.error += f"\n{tail}"
 				return False
 		return True
 
