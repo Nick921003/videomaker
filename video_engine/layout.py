@@ -77,8 +77,10 @@ def _stack(slide, index):
 	n_bullets = sum(1 for e in els if e["type"] in ("bullet", "callout"))
 	figs = [e for e in els if e["type"] == "figure"]
 
-	step, _ = bullet_metrics(n_bullets)
-	bullets_h = (n_bullets - 1) * step + 48 if n_bullets else 0
+	# 這裡刻意用固定的 BULLET_STEP，不用 bullet_metrics。
+	# render_slide 的繪製迴圈這一步也是以 BULLET_STEP 遞增，兩邊必須算同一個值，
+	# 否則 7 條以上就分歧（738 vs 768）。自適應行距由後續 Task 在兩處同時換上
+	bullets_h = (n_bullets - 1) * BULLET_STEP + 48 if n_bullets else 0
 	figs_h = sum(fig_height(f) + 40 for f in figs)
 	block_h = bullets_h + figs_h
 	top = (CONTENT_BOX[1] + (CONTENT_BOX[3] - CONTENT_BOX[1] - block_h) // 2
