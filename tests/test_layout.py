@@ -35,9 +35,11 @@ def two_figs(n_bullets=3, hidden=()):
 
 class TestRegionsStack(unittest.TestCase):
 	def _regions(self, sl, index=0):
-		"""regions_for 只有 split 有自己的分支，其餘都吃 _stack。
+		"""regions_for 只有 split／stage 有自己的分支，其餘都吃 _stack。
 		fixture 選錯分支的話，底下的斷言只是巧合成立——這裡先擋住這種漂移，
-		不管日後 pick_variant 怎麼改，這個類別測的東西永遠是 _stack 本身"""
+		不管日後 pick_variant 怎麼改，這個類別測的東西永遠是 _stack 本身。
+		注意：code 頁的區域雖然也吃 _stack，但 variant 標籤會被覆蓋成 "code"，
+		所以帶 code 元素的 fixture 不能餵進這裡——那個組合測試搬去了 TestRegionsCode"""
 		r = L.regions_for(sl, index)
 		self.assertEqual(r["variant"], "stack")
 		return r
@@ -66,10 +68,6 @@ class TestRegionsStack(unittest.TestCase):
 	def test_沒有程式碼的頁面_code_區域是_None(self):
 		r = self._regions(two_figs(n_bullets=3))
 		self.assertIsNone(r["code"])
-
-	def test_有程式碼的頁面_code_區域等於_CODE_BOX(self):
-		r = self._regions(slide("code"))
-		self.assertEqual(r["code"], L.rect(*L.CODE_BOX))
 
 	def test_版位高度與繪製遞增量必須同源(self):
 		# _stack 與 render_slide 的繪製迴圈都改吃 bullet_metrics 的自適應
@@ -169,6 +167,58 @@ class TestRegionsSplit(unittest.TestCase):
 		a = L.regions_for(slide("figure", kind="boxes", n_bullets=3), 0)
 		b = L.regions_for(slide("figure", kind="boxes", n_bullets=3, hidden=(1, 2)), 0)
 		self.assertEqual(a, b)
+
+
+class TestRegionsStage(unittest.TestCase):
+	def _r(self):
+		return L.regions_for(slide("figure", kind="compare", n_bullets=3), 0)
+
+	def test_版型真的是_stage(self):
+		self.assertEqual(self._r()["variant"], "stage")
+
+	def test_文字在上_圖在下_不重疊(self):
+		r = self._r()
+		self.assertLessEqual(r["text"]["y"] + r["text"]["h"], r["figure"]["y"])
+
+	def test_圖區比_split_的欄位寬(self):
+		# compare 走 stage 的唯一理由就是它需要寬度
+		stage = self._r()["figure"]["w"]
+		split = L.regions_for(slide("figure", kind="boxes", n_bullets=3), 0)["figure"]["w"]
+		self.assertGreater(stage, split)
+
+	def test_文字帶不超過內容卡四成高(self):
+		card_h = L.CONTENT_BOX[3] - L.CONTENT_BOX[1]
+		self.assertLessEqual(self._r()["text"]["h"], card_h * 0.4)
+
+	def test_圖區關在內容卡裡(self):
+		f = self._r()["figure"]
+		self.assertGreaterEqual(f["x"], L.CONTENT_BOX[0])
+		self.assertLessEqual(f["x"] + f["w"], L.CONTENT_BOX[2])
+		self.assertLessEqual(f["y"] + f["h"], L.CONTENT_BOX[3])
+
+
+class TestRegionsCode(unittest.TestCase):
+	def test_版型與區域都要對(self):
+		# 光測 code_metrics／code_top 是不夠的：regions_for 對 code 頁
+		# 回傳錯結構或根本沒實作，那兩個函式照樣是綠的
+		r = L.regions_for(slide("code"), 0)
+		self.assertEqual(r["variant"], "code")
+		self.assertEqual(r["code"], L.rect(*L.CODE_BOX))
+		self.assertIsNone(r["figure"])
+
+	def test_程式碼整塊垂直置中(self):
+		step, _ = L.code_metrics(10)
+		top = L.code_top(10)
+		above = top - L.CODE_BOX[1]
+		below = L.CODE_BOX[3] - (top + 10 * step)
+		self.assertLessEqual(abs(above - below), 2, "上下留白差超過 2px 就不算置中")
+
+	def test_置中後仍不溢出(self):
+		for n in range(1, 41):
+			step, _ = L.code_metrics(n)
+			top = L.code_top(n)
+			self.assertGreaterEqual(top, L.CODE_BOX[1], f"{n} 行")
+			self.assertLessEqual(top + n * step, L.CODE_BOX[3], f"{n} 行")
 
 
 if __name__ == "__main__":

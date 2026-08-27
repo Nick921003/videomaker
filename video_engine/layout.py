@@ -33,6 +33,7 @@ CARD_PAD_X = (CONTENT_BOX[2] - CONTENT_BOX[0] - BULLET_MAX_W) // 2
 COL_GAP = 60
 COL_PAD = 40
 SPLIT_MAX_BULLETS = 6      # 半欄高 660，(6-1)*120+48 = 648 剛好放得下
+STAGE_TEXT_RATIO = 0.4     # stage 文字帶最高占內容卡四成，其餘整片寬度留給 compare
 
 
 def bullet_metrics(n):
@@ -67,6 +68,15 @@ def code_metrics(n):
 	"""
 	step = min(CODE_STEP, (CODE_BOX[3] - CODE_Y0) // max(1, n))
 	return step, max(12, min(CODE_SIZE, round(step * CODE_SIZE / CODE_STEP)))
+
+
+def code_top(n):
+	"""程式碼整塊在 CODE_BOX 內垂直置中的起始 y。
+
+	舊版固定從 CODE_Y0 開始，10 行的話下方留 210px 死白
+	"""
+	step, _ = code_metrics(n)
+	return CODE_BOX[1] + max(0, (CODE_BOX[3] - CODE_BOX[1] - n * step) // 2)
 
 
 def fig_vertical(el, width):
@@ -146,30 +156,60 @@ def _stack(slide, index):
 	}
 
 
+def _stage(slide, index):
+	"""compare 圖走 stage 的唯一理由是它需要寬度：文字條列收窄成頂部一條帶狀區
+	（至多內容卡四成高），圖拿下方剩餘部分的整片寬度，左右各留 COL_PAD——
+	比 split 的半欄寬得多"""
+	x0, y0, x1, y1 = CONTENT_BOX
+	n_bullets = count_bullets(slide)
+	step, _ = bullet_metrics(n_bullets)
+	bullets_h = (n_bullets - 1) * step + 48 if n_bullets else 0
+	text_h = min(bullets_h, int((y1 - y0) * STAGE_TEXT_RATIO))
+	# 跟 _stack 同款：文字帶與圖區之間留 40px 呼吸空間，沒文字就不留
+	fig_top = y0 + text_h + (40 if text_h else 0)
+	return {
+		"variant": "stage",
+		"text": rect(x0 + CARD_PAD_X, y0, x1 - CARD_PAD_X, y0 + text_h),
+		"text_align": "center",      # 文字帶橫跨整幅，靠左對齊會很怪
+		"figure": rect(x0 + COL_PAD, fig_top, x1 - COL_PAD, y1),
+		"code": None,
+	}
+
+
 def regions_for(slide, index):
 	"""這一頁的哪塊區域給誰。index 是頁次（0 起算），split 用它決定文字放左還是放右。
 
 	title／subtitle 不在回傳值裡——它們永遠畫在 HEADER_BOX，
 	那是換頁交叉淡化時唯一不動的錨點。
-	版型由 pick_variant 依內容組成決定；目前只有 split 有自己的幾何切法，
-	其餘（stack／code／stage）暫時都沿用 _stack，split 容量算不下時也降級回 _stack
+	版型由 pick_variant 依內容組成決定：split、stage 各有自己的幾何切法，
+	容量算不下時都降級回 _stack；code 的區域跟 _stack 完全一樣（CODE_BOX 外框
+	本來就不動，程式碼整塊的垂直置中另外交給 code_top，不影響這裡切出來的區域），
+	只是把 variant 標籤覆蓋成 "code" 才對得上 pick_variant
 	"""
-	if pick_variant(slide) != "split":
-		return _stack(slide, index)
+	variant = pick_variant(slide)
 
-	n_bullets = count_bullets(slide)
+	if variant == "split":
+		n_bullets = count_bullets(slide)
 
-	x0, y0, x1, y1 = CONTENT_BOX
-	col_w = (x1 - x0 - 2 * COL_PAD - COL_GAP) // 2
-	left = rect(x0 + COL_PAD, y0 + COL_PAD, x0 + COL_PAD + col_w, y1 - COL_PAD)
-	right = rect(x0 + COL_PAD + col_w + COL_GAP, y0 + COL_PAD, x1 - COL_PAD, y1 - COL_PAD)
-	if n_bullets > SPLIT_MAX_BULLETS:
-		return _stack(slide, index)      # 半欄放不下就退回整幅
-	text_left = index % 2 == 0           # 偶數頁文字在左，同課同 kind 的兩頁才不會長一樣
-	return {
-		"variant": "split",
-		"text": left if text_left else right,
-		"text_align": "left",
-		"figure": right if text_left else left,
-		"code": None,
-	}
+		x0, y0, x1, y1 = CONTENT_BOX
+		col_w = (x1 - x0 - 2 * COL_PAD - COL_GAP) // 2
+		left = rect(x0 + COL_PAD, y0 + COL_PAD, x0 + COL_PAD + col_w, y1 - COL_PAD)
+		right = rect(x0 + COL_PAD + col_w + COL_GAP, y0 + COL_PAD, x1 - COL_PAD, y1 - COL_PAD)
+		if n_bullets > SPLIT_MAX_BULLETS:
+			return _stack(slide, index)      # 半欄放不下就退回整幅
+		text_left = index % 2 == 0           # 偶數頁文字在左，同課同 kind 的兩頁才不會長一樣
+		return {
+			"variant": "split",
+			"text": left if text_left else right,
+			"text_align": "left",
+			"figure": right if text_left else left,
+			"code": None,
+		}
+
+	if variant == "stage":
+		return _stage(slide, index)
+
+	r = _stack(slide, index)
+	if variant == "code":
+		r["variant"] = "code"
+	return r

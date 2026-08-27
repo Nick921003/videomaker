@@ -15,9 +15,9 @@ from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont
 
 from layout import (
-	CENTER_X, CODE_BOX, CODE_X, CODE_Y0, CONTENT_BOX, FIG_GAP,
+	CENTER_X, CODE_BOX, CODE_X, CONTENT_BOX, FIG_GAP,
 	FIG_ROW_H, H, HEADER_BOX, SUB_Y, TITLE_Y, W, bullet_metrics, code_metrics,
-	count_bullets, fig_height, fig_vertical, regions_for,
+	code_top, count_bullets, fig_height, fig_vertical, regions_for,
 )
 
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
@@ -269,9 +269,10 @@ def render_slide(slide, guard, th, out_dir, idx):
 			font = ImageFont.truetype(CJK_FONT, size)
 			x0, y0, x1, y1 = CODE_BOX
 			whole = {"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0}
+			top = code_top(len(el["lines"]))       # 整塊垂直置中，CODE_BOX 外框本身不動
 			for i, raw in enumerate(el["lines"], start=1):
 				line = guard.sanitize(raw, keep_indent=True)
-				y = CODE_Y0 + (i - 1) * step
+				y = top + (i - 1) * step
 				if line:
 					for d in targets:
 						d.text((CODE_X, y), line, font=font, fill=code_color(line, th))
