@@ -472,8 +472,16 @@ class TestCorpusInvariants(unittest.TestCase):
 						f"{name} {el['id']} 跑到文字區下緣外")
 
 	def test_條列溢出不得侵入圖區(self):
-		# 上一則允許小幅溢出，這一則守的是真正要緊的事：
-		# 溢出量必須被文字帶與圖區之間那 40px 間隙吸收掉
+		# 上一則允許小幅溢出，這一則守的是真正要緊的事：條列的量測框不得
+		# 跟圖區產生真正的矩形相交。
+		#
+		# 舊寫法只查 y 軸（b.y+b.h <= figure.y），隱含「文字帶永遠疊在圖區
+		# 正上方」——stack／stage 兩種版型確實如此，但 split 版型是左右
+		# 分欄、文字跟圖區同一個 y 帶，只是 x 不重疊。舊寫法在 split 頁上
+		# 把「同 y、不同 x」的正常並排誤判成侵入，四份教材、24 個
+		# （lesson, slide, element）都是假警報，x 範圍其實完全不相交。
+		# 兩個矩形要「同時」在 x 軸與 y 軸都重疊才算真的相交，只查一軸守
+		# 不住這個不變量，四種版型都通用的寫法才是這條測試該長的樣子
 		import layout as L
 		for name in self.LESSONS:
 			lay, _ = self._render(name)
@@ -482,12 +490,16 @@ class TestCorpusInvariants(unittest.TestCase):
 				r = L.regions_for(sl, i)
 				if not r["figure"]:
 					continue
+				fig = r["figure"]
 				for el in sl["elements"]:
 					if el["type"] not in ("bullet", "callout"):
 						continue
 					b = page["boxes"][el["id"]]
-					self.assertLessEqual(b["y"] + b["h"], r["figure"]["y"],
-						f"{name} {el['id']} 侵入圖區")
+					x_overlap = b["x"] < fig["x"] + fig["w"] and fig["x"] < b["x"] + b["w"]
+					y_overlap = b["y"] < fig["y"] + fig["h"] and fig["y"] < b["y"] + b["h"]
+					self.assertFalse(x_overlap and y_overlap,
+						f"{name} slide={sl['id']} el={el['id']} 侵入圖區：\n"
+						f"  bullet_box={b}\n  figure_region={fig}")
 
 	def test_每份教材至少用到兩種版型(self):
 		# 這輪的目的就是消除單調。四種版型全部實作了但沒有一頁走到，
