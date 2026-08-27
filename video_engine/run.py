@@ -92,6 +92,8 @@ def main():
 	start = STAGES.index(opt("--from", "lesson"))
 	stop = STAGES.index(opt("--until", "video"))
 	sec = opt("--sec")
+	layout = opt("--layout")
+	seed = opt("--seed")
 	global JSON_EVENTS
 	JSON_EVENTS = "--json-events" in argv
 
@@ -112,7 +114,9 @@ def main():
 	if want("lesson"):
 		run("generate_lesson.py", [material, lesson], "階段 2　教材結構化（LLM）", LLM_PY, stage="lesson")
 	if want("slides"):
-		run("render_slides.py", [lesson, out_dir], "階段 3　投影片繪製與量測", stage="slides")
+		slides_args = [lesson, out_dir] + (["--layout", layout] if layout else []) + (["--seed", seed] if seed is not None else [])
+		run("render_slides.py", slides_args,
+			"階段 3　投影片繪製與量測", stage="slides")
 	if want("actions"):
 		run("generate_actions.py", [lesson, actions] + (["--sec", sec] if sec else []),
 			"階段 4　動作編排（LLM，內含驗證閘）", LLM_PY, stage="actions")

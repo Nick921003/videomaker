@@ -158,7 +158,7 @@ def shutdown(srv):
 	return n
 
 
-def real_runner(material, sec):
+def real_runner(material, sec, layout=None, seed=None):
 	"""把 run.py --json-events 的 stderr 逐行轉成事件流。
 
 	非 JSON 的那些行不是雜訊——sub-stage（validate.py 之類）的 traceback
@@ -170,6 +170,10 @@ def real_runner(material, sec):
 		args = [PY, RUN, material, "--from", stage_from, "--until", stage_to, "--json-events"]
 		if sec:
 			args += ["--sec", str(sec)]
+		if layout:
+			args += ["--layout", str(layout)]
+		if seed is not None:
+			args += ["--seed", str(seed)]
 		p = spawn(args)
 		saw_fail = False
 		tail = collections.deque(maxlen=20)
@@ -356,7 +360,8 @@ class Handler(BaseHTTPRequestHandler):
 				return self._json(503, {"error": f"語音服務 {TTS_URL} 沒有回應，先把 GPT-SoVITS 開起來"})
 			if length > MAX_UPLOAD:
 				return self._json(413, {"error": "檔案超過 5 MB"})
-			name, blob, sec = parse_multipart(body, self.headers.get("Content-Type", ""))
+			mp = parse_multipart(body, self.headers.get("Content-Type", ""))
+			name, blob, sec, layout, seed = mp.name, mp.blob, mp.sec, mp.layout, mp.seed
 			name = safe_name(name)
 			if not allowed(name):
 				return self._json(400, {"error": f"不支援 {name}，只吃 {'、'.join(SUPPORTED)}"})
@@ -375,7 +380,7 @@ class Handler(BaseHTTPRequestHandler):
 			except ValueError as e:
 				return self._json(400, {"error": str(e)})
 			_job_id += 1
-			_job = Job(md, OUT, sec, real_runner(md, sec))
+			_job = Job(md, OUT, sec, real_runner(md, sec, layout, seed))
 			threading.Thread(target=_guard, args=(_job, _start_job, _job), daemon=True).start()
 		self._json(201, {"job_id": _job_id})
 
@@ -449,8 +454,19 @@ def _review_timer(job):
 		time.sleep(0.5)
 
 
+class MultipartResult(tuple):
+	def __new__(cls, name, blob, sec, layout=None, seed=None):
+		obj = super().__new__(cls, (name, blob, sec))
+		obj.name = name
+		obj.blob = blob
+		obj.sec = sec
+		obj.layout = layout
+		obj.seed = seed
+		return obj
+
+
 def parse_multipart(body, ctype):
-	"""只解析我們自己前端送的兩個欄位：file 與 sec。
+	"""只解析我們自己前端送的欄位：file、sec、layout 與 seed。
 	不用 cgi 模組——Python 3.13 已經移除它。
 
 	去尾必須精確切掉那兩個 CRLF 位元組，不能用 rstrip(b"\r\n-")：
@@ -458,7 +474,7 @@ def parse_multipart(body, ctype):
 	rstrip 會把檔案結構吃掉，解壓時炸 BadZipFile。
 	"""
 	boundary = ctype.split("boundary=")[-1].strip().strip('"').encode()
-	name, blob, sec = "", b"", None
+	name, blob, sec, layout, seed = "", b"", None, None, None
 	for part in body.split(b"--" + boundary):
 		if b"\r\n\r\n" not in part:
 			continue
@@ -471,7 +487,11 @@ def parse_multipart(body, ctype):
 			blob = data
 		elif 'name="sec"' in h:
 			sec = data.decode().strip() or None
-	return name, blob, sec
+		elif 'name="layout"' in h:
+			layout = data.decode().strip() or None
+		elif 'name="seed"' in h:
+			seed = data.decode().strip() or None
+	return MultipartResult(name, blob, sec, layout, seed)
 
 
 def make_server(port):

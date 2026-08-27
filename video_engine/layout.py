@@ -112,22 +112,51 @@ def fig_height(el, width):
 	return FIG_ROW_H + cap
 
 
-def pick_variant(slide):
+LAYOUT_MODES = ("auto", "split", "center", "random")
+
+
+def _roll(seed, slide_id):
+	"""FNV-1a：純算術的確定性混合，不用 random 也不用 hashlib——
+	layout.py 必須維持零 import。Python 內建的 hash 函式不能用：
+	它對字串每個行程都不一樣（PYTHONHASHSEED），輸出會不可重現"""
+	h = 2166136261 ^ (seed & 0xFFFFFFFF)
+	for ch in slide_id:
+		h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
+	return h
+
+
+def pick_variant(slide, mode="auto", seed=0):
 	"""版型由內容組成推導，不由教材指定，也不隨機。
 
 	一堂課的序列固定是 compare → boxes → code → steps，四種內容配四種幾何，
 	同一堂課內自然就不重複——不需要靠頁次輪替製造變化。
 	image 與多張圖一律退回 stack：前者是寫死座標貼上去的、不吃區域，
-	後者在只切出一塊圖區的版型裡會整個疊在一起
+	後者在只切出一塊圖區的版型裡會整個疊在一起。
+
+	mode 參數支援四種選擇模式：
+	- auto（預設）：現況，依內容組成推導
+	- split：只要有單張圖就左右分欄（compare 也走分欄）
+	- center：一律 stack 置中單欄
+	- random：單張圖從 split / stage / stack 依種子抽樣，其餘結構維持原樣
+	程式碼頁在任何模式下皆維持 code。
 	"""
+	if mode not in LAYOUT_MODES:
+		raise ValueError(f"未知的版面模式：{mode!r}（支援：{', '.join(LAYOUT_MODES)}）")
 	els = slide["elements"]
 	if any(e["type"] == "code" for e in els):
 		return "code"
+	if mode == "center":
+		return "stack"
 	if any(e["type"] == "image" for e in els):
 		return "stack"
 	figs = [e for e in els if e["type"] == "figure"]
 	if len(figs) != 1:
 		return "stack"
+	if mode == "split":
+		return "split"
+	if mode == "random":
+		candidates = ("split", "stage", "stack")
+		return candidates[_roll(seed, slide["id"]) % len(candidates)]
 	return "stage" if figs[0]["kind"] == "compare" else "split"
 
 
@@ -203,17 +232,17 @@ def _stage(slide, index):
 	}
 
 
-def regions_for(slide, index):
+def regions_for(slide, index, mode="auto", seed=0):
 	"""這一頁的哪塊區域給誰。index 是頁次（0 起算），split 用它決定文字放左還是放右。
 
 	title／subtitle 不在回傳值裡——它們永遠畫在 HEADER_BOX，
 	那是換頁交叉淡化時唯一不動的錨點。
-	版型由 pick_variant 依內容組成決定：split、stage 各有自己的幾何切法，
+	版型由 pick_variant 依內容組成與模式決定：split、stage 各有自己的幾何切法，
 	容量算不下時都降級回 _stack；code 的區域跟 _stack 完全一樣（CODE_BOX 外框
 	本來就不動，程式碼整塊的垂直置中另外交給 code_top，不影響這裡切出來的區域），
 	只是把 variant 標籤覆蓋成 "code" 才對得上 pick_variant
 	"""
-	variant = pick_variant(slide)
+	variant = pick_variant(slide, mode=mode, seed=seed)
 
 	if variant == "split":
 		n_bullets = count_bullets(slide)

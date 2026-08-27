@@ -219,7 +219,7 @@ def draw_figure(targets, measure, el, th, region, guard):
 	return boxes
 
 
-def render_slide(slide, guard, th, out_dir, idx):
+def render_slide(slide, guard, th, out_dir, idx, mode="auto", seed=0):
 	"""畫一頁，回傳該頁的 boxes 與兩張圖的路徑"""
 	bg = th["canvas"]["bg"]
 	base = Image.new("RGB", (W, H), bg)
@@ -237,7 +237,7 @@ def render_slide(slide, guard, th, out_dir, idx):
 			d.rectangle(CODE_BOX, fill=th["code"]["bg"], outline=th["code"]["edge"], width=2)
 
 	# 版位交給 regions_for 算，這裡只取畫圖要用的起點
-	reg = regions_for(slide, idx - 1)      # idx 從 1 起算，版型用 0 起算的頁次
+	reg = regions_for(slide, idx - 1, mode=mode, seed=seed)      # idx 從 1 起算，版型用 0 起算的頁次
 	bullet_y = reg["text"]["y"]
 	fig_y = reg["figure"]["y"] if reg["figure"] else bullet_y
 	n_bullets = count_bullets(slide)
@@ -330,15 +330,21 @@ def render_slide(slide, guard, th, out_dir, idx):
 	return boxes, base_png, full_png
 
 
+def opt(name, default=None):
+	return sys.argv[sys.argv.index(name) + 1] if name in sys.argv and sys.argv.index(name) + 1 < len(sys.argv) else default
+
+
 def main():
 	if len(sys.argv) < 2:
 		print(__doc__)
 		return 2
 	with open(sys.argv[1], encoding="utf-8") as f:
 		lesson = json.load(f)
-	out_dir = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
+	out_dir = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith("--") else os.path.join(
 		os.path.dirname(os.path.abspath(__file__)), "out", lesson["lesson_id"]
 	)
+	layout_mode = opt("--layout", "auto")
+	seed = int(opt("--seed", 0))
 	os.makedirs(out_dir, exist_ok=True)
 
 	guard = FontGuard(CJK_FONT)
@@ -349,12 +355,14 @@ def main():
 		"lesson_id": lesson["lesson_id"],
 		"canvas": {"width": W, "height": H},
 		"theme": theme_name,
+		"mode": layout_mode,
+		"seed": seed,
 		"slides": [],
 	}
 
 	for idx, slide in enumerate(lesson["slides"], start=1):
 		print(f"[{idx}/{len(lesson['slides'])}] {slide['id']}")
-		boxes, base_png, full_png = render_slide(slide, guard, th, out_dir, idx)
+		boxes, base_png, full_png = render_slide(slide, guard, th, out_dir, idx, mode=layout_mode, seed=seed)
 		layout["slides"].append({
 			"slide_id": slide["id"],
 			"png": base_png,
