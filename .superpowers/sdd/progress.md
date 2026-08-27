@@ -97,3 +97,50 @@ Task 9: complete (commits 3e01b8b..8a6a123 + E2E 路徑修正，controller-verif
   內嵌播放器移出 YAGNI 並記下翻轉理由與代價
   新增「刻意不處理的技術債」節：9 項拒絕理由 + 2 個被推翻的論斷
 技術債三個 Task 全部完成。53 個測試。
+
+## 版型多樣化（plan: 2026-08-26-slide-layout-variation.md）
+Task 1: complete (commits b523450..c8a0f00, review clean)
+  Minor（plan-mandated）：render_slides.py 匯入了 CARD_PAD_X／bullet_metrics 但沒用到。
+  處置：Task 2 起把匯入清單收斂成「實際用到的」，不做前瞻匯入。
+Task 2: complete (commits c8a0f00..5517016, review clean after one fix round)
+  Review 抓到 plan-mandated 缺陷：_stack 用 bullet_metrics 的自適應行距算高度，
+  但繪製迴圈仍以固定 BULLET_STEP 遞增，7 條起分歧（738 vs 768）。
+  已修（退回固定行距）＋ 加回歸測試，計畫的 Task 3A 也改成兩處必須同時換。
+  Minor：新測試用裸 assertEqual 而非 subTest，診斷廣度略窄。留給最終審查裁決。
+Task 3A: complete (commits 7ddcadc..b911f5a, review clean after one fix round)
+  Important x2：(a) 三則掛在 TestRegionsStack 的測試因 pick_variant 上線而實際跑去測 split，
+  _stack 的垂直邊界與 hidden 不變量變成零覆蓋；(b) 跨模組哨兵被 plan 的範例碼削弱成同檔內自證。
+  兩者已修：TestRegionsStack 加 variant 斷言防再漂移、新增真的渲染 7 條條列的端對端哨兵。
+  順帶：count_bullets() 收掉三處重複計數；draw_text_block 靠左卻沒給區域改成丟 ValueError。
+Task 3B: complete (commits b911f5a..a11f3b5, review clean after one fix round)
+  Important：實作自加的「多圖剩餘空間切片」可達且有實測 bug——圖疊在一起、畫到 y=1090。
+  根因兩個：fig_height 不知道直排會變高（回傳橫排高度）、切片後又垂直置中吃掉後面的空間。
+  已修：fig_vertical() 讓橫直排判準只活在 layout.py 一處；單圖頁原樣傳區域，多圖頁每張只拿自己的高度依序疊；超出 CONTENT_BOX 明確 raise。
+  複審用 worktree 做 red/green、75 組參數對帳 fig_height vs draw_figure、44 張 PNG 逐位元組確認改名零行為差異。
+  Minor：單圖頁的 _stack 負偏移溢出未補守門；多圖＋caption 未被覆蓋。留給最終審查。
+Task 4: complete (commits 25d95e0..d0be36a, review clean after one fix round)
+  Important：_stage 把條列帶壓到卡片 40%，但繪製迴圈不看那個上限，compare 頁 4 條時
+  最後一條畫到 y=612 落進圖區（576-980）。prompt 規則 4 允許 2-4 條＝產得出來的輸入。
+  已修：加從常數推導的容量守門（cap=int(740*0.4)=296，n=3 是 288 過、n=4 是 408 降級）。
+  六張 compare 頁全部維持 stage，44 張 PNG 逐位元組不變。
+  Minor（留給最終審查）：bullet_metrics 的 +48 是平的高度預算不是量測的字身下緣，
+  實測墨跡溢出 0-4px 且與內容有關（結尾「，」多 4px），實作宣稱的「固定 +2px」不成立。
+  未越進圖區（中間有 40px 間隙），但 bounds check 從沒查過條列框 vs 文字區。Task 5 補。
+Task 5: complete (commits d0be36a..41ad9c7, review clean after one fix round)
+  我寫的 test_條列溢出不得侵入圖區 假設文字在圖上方，但 split 是並排（同 y 不同 x），
+  24 筆全是誤判。實作者拒絕放寬斷言、照實回報——正確。已改成真正的二維不相交判定，
+  並構造真重疊案例證明改後的斷言不是恆真。
+  實測 ink_slack(38)=16px，真實語料最糟溢出 4px（c_loop p1 p1_c，結尾全形「，」）。
+版型計畫五個 Task 全部完成。114 個測試。
+
+最終全分支審查（Opus）：2 Critical + 5 Important，全數修完（commit f50425c）。
+  C1 split 無圖側守門（5 項 steps 溢出 60px）；根因更深：fig_vertical 連滿版寬也翻直排，
+     而直排 760px 比整張卡片還高。改成直排只在窄欄啟用 + 補守門。
+  C2 caption 被排除在置中高度外（fig_height 算進、draw_figure 自己重算一份漏掉）。
+  I1 單圖 stack 零守門（實測 top=-62）；I2 stage 只守條列不守圖；
+  I3 stage 守門測試 fixture 太小；I4 變異度測試讀意圖非結果；I5 只查畫布不查 CONTENT_BOX。
+  五個突變（M1–M5）全部轉紅，守門確實被測到。
+  六條不變量在真實語料上全數成立：239 框零越界、零代號缺漏、外框簽章 1 種、
+  hidden 不影響版位、五份決定性。版型分布 stage 6 / split 8 / code 5 / stack 3。
+事故：我用 git checkout 還原突變，抹掉 tests/test_render_slides.py 一整輪未提交的改動。
+  已全部重寫。教訓：突變驗證一律用檔案備份還原，git checkout 是破壞性操作。
