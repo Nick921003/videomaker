@@ -1,0 +1,235 @@
+{
+	"lesson_id": "demo3",
+	"slides": [
+		{
+			"slide_id": "p1",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p1_title"
+				},
+				{
+					"type": "speech",
+					"text": "歡迎來到今天的微課程。如果要寫程式從一加到一百，大家第一個想到的都是迴圈。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_b"
+				},
+				{
+					"type": "laser",
+					"target": "p1_b"
+				},
+				{
+					"type": "speech",
+					"text": "但初學者寫迴圈時，常常答案算出來不是少加最後一個數，就是多跑了一次。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_fig:l1"
+				},
+				{
+					"type": "speech",
+					"text": "這就是最經典的差一錯誤，邊界條件只要差一點點，答案就完全不對。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_fig:r1"
+				},
+				{
+					"type": "speech",
+					"text": "另一個常見狀況是終止條件寫錯，導致程式停不下來，直接卡在無窮迴圈裡。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_c"
+				},
+				{
+					"type": "speech",
+					"text": "最麻煩的是，這些都不是語法錯誤，編譯器完全不會警告你，只有跑出結果才會發現。"
+				}
+			]
+		},
+		{
+			"slide_id": "p2",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p2_fig:i1"
+				},
+				{
+					"type": "speech",
+					"text": "其實不管是哪種迴圈，背後都只有三件事。第一件事是起始值，告訴電腦要從哪裡開始算起。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_fig:i2"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_c"
+				},
+				{
+					"type": "speech",
+					"text": "第二件事是條件判斷。這裡最容易搞混，寫在中間的是繼續執行的條件，只要符合就繼續跑，而不是結束條件。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_fig:i3"
+				},
+				{
+					"type": "speech",
+					"text": "第三件事則是每一輪的變化，讓變數跟著更新，這樣條件才會在適當的時機變成不成立。"
+				},
+				{
+					"type": "laser",
+					"target": "p2_a"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_b"
+				},
+				{
+					"type": "speech",
+					"text": "我們常見的 for 迴圈就是把這三件事收在同一行；而 while 迴圈則是把三件事拆在不同位置。"
+				}
+			]
+		},
+		{
+			"slide_id": "p3",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p3_a"
+				},
+				{
+					"type": "speech",
+					"text": "很多同學會問，到底什麼時候該用 for，什麼時候用 while？最核心的判斷標準，就是次數在執行前是否已知。"
+				},
+				{
+					"type": "laser",
+					"target": "p3_fig:l1"
+				},
+				{
+					"type": "speech",
+					"text": "如果一開始就知道要跑固定次數，比如跑十次或算一加到一百，首選一定是 for 迴圈。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_fig:l2"
+				},
+				{
+					"type": "speech",
+					"text": "因為 for 迴圈把起始、條件和更新都集中在同一行，邏輯一目了然，最不容易漏掉更新步驟。"
+				},
+				{
+					"type": "reveal",
+					"target": "p3_b"
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_fig:r1"
+				},
+				{
+					"type": "speech",
+					"text": "相反地，如果次數事先不知道，比如要讀取檔案直到結束，或是等待使用者輸入特定數字才停，這時候選 while 就最自然。"
+				}
+			]
+		},
+		{
+			"slide_id": "p4",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p4_code:L4"
+				},
+				{
+					"type": "speech",
+					"text": "我們來看具體程式碼。第四行先設定目標加到五，並且把累積總和先歸零。"
+				},
+				{
+					"type": "camera",
+					"target": "p4_code:L5",
+					"scale": 1.3
+				},
+				{
+					"type": "spotlight",
+					"target": "p4_code:L5"
+				},
+				{
+					"type": "speech",
+					"text": "第五行的 for 迴圈一次放好三件事，從一開始、只要小於等於五就繼續、每輪把變數加一。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p4_code:L6"
+				},
+				{
+					"type": "speech",
+					"text": "進到迴圈本體，第六行把每一輪的數字累加到總和變數裡面。"
+				},
+				{
+					"type": "camera",
+					"reset": true
+				},
+				{
+					"type": "spotlight",
+					"target": "p4_code:L8"
+				},
+				{
+					"type": "speech",
+					"text": "當條件不符合跳出迴圈後，第八行印出最後結果，順利完成一加到五的運算。"
+				}
+			]
+		},
+		{
+			"slide_id": "p5",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p5_fig:l1"
+				},
+				{
+					"type": "speech",
+					"text": "寫迴圈最常踩的第一個坑，就是條件到底要寫小於等於，還是小於。如果是從一加到五，因為五本身要算進去，條件就要用小於等於。"
+				},
+				{
+					"type": "reveal",
+					"target": "p5_b"
+				},
+				{
+					"type": "spotlight",
+					"target": "p5_fig:r1"
+				},
+				{
+					"type": "speech",
+					"text": "但如果今天是走訪長度為五的陣列，因為索引是從零算到四，這時候條件就必須改用小於，才不會超出陣列範圍。"
+				},
+				{
+					"type": "reveal",
+					"target": "p5_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p5_c"
+				},
+				{
+					"type": "speech",
+					"text": "另外一個常見的坑，是在寫 while 迴圈時，忘記在內部更新控制變數，導致條件永遠成立、程式陷入無窮迴圈停不下來。"
+				},
+				{
+					"type": "laser",
+					"target": "p5_title"
+				},
+				{
+					"type": "speech",
+					"text": "只要釐清邊界條件，並記得每次都要更新變數，你的迴圈邏輯就會非常穩固。我們迴圈的課程就到這邊！"
+				}
+			]
+		}
+	]
+}

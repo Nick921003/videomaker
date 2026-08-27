@@ -58,6 +58,30 @@ def resolve_box(boxes, ref, canvas):
 	return {"x": round(x), "y": round(y), "w": round(w), "h": round(h)}
 
 
+def check_figure_subitems(boxes, kind, ref, sid, diags):
+	"""B.5: spotlight 或 laser 指向含有子項目的示意圖整體時發出 WARN"""
+	if kind not in ("spotlight", "laser"):
+		return
+	sub_keys = [k for k in boxes if re.match(rf"^{re.escape(ref)}:(i\d+|l\d+|r\d+)", k)]
+	if sub_keys:
+		sub_list = ", ".join(sorted(sub_keys))
+		diags.append({"level": "warn", "slide": sid,
+			"msg": f"{kind} 指向含有子項目的示意圖整體「{ref}」，應指向具體子項目（如 {sub_list}）"})
+
+
+def calc_camera_scale(box, canvas):
+	"""B.4: 計算聚光燈推近倍率：反向隨目標面積縮放，上限 1.4 倍，≥8% 不推近"""
+	share = (box["w"] * box["h"]) / float(canvas["width"] * canvas["height"])
+	if share >= 0.08:
+		return share, None
+	# 小於等於 1% 的小目標推滿 1.4 倍，1%~8% 反向平滑遞減至 ~1.05
+	if share <= 0.01:
+		scale = 1.4
+	else:
+		scale = round(min(1.4, 1.4 - ((share - 0.01) / 0.07) * 0.35), 2)
+	return share, scale
+
+
 def compile_slide(slide_actions, boxes, canvas, durations, sid, cursor):
 	"""展開一頁的動作，回傳（場景, 新的游標時間, 診斷）"""
 	scene = {"slide_id": sid, "start_ms": cursor, "narration": [], "effects": [],
@@ -108,16 +132,30 @@ def compile_slide(slide_actions, boxes, canvas, durations, sid, cursor):
 		ref = a.get("target", "")
 		is_code = ":L" in ref
 		if kind == "spotlight":
-			# 文字用螢光筆，程式碼才壓暗（只壓程式碼區塊，不壓整頁）
+			# 文字與示意圖聚光燈：壓暗周圍＋配鏡頭推近
 			eff = {"type": "spotlight", "start_ms": t, "end_ms": None, "box": box,
-				"style": "code" if is_code else "text", "target": ref, "seq": seq}
+				"style": "code" if is_code else "text", "target": ref,
+				"dim": a.get("dim", 0.62), "seq": seq}
 			if is_code:
 				eff["region"] = boxes.get(ref.split(":")[0])
-				eff["dim"] = a.get("dim", 0.62)
 			scene["effects"].append(eff)
+			check_figure_subitems(boxes, kind, ref, sid, diags)
+
+			# 推近只配給程式區塊，跟壓暗綁在一起。
+			# 圖與條列配了推近反而暈——實測整片幾乎每一格都在做 LANCZOS 縮放，
+			# 渲染時間從 95 秒變成 400 秒，畫面上卻看不出好處
+			if is_code:
+				share, scale = calc_camera_scale(box, canvas)
+				if scale is not None:
+					# 顯式 camera 動作由 LLM 產生、沒有幾何概念，實測會在聚光燈
+					# 亮起的同時把鏡頭往後拉。同一時刻以自動配的為準
+					scene["camera"] = [c for c in scene["camera"] if c["start_ms"] != t]
+					scene["camera"].append({"start_ms": t, "box": box, "scale": scale,
+						"ms": CAMERA_MS, "seq": seq, "auto": True, "target": ref})
 		elif kind == "laser":
 			scene["effects"].append({"type": "laser", "start_ms": t, "end_ms": t + LASER_MS,
 				"box": box, "target": ref, "pad": BOX_PAD, "seq": seq})
+			check_figure_subitems(boxes, kind, ref, sid, diags)
 		elif kind == "reveal":
 			scene["reveals"].append({"start_ms": t, "ms": reveal_ms(box, canvas),
 				"box": box, "seq": seq})
@@ -201,11 +239,21 @@ def clamp_lifetimes(scene):
 	for e in scene["effects"]:
 		e["end_ms"] = min(e["end_ms"] if e["end_ms"] is not None else end, end)
 
+	# 鏡頭動作時序與前後狀態銜接
+	scene["camera"].sort(key=lambda c: c["start_ms"])
 	cams = scene["camera"]
 	for a, b in zip(cams, cams[1:]):
 		a["end_ms"] = b["start_ms"]
 	if cams:
 		cams[-1]["end_ms"] = end
+
+	prev_box = None
+	prev_scale = 1.0
+	for c in cams:
+		c["from_box"] = prev_box
+		c["from_scale"] = prev_scale
+		prev_box = c.get("box")
+		prev_scale = c.get("scale", 1.0)
 
 
 def lint_motion(scene):

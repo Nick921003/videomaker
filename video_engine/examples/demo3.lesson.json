@@ -1,0 +1,246 @@
+{
+	"lesson_id": "demo3",
+	"title": "C 語言迴圈基礎",
+	"slides": [
+		{
+			"id": "p1",
+			"role": "hook",
+			"note": "強調兩個坑都不是語法錯誤，編譯器抓不到，只有結果會告訴你。",
+			"elements": [
+				{
+					"id": "p1_title",
+					"type": "title",
+					"text": "迴圈寫出來，答案卻總是差一點"
+				},
+				{
+					"id": "p1_sub",
+					"type": "subtitle",
+					"text": "從一加到一百說起"
+				},
+				{
+					"id": "p1_a",
+					"type": "bullet",
+					"text": "手寫一百行加法沒有人受得了"
+				},
+				{
+					"id": "p1_b",
+					"type": "bullet",
+					"text": "改用迴圈後，常常少加最後一個數",
+					"hidden": true
+				},
+				{
+					"id": "p1_c",
+					"type": "callout",
+					"text": "兩個坑編譯器都不會幫你抓",
+					"hidden": true
+				},
+				{
+					"id": "p1_fig",
+					"type": "figure",
+					"kind": "compare",
+					"left": {
+						"title": "差一錯誤",
+						"items": [
+							"少加最後一個",
+							"多加不該加的"
+						]
+					},
+					"right": {
+						"title": "無窮迴圈",
+						"items": [
+							"程式停不下來",
+							"只能 Ctrl 加 C"
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "p2",
+			"role": "concept",
+			"note": "重點在中間那段是繼續條件不是結束條件，方向很多人想反。",
+			"elements": [
+				{
+					"id": "p2_title",
+					"type": "title",
+					"text": "迴圈只有三件事"
+				},
+				{
+					"id": "p2_sub",
+					"type": "subtitle",
+					"text": "起始、繼續條件、每輪變化"
+				},
+				{
+					"id": "p2_a",
+					"type": "bullet",
+					"text": "for 把三件事寫在同一行，一眼看完"
+				},
+				{
+					"id": "p2_b",
+					"type": "bullet",
+					"text": "while 把三件事拆開，寫法比較鬆散",
+					"hidden": true
+				},
+				{
+					"id": "p2_c",
+					"type": "callout",
+					"text": "中間那個是繼續的條件，不是結束的條件",
+					"hidden": true
+				},
+				{
+					"id": "p2_fig",
+					"type": "figure",
+					"kind": "boxes",
+					"items": [
+						"從哪裡開始",
+						"什麼時候繼續",
+						"每一輪怎麼變"
+					],
+					"right": {}
+				}
+			]
+		},
+		{
+			"id": "p3",
+			"role": "concept",
+			"note": "說明 for 與 while 各自適合的場合，帶到次數已知優先用 for。",
+			"elements": [
+				{
+					"id": "p3_title",
+					"type": "title",
+					"text": "for 還是 while"
+				},
+				{
+					"id": "p3_sub",
+					"type": "subtitle",
+					"text": "看次數事先知不知道"
+				},
+				{
+					"id": "p3_a",
+					"type": "bullet",
+					"text": "次數已經知道的情況，用 for"
+				},
+				{
+					"id": "p3_b",
+					"type": "callout",
+					"text": "次數事先不知道時，才選 while",
+					"hidden": true
+				},
+				{
+					"id": "p3_fig",
+					"type": "figure",
+					"kind": "compare",
+					"left": {
+						"title": "for",
+						"items": [
+							"次數已知",
+							"三段寫在一行",
+							"不易漏掉更新"
+						]
+					},
+					"right": {
+						"title": "while",
+						"items": [
+							"次數未知",
+							"讀到檔案結束",
+							"等輸入零才停"
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "p4",
+			"role": "walkthrough",
+			"note": "分四步走讀：第四行歸零、第五行三段、第六行累加、最後印出。",
+			"elements": [
+				{
+					"id": "p4_title",
+					"type": "title",
+					"text": "一加到五的完整程式"
+				},
+				{
+					"id": "p4_sub",
+					"type": "subtitle",
+					"text": "四個步驟逐行看"
+				},
+				{
+					"id": "p4_code",
+					"type": "code",
+					"lang": "c",
+					"lines": [
+						"#include <stdio.h>",
+						"",
+						"int main() {",
+						"    int n = 5, sum = 0;",
+						"    for (int i = 1; i <= n; i++) {",
+						"        sum += i;",
+						"    }",
+						"    printf(\"1 加到 %d 等於 %d\\n\", n, sum);",
+						"    return 0;",
+						"}"
+					]
+				}
+			]
+		},
+		{
+			"id": "p5",
+			"role": "pitfall",
+			"note": "對比小於等於與小於的兩種情境，收在 while 忘記更新變數這個坑。",
+			"elements": [
+				{
+					"id": "p5_title",
+					"type": "title",
+					"text": "小於等於還是小於"
+				},
+				{
+					"id": "p5_sub",
+					"type": "subtitle",
+					"text": "兩個坑的收尾"
+				},
+				{
+					"id": "p5_a",
+					"type": "bullet",
+					"text": "從一加到五，五要算進去，用小於等於"
+				},
+				{
+					"id": "p5_b",
+					"type": "bullet",
+					"text": "走訪長度五的陣列，索引零到四，用小於",
+					"hidden": true
+				},
+				{
+					"id": "p5_c",
+					"type": "callout",
+					"text": "while 忘記更新條件變數，就停不下來",
+					"hidden": true
+				},
+				{
+					"id": "p5_fig",
+					"type": "figure",
+					"kind": "compare",
+					"left": {
+						"title": "i <= n",
+						"items": [
+							"從一加到五",
+							"五本身要算"
+						]
+					},
+					"right": {
+						"title": "i < n",
+						"items": [
+							"走訪陣列",
+							"索引零到四"
+						]
+					}
+				}
+			]
+		}
+	],
+	"voice": {
+		"model": "wang_teacher_v3",
+		"speed_factor": 0.95,
+		"text_lang": "zh",
+		"text_split_method": "cut5"
+	}
+}

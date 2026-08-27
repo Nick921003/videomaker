@@ -587,5 +587,54 @@ class TestFigureCaption(unittest.TestCase):
 			"items": ["甲", "乙", "丙", "丁", "戊"]}, n_bullets=2)
 
 
+class TestFigureHeightReconciliationGrid(unittest.TestCase):
+	"""layout.fig_height(el, w) 預測的高度與 draw_figure 實際量出的 boxes[eid]["h"] 必須完全一致。
+
+	涵蓋 kind (boxes, steps, compare) × 項目數 2..5 × 區域寬 (300, 500, 810, 1200, 1760) 共 60 種組合。
+	"""
+
+	def test_高度預測與實繪矩陣無分歧(self):
+		th = R.load_theme("warm")
+		guard = R.FontGuard(R.CJK_FONT)
+		canvas = Image.new("RGB", (L.W, L.H))
+		measure = ImageDraw.Draw(canvas)
+		targets = [measure]
+
+		checked = 0
+		disagreed = 0
+		for kind in ("boxes", "steps", "compare"):
+			for n in range(2, 6):
+				for w in (300, 500, 810, 1200, 1760):
+					if kind == "compare":
+						el = {
+							"id": "fig",
+							"type": "figure",
+							"kind": "compare",
+							"left": {"title": "左", "items": [f"L{i}" for i in range(n)]},
+							"right": {"title": "右", "items": [f"R{i}" for i in range(n)]},
+						}
+					else:
+						el = {
+							"id": "fig",
+							"type": "figure",
+							"kind": kind,
+							"items": [f"Item {i}" for i in range(n)],
+						}
+					region = {"x": 100, "y": 200, "w": w, "h": 700}
+					predicted_h = L.fig_height(el, w)
+					boxes = R.draw_figure(targets, measure, el, th, region, guard)
+					actual_h = boxes["fig"]["h"]
+					if predicted_h != actual_h:
+						disagreed += 1
+					self.assertEqual(
+						predicted_h,
+						actual_h,
+						f"不一致：kind={kind}, n={n}, w={w}, predicted={predicted_h}, actual={actual_h}"
+					)
+					checked += 1
+		self.assertEqual(checked, 60)
+		self.assertEqual(disagreed, 0)
+
+
 if __name__ == "__main__":
 	unittest.main()

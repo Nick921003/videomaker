@@ -23,6 +23,7 @@ CODE_SIZE = 28
 FIG_ROW_H = 104
 FIG_GAP = 26
 FIG_CAPTION_H = 46
+FIG_MAX_BOX_W = 520
 
 
 # 文字不貼卡片邊：BULLET_MAX_W 比內容卡內寬窄 110px，左右各 55px。
@@ -94,6 +95,19 @@ def fig_vertical(el, width):
 	n = max(1, len(el.get("items", [])))
 	gap = FIG_GAP + (34 if el["kind"] == "steps" else 0)
 	return 360 * n + gap * (n - 1) > width
+
+
+def fig_box_width(el, width):
+	"""計算 boxes/steps 單格寬度。
+
+	上限 FIG_MAX_BOX_W 橫排直排一體適用：格子要比舊的 360 大，但**不填滿區域**。
+	吃滿欄寬的話（810 欄位會長到 770）區域四周一點留白都不剩，看起來是撐爆不是變大
+	"""
+	n = max(1, len(el.get("items", [])))
+	gap = FIG_GAP + (34 if el.get("kind") == "steps" else 0)
+	if fig_vertical(el, width):
+		return min(FIG_MAX_BOX_W, max(40, width - 40))
+	return min(FIG_MAX_BOX_W, (width - gap * (n - 1)) // n)
 
 
 def fig_height(el, width):

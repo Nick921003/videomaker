@@ -25,6 +25,7 @@ import numpy as np
 from PIL import Image
 from scipy.io import wavfile
 
+from layout import CODE_BOX, rect
 from motion import (CAMERA_MS, DIM_IN_MS, EXIT_RATIO, HL_WIPE_MS, SCAN_MS,
 	TRANS_MS, UL_WIPE_MS)
 
@@ -259,6 +260,36 @@ def apply_underline(frame, eff, t, col):
 	return frame
 
 
+def spot_style(eff):
+	"""這個 spotlight 該怎麼畫：code 專用效果／壓暗／單純螢光筆。
+
+	壓暗只用在程式碼走讀。為了襯一個標題把整頁壓暗，觀眾讀到的是
+	「畫面壞了」而不是「看這裡」——標題、條列、示意圖項目用螢光筆就夠
+	"""
+	if eff.get("style") == "code":
+		return "code"
+	return "highlight"
+
+
+def apply_spotlight(frame, eff, t, dim_rgb, keep_box):
+	"""聚光燈：壓暗 keep_box 以外的整頁，框內維持原亮度。
+
+	keep_box 是要保留的區域（程式碼卡），不是效果自己的框——壓暗只用在程式講解，
+	框選哪幾行由 apply_code_focus 在卡片內部處理
+	"""
+	b = keep_box
+	p = min(1.0, (t - eff["start_ms"]) / HL_WIPE_MS)
+	out = exit_alpha(t, eff["end_ms"], HL_WIPE_MS)
+	if out <= 0:
+		return frame
+	keep = frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]].copy()
+	fade = np.array(dim_rgb, dtype=np.float32)
+	a = eff.get("dim", 0.62) * ease_enter(p) * out
+	frame = (frame.astype(np.float32) * (1 - a) + fade * a).astype(np.uint8)
+	frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]] = keep
+	return frame
+
+
 def zoom(img, cx, cy, scale, canvas):
 	if scale <= 1.001:
 		return img
@@ -271,15 +302,35 @@ def zoom(img, cx, cy, scale, canvas):
 
 
 def apply_camera(img, cam, t, canvas):
-	p = ease_move((t - cam["start_ms"]) / cam["ms"]) if cam["ms"] else 1.0
 	W, H = canvas["width"], canvas["height"]
-	if cam["box"] is None:
-		return zoom(img, W / 2, H / 2, 1 + (cam.get("from_scale", 1.35) - 1) * (1 - p), canvas)
-	b = cam["box"]
-	# 推近帶微幅過衝：推到定位再回穩，比等速停住像真的攝影機
-	q = back_out((t - cam["start_ms"]) / cam["ms"], CAM_OVERSHOOT) if cam["ms"] else 1.0
-	return zoom(img, b["x"] + b["w"] / 2, b["y"] + b["h"] / 2,
-		1 + (cam["scale"] - 1) * q, canvas)
+	raw_p = (t - cam["start_ms"]) / cam["ms"] if cam.get("ms") else 1.0
+	p = min(1.0, max(0.0, raw_p))
+	ease_p = ease_move(p)
+
+	from_b = cam.get("from_box")
+	if from_b is not None:
+		from_cx, from_cy = from_b["x"] + from_b["w"] / 2, from_b["y"] + from_b["h"] / 2
+	else:
+		from_cx, from_cy = W / 2, H / 2
+	from_scale = cam.get("from_scale", 1.0)
+
+	to_b = cam.get("box")
+	if to_b is not None:
+		to_cx, to_cy = to_b["x"] + to_b["w"] / 2, to_b["y"] + to_b["h"] / 2
+	else:
+		to_cx, to_cy = W / 2, H / 2
+	to_scale = cam.get("scale", 1.0)
+
+	cx = from_cx + (to_cx - from_cx) * ease_p
+	cy = from_cy + (to_cy - from_cy) * ease_p
+
+	if to_scale > from_scale:
+		q = back_out(p, CAM_OVERSHOOT)
+		scale = from_scale + (to_scale - from_scale) * q
+	else:
+		scale = from_scale + (to_scale - from_scale) * ease_p
+
+	return zoom(img, cx, cy, scale, canvas)
 
 
 def active(items, t):
@@ -299,6 +350,7 @@ def main():
 	fx = theme["effects"]
 	fade_rgb, hl_rgb = rgb(fx["code_fade"]), rgb(fx["highlight"])
 	ul_rgb, bar_rgb = rgb(fx["underline"]), rgb(fx["spotlight_border"])
+	dim_rgb = rgb(fx["dim"])
 
 	canvas, fps = timeline["canvas"], timeline["fps"]
 	W, H = canvas["width"], canvas["height"]
@@ -338,7 +390,10 @@ def main():
 		frame = apply_reveals(frame, full, scene, t, W)
 
 		for eff in active([e for e in scene["effects"] if e["type"] == "spotlight"], t):
-			if eff.get("style") == "code":
+			if spot_style(eff) == "code":
+				# 程式講解才用聚光燈：壓暗程式碼卡以外的整頁，卡內維持逐行淡化。
+				# 兩者疊起來才是「只照亮正在講的那幾行」
+				frame = apply_spotlight(frame, eff, t, dim_rgb, rect(*CODE_BOX))
 				frame = apply_code_focus(frame, eff, t, fade_rgb, bar_rgb)
 			else:
 				frame = apply_highlight(frame, eff, t, hl_rgb)

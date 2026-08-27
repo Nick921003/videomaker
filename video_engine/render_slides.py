@@ -17,7 +17,7 @@ from fontTools.ttLib import TTFont
 from layout import (
 	CENTER_X, CODE_BOX, CODE_X, CONTENT_BOX, FIG_GAP,
 	FIG_ROW_H, H, HEADER_BOX, SUB_Y, TITLE_Y, W, bullet_metrics, code_metrics,
-	code_top, count_bullets, fig_height, fig_vertical, regions_for,
+	code_top, count_bullets, fig_box_width, fig_height, fig_vertical, regions_for,
 )
 
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
@@ -131,9 +131,9 @@ def draw_figure(targets, measure, el, th, region, guard):
 		vertical = fig_vertical(el, region["w"])
 
 		if vertical:
-			# 窄欄放不下橫排，改直排：每格寬頂多 360，水平置中於 cx，
+			# 窄欄放不下橫排，改直排：每格寬吃滿欄寬（扣 40px 內距），水平置中於 cx，
 			# 整塊在區域內垂直置中——這樣才不會貼著區域上緣
-			w = min(360, region["w"])
+			w = fig_box_width(el, region["w"])
 			total = FIG_ROW_H * n + gap * (n - 1)
 			x = cx - w // 2
 			# 置中要問 layout.fig_height，不能只拿本體高度：自己重算一份的話
@@ -141,7 +141,7 @@ def draw_figure(targets, measure, el, th, region, guard):
 			y0 = region["y"] + max(0, (region["h"] - fig_height(el, region["w"])) // 2)
 			y = y0
 			for i, text in enumerate(items, start=1):
-				font = fit_font(measure, text, CJK_FONT, 30, w - 28, floor=18)
+				font = fit_font(measure, text, CJK_FONT, 34, w - 28, floor=18)
 				for d in targets:
 					d.rounded_rectangle([x, y, x + w, y + FIG_ROW_H], radius=8,
 						fill=fill, outline=edge, width=2)
@@ -155,11 +155,11 @@ def draw_figure(targets, measure, el, th, region, guard):
 			boxes[eid] = {"x": x, "y": y0, "w": w, "h": total}
 			bottom = y0 + total
 		else:
-			w = min(360, (region["w"] - gap * (n - 1)) // n)
+			w = fig_box_width(el, region["w"])
 			total = w * n + gap * (n - 1)
 			x = cx - total // 2
 			for i, text in enumerate(items, start=1):
-				font = fit_font(measure, text, CJK_FONT, 30, w - 28, floor=18)
+				font = fit_font(measure, text, CJK_FONT, 34, w - 28, floor=18)
 				for d in targets:
 					d.rounded_rectangle([x, top, x + w, top + FIG_ROW_H], radius=8,
 						fill=fill, outline=edge, width=2)
@@ -188,14 +188,14 @@ def draw_figure(targets, measure, el, th, region, guard):
 		x0 = cx - (panel_w * 2 + mid) // 2
 		for side, px in ((el.get("left", {}), x0), (el.get("right", {}), x0 + panel_w + mid)):
 			title = guard.sanitize(side.get("title", ""))
-			tf = fit_font(measure, title, CJK_FONT, 28, panel_w - 24, floor=18)
+			tf = fit_font(measure, title, CJK_FONT, 30, panel_w - 24, floor=18)
 			for d in targets:
 				d.rounded_rectangle([px, panel_top, px + panel_w, panel_top + 52], radius=8, fill=edge)
 				d.text((px + panel_w // 2, panel_top + 26), title, font=tf, fill=fill, anchor="mm")
 			y = panel_top + 64
 			for j, raw in enumerate(side.get("items", []), start=1):
 				text = guard.sanitize(raw)
-				f = fit_font(measure, text, CJK_FONT, 26, panel_w - 32, floor=16)
+				f = fit_font(measure, text, CJK_FONT, 28, panel_w - 32, floor=16)
 				for d in targets:
 					d.rounded_rectangle([px, y, px + panel_w, y + 62], radius=6,
 						fill=alt, outline=edge, width=1)
