@@ -201,6 +201,63 @@ class TestFigureInRegion(unittest.TestCase):
 			self.assertIn(k, boxes)
 
 
+class TestStageBulletCapacityGuard(unittest.TestCase):
+	"""stage 版型的文字帶被 STAGE_TEXT_RATIO 封頂在內容卡四成高，但 render_slide
+	的條列繪製迴圈是線性遞增、不看 reg["text"]["h"]。條列衝出封頂高度時就會畫進
+	figure 區域——4 條 compare 條列正好踩線（bullets_h=408 > cap=296），這是
+	prompt 規則 4 允許的合法輸入（2–4 條），不是假設情境。這裡跑真正的
+	render_slides.main()，用量出來的實際框去比對 regions_for 切出的區域，
+	光算 layout._stage() 的回傳值測不出繪製迴圈跟它對不對得上"""
+
+	def _render(self, n_bullets):
+		els = [{"id": "p1_title", "type": "title", "text": "測試"}]
+		for i in range(n_bullets):
+			els.append({"id": f"p1_b{i}", "type": "bullet", "text": f"條列 {i}"})
+		els.append({"id": "p1_fig", "type": "figure", "kind": "compare",
+			"left": {"title": "前", "items": ["甲"]},
+			"right": {"title": "後", "items": ["乙"]}})
+		lesson = {"lesson_id": "t", "title": "t",
+			"slides": [{"id": "p1", "elements": els}]}
+		d = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, d, True)
+		path = os.path.join(d, "t.lesson.json")
+		with open(path, "w", encoding="utf-8") as f:
+			json.dump(lesson, f)
+		old = sys.argv
+		sys.argv = ["render_slides.py", path, d]
+		try:
+			self.assertEqual(R.main(), 0)
+		finally:
+			sys.argv = old
+		with open(os.path.join(d, "layout.json"), encoding="utf-8") as f:
+			boxes = json.load(f)["slides"][0]["boxes"]
+		return boxes, lesson["slides"][0]
+
+	def test_compare四條列每個量測框都在所屬區域內(self):
+		n = 4
+		boxes, sl = self._render(n)
+		reg = L.regions_for(sl, 0)
+		t = reg["text"]
+		# 2px 容差：bullet_metrics 的 "+48" 是預算行高，跟 anchor="ma" 實際量出來的
+		# 墨跡框（ascender 起點再往下一點才是真墨跡、外加字符本身的下沉量）有 ±2px
+		# 落差，_stack／split 的既有頁面本來就有這個量級的誤差（跟這裡要修的 stage
+		# 封頂溢版不是同一件事——那個是幾十到上百 px，這個是固定 2px），
+		# 跟 Finding 3 的置中容差同一個量級，不在這次要修的範圍內
+		INK_SLACK = 2
+		for i in range(n):
+			b = boxes[f"p1_b{i}"]
+			self.assertGreaterEqual(b["y"], t["y"], f"p1_b{i} 跑到文字區上緣外")
+			self.assertLessEqual(b["y"] + b["h"], t["y"] + t["h"] + INK_SLACK,
+				f"p1_b{i} 跑到文字區下緣外，落進了 figure 區域")
+		f_reg = reg["figure"]
+		for k, b in boxes.items():
+			if not k.startswith("p1_fig"):
+				continue
+			self.assertGreaterEqual(b["y"], f_reg["y"], f"{k} 跑到圖區上緣外")
+			self.assertLessEqual(b["y"] + b["h"], f_reg["y"] + f_reg["h"],
+				f"{k} 跑到圖區下緣外")
+
+
 class TestMultiFigureStacking(unittest.TestCase):
 	"""多圖頁必須依序往下排，不能互相覆蓋、也不能跑出 CONTENT_BOX——
 	單圖頁沒有這個問題，它拿到的是整塊 reg["figure"]，不用跟別人搶位置。

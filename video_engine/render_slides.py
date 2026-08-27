@@ -269,7 +269,7 @@ def render_slide(slide, guard, th, out_dir, idx):
 			font = ImageFont.truetype(CJK_FONT, size)
 			x0, y0, x1, y1 = CODE_BOX
 			whole = {"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0}
-			top = code_top(len(el["lines"]))       # 整塊垂直置中，CODE_BOX 外框本身不動
+			top = code_top(len(el["lines"]), step)  # 整塊垂直置中，CODE_BOX 外框本身不動；step 沿用上面算好的，不重算
 			for i, raw in enumerate(el["lines"], start=1):
 				line = guard.sanitize(raw, keep_indent=True)
 				y = top + (i - 1) * step

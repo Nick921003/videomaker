@@ -112,3 +112,4 @@
 `prompts/lesson_content.system.md` 規則 7 允許程式碼 8–16 行，但固定 42px 行距下 15 行剛好貼齊 `CODE_BOX` 底線、**16 行溢出 42px**。既有語料最長 15 行，差一行就爆版。已由 `code_metrics()` 依行數自適應行距與字級修掉，15 行以內輸出逐像素不變。
 
 - 2026-08-27 後續修正：多圖頁（`render_slide` 依 `fig_y` 游標排多個 `figure` 元素）曾把「剩餘空間」整塊交給 `draw_figure` 置中，導致第一張圖蓋到第二張、且 `layout.fig_height` 對直排項目算出的高度一律等於橫排，游標少推進；已改為每張圖只拿自己會畫出來的高度（`fig_height` 加吃寬度參數，直排/橫排判準收斂進 `fig_vertical`，`draw_figure` 改用它、不再自己重算），疊加超出 `CONTENT_BOX` 時明確 `raise ValueError`（不變量 3 的「降級為 stack」在多圖頁本身已經是 stack，沒有更下一級可退，故選擇顯式失敗而非靜默溢出）（commit 待補 hash）。
+- 2026-08-27 後續修正：`_stage` 的文字帶被 `STAGE_TEXT_RATIO` 封頂在內容卡四成高，但 `render_slide` 的條列繪製迴圈是線性遞增、不看這個封頂——條列數衝出上限時會畫穿進 figure 區域（4 條 compare 條列即踩線：`bullets_h=408 > cap=296`，prompt 規則 4 允許 2–4 條，非假設情境）。已比照 `SPLIT_MAX_BULLETS` 加容量守門：`bullets_h` 超過封頂時整頁降級回 `_stack`。五份範例教材的 compare 頁最多 3 條，皆未被降級。順帶把 `code_top` 的 `code_metrics` 重複呼叫收斂成可選傳入 `step`（commit 待補 hash）。

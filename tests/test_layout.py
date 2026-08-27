@@ -170,8 +170,13 @@ class TestRegionsSplit(unittest.TestCase):
 
 
 class TestRegionsStage(unittest.TestCase):
-	def _r(self):
-		return L.regions_for(slide("figure", kind="compare", n_bullets=3), 0)
+	def _r(self, n_bullets=3):
+		"""跟 TestRegionsStack 的 _regions 同一道防線：_stage 若被還原成
+		無條件退回 _stack，這裡先擋住——不然底下四則斷言只是巧合成立在
+		_stack 的幾何上，_stage 真退化了也測不出來"""
+		r = L.regions_for(slide("figure", kind="compare", n_bullets=n_bullets), 0)
+		self.assertEqual(r["variant"], "stage")
+		return r
 
 	def test_版型真的是_stage(self):
 		self.assertEqual(self._r()["variant"], "stage")
@@ -219,6 +224,12 @@ class TestRegionsCode(unittest.TestCase):
 			top = L.code_top(n)
 			self.assertGreaterEqual(top, L.CODE_BOX[1], f"{n} 行")
 			self.assertLessEqual(top + n * step, L.CODE_BOX[3], f"{n} 行")
+			# 光測不溢出擋不住 code_top 被還原成固定 CODE_Y0：code_metrics 的
+			# 行距封頂本來就保證不溢出，跟有沒有置中無關。這裡才是真的在測
+			# 置中——上下留白要接近，不是只测有沒有超出底線
+			above = top - L.CODE_BOX[1]
+			below = L.CODE_BOX[3] - (top + n * step)
+			self.assertLessEqual(abs(above - below), 2, f"{n} 行的上下留白差超過 2px，不算置中")
 
 
 if __name__ == "__main__":

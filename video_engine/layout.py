@@ -70,12 +70,15 @@ def code_metrics(n):
 	return step, max(12, min(CODE_SIZE, round(step * CODE_SIZE / CODE_STEP)))
 
 
-def code_top(n):
+def code_top(n, step=None):
 	"""程式碼整塊在 CODE_BOX 內垂直置中的起始 y。
 
-	舊版固定從 CODE_Y0 開始，10 行的話下方留 210px 死白
+	舊版固定從 CODE_Y0 開始，10 行的話下方留 210px 死白。
+	step 可選傳入：呼叫端（render_slide）多半已經先呼叫過 code_metrics(n) 拿字級，
+	讓它把算好的 step 遞進來，這裡就不用同一個 n 再算一次 code_metrics
 	"""
-	step, _ = code_metrics(n)
+	if step is None:
+		step, _ = code_metrics(n)
 	return CODE_BOX[1] + max(0, (CODE_BOX[3] - CODE_BOX[1] - n * step) // 2)
 
 
@@ -164,7 +167,14 @@ def _stage(slide, index):
 	n_bullets = count_bullets(slide)
 	step, _ = bullet_metrics(n_bullets)
 	bullets_h = (n_bullets - 1) * step + 48 if n_bullets else 0
-	text_h = min(bullets_h, int((y1 - y0) * STAGE_TEXT_RATIO))
+	cap = int((y1 - y0) * STAGE_TEXT_RATIO)
+	if bullets_h > cap:
+		# 條列塞不進封頂的帶狀區：render_slide 的繪製迴圈是線性遞增、不看
+		# text_h 這個封頂，硬塞只會畫穿進 figure 區域。跟 split 超過
+		# SPLIT_MAX_BULLETS 同一招，整頁降級回 _stack——它沒有封頂，
+		# 繪製迴圈跟區域算式天生同源，不會有這種落差
+		return _stack(slide, index)
+	text_h = bullets_h
 	# 跟 _stack 同款：文字帶與圖區之間留 40px 呼吸空間，沒文字就不留
 	fig_top = y0 + text_h + (40 if text_h else 0)
 	return {
