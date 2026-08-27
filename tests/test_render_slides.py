@@ -5,11 +5,29 @@ import sys
 import tempfile
 import unittest
 
+from PIL import Image, ImageDraw, ImageFont
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "video_engine"))
 
 import layout as L
 import render_slides as R
+
+
+def ink_slack(size):
+	"""實測字身下緣超出「名目字高」的最大值，取代用猜的容差。
+
+	bullet_metrics 的 +48 是平的高度預算，不是量出來的字身下緣。用同一支字型
+	（跟 render_slides 畫條列同一支）真的畫幾個已知會有下伸部的字元——
+	拉丁 gjpqy、全形「，」——量出墨跡框底端（anchor="la" 時 y=0 對齊字身頂，
+	textbbox 的 y1 就是墨跡實際伸到多下面）超出 size 多少，取最大值"""
+	font = ImageFont.truetype(R.CJK_FONT, size)
+	draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+	worst = 0
+	for ch in "gjpqy，":
+		bottom = draw.textbbox((0, 0), ch, font=font, anchor="la")[3]
+		worst = max(worst, bottom - size)
+	return max(worst, 0)
 
 
 class TestCodeMetrics(unittest.TestCase):
@@ -355,6 +373,129 @@ class TestMultiFigureStacking(unittest.TestCase):
 				R.main()
 		finally:
 			sys.argv = old
+
+
+class TestCorpusInvariants(unittest.TestCase):
+	"""五份現成教材是唯一的真實樣本，每個不變量都要對它們成立"""
+
+	LESSONS = ("c_loop", "c_string", "c_struct", "c_struct_combo", "c_struct_v3")
+
+	def _lesson(self, name):
+		with open(os.path.join(ROOT, "video_engine/examples", f"{name}.lesson.json"),
+				encoding="utf-8") as f:
+			return json.load(f)
+
+	def _render(self, name):
+		d = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, d, True)
+		old = sys.argv
+		sys.argv = ["render_slides.py",
+			os.path.join(ROOT, "video_engine/examples", f"{name}.lesson.json"), d]
+		try:
+			self.assertEqual(R.main(), 0)
+		finally:
+			sys.argv = old
+		with open(os.path.join(d, "layout.json"), encoding="utf-8") as f:
+			return json.load(f), d
+
+	def test_每個可定址代號都有量測框(self):
+		# 只查元素 id 是不夠的：figure 的子代號（:i、:l、:r、:caption）
+		# 才是動作真正指到的東西，漏掉的話這則測試會在版型改壞時仍然全綠
+		for name in self.LESSONS:
+			lay, _ = self._render(name)
+			lesson = self._lesson(name)
+			for page, sl in zip(lay["slides"], lesson["slides"]):
+				bx = page["boxes"]
+				for el in sl["elements"]:
+					eid = el["id"]
+					self.assertIn(eid, bx, f"{name} {eid}")
+					if el["type"] == "code":
+						for i in range(1, len(el["lines"]) + 1):
+							self.assertIn(f"{eid}:L{i}", bx, f"{name} {eid}:L{i}")
+					elif el["type"] == "figure":
+						if el["kind"] in ("boxes", "steps"):
+							for i in range(1, len(el.get("items", [])) + 1):
+								self.assertIn(f"{eid}:i{i}", bx, f"{name} {eid}:i{i}")
+						else:
+							for j in range(1, len(el.get("left", {}).get("items", [])) + 1):
+								self.assertIn(f"{eid}:l{j}", bx, f"{name} {eid}:l{j}")
+							for j in range(1, len(el.get("right", {}).get("items", [])) + 1):
+								self.assertIn(f"{eid}:r{j}", bx, f"{name} {eid}:r{j}")
+						if el.get("caption"):
+							self.assertIn(f"{eid}:caption", bx, f"{name} {eid}:caption")
+
+	def test_所有框都在畫布內(self):
+		import layout as L
+		for name in self.LESSONS:
+			lay, _ = self._render(name)
+			for page in lay["slides"]:
+				for key, b in page["boxes"].items():
+					self.assertGreaterEqual(b["x"], 0, f"{name} {key}")
+					self.assertGreaterEqual(b["y"], 0, f"{name} {key}")
+					self.assertLessEqual(b["x"] + b["w"], L.W, f"{name} {key}")
+					self.assertLessEqual(b["y"] + b["h"], L.H, f"{name} {key}")
+
+	def test_五份教材各自連跑兩次都逐位元組相同(self):
+		import hashlib
+
+		def digest(name):
+			_, d = self._render(name)
+			h = hashlib.md5()
+			for f in sorted(os.listdir(d)):
+				if f.endswith(".png"):
+					with open(os.path.join(d, f), "rb") as fh:
+						h.update(fh.read())
+			return h.hexdigest()
+
+		for name in self.LESSONS:
+			self.assertEqual(digest(name), digest(name), f"{name} 引入了非決定性")
+
+	def test_條列框也要關在文字區內(self):
+		# 先前的 bounds check 只查 figure 與 code 的框，從沒查過條列。
+		# bullet_metrics 的 +48 是平的高度預算，不是量測出來的字身下緣——
+		# 實測墨跡會溢出 0–4px 且跟內容有關（結尾是全形「，」的頁面最多）。
+		# 容差要從真的字型量出來，不要猜一個數字
+		import layout as L
+		slack = ink_slack(L.BULLET_SIZE)      # 見上方輔助函式，實測字身下緣
+		for name in self.LESSONS:
+			lay, _ = self._render(name)
+			lesson = self._lesson(name)
+			for i, (page, sl) in enumerate(zip(lay["slides"], lesson["slides"])):
+				reg = L.regions_for(sl, i)["text"]
+				for el in sl["elements"]:
+					if el["type"] not in ("bullet", "callout"):
+						continue
+					b = page["boxes"][el["id"]]
+					self.assertGreaterEqual(b["y"], reg["y"] - slack,
+						f"{name} {el['id']} 跑到文字區上緣外")
+					self.assertLessEqual(b["y"] + b["h"], reg["y"] + reg["h"] + slack,
+						f"{name} {el['id']} 跑到文字區下緣外")
+
+	def test_條列溢出不得侵入圖區(self):
+		# 上一則允許小幅溢出，這一則守的是真正要緊的事：
+		# 溢出量必須被文字帶與圖區之間那 40px 間隙吸收掉
+		import layout as L
+		for name in self.LESSONS:
+			lay, _ = self._render(name)
+			lesson = self._lesson(name)
+			for i, (page, sl) in enumerate(zip(lay["slides"], lesson["slides"])):
+				r = L.regions_for(sl, i)
+				if not r["figure"]:
+					continue
+				for el in sl["elements"]:
+					if el["type"] not in ("bullet", "callout"):
+						continue
+					b = page["boxes"][el["id"]]
+					self.assertLessEqual(b["y"] + b["h"], r["figure"]["y"],
+						f"{name} {el['id']} 侵入圖區")
+
+	def test_每份教材至少用到兩種版型(self):
+		# 這輪的目的就是消除單調。四種版型全部實作了但沒有一頁走到，
+		# 測試照樣全綠——這裡把「目的達成了沒有」也變成可驗的
+		import layout as L
+		for name in self.LESSONS:
+			used = {L.pick_variant(sl) for sl in self._lesson(name)["slides"]}
+			self.assertGreaterEqual(len(used), 2, f"{name} 只用到 {used}")
 
 
 if __name__ == "__main__":
