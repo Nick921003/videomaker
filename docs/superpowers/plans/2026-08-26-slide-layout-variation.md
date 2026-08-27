@@ -924,6 +924,45 @@ class TestCorpusInvariants(unittest.TestCase):
 		for name in self.LESSONS:
 			self.assertEqual(digest(name), digest(name), f"{name} 引入了非決定性")
 
+	def test_條列框也要關在文字區內(self):
+		# 先前的 bounds check 只查 figure 與 code 的框，從沒查過條列。
+		# bullet_metrics 的 +48 是平的高度預算，不是量測出來的字身下緣——
+		# 實測墨跡會溢出 0–4px 且跟內容有關（結尾是全形「，」的頁面最多）。
+		# 容差要從真的字型量出來，不要猜一個數字
+		import layout as L
+		slack = ink_slack(L.BULLET_SIZE)      # 見下方輔助函式，實測字身下緣
+		for name in self.LESSONS:
+			lay, _ = self._render(name)
+			lesson = self._lesson(name)
+			for i, (page, sl) in enumerate(zip(lay["slides"], lesson["slides"])):
+				reg = L.regions_for(sl, i)["text"]
+				for el in sl["elements"]:
+					if el["type"] not in ("bullet", "callout"):
+						continue
+					b = page["boxes"][el["id"]]
+					self.assertGreaterEqual(b["y"], reg["y"] - slack,
+						f"{name} {el['id']} 跑到文字區上緣外")
+					self.assertLessEqual(b["y"] + b["h"], reg["y"] + reg["h"] + slack,
+						f"{name} {el['id']} 跑到文字區下緣外")
+
+	def test_條列溢出不得侵入圖區(self):
+		# 上一則允許小幅溢出，這一則守的是真正要緊的事：
+		# 溢出量必須被文字帶與圖區之間那 40px 間隙吸收掉
+		import layout as L
+		for name in self.LESSONS:
+			lay, _ = self._render(name)
+			lesson = self._lesson(name)
+			for i, (page, sl) in enumerate(zip(lay["slides"], lesson["slides"])):
+				r = L.regions_for(sl, i)
+				if not r["figure"]:
+					continue
+				for el in sl["elements"]:
+					if el["type"] not in ("bullet", "callout"):
+						continue
+					b = page["boxes"][el["id"]]
+					self.assertLessEqual(b["y"] + b["h"], r["figure"]["y"],
+						f"{name} {el['id']} 侵入圖區")
+
 	def test_每份教材至少用到兩種版型(self):
 		# 這輪的目的就是消除單調。四種版型全部實作了但沒有一頁走到，
 		# 測試照樣全綠——這裡把「目的達成了沒有」也變成可驗的
@@ -932,6 +971,8 @@ class TestCorpusInvariants(unittest.TestCase):
 			used = {L.pick_variant(sl) for sl in self._lesson(name)["slides"]}
 			self.assertGreaterEqual(len(used), 2, f"{name} 只用到 {used}")
 ```
+
+`ink_slack(size)` 是這一則要用的輔助函式，**實測**而非猜測：用同一支字型畫幾個已知會有字身下緣的字元（拉丁 `gjpqy`、全形「，」），取墨跡框底端超出名目字高的最大值。寫在 `tests/test_render_slides.py` 的模組層即可。
 
 - [ ] **Step 2：跑測試**
 

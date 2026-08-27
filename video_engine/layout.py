@@ -20,7 +20,6 @@ BULLET_MAX_W = 1650
 CODE_X, CODE_Y0, CODE_STEP = 170, 310, 42
 CODE_SIZE = 28
 
-FIG_MAX_W = 1560
 FIG_ROW_H = 104
 FIG_GAP = 26
 FIG_CAPTION_H = 46
@@ -86,10 +85,15 @@ def fig_vertical(el, width):
 	"""boxes／steps 橫排要多寬、放不下就改直排的判準。draw_figure 跟 fig_height
 	都要問同一題，答案搬來這裡兩邊才會一致——不然一個判橫排、一個算直排的高度，
 	量出來的框跟實際畫的對不上"""
+	# 直排是「窄欄」的作法（spec 3.1）：拿到整幅寬度時一律橫排，放不下就縮格寬——
+	# 那是改直排之前一直在用的作法，5 項 steps 就是靠它畫出來的。
+	# 少了這一條的話，_stack 拿滿版寬也會翻直排（760px 比整張卡片還高），
+	# 合法輸入會一路降級到 raise
+	if width >= CONTENT_BOX[2] - CONTENT_BOX[0]:
+		return False
 	n = max(1, len(el.get("items", [])))
 	gap = FIG_GAP + (34 if el["kind"] == "steps" else 0)
-	need = 360 * n + gap * (n - 1)        # 橫排要的最小寬度
-	return need > width
+	return 360 * n + gap * (n - 1) > width
 
 
 def fig_height(el, width):
@@ -143,6 +147,13 @@ def _stack(slide, index):
 	# 圖區永遠給滿版寬（CONTENT_BOX 內寬），跟下面 "figure" 那格算出來的區域一致
 	figs_h = sum(fig_height(f, CONTENT_BOX[2] - CONTENT_BOX[0]) + 40 for f in figs)
 	block_h = bullets_h + figs_h
+	# stack 是最後一級版型，沒有更低可退：放不下就 raise，不要讓置中算式
+	# 算出負的 top（曾經量到 -62，條列整條跑出畫布上緣，見 review I1）
+	if block_h > CONTENT_BOX[3] - CONTENT_BOX[1]:
+		raise ValueError(
+			f"{slide['id']} 版位放不下：需要 {block_h}px，"
+			f"CONTENT_BOX 只有 {CONTENT_BOX[3] - CONTENT_BOX[1]}px 可用"
+		)
 	top = (CONTENT_BOX[1] + (CONTENT_BOX[3] - CONTENT_BOX[1] - block_h) // 2
 		if block_h else BULLET_Y0)
 
@@ -177,6 +188,12 @@ def _stage(slide, index):
 	text_h = bullets_h
 	# 跟 _stack 同款：文字帶與圖區之間留 40px 呼吸空間，沒文字就不留
 	fig_top = y0 + text_h + (40 if text_h else 0)
+	fig = next(e for e in slide["elements"] if e["type"] == "figure")
+	if fig_height(fig, x1 - x0 - 2 * COL_PAD) > y1 - fig_top:
+		# 文字帶沒超封頂，但圖本身放不進剩下的區域（見 review I2：只守條列不守圖）。
+		# 走 _stack 不是為了買空間——條列沒被 40% 上限壓到時兩者容量相同——
+		# 而是把「放不下」的終結權集中在 _stack 那一個 raise，不要散成兩處
+		return _stack(slide, index)
 	return {
 		"variant": "stage",
 		"text": rect(x0 + CARD_PAD_X, y0, x1 - CARD_PAD_X, y0 + text_h),
@@ -203,10 +220,14 @@ def regions_for(slide, index):
 
 		x0, y0, x1, y1 = CONTENT_BOX
 		col_w = (x1 - x0 - 2 * COL_PAD - COL_GAP) // 2
+		col_h = y1 - y0 - 2 * COL_PAD
 		left = rect(x0 + COL_PAD, y0 + COL_PAD, x0 + COL_PAD + col_w, y1 - COL_PAD)
 		right = rect(x0 + COL_PAD + col_w + COL_GAP, y0 + COL_PAD, x1 - COL_PAD, y1 - COL_PAD)
-		if n_bullets > SPLIT_MAX_BULLETS:
-			return _stack(slide, index)      # 半欄放不下就退回整幅
+		fig = next(e for e in slide["elements"] if e["type"] == "figure")
+		if n_bullets > SPLIT_MAX_BULLETS or fig_height(fig, col_w) > col_h:
+			# 半欄放不下（條列太多，或圖本身太高）就退回整幅——_stack 給滿版寬
+			# 天生放得下，見 review C1（5 項 steps 直排需要 760px，半欄只有 660px）
+			return _stack(slide, index)
 		text_left = index % 2 == 0           # 偶數頁文字在左，同課同 kind 的兩頁才不會長一樣
 		return {
 			"variant": "split",

@@ -136,7 +136,9 @@ def draw_figure(targets, measure, el, th, region, guard):
 			w = min(360, region["w"])
 			total = FIG_ROW_H * n + gap * (n - 1)
 			x = cx - w // 2
-			y0 = region["y"] + max(0, (region["h"] - total) // 2)
+			# 置中要問 layout.fig_height，不能只拿本體高度：自己重算一份的話
+			# caption 的預留空間會被漏掉，整塊被往下推、caption 疊出區域外（見 C2）
+			y0 = region["y"] + max(0, (region["h"] - fig_height(el, region["w"])) // 2)
 			y = y0
 			for i, text in enumerate(items, start=1):
 				font = fit_font(measure, text, CJK_FONT, 30, w - 28, floor=18)
@@ -179,8 +181,10 @@ def draw_figure(targets, measure, el, th, region, guard):
 			len(el.get("right", {}).get("items", [])))
 		h = 64 + rows * 74
 		# panel_top 是垂直置中後的實際起點，跟函式開頭那個「區域頂緣」的 top 是兩碼事，
-		# 同名互相覆蓋只是巧合正確，改個名字讓兩種意思各自有名字
-		panel_top = region["y"] + max(0, (region["h"] - h) // 2)
+		# 同名互相覆蓋只是巧合正確，改個名字讓兩種意思各自有名字。
+		# 置中要問 layout.fig_height（含 caption），不能只拿 h：h 只是面板本體高度，
+		# 自己重算一份的話 caption 會被漏算，整塊被往下推、caption 疊出區域外（見 C2）
+		panel_top = region["y"] + max(0, (region["h"] - fig_height(el, region["w"])) // 2)
 		x0 = cx - (panel_w * 2 + mid) // 2
 		for side, px in ((el.get("left", {}), x0), (el.get("right", {}), x0 + panel_w + mid)):
 			title = guard.sanitize(side.get("title", ""))
@@ -267,8 +271,6 @@ def render_slide(slide, guard, th, out_dir, idx):
 		elif etype == "code":
 			step, size = code_metrics(len(el["lines"]))
 			font = ImageFont.truetype(CJK_FONT, size)
-			x0, y0, x1, y1 = CODE_BOX
-			whole = {"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0}
 			top = code_top(len(el["lines"]), step)  # 整塊垂直置中，CODE_BOX 外框本身不動；step 沿用上面算好的，不重算
 			for i, raw in enumerate(el["lines"], start=1):
 				line = guard.sanitize(raw, keep_indent=True)
@@ -285,7 +287,7 @@ def render_slide(slide, guard, th, out_dir, idx):
 					"h": step,
 					"baseline": y + step,
 				}
-			boxes[eid] = whole
+			boxes[eid] = reg["code"]      # 版位交給 regions_for 算，這裡不重算 CODE_BOX 的 rect
 
 		elif etype == "figure":
 			if n_figs > 1:
@@ -332,7 +334,8 @@ def main():
 	if len(sys.argv) < 2:
 		print(__doc__)
 		return 2
-	lesson = json.load(open(sys.argv[1], encoding="utf-8"))
+	with open(sys.argv[1], encoding="utf-8") as f:
+		lesson = json.load(f)
 	out_dir = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
 		os.path.dirname(os.path.abspath(__file__)), "out", lesson["lesson_id"]
 	)

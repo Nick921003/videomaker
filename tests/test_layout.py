@@ -155,8 +155,16 @@ class TestRegionsSplit(unittest.TestCase):
 
 	def test_條列太多時降級為_stack(self):
 		# 降級檢查放這裡而不是留到 Task 5：split 一啟用就需要它，
-		# 中間留一個 Task 的防禦空窗沒有道理
-		self.assertEqual(self._r(0, n_bullets=12)["variant"], "stack")
+		# 中間留一個 Task 的防禦空窗沒有道理。
+		#
+		# bullet_metrics 為了讓條列本身塞進 740px 已經壓到逼近上限（7 條就要
+		# 738px），半欄裝不下的條列量（> SPLIT_MAX_BULLETS）再疊上一張圖，
+		# 全版寬的 stack 也放不下——沒有更低可退，_stack 這時該明確失敗，
+		# 不是默默溢出 CONTENT_BOX（同一種守門，見 review I1）。這個
+		# ValueError 本身就是「真的降級到了 _stack」的證據：split 分支自己
+		# 不會 raise，只有它把控制權交給 _stack 之後才可能炸
+		with self.assertRaises(ValueError):
+			self._r(0, n_bullets=L.SPLIT_MAX_BULLETS + 1)
 
 	def test_實際會出現的條數不會被誤降級(self):
 		# prompt 規則 4 給 2–4 條，實測語料最多 3 條
@@ -167,6 +175,39 @@ class TestRegionsSplit(unittest.TestCase):
 		a = L.regions_for(slide("figure", kind="boxes", n_bullets=3), 0)
 		b = L.regions_for(slide("figure", kind="boxes", n_bullets=3, hidden=(1, 2)), 0)
 		self.assertEqual(a, b)
+
+	def test_五項_steps_不再溢出_退回滿版橫排(self):
+		# prompt 規則 6 允許 steps 2–5 項；5 項在半欄（810）直排要
+		# 104*5 + 60*4 = 760px，半欄只有 660px——只守條列數擋不住這個，
+		# 語料現有最大值是 4，只差一項就溢出（見 review C1）。
+		#
+		# 正確的終點不是 raise：直排 760px 連整張內容卡（740）都放不下，
+		# 代表直排在任何區域都不可行，該退回縮寬橫排——那正是改直排之前
+		# 一直在用的作法，base commit 的 5 項 steps 就是這樣畫出來的
+		sl = {"id": "p1", "elements": [
+			{"id": "p1_title", "type": "title", "text": "t"},
+			{"id": "p1_sub", "type": "subtitle", "text": "s"},
+			{"id": "p1_b0", "type": "bullet", "text": "x"},
+			{"id": "p1_b1", "type": "bullet", "text": "x"},
+			{"id": "p1_fig", "type": "figure", "kind": "steps",
+				"items": ["一", "二", "三", "四", "五"]},
+		]}
+		r = L.regions_for(sl, 0)
+		f = r["figure"]
+		self.assertLessEqual(f["y"] + f["h"], L.CONTENT_BOX[3], "圖區溢出內容卡")
+
+	def test_四項_steps_不會被誤降級(self):
+		# 語料現有最大值：4 項放得進半欄（見上一則的對照組），確認守門沒有
+		# 連帶誤傷語料裡本來就合法的內容
+		sl = {"id": "p1", "elements": [
+			{"id": "p1_title", "type": "title", "text": "t"},
+			{"id": "p1_sub", "type": "subtitle", "text": "s"},
+			{"id": "p1_b0", "type": "bullet", "text": "x"},
+			{"id": "p1_b1", "type": "bullet", "text": "x"},
+			{"id": "p1_fig", "type": "figure", "kind": "steps",
+				"items": ["一", "二", "三", "四"]},
+		]}
+		self.assertEqual(L.regions_for(sl, 0)["variant"], "split")
 
 
 class TestRegionsStage(unittest.TestCase):
@@ -195,11 +236,83 @@ class TestRegionsStage(unittest.TestCase):
 		card_h = L.CONTENT_BOX[3] - L.CONTENT_BOX[1]
 		self.assertLessEqual(self._r()["text"]["h"], card_h * 0.4)
 
+	def _compare_slide(self, n_items, n_bullets=3):
+		els = [{"id": "p1_title", "type": "title", "text": "t"},
+			{"id": "p1_sub", "type": "subtitle", "text": "s"}]
+		for i in range(n_bullets):
+			els.append({"id": f"p1_b{i}", "type": "bullet", "text": "x"})
+		side = {"title": "前", "items": ["x"] * n_items}
+		els.append({"id": "p1_fig", "type": "figure", "kind": "compare",
+			"left": dict(side), "right": dict(side)})
+		return {"id": "p1", "elements": els}
+
+	def test_契約上限的_compare_仍維持_stage(self):
+		# prompt 規則 6 給 compare 每邊 2–4 項，語料的 c_struct/p1 正是上限那格
+		# （3 條列 + 4 列）。這一格必須留在 stage，被誤降級的話畫面會退回單欄
+		for n in (2, 3, 4):
+			self.assertEqual(L.regions_for(self._compare_slide(n), 0)["variant"],
+				"stage", f"每邊 {n} 項")
+
+	def test_圖高到哪裡都放不下時明確失敗(self):
+		# 每邊 5 項已超出 prompt 契約，圖高 434 + 條列 288 + 間距 40 = 762 > 740。
+		# 3 條列沒被 40% 上限（296）壓到，所以 stage 與 stack 的容量完全相同——
+		# 降級買不到任何空間，終點就是誠實地 raise，而不是畫到卡片外
+		with self.assertRaises(ValueError):
+			L.regions_for(self._compare_slide(5), 0)
+
+	def test_圖太高時先讓_stage_退出(self):
+		# _stage 的圖側守門確實會觸發（不是被條列守門搶先），
+		# 這則釘住它自己有在檢查——把 _stage 的圖側判斷拿掉，這裡就不會 raise
+		fig = {"id": "p1_fig", "type": "figure", "kind": "compare",
+			"left": {"title": "前", "items": ["x"] * 5},
+			"right": {"title": "後", "items": ["x"] * 5}}
+		col_w = L.CONTENT_BOX[2] - L.CONTENT_BOX[0] - 2 * L.COL_PAD
+		band = min(288, int((L.CONTENT_BOX[3] - L.CONTENT_BOX[1]) * L.STAGE_TEXT_RATIO))
+		fig_top = L.CONTENT_BOX[1] + band + 40
+		self.assertGreater(L.fig_height(fig, col_w), L.CONTENT_BOX[3] - fig_top,
+			"這則測試的前提壞了：這張圖其實放得進 stage 的圖區")
+
+	def test_語料實際列數不會被誤降級(self):
+		# 同樣 3 條列，圖收回語料現有的最大值（4 列，恰好卡在合法上限）——
+		# 確認守門沒有連帶誤傷這個真實存在的頁面（c_struct/p1）
+		sl = {"id": "p1", "elements": [
+			{"id": "p1_title", "type": "title", "text": "t"},
+			{"id": "p1_sub", "type": "subtitle", "text": "s"},
+			{"id": "p1_b0", "type": "bullet", "text": "x"},
+			{"id": "p1_b1", "type": "bullet", "text": "x"},
+			{"id": "p1_b2", "type": "bullet", "text": "x"},
+			{"id": "p1_fig", "type": "figure", "kind": "compare",
+				"left": {"title": "前", "items": ["一", "二", "三", "四"]},
+				"right": {"title": "後", "items": ["1", "2", "3", "4"]}},
+		]}
+		self.assertEqual(L.regions_for(sl, 0)["variant"], "stage")
+
 	def test_圖區關在內容卡裡(self):
 		f = self._r()["figure"]
 		self.assertGreaterEqual(f["x"], L.CONTENT_BOX[0])
 		self.assertLessEqual(f["x"] + f["w"], L.CONTENT_BOX[2])
 		self.assertLessEqual(f["y"] + f["h"], L.CONTENT_BOX[3])
+
+
+class TestStackFigureCapacityGuard(unittest.TestCase):
+	"""單圖頁完全無守門的那個缺口（review I1）：_stage 因條列超過封頂先降級
+	到 _stack，_stack 舊版的置中算式沒有下限夾制，塞不下就會算出負的 top，
+	條列整條畫到畫布外，卻不炸、不警告——只是畫出一張錯的圖"""
+
+	def test_單圖版位放不下時明確失敗_不產生負座標(self):
+		# 實測輸入：6 條列 + 8 列 compare。stage 先因 bullets_h(648) 超過
+		# cap(296) 降級到 stack，stack 舊版算出 top=-62（見 review I1 原文）；
+		# 改成必須在這裡 raise，不能悄悄畫到畫布外
+		sl = {"id": "p1", "elements": [
+			{"id": "p1_title", "type": "title", "text": "t"},
+			{"id": "p1_sub", "type": "subtitle", "text": "s"},
+		] + [{"id": f"p1_b{i}", "type": "bullet", "text": "x"} for i in range(6)] + [
+			{"id": "p1_fig", "type": "figure", "kind": "compare",
+				"left": {"title": "前", "items": [f"甲{i}" for i in range(8)]},
+				"right": {"title": "後", "items": [f"乙{i}" for i in range(8)]}},
+		]}
+		with self.assertRaises(ValueError):
+			L.regions_for(sl, 0)
 
 
 class TestRegionsCode(unittest.TestCase):
@@ -230,6 +343,56 @@ class TestRegionsCode(unittest.TestCase):
 			above = top - L.CODE_BOX[1]
 			below = L.CODE_BOX[3] - (top + n * step)
 			self.assertLessEqual(abs(above - below), 2, f"{n} 行的上下留白差超過 2px，不算置中")
+
+
+class TestPromptContractRenders(unittest.TestCase):
+	"""prompt 白紙黑字允許的每一種尺寸都必須畫得出來。
+
+	C1 就是從這裡漏掉的：規則 6 給 boxes／steps 2–5 項，語料最大值是 4，
+	只差一項——5 項 steps 直排要 760px 比整張內容卡還高，當時直接畫到卡片外。
+	用真實語料當樣本永遠測不到這一格，因為語料本來就沒有那一格
+	"""
+
+	def _slide(self, fig, n_bullets):
+		els = [{"id": "p1_title", "type": "title", "text": "t"}]
+		els += [{"id": f"p1_b{i}", "type": "bullet", "text": "項目"} for i in range(n_bullets)]
+		return {"id": "p1", "elements": els + [fig]}
+
+	def test_boxes_與_steps_二到五項都放得下(self):
+		for kind in ("boxes", "steps"):
+			for n in range(2, 6):
+				for nb in (2, 3):        # 規則 6：有 figure 的頁面條列減到 2–3 條
+					fig = {"id": "p1_fig", "type": "figure", "kind": kind,
+						"items": ["項目"] * n}
+					r = L.regions_for(self._slide(fig, nb), 0)
+					f = r["figure"]
+					self.assertLessEqual(f["y"] + f["h"], L.CONTENT_BOX[3],
+						f"{kind} {n} 項 + {nb} 條列 的圖區溢出內容卡")
+
+	def test_compare_每邊二到四項都放得下(self):
+		for n in range(2, 5):
+			for nb in (2, 3):
+				fig = {"id": "p1_fig", "type": "figure", "kind": "compare",
+					"left": {"title": "前", "items": ["項目"] * n},
+					"right": {"title": "後", "items": ["項目"] * n}}
+				r = L.regions_for(self._slide(fig, nb), 0)
+				f = r["figure"]
+				self.assertLessEqual(f["y"] + f["h"], L.CONTENT_BOX[3],
+					f"compare 每邊 {n} 項 + {nb} 條列 的圖區溢出內容卡")
+
+	def test_直排只在窄欄啟用_滿版一律橫排(self):
+		# 直排是窄欄的作法（spec 3.1）。拿到整幅寬度時一律橫排、放不下就縮格寬——
+		# 少了這條的話，_stack 拿滿版寬也會翻直排，而 5 項 steps 直排要 760px
+		# 比整張卡片（740）還高，合法輸入會一路降級到 raise
+		full = L.CONTENT_BOX[2] - L.CONTENT_BOX[0]
+		for kind in ("boxes", "steps"):
+			for n in range(2, 6):
+				fig = {"id": "p1_fig", "type": "figure", "kind": kind, "items": ["項目"] * n}
+				self.assertFalse(L.fig_vertical(fig, full), f"{kind} {n} 項在滿版仍翻直排")
+				self.assertEqual(L.fig_height(fig, full), L.FIG_ROW_H, f"{kind} {n} 項")
+		# 窄欄則相反：360 給不滿就翻直排
+		fig = {"id": "p1_fig", "type": "figure", "kind": "boxes", "items": ["項目"] * 3}
+		self.assertTrue(L.fig_vertical(fig, 810))
 
 
 if __name__ == "__main__":

@@ -231,9 +231,12 @@ class TestStageBulletCapacityGuard(unittest.TestCase):
 		els = [{"id": "p1_title", "type": "title", "text": "測試"}]
 		for i in range(n_bullets):
 			els.append({"id": f"p1_b{i}", "type": "bullet", "text": f"條列 {i}"})
+		# 每邊 3 項：條列 4 條（408）＋圖 286＋間距 40 ＝ 734，剛好進得了卡片（740），
+		# 降級之後畫得出來。用每邊 1 項的最小 compare 的話圖區餘裕太大，
+		# 守門刪掉也測不出來；每邊 4 項則是 808 > 740，會變成測到 raise
 		els.append({"id": "p1_fig", "type": "figure", "kind": "compare",
-			"left": {"title": "前", "items": ["甲"]},
-			"right": {"title": "後", "items": ["乙"]}})
+			"left": {"title": "前", "items": ["甲一", "甲二", "甲三"]},
+			"right": {"title": "後", "items": ["乙一", "乙二", "乙三"]}})
 		lesson = {"lesson_id": "t", "title": "t",
 			"slides": [{"id": "p1", "elements": els}]}
 		d = tempfile.mkdtemp()
@@ -352,11 +355,13 @@ class TestMultiFigureStacking(unittest.TestCase):
 		# 直排要 624px；CONTENT_BOX 只有 740px 高，扣掉間距跟第二張圖，
 		# 怎麼排都會超出卡片——這是內容量超出容量的問題，不是排版算式的問題，
 		# 應該炸得響亮，不是默默把箱子畫到卡片外
+		# 多圖頁一律走 stack、拿滿版寬，所以每張圖都是橫排的 104px + 40px 間距。
+		# 六張就要 864px，CONTENT_BOX 只有 740px——內容量超出容量，不是排版算式
+		# 的問題，應該炸得響亮。stack 是最後一級版型，沒有更低可退
 		figs = [
-			{"id": "p1_figA", "type": "figure", "kind": "boxes",
-				"items": ["甲1", "甲2", "甲3", "甲4", "甲5"]},
-			{"id": "p1_figB", "type": "figure", "kind": "steps",
-				"items": ["乙1", "乙2", "乙3", "乙4"]},
+			{"id": f"p1_fig{c}", "type": "figure", "kind": "boxes",
+				"items": [f"{c}1", f"{c}2", f"{c}3"]}
+			for c in "ABCDEF"
 		]
 		els = [{"id": "p1_title", "type": "title", "text": "測試"}] + figs
 		lesson = {"lesson_id": "t", "title": "t",
@@ -506,8 +511,80 @@ class TestCorpusInvariants(unittest.TestCase):
 		# 測試照樣全綠——這裡把「目的達成了沒有」也變成可驗的
 		import layout as L
 		for name in self.LESSONS:
-			used = {L.pick_variant(sl) for sl in self._lesson(name)["slides"]}
+			# 要讀 regions_for 的結果，不是 pick_variant 的意圖：pick_variant 只說
+			# 「想走哪個版型」，容量守門可能把它整批降級回 stack。讀意圖的話，
+			# 四種版型全部關掉這則測試照樣綠（見 review I4）
+			slides = self._lesson(name)["slides"]
+			used = {L.regions_for(sl, i)["variant"] for i, sl in enumerate(slides)}
 			self.assertGreaterEqual(len(used), 2, f"{name} 只用到 {used}")
+
+
+class TestFigureCaption(unittest.TestCase):
+	"""caption 這條路徑在生產端從未被走過——五份語料一個 caption 都沒有，
+	但 lesson_content.system.md 的範例本身就在示範它，下一份教材極可能就帶。
+
+	draw_figure 改成「在區域內垂直置中」時，若自己重算一份本體高度，
+	那份不含 FIG_CAPTION_H，整塊會被往下推 23px、caption 疊出區域外（見 review C2）
+	"""
+
+	def _boxes(self, fig, n_bullets):
+		els = [{"id": "p1_title", "type": "title", "text": "測試"}]
+		els += [{"id": f"p1_b{i}", "type": "bullet", "text": "條列文字"} for i in range(n_bullets)]
+		lesson = {"lesson_id": "t", "title": "t",
+			"slides": [{"id": "p1", "elements": els + [fig]}]}
+		d = tempfile.mkdtemp()
+		self.addCleanup(shutil.rmtree, d, True)
+		path = os.path.join(d, "t.lesson.json")
+		with open(path, "w", encoding="utf-8") as f:
+			json.dump(lesson, f)
+		old = sys.argv
+		sys.argv = ["render_slides.py", path, d]
+		try:
+			self.assertEqual(R.main(), 0)
+		finally:
+			sys.argv = old
+		with open(os.path.join(d, "layout.json"), encoding="utf-8") as f:
+			boxes = json.load(f)["slides"][0]["boxes"]
+		return boxes, {"id": "p1", "elements": els + [fig]}
+
+	def _check(self, fig, n_bullets=3):
+		"""界線打在圖區上，不是打在 CONTENT_BOX 上。
+
+		只查 CONTENT_BOX 太鬆：圖溢出自己的區域幾十像素往往還在卡片裡，
+		斷言照樣綠——但畫面上它已經壓到隔壁欄了
+		"""
+		import layout as L
+		boxes, slide = self._boxes(fig, n_bullets)
+		reg = L.regions_for(slide, 0)["figure"]
+		self.assertIn("p1_fig:caption", boxes, "caption 沒有量測框，指到它的動作會靜默失效")
+		cap, body = boxes["p1_fig:caption"], boxes["p1_fig"]
+		self.assertGreaterEqual(cap["y"], body["y"], "caption 跑到圖本體上面去了")
+		for label, b in (("圖本體", body), ("caption", cap)):
+			self.assertGreaterEqual(b["y"], reg["y"],
+				f"{label} 頂端 {b['y']} 在圖區 {reg['y']} 之上")
+			self.assertLessEqual(b["y"] + b["h"], reg["y"] + reg["h"],
+				f"{label} 底端 {b['y'] + b['h']} 溢出圖區 {reg['y'] + reg['h']}")
+
+	def test_compare_帶_caption_不溢出(self):
+		# 每邊 4 項是 prompt 規則 6 的上限，也是語料 c_struct/p1 的真實形狀。
+		# 這一格的圖區只剩 6px 餘裕——draw_figure 若自己重算不含 caption 的高度，
+		# 整塊往下推 23px 就溢出。降到每邊 3 項的話餘裕有 39px，同樣的缺陷測不出來
+		self._check({"id": "p1_fig", "type": "figure", "kind": "compare",
+			"caption": "一個 Student 實體的組成",
+			"left": {"title": "傳統做法", "items": ["name 陣列", "score 陣列", "各自維護", "難以擴充"]},
+			"right": {"title": "用 struct", "items": ["Student 陣列", "一起搬動", "語意清楚", "好擴充"]}})
+
+	def test_boxes_帶_caption_不溢出(self):
+		self._check({"id": "p1_fig", "type": "figure", "kind": "boxes",
+			"caption": "一個 Student 實體的組成",
+			"items": ["char name[32]", "int score"]})
+
+	def test_五項_boxes_帶_caption_不溢出(self):
+		# 直排 624 + caption 46 = 670，比 split 半欄的 660 高——
+		# 這一格正是 split 圖側守門唯一構得到的輸入，拿掉守門就會溢出圖區
+		self._check({"id": "p1_fig", "type": "figure", "kind": "boxes",
+			"caption": "五個成員的記憶體配置",
+			"items": ["甲", "乙", "丙", "丁", "戊"]}, n_bullets=2)
 
 
 if __name__ == "__main__":
