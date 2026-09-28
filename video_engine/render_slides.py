@@ -21,6 +21,12 @@ from layout import (
 )
 
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
+CJK_REGULAR_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+FONT_FACES = {
+	"regular-tc": (CJK_REGULAR_FONT, 3),
+	"bold-tc": (CJK_FONT, 3),
+	"mono-tc": (CJK_REGULAR_FONT, 8),
+}
 THEME_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 DEFAULT_THEME = "warm"
 
@@ -36,7 +42,7 @@ def load_theme(name):
 	if not os.path.exists(path):
 		raise SystemExit(f"找不到主題 {name}，可用：{sorted(f[:-5] for f in os.listdir(THEME_DIR))}")
 	t = json.load(open(path, encoding="utf-8"))
-	for group in ("canvas", "card", "text", "code", "effects"):
+	for group in ("canvas", "card", "text", "code", "effects", "figure"):
 		for k, v in t.get(group, {}).items():
 			if isinstance(v, str) and v.startswith("#"):
 				t[group][k] = rgb(v)
@@ -67,14 +73,29 @@ class FontGuard:
 		return clean if keep_indent else clean.strip()
 
 
-def fit_font(draw, text, path, size, max_w, floor=24):
+def font_for_role(th, role):
+	"""舊主題維持既有 JP Bold 字面；新主題可明確選 TC 字面與字重。"""
+	face = th.get("typography", {}).get(role)
+	if face is None:
+		return CJK_FONT, 0
+	if face not in FONT_FACES:
+		raise ValueError(f"未知字型：{face}（{role}）")
+	return FONT_FACES[face]
+
+
+def fit_font(draw, text, path, size, max_w, floor=24, index=0):
 	"""字太寬就縮，縮到底線為止"""
 	while size > floor:
-		font = ImageFont.truetype(path, size)
+		font = ImageFont.truetype(path, size, index=index)
 		if draw.textlength(text, font=font) <= max_w:
 			return font
 		size -= 2
-	return ImageFont.truetype(path, floor)
+	return ImageFont.truetype(path, floor, index=index)
+
+
+def style_font(draw, text, th, role, size, max_w, floor=24):
+	path, index = font_for_role(th, role)
+	return fit_font(draw, text, path, size, max_w, floor=floor, index=index)
 
 
 def code_color(line, th):
@@ -116,6 +137,8 @@ def draw_figure(targets, measure, el, th, region, guard):
 	改吃直排；compare 一律在自己拿到的區域內垂直置中，不假設全寬
 	"""
 	fill, edge = th["figure"]["fill"], th["figure"]["edge"]
+	heading = th["figure"].get("heading", edge)
+	heading_text = th["figure"].get("heading_text", fill)
 	alt, ink = th["figure"]["alt"], th["text"]["bullet"]
 	accent = th["text"]["callout"]
 	boxes, eid, kind = {}, el["id"], el["kind"]
@@ -141,7 +164,7 @@ def draw_figure(targets, measure, el, th, region, guard):
 			y0 = region["y"] + max(0, (region["h"] - fig_height(el, region["w"])) // 2)
 			y = y0
 			for i, text in enumerate(items, start=1):
-				font = fit_font(measure, text, CJK_FONT, 34, w - 28, floor=18)
+				font = style_font(measure, text, th, "figure", 34, w - 28, floor=18)
 				for d in targets:
 					d.rounded_rectangle([x, y, x + w, y + FIG_ROW_H], radius=8,
 						fill=fill, outline=edge, width=2)
@@ -159,7 +182,7 @@ def draw_figure(targets, measure, el, th, region, guard):
 			total = w * n + gap * (n - 1)
 			x = cx - total // 2
 			for i, text in enumerate(items, start=1):
-				font = fit_font(measure, text, CJK_FONT, 34, w - 28, floor=18)
+				font = style_font(measure, text, th, "figure", 34, w - 28, floor=18)
 				for d in targets:
 					d.rounded_rectangle([x, top, x + w, top + FIG_ROW_H], radius=8,
 						fill=fill, outline=edge, width=2)
@@ -188,14 +211,14 @@ def draw_figure(targets, measure, el, th, region, guard):
 		x0 = cx - (panel_w * 2 + mid) // 2
 		for side, px in ((el.get("left", {}), x0), (el.get("right", {}), x0 + panel_w + mid)):
 			title = guard.sanitize(side.get("title", ""))
-			tf = fit_font(measure, title, CJK_FONT, 30, panel_w - 24, floor=18)
+			tf = style_font(measure, title, th, "figure_heading", 30, panel_w - 24, floor=18)
 			for d in targets:
-				d.rounded_rectangle([px, panel_top, px + panel_w, panel_top + 52], radius=8, fill=edge)
-				d.text((px + panel_w // 2, panel_top + 26), title, font=tf, fill=fill, anchor="mm")
+				d.rounded_rectangle([px, panel_top, px + panel_w, panel_top + 52], radius=8, fill=heading)
+				d.text((px + panel_w // 2, panel_top + 26), title, font=tf, fill=heading_text, anchor="mm")
 			y = panel_top + 64
 			for j, raw in enumerate(side.get("items", []), start=1):
 				text = guard.sanitize(raw)
-				f = fit_font(measure, text, CJK_FONT, 28, panel_w - 32, floor=16)
+				f = style_font(measure, text, th, "figure", 28, panel_w - 32, floor=16)
 				for d in targets:
 					d.rounded_rectangle([px, y, px + panel_w, y + 62], radius=6,
 						fill=alt, outline=edge, width=1)
@@ -212,7 +235,7 @@ def draw_figure(targets, measure, el, th, region, guard):
 
 	if el.get("caption"):
 		cap = guard.sanitize(el["caption"])
-		cf = fit_font(measure, cap, CJK_FONT, 26, region["w"], floor=18)
+		cf = style_font(measure, cap, th, "caption", 26, region["w"], floor=18)
 		for d in targets:
 			d.text((cx, bottom + 12), cap, font=cf, fill=th["text"]["subtitle"], anchor="ma")
 		boxes[f"{eid}:caption"] = ink_box(measure, (cx, bottom + 12), cap, cf, anchor="ma")
@@ -252,17 +275,17 @@ def render_slide(slide, guard, th, out_dir, idx, mode="auto", seed=0):
 
 		if etype == "title":
 			text = guard.sanitize(el["text"])
-			font = fit_font(df, text, CJK_FONT, 54, 1600)
+			font = style_font(df, text, th, "title", 54, 1600)
 			boxes[eid] = draw_text_block(targets, df, text, TITLE_Y, font, th["text"]["title"])
 
 		elif etype == "subtitle":
 			text = guard.sanitize(el["text"])
-			font = fit_font(df, text, CJK_FONT, 30, 1600)
+			font = style_font(df, text, th, "subtitle", 30, 1600)
 			boxes[eid] = draw_text_block(targets, df, text, SUB_Y, font, th["text"]["subtitle"])
 
 		elif etype in ("bullet", "callout"):
 			text = guard.sanitize(el["text"])
-			font = fit_font(df, text, CJK_FONT, bullet_size, reg["text"]["w"])
+			font = style_font(df, text, th, etype, bullet_size, reg["text"]["w"])
 			color = th["text"]["callout"] if etype == "callout" else th["text"]["bullet"]
 			boxes[eid] = draw_text_block(targets, df, text, bullet_y, font, color,
 				reg["text"], reg["text_align"])
@@ -270,7 +293,17 @@ def render_slide(slide, guard, th, out_dir, idx, mode="auto", seed=0):
 
 		elif etype == "code":
 			step, size = code_metrics(len(el["lines"]))
-			font = ImageFont.truetype(CJK_FONT, size)
+			if th.get("typography", {}).get("code"):
+				path, index = font_for_role(th, "code")
+				probe = ImageFont.truetype(path, size, index=index)
+				lines = [guard.sanitize(raw, keep_indent=True) for raw in el["lines"]]
+				longest = max(lines, key=lambda line: df.textlength(line, font=probe), default="")
+				max_width = CODE_BOX[2] - CODE_X - 40
+				font = fit_font(df, longest, path, size, max_width, floor=12, index=index)
+				if df.textlength(longest, font=font) > max_width:
+					raise ValueError(f"{slide['id']} 的 code {eid} 無法放進 CODE_BOX")
+			else:
+				font = ImageFont.truetype(CJK_FONT, size)
 			top = code_top(len(el["lines"]), step)  # 整塊垂直置中，CODE_BOX 外框本身不動；step 沿用上面算好的，不重算
 			for i, raw in enumerate(el["lines"], start=1):
 				line = guard.sanitize(raw, keep_indent=True)

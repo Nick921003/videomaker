@@ -10,7 +10,7 @@
   區域壓暗　只有程式碼走讀才壓暗，而且只壓程式碼區塊
   底線畫出　雷射改成由左往右畫出的底線，比細線明顯
   左移淡入　reveal 從左側平移進場
-  交叉淡化　換頁不硬切
+  卡面過場　舊字先退場、新字再進場，兩頁不疊影
   掃描線　　程式碼首次走讀時一道光等速掃過，表示「正在逐行讀」
   退場淡出　所有強調效果收尾都淡掉，不再瞬間消失
   依序進場　同時觸發的多個 reveal 由上到下錯開，不會整塊蹦出來
@@ -22,12 +22,12 @@ import sys
 import time
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
-from layout import CODE_BOX, rect
-from motion import (CAMERA_MS, DIM_IN_MS, EXIT_RATIO, HL_WIPE_MS, SCAN_MS,
-	TRANS_MS, UL_WIPE_MS)
+from layout import CODE_BOX, CONTENT_BOX, HEADER_BOX, rect
+from motion import (CAMERA_MS, DIM_IN_MS, EXIT_RATIO, HL_WIPE_MS, INTRO_SUB_DELAY_MS,
+	INTRO_SUB_MS, INTRO_TITLE_MS, INTRO_TOTAL_MS, SCAN_MS, TRANS_MS, UL_WIPE_MS)
 
 REVEAL_SHIFT = 30     # 左移淡入的位移；再大就是動作疲勞，再小就看不出方向
 UL_H = 6              # 底線中段最寬處
@@ -64,7 +64,7 @@ def _bezier(x1, y1, x2, y2):
 # 混用就是「動起來很機械」的來源。數值取自 Material Design 3 的標準曲線。
 ease_enter = _bezier(0.05, 0.7, 0.1, 1)    # 進場：一開始就衝出去，尾巴慢慢收
 ease_exit = _bezier(0.3, 0, 1, 1)          # 退場：慢慢起步，最後加速離開
-ease_move = _bezier(0.2, 0, 0, 1)          # 畫面內位移：鏡頭、換頁
+ease_move = _bezier(0.2, 0, 0, 1)          # 畫面內位移：鏡頭
 
 
 _BACK_C1 = {}
@@ -156,6 +156,39 @@ def apply_reveals(frame, full, scene, t, canvas_w):
 		if dst.shape[:2] != patch.shape[:2]:
 			continue
 		frame[y:y + h, dx:dx + w] = (dst.astype(np.float32) * (1 - a) + patch * a).astype(np.uint8)
+	return frame
+
+
+def apply_intro(frame, full, intro, t, card_rgb):
+	"""首張 hook 的字從上方進場；僅移動實測 ink box，完成後保留原像素。"""
+	elapsed = t - intro["start_ms"]
+	if elapsed < 0 or elapsed >= INTRO_TOTAL_MS:
+		return frame
+	for key in ("title", "subtitle"):
+		b = intro.get(key)
+		if not b:
+			continue
+		x, y, w, h = (int(b[k]) for k in ("x", "y", "w", "h"))
+		if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > frame.shape[1] or y + h > frame.shape[0]:
+			continue
+		frame[y:y + h, x:x + w] = card_rgb
+	for key, delay, duration, rise in (("title", 0, INTRO_TITLE_MS, 16),
+			("subtitle", INTRO_SUB_DELAY_MS, INTRO_SUB_MS, 10)):
+		b = intro.get(key)
+		if not b:
+			continue
+		x, y, w, h = (int(b[k]) for k in ("x", "y", "w", "h"))
+		if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > frame.shape[1] or y + h > frame.shape[0]:
+			continue
+		p = max(0.0, min(1.0, (elapsed - delay) / duration))
+		a = ease_enter(p)
+		if a <= 0:
+			continue
+		shift = min(rise, max(0, y - HEADER_BOX[1]))
+		dy = y - round(shift * (1 - a))
+		patch = full[y:y + h, x:x + w].astype(np.float32)
+		dst = frame[dy:dy + h, x:x + w].astype(np.float32)
+		frame[dy:dy + h, x:x + w] = (dst * (1 - a) + patch * a).astype(np.uint8)
 	return frame
 
 
@@ -333,6 +366,34 @@ def apply_camera(img, cam, t, canvas):
 	return zoom(img, cx, cy, scale, canvas)
 
 
+def transition_surface(canvas, theme):
+	"""與投影片相同外框的乾淨卡面；換頁時讓舊字退場後才出現新字。"""
+	im = Image.new("RGB", (canvas["width"], canvas["height"]), rgb(theme["canvas"]["bg"]))
+	draw = ImageDraw.Draw(im)
+	for box in (HEADER_BOX, CONTENT_BOX):
+		draw.rectangle(box, fill=rgb(theme["card"]["fill"]),
+			outline=rgb(theme["card"]["edge"]), width=theme["card"]["width"])
+	return np.asarray(im)
+
+
+def dip_to_surface(previous, current, surface, progress):
+	"""舊頁先退到卡面，新頁再進場，兩頁文字永不同時疊色。"""
+	if progress <= 0:
+		return previous.copy()
+	if progress >= 1:
+		return current.copy()
+	if progress < 0.5:
+		a = 1 - ease_exit(progress * 2)
+		source = previous
+	elif progress > 0.5:
+		a = ease_enter((progress - 0.5) * 2)
+		source = current
+	else:
+		return surface.copy()
+	return (surface.astype(np.float32) * (1 - a)
+		+ source.astype(np.float32) * a).astype(np.uint8)
+
+
 def active(items, t):
 	return [i for i in items if i["start_ms"] <= t < i.get("end_ms", 10 ** 9)]
 
@@ -363,6 +424,8 @@ def main():
 		np.array(Image.open(s["full_png"]).convert("RGB")),
 	) for s in timeline["scenes"]}
 
+	surface = transition_surface(canvas, theme)
+
 	# 用輸出目錄名，才不會跟 lesson_id 不一致（同一份教材可能跑多種設定）
 	out_mp4 = os.path.join(out_dir, os.path.basename(out_dir.rstrip("/")) + ".mp4")
 	total_frames = int(timeline["total_ms"] / 1000 * fps)
@@ -388,6 +451,8 @@ def main():
 		base, full = pages[scene["slide_id"]]
 		frame = base.copy()
 		frame = apply_reveals(frame, full, scene, t, W)
+		if scene.get("intro"):
+			frame = apply_intro(frame, full, scene["intro"], t, rgb(theme["card"]["fill"]))
 
 		for eff in active([e for e in scene["effects"] if e["type"] == "spotlight"], t):
 			if spot_style(eff) == "code":
@@ -408,13 +473,12 @@ def main():
 		else:
 			arr = frame
 
-		# 換頁交叉淡化：記住上一頁最後一格，新頁前 TRANS_MS 內混合
+		# 換頁先回到乾淨卡面再帶入新頁，避免文字疊影與邊界裁字
 		if idx != last_idx:
 			trans_from, trans_until = last_frame, t + TRANS_MS
 			last_idx = idx
 		if trans_from is not None and t < trans_until:
-			a = ease_move(1 - (trans_until - t) / TRANS_MS)
-			arr = (trans_from.astype(np.float32) * (1 - a) + arr.astype(np.float32) * a).astype(np.uint8)
+			arr = dip_to_surface(trans_from, arr, surface, 1 - (trans_until - t) / TRANS_MS)
 		last_frame = arr
 
 		proc.stdin.write(arr.tobytes())

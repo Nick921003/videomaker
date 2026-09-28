@@ -8,7 +8,11 @@ lint 就會拿錯的基準去檢查對的畫面。每個數值為什麼是這個
 HL_WIPE_MS = 380        # 螢光筆刷過
 DIM_IN_MS = 420         # 程式碼區域壓暗淡入
 UL_WIPE_MS = 330        # 馬克筆底線畫出
-TRANS_MS = 420          # 換頁交叉淡化
+TRANS_MS = 420          # 換頁回到乾淨卡面再進場
+INTRO_TITLE_MS = 480    # 首張 hook 標題進場
+INTRO_SUB_DELAY_MS = 120 # 副標延後進場
+INTRO_SUB_MS = 480      # 副標進場
+INTRO_TOTAL_MS = 600    # 片頭落位
 CAMERA_MS = 600         # 鏡頭推近
 EXIT_RATIO = 0.7        # 退場時長 = 進場的 70%
 

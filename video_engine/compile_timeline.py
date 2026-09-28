@@ -301,6 +301,19 @@ def to_srt(cues):
 	return "\n".join(out)
 
 
+def intro_for(slide, boxes, start_ms):
+	"""只為首張 hook 提供實測標題框；缺主標時保持舊片行為。"""
+	if not slide or slide.get("role") != "hook":
+		return None
+	ids = {e.get("type"): e.get("id") for e in slide.get("elements", [])
+		if e.get("type") in ("title", "subtitle")}
+	title = boxes.get(ids.get("title"))
+	if not title:
+		return None
+	return {"start_ms": start_ms, "title": title,
+		"subtitle": boxes.get(ids.get("subtitle"))}
+
+
 def main():
 	if len(sys.argv) < 3:
 		print(__doc__)
@@ -315,17 +328,23 @@ def main():
 	durations = json.load(open(os.path.join(out_dir, "durations.json"), encoding="utf-8"))
 	canvas = layout["canvas"]
 	pages = {s["slide_id"]: s for s in layout["slides"]}
+	lesson_slides = {s["id"]: s for s in lesson["slides"]}
 
 	timeline = {"lesson_id": lesson["lesson_id"], "fps": FPS, "canvas": canvas,
+		"theme": layout.get("theme", lesson.get("theme", "warm")),
 		"scenes": [], "subtitles": [], "diagnostics": []}
 	cursor = 0
 
-	for slide in actions["slides"]:
+	for slide_idx, slide in enumerate(actions["slides"]):
 		sid = slide["slide_id"]
 		page = pages[sid]
 		scene, cursor, diags = compile_slide(
 			slide["actions"], page["boxes"], canvas, durations, sid, cursor
 		)
+		if slide_idx == 0:
+			intro = intro_for(lesson_slides.get(sid), page["boxes"], scene["start_ms"])
+			if intro:
+				scene["intro"] = intro
 		scene["base_png"] = page["png"]
 		scene["full_png"] = page["png_full"]
 		timeline["scenes"].append(scene)

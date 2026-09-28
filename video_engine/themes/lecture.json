@@ -1,0 +1,50 @@
+{
+	"name": "lecture",
+	"label": "清晰講義",
+	"canvas": {
+		"bg": "#EEF2F5"
+	},
+	"card": {
+		"fill": "#FFFFFF",
+		"edge": "#D6E1E7",
+		"width": 2
+	},
+	"text": {
+		"title": "#162C3C",
+		"subtitle": "#426579",
+		"bullet": "#294454",
+		"callout": "#A74724"
+	},
+	"code": {
+		"bg": "#13212B",
+		"edge": "#344B58",
+		"normal": "#F1F5F7",
+		"keyword": "#73D2C4",
+		"preproc": "#F0BF76"
+	},
+	"effects": {
+		"dim": "#0C1922",
+		"laser": "#E89E50",
+		"spotlight_border": "#3BAAAA",
+		"highlight": "#275668",
+		"underline": "#2A8C8D",
+		"code_fade": "#13212B"
+	},
+	"figure": {
+		"fill": "#F3F8F9",
+		"edge": "#BCD4D8",
+		"alt": "#E4F0F0",
+		"heading": "#366772",
+		"heading_text": "#FFFFFF"
+	},
+	"typography": {
+		"title": "bold-tc",
+		"subtitle": "regular-tc",
+		"bullet": "regular-tc",
+		"callout": "bold-tc",
+		"code": "mono-tc",
+		"figure": "regular-tc",
+		"figure_heading": "bold-tc",
+		"caption": "regular-tc"
+	}
+}
