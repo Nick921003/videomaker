@@ -8,6 +8,18 @@
 
 約三分鐘。要先審講稿就 `--until storyboard`，看過再 `--from timeline` 續跑。
 
+需要全幅解說畫面時加 `--visual-style explainer`；預設 `cards` 保留既有投影片構圖。
+視覺模式在 `slides` 階段決定，重跑樣式時從 `--from slides` 開始：
+
+```bash
+.venv/bin/python video_engine/run.py video_engine/materials/c_struct.md --from slides --until slides --visual-style explainer
+.venv/bin/python video_engine/run.py video_engine/materials/c_struct.md --from timeline --visual-style explainer
+```
+
+`explainer` 目前支援對照、字元模型、程式走讀、錯誤修正四種場景；不支援的頁面會記錄診斷並逐頁回退 `cards`。可直接重用既有語音檔與動作檔做 A/B。
+焦點提示依目標語意選擇：程式碼行用左側軌、文字與圖中文字用底線、字元格／流程節點用圈選。
+`spotlight` 和 `laser` 指向同一目標時使用同一形狀；位置一律取自 `layout.json` 的實測框。
+
 ## 三層契約
 
 內容、編排、幾何各有唯一作者，不得跨界。這是整個設計唯一要守的規矩。
@@ -26,7 +38,7 @@
 | 腳本 | 做什麼 | 耗時 |
 | :--- | :--- | ---: |
 | `generate_lesson.py` | 教材 → lesson.json（LLM） | 15 秒 |
-| `render_slides.py` | 畫投影片，順便量測每個元素落點 | 1 秒 |
+| `render_slides.py` | 畫投影片或全幅解說場景，並量測元素落點 | 1 秒 |
 | `generate_actions.py` | lesson → actions.json（LLM，內含驗證閘） | 20–45 秒 |
 | `validate.py` | 編排驗證閘 | <1 秒 |
 | `synth.py` | 語音合成＋驗收重試（GPT-SoVITS :9880） | 45 秒 |
@@ -47,11 +59,11 @@ LLM SDK 裝在獨立的 `.venv-llm`，避免 `google-genai` 連帶升級 pydanti
 
 | 想改 | 改這裡 |
 | :--- | :--- |
-| 配色、效果顏色 | `themes/warm.json`（`dark.json` 是舊的深色） |
+| 配色、效果顏色 | `themes/lecture.json`、`themes/explainer.json` 等主題檔 |
 | 講稿風格、動作規則 | `prompts/slide_actions.system.md` |
 | 投影片結構規則 | `prompts/lesson_content.system.md` |
 | 什麼算不合格 | `validate.py`（改這裡比改 prompt 有效，模型會被打回重做） |
-| 動畫的時長與曲線 | `render_video.py` 頂部常數 |
+| 動畫的時長與曲線 | `motion.py` 與 `render_video.py` |
 
 ## 踩過的坑
 

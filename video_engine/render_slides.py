@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """投影片繪製器：讀 lesson.json，畫出 1080p 底圖，並吐出實測幾何 layout.json。
 
-用法：.venv/bin/python video_engine/render_slides.py <lesson.json> [輸出目錄]
+用法：.venv/bin/python video_engine/render_slides.py <lesson.json> [輸出目錄] [--visual-style cards|explainer]
+
+explainer 模式會使用 explainer 主題；cards 是預設模式，沿用 lesson 的主題。
 
 每頁產兩張圖：
   slide_XX_base.png — hidden 元素不畫（進場狀態）
@@ -41,7 +43,8 @@ def load_theme(name):
 	path = os.path.join(THEME_DIR, f"{name}.json")
 	if not os.path.exists(path):
 		raise SystemExit(f"找不到主題 {name}，可用：{sorted(f[:-5] for f in os.listdir(THEME_DIR))}")
-	t = json.load(open(path, encoding="utf-8"))
+	with open(path, encoding="utf-8") as f:
+		t = json.load(f)
 	for group in ("canvas", "card", "text", "code", "effects", "figure"):
 		for k, v in t.get(group, {}).items():
 			if isinstance(v, str) and v.startswith("#"):
@@ -378,26 +381,48 @@ def main():
 	)
 	layout_mode = opt("--layout", "auto")
 	seed = int(opt("--seed", 0))
+	if "--visual-style" in sys.argv and sys.argv.index("--visual-style") + 1 == len(sys.argv):
+		print("--visual-style 缺少值（可用：cards, explainer）")
+		return 2
+	visual_style = opt("--visual-style", "cards")
+	if visual_style not in ("cards", "explainer"):
+		print(f"未知視覺模式：{visual_style}（可用：cards, explainer）")
+		return 2
 	os.makedirs(out_dir, exist_ok=True)
 
 	guard = FontGuard(CJK_FONT)
-	theme_name = lesson.get("theme", DEFAULT_THEME)
+	theme_name = "explainer" if visual_style == "explainer" else lesson.get("theme", DEFAULT_THEME)
 	th = load_theme(theme_name)
 	print(f"主題：{th['label']}（{theme_name}）")
 	layout = {
 		"lesson_id": lesson["lesson_id"],
 		"canvas": {"width": W, "height": H},
 		"theme": theme_name,
+		"visual_style": visual_style,
 		"mode": layout_mode,
 		"seed": seed,
 		"slides": [],
+		"diagnostics": [],
 	}
 
 	for idx, slide in enumerate(lesson["slides"], start=1):
 		print(f"[{idx}/{len(lesson['slides'])}] {slide['id']}")
-		boxes, base_png, full_png = render_slide(slide, guard, th, out_dir, idx, mode=layout_mode, seed=seed)
+		page_style = visual_style
+		if visual_style == "explainer":
+			from render_explainer import render_explainer_scene
+			try:
+				boxes, base_png, full_png = render_explainer_scene(slide, guard, th, out_dir, idx)
+			except ValueError as exc:
+				page_style = "cards"
+				msg = f"explainer 場景無法繪製，改用 cards：{exc}"
+				layout["diagnostics"].append({"level": "warn", "slide": slide["id"], "msg": msg})
+				print(f"  WARN {msg}")
+				boxes, base_png, full_png = render_slide(slide, guard, th, out_dir, idx, mode=layout_mode, seed=seed)
+		else:
+			boxes, base_png, full_png = render_slide(slide, guard, th, out_dir, idx, mode=layout_mode, seed=seed)
 		layout["slides"].append({
 			"slide_id": slide["id"],
+			"visual_style": page_style,
 			"png": base_png,
 			"png_full": full_png,
 			"boxes": boxes,
@@ -405,7 +430,8 @@ def main():
 		print(f"  元素 {len(boxes)} 個已量測")
 
 	layout_path = os.path.join(out_dir, "layout.json")
-	json.dump(layout, open(layout_path, "w", encoding="utf-8"), ensure_ascii=False, indent="\t")
+	with open(layout_path, "w", encoding="utf-8") as stream:
+		json.dump(layout, stream, ensure_ascii=False, indent="\t")
 	print(f"\n輸出：{out_dir}")
 	print(f"幾何：{layout_path}")
 	return 0

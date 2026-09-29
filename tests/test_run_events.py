@@ -34,5 +34,16 @@ class TestJsonEvents(unittest.TestCase):
 		self.assertNotIn('{"event"', r.stderr)
 
 
+class TestVisualStyleCli(unittest.TestCase):
+	def test_視覺模式旗標缺值直接報錯(self):
+		r = subprocess.run(
+			[PY, os.path.join(ROOT, "video_engine/run.py"),
+				os.path.join(ROOT, "video_engine/materials/c_string.md"),
+				"--from", "video", "--until", "lesson", "--visual-style"],
+			capture_output=True, text=True)
+		self.assertNotEqual(r.returncode, 0)
+		self.assertIn("--visual-style", r.stdout + r.stderr)
+
+
 if __name__ == "__main__":
 	unittest.main()

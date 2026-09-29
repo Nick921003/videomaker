@@ -12,13 +12,14 @@ import re
 import sys
 
 import motion
-from motion import (CAMERA_MS, MIN_GAP_MS, REVEAL_MS_CARD, REVEAL_MS_HERO,
-	REVEAL_MS_SMALL, SCAN_DELAY_MS, STAGGER_BUDGET_MS, STAGGER_MS, TRANS_MS)
+from motion import (CAMERA_MS, INTRO_TOTAL_MS, MIN_GAP_MS, REVEAL_MS_CARD, REVEAL_MS_HERO,
+	REVEAL_MS_SMALL, STAGGER_BUDGET_MS, STAGGER_MS, TRANS_MS)
 
 FPS = 30
 LASER_MS = 1200
 MAX_HOLD_MS = 9000    # 強調效果最長停留，避免整頁一直掛著
 PAUSE_DEFAULT_MS = 300
+REVEAL_HOLD_MS = 200
 BOX_PAD = 16
 BLOCKING = {"speech", "pause"}
 
@@ -82,7 +83,23 @@ def calc_camera_scale(box, canvas):
 	return share, scale
 
 
-def compile_slide(slide_actions, boxes, canvas, durations, sid, cursor):
+def element_types_for_slide(slide):
+	"""只傳語意種類；焦點的實際座標仍以 layout 實測框為準。"""
+	return {el["id"]: el["type"] for el in slide.get("elements", [])}
+
+
+def focus_shape_for_target(ref, element_types):
+	base, _, part = ref.partition(":")
+	kind = element_types.get(base)
+	if kind == "code":
+		return "rail"
+	if kind == "figure" and part != "caption" and not part.startswith(("l", "r")):
+		return "outline"
+	return "underline"
+
+
+def compile_slide(slide_actions, boxes, canvas, durations, sid, cursor, intro_floor_ms=None,
+		element_types=None):
 	"""展開一頁的動作，回傳（場景, 新的游標時間, 診斷）"""
 	scene = {"slide_id": sid, "start_ms": cursor, "narration": [], "effects": [],
 		"reveals": [], "camera": []}
@@ -136,6 +153,8 @@ def compile_slide(slide_actions, boxes, canvas, durations, sid, cursor):
 			eff = {"type": "spotlight", "start_ms": t, "end_ms": None, "box": box,
 				"style": "code" if is_code else "text", "target": ref,
 				"dim": a.get("dim", 0.62), "seq": seq}
+			if element_types is not None:
+				eff["focus_shape"] = focus_shape_for_target(ref, element_types)
 			if is_code:
 				eff["region"] = boxes.get(ref.split(":")[0])
 			scene["effects"].append(eff)
@@ -153,17 +172,32 @@ def compile_slide(slide_actions, boxes, canvas, durations, sid, cursor):
 					scene["camera"].append({"start_ms": t, "box": box, "scale": scale,
 						"ms": CAMERA_MS, "seq": seq, "auto": True, "target": ref})
 		elif kind == "laser":
-			scene["effects"].append({"type": "laser", "start_ms": t, "end_ms": t + LASER_MS,
-				"box": box, "target": ref, "pad": BOX_PAD, "seq": seq})
+			eff = {"type": "laser", "start_ms": t, "end_ms": t + LASER_MS,
+				"box": box, "target": ref, "pad": BOX_PAD, "seq": seq}
+			if element_types is not None:
+				eff["focus_shape"] = focus_shape_for_target(ref, element_types)
+			scene["effects"].append(eff)
 			check_figure_subitems(boxes, kind, ref, sid, diags)
 		elif kind == "reveal":
 			scene["reveals"].append({"start_ms": t, "ms": reveal_ms(box, canvas),
 				"box": box, "seq": seq})
 
 	scene["end_ms"] = t
-	settle_starts(scene)
-	mark_first_scan(scene)
+	settle_starts(scene, intro_floor_ms)
+	if intro_floor_ms is not None and scene["reveals"]:
+		# hidden 元素一定要走完整段浮現，並留一小段時間讓觀眾看到完成態。
+		t = max(t, max(r["start_ms"] + r["ms"] for r in scene["reveals"]) + REVEAL_HOLD_MS)
+		scene["end_ms"] = t
 	clamp_lifetimes(scene)
+	if intro_floor_ms is not None:
+		# 短旁白若在片頭落位前結束，丟掉無法播放的動態，避免負時長。
+		for key in ("effects", "reveals", "camera"):
+			kept = [item for item in scene[key] if item["start_ms"] < scene["end_ms"]
+				and item.get("end_ms", scene["end_ms"]) > item["start_ms"]]
+			if len(kept) != len(scene[key]):
+				diags.append({"level": "warn", "slide": sid,
+					"msg": f"片頭落位後無播放時間，略過 {len(scene[key]) - len(kept)} 個 {key} 動態"})
+			scene[key] = kept
 	diags += lint_motion(scene)
 	return scene, t, diags
 
@@ -178,7 +212,7 @@ def reveal_ms(box, canvas):
 	return REVEAL_MS_HERO
 
 
-def settle_starts(scene):
+def settle_starts(scene, earliest_ms=None):
 	"""把同一刻擠在一起的動態起點排開，並讓頁首的動態等換頁交叉淡化走完。
 
 	動作只寫語意代號、不寫時間碼（三層契約），所以「什麼時候動」全部落在編譯期。
@@ -196,7 +230,7 @@ def settle_starts(scene):
 	for kind, it in items:
 		groups.setdefault(it["start_ms"], []).append((kind, it))
 
-	floor = scene["start_ms"] + TRANS_MS   # 換頁淡化走完前不要動
+	floor = max(scene["start_ms"] + TRANS_MS, earliest_ms or 0)   # 片頭落位後才起動首張解說場景
 	prev_end = None
 	for base in sorted(groups):
 		group = sorted(groups[base], key=lambda p: p[1].get("seq", 0))
@@ -209,20 +243,12 @@ def settle_starts(scene):
 			if last_kind is not None:
 				gap = STAGGER_MS if (kind == "reveal" and last_kind == "reveal") else MIN_GAP_MS
 				at = min(at + gap, budget)
+			old_start = it["start_ms"]
 			it["start_ms"] = int(at)
+			if it.get("end_ms") is not None:
+				it["end_ms"] += it["start_ms"] - old_start
 			last_kind = kind
 		prev_end = at
-
-
-def mark_first_scan(scene):
-	"""掃描線只在該頁第一次進入程式碼走讀時掃一趟。
-	每次聚焦都掃會變成裝飾，掃一次才是「開始讀這段程式碼」的宣告。
-	起掃時間另外記——第一個聚焦通常就落在頁首，會跟換頁淡化撞在一起"""
-	for e in scene["effects"]:
-		if e["type"] == "spotlight" and e.get("style") == "code":
-			e["scan"] = True
-			e["scan_at"] = max(e["start_ms"], scene["start_ms"] + SCAN_DELAY_MS)
-			return
 
 
 def clamp_lifetimes(scene):
@@ -332,21 +358,25 @@ def main():
 
 	timeline = {"lesson_id": lesson["lesson_id"], "fps": FPS, "canvas": canvas,
 		"theme": layout.get("theme", lesson.get("theme", "warm")),
-		"scenes": [], "subtitles": [], "diagnostics": []}
+		"visual_style": layout.get("visual_style", "cards"),
+		"scenes": [], "subtitles": [], "diagnostics": list(layout.get("diagnostics", []))}
 	cursor = 0
 
 	for slide_idx, slide in enumerate(actions["slides"]):
 		sid = slide["slide_id"]
 		page = pages[sid]
+		intro = intro_for(lesson_slides.get(sid), page["boxes"], cursor) if slide_idx == 0 else None
+		page_style = page.get("visual_style", timeline["visual_style"])
+		intro_floor_ms = intro["start_ms"] + INTRO_TOTAL_MS if intro and page_style == "explainer" else None
 		scene, cursor, diags = compile_slide(
-			slide["actions"], page["boxes"], canvas, durations, sid, cursor
+			slide["actions"], page["boxes"], canvas, durations, sid, cursor, intro_floor_ms,
+			element_types_for_slide(lesson_slides[sid]) if page_style == "explainer" else None
 		)
-		if slide_idx == 0:
-			intro = intro_for(lesson_slides.get(sid), page["boxes"], scene["start_ms"])
-			if intro:
-				scene["intro"] = intro
+		if intro:
+			scene["intro"] = intro
 		scene["base_png"] = page["png"]
 		scene["full_png"] = page["png_full"]
+		scene["visual_style"] = page_style
 		timeline["scenes"].append(scene)
 		timeline["diagnostics"] += diags
 		for n in scene["narration"]:

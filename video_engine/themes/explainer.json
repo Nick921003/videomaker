@@ -1,0 +1,53 @@
+{
+	"name": "explainer",
+	"label": "解說畫布",
+	"canvas": {
+		"bg": "#F5F9FB"
+	},
+	"card": {
+		"fill": "#F5F9FB",
+		"edge": "#D7E4EA",
+		"width": 0
+	},
+	"text": {
+		"title": "#102D3C",
+		"subtitle": "#3C5969",
+		"bullet": "#173C4E",
+		"callout": "#8B351D"
+	},
+	"code": {
+		"bg": "#102936",
+		"edge": "#102936",
+		"normal": "#F4F9FB",
+		"keyword": "#7CE4D1",
+		"preproc": "#F6CB82"
+	},
+	"effects": {
+		"dim": "#102936",
+		"laser": "#A05AA2",
+		"spotlight_border": "#A05AA2",
+		"highlight": "#A05AA2",
+		"underline": "#A05AA2",
+		"focus": "#A05AA2",
+		"focus_mark": "#A05AA2",
+		"focus_on_dark": "#D77CCC",
+		"code_fade": "#102936"
+	},
+	"figure": {
+		"fill": "#E4F0F2",
+		"edge": "#9EC7CB",
+		"alt": "#EAF3F4",
+		"heading": "#0A625B",
+		"heading_text": "#FFFFFF"
+	},
+	"typography": {
+		"title": "bold-tc",
+		"subtitle": "regular-tc",
+		"bullet": "regular-tc",
+		"callout": "bold-tc",
+		"code": "mono-tc",
+		"figure": "regular-tc",
+		"figure_heading": "bold-tc",
+		"caption": "regular-tc"
+	}
+}

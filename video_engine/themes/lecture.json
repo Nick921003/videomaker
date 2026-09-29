@@ -26,6 +26,8 @@
 		"dim": "#0C1922",
 		"laser": "#E89E50",
 		"spotlight_border": "#3BAAAA",
+		"focus": "#A05AA2",
+		"focus_on_dark": "#D77CCC",
 		"highlight": "#275668",
 		"underline": "#2A8C8D",
 		"code_fade": "#13212B"

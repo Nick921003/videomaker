@@ -6,14 +6,13 @@
 效果全部由時間軸驅動，這支程式不認識任何投影片內容，也不含任何座標常數。
 
 效果語彙：
-  螢光筆　文字重點由左往右刷過暖色底，不壓暗其他內容
-  區域壓暗　只有程式碼走讀才壓暗，而且只壓程式碼區塊
-  底線畫出　雷射改成由左往右畫出的底線，比細線明顯
+  語意焦點　程式碼用側軌、文字用底線、圖示用圈選；同一目標的 spotlight/laser 共用形狀
+  程式碼走讀　非目標行淡化，目標行保持原色並沿用焦點側軌
   左移淡入　reveal 從左側平移進場
-  卡面過場　舊字先退場、新字再進場，兩頁不疊影
-  掃描線　　程式碼首次走讀時一道光等速掃過，表示「正在逐行讀」
-  退場淡出　所有強調效果收尾都淡掉，不再瞬間消失
-  依序進場　同時觸發的多個 reveal 由上到下錯開，不會整塊蹦出來
+  場景過場　前頁先退至主題底面，新頁再進場，不疊字
+  鏡頭推近　只在有相機動作時重取樣
+  退場淡出　所有強調效果收尾都淡掉
+  依序進場　同時觸發的多個 reveal 由上到下錯開
 """
 import json
 import os
@@ -26,15 +25,12 @@ from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
 from layout import CODE_BOX, CONTENT_BOX, HEADER_BOX, rect
-from motion import (CAMERA_MS, DIM_IN_MS, EXIT_RATIO, HL_WIPE_MS, INTRO_SUB_DELAY_MS,
-	INTRO_SUB_MS, INTRO_TITLE_MS, INTRO_TOTAL_MS, SCAN_MS, TRANS_MS, UL_WIPE_MS)
+from motion import (CAMERA_MS, DIM_IN_MS, EXIT_RATIO, FOCUS_IN_MS, INTRO_SUB_DELAY_MS,
+	INTRO_SUB_MS, INTRO_TITLE_MS, INTRO_TOTAL_MS, TRANS_MS)
 
 REVEAL_SHIFT = 30     # 左移淡入的位移；再大就是動作疲勞，再小就看不出方向
-UL_H = 6              # 底線中段最寬處
 REVEAL_OVERSHOOT = 0.05   # 落位過衝，紙感材質上限（教學內容偏穩重，不用彈性材質的 15–25%）
 CAM_OVERSHOOT = 0.02      # 鏡頭推近的過衝，像真的攝影機推到定位再回穩
-SCAN_ALPHA = 0.30     # 掃描線最濃處
-SCAN_TAIL = 46        # 掃描線拖尾長度（像素）        # 掃描線拖尾長度（像素）
 
 
 def _bezier(x1, y1, x2, y2):
@@ -116,7 +112,8 @@ def rgb(hex_str):
 
 def load_theme(name):
 	path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes", f"{name}.json")
-	return json.load(open(path, encoding="utf-8"))
+	with open(path, encoding="utf-8") as stream:
+		return json.load(stream)
 
 
 def build_audio(timeline, out_wav):
@@ -192,48 +189,77 @@ def apply_intro(frame, full, intro, t, card_rgb):
 	return frame
 
 
-def apply_highlight(frame, eff, t, hl):
-	"""螢光筆：正片疊底刷過重點，深色文字仍然清楚。收尾用退場曲線淡掉"""
+def apply_focus_mark(frame, eff, t, col):
+	"""以框外同款側軌標示焦點；任何字形像素都不參與混色。"""
+	if t < eff["start_ms"]:
+		return frame
 	b = eff["box"]
-	p = ease_enter(min(1.0, (t - eff["start_ms"]) / HL_WIPE_MS))
-	out = exit_alpha(t, eff["end_ms"], HL_WIPE_MS)
-	w = int(b["w"] * p)
-	if w <= 0 or out <= 0:
+	p = ease_enter(min(1.0, (t - eff["start_ms"]) / FOCUS_IN_MS))
+	out = exit_alpha(t, eff["end_ms"], FOCUS_IN_MS)
+	if p <= 0 or out <= 0:
 		return frame
-	region = frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + w].astype(np.float32)
-	tint = 1 - (1 - np.array(hl, dtype=np.float32) / 255.0) * out
-	frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + w] = np.clip(region * tint, 0, 255).astype(np.uint8)
-	return frame
-
-
-def apply_scan(frame, region, start_ms, t, col, out):
-	"""掃描線：等速由上往下掃過整塊程式碼一趟，帶漸層拖尾。
-	等速是命門——加了緩動會讀成「有人在拖進度條」，而不是「機器在讀」。
-	只掃程式碼區塊內，漏出去就變成掃整個畫面。"""
-	prog = (t - start_ms) / SCAN_MS
-	if prog < 0 or prog > 1:
+	H, W = frame.shape[:2]
+	y0, y1 = max(0, b["y"]), min(H, b["y"] + b["h"])
+	if y1 <= y0:
 		return frame
-	rx, ry, rw, rh = region["x"], region["y"], region["w"], region["h"]
-	head = min(ry + int(prog * rh), ry + rh)
-	top = max(ry, head - SCAN_TAIL)
-	edge = min(1.0, prog / 0.12) * min(1.0, (1 - prog) / 0.12)
+	left = b["x"] >= 16
+	x0 = b["x"] - 14 if left else b["x"] + b["w"] + 8
+	if x0 < 0 or x0 + 6 > W:
+		return frame
+	end = min(y1, y0 + max(1, round((y1 - y0) * p)))
 	c = np.array(col, dtype=np.float32)
-	if head > top:
-		rows = np.arange(top, head, dtype=np.float32)
-		a = ((rows - top) / max(1.0, head - top)) ** 2 * SCAN_ALPHA * out * edge
-		strip = frame[top:head, rx:rx + rw].astype(np.float32)
-		a3 = a[:, None, None]
-		frame[top:head, rx:rx + rw] = (strip * (1 - a3) + c * a3).astype(np.uint8)
-	blend(frame, head, min(head + 2, ry + rh), rx, rx + rw, c, SCAN_ALPHA * 1.6 * out * edge)
+	blend(frame, y0, end, x0, x0 + 6, c, out)
+	if p > 0.8:
+		cap = round(10 * (p - 0.8) / 0.2)
+		if left:
+			xa, xb = x0, min(b["x"], x0 + 6 + cap)
+		else:
+			xa, xb = max(b["x"] + b["w"], x0 - cap), x0 + 6
+		blend(frame, y0, min(y0 + 5, y1), xa, xb, c, out)
+		blend(frame, max(y0, y1 - 5), y1, xa, xb, c, out)
 	return frame
 
 
-def apply_code_focus(frame, eff, t, fade_rgb, border_rgb):
-	"""程式碼走讀：未聚焦的行往底色淡出（不是壓黑），目標行保持原亮度並加左側範圍括號。
-	該頁第一次進入走讀時，另有一道掃描線掃過整塊程式碼——程式碼本身全程靜止，只有光在動"""
+def apply_semantic_focus(frame, eff, t, col):
+	"""依目標語意畫焦點；實測框已含留白，標記不可覆蓋字形。"""
+	shape = eff.get("focus_shape", "rail")
+	if shape == "rail":
+		return apply_focus_mark(frame, eff, t, col)
+	if t < eff["start_ms"]:
+		return frame
+	p = ease_enter(min(1.0, (t - eff["start_ms"]) / FOCUS_IN_MS))
+	out = exit_alpha(t, eff["end_ms"], FOCUS_IN_MS)
+	if p <= 0 or out <= 0:
+		return frame
+	b = eff["box"]
+	H, W = frame.shape[:2]
+	x0, y0 = max(0, b["x"]), max(0, b["y"])
+	x1, y1 = min(W, b["x"] + b["w"]), min(H, b["y"] + b["h"])
+	if x1 - x0 < 16 or y1 - y0 < 16:
+		return frame
+	if shape == "underline":
+		left, right = x0 + 5, x1 - 5
+		end = min(right, left + max(1, round((right - left) * p)))
+		blend(frame, max(y0, y1 - 9), min(H, y1 - 3), left, end,
+			np.array(col, dtype=np.float32), out)
+		return frame
+	if shape == "outline":
+		mask = Image.new("L", (x1 - x0, y1 - y0), 0)
+		ImageDraw.Draw(mask).arc((3, 3, x1 - x0 - 4, y1 - y0 - 4),
+			start=-90, end=-90 + round(360 * p), fill=255, width=6)
+		alpha = np.asarray(mask, dtype=np.float32)[:, :, None] * (out / 255)
+		patch = frame[y0:y1, x0:x1].astype(np.float32)
+		frame[y0:y1, x0:x1] = (patch * (1 - alpha)
+			+ np.array(col, dtype=np.float32) * alpha).astype(np.uint8)
+		return frame
+	raise ValueError(f"未知焦點形狀：{shape}")
+
+
+def apply_code_focus(frame, eff, t, fade_rgb, focus_rgb):
+	"""淡化未聚焦程式行，保留目標行原色，並沿用同一種框外聚焦軌。"""
 	region = eff.get("region")
 	if not region:
-		return frame
+		return apply_focus_mark(frame, eff, t, focus_rgb)
 	p = min(1.0, (t - eff["start_ms"]) / DIM_IN_MS)
 	out = exit_alpha(t, eff["end_ms"], DIM_IN_MS)
 	if out <= 0:
@@ -246,62 +272,12 @@ def apply_code_focus(frame, eff, t, fade_rgb, border_rgb):
 	a = eff.get("dim", 0.62) * ease_enter(p) * out
 	frame[ry:ry + rh, rx:rx + rw] = (patch * (1 - a) + fade * a).astype(np.uint8)
 	frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]] = keep
-	if eff.get("scan"):
-		frame = apply_scan(frame, region, eff.get("scan_at", eff["start_ms"]), t, border_rgb, out)
-	# 左側範圍括號：豎線由上往下畫出，上下各一短勾標出涵蓋幾行
-	col = np.array(border_rgb, dtype=np.float32)
-	bx = max(0, b["x"] - 16)
-	grow = ease_enter(p)
-	spine = int(b["h"] * grow)
-	blend(frame, b["y"], b["y"] + spine, bx, bx + 4, col, out)
-	if grow > 0.85:
-		tick = int(14 * (grow - 0.85) / 0.15)
-		blend(frame, b["y"], b["y"] + 4, bx, bx + tick, col, out)
-		blend(frame, b["y"] + b["h"] - 4, b["y"] + b["h"], bx, bx + tick, col, out)
-	return frame
-
-
-def apply_underline(frame, eff, t, col):
-	"""馬克筆底線：貼著字底由左往右一筆畫出。中段最寬、首尾略細、邊緣輕微毛糙，
-	這三件事讓它讀起來像人拿筆劃的，而不是 CSS 畫的框線。
-	沒有筆尖圓點——那是裝飾雜訊，不帶任何教學資訊。"""
-	b = eff["box"]
-	pad = eff.get("pad", 0)
-	total = max(1, b["w"] - pad * 2)
-	p = ease_enter(min(1.0, (t - eff["start_ms"]) / UL_WIPE_MS))
-	out = exit_alpha(t, eff["end_ms"], UL_WIPE_MS)
-	w = int(total * p)
-	if w <= 0 or out <= 0:
-		return frame
-	x0 = b["x"] + pad
-	cy = b["y"] + b["h"] - pad + 1      # 貼著文字底部，離遠了會讀成分隔線
-	hgt = UL_H + 3
-	y0 = int(cy - hgt / 2)
-	if y0 < 0 or y0 + hgt > frame.shape[0] or x0 + w > frame.shape[1]:
-		return frame
-	xs = np.arange(w, dtype=np.float32)
-	u = np.clip(xs / max(1.0, total - 1), 0, 1)
-	# clip 是必要的：float32 的 π 略大於真值，u=1 時 sin 會是極小負數，開根號變 NaN
-	half = UL_H / 2 * (0.6 + 0.4 * np.clip(np.sin(np.pi * u), 0, 1) ** 0.5)
-	rough = 0.35 * (np.sin(xs * 0.9) + np.sin(xs * 0.31))      # 太糙會讀成故障
-	center = hgt / 2 + rough * 0.5
-	rows = np.arange(hgt, dtype=np.float32)[:, None]
-	a = np.clip(half + rough - np.abs(rows - center) + 0.5, 0, 1) * out
-	strip = frame[y0:y0 + hgt, x0:x0 + w].astype(np.float32)
-	c = np.array(col, dtype=np.float32)
-	frame[y0:y0 + hgt, x0:x0 + w] = (strip * (1 - a[:, :, None]) + c * a[:, :, None]).astype(np.uint8)
-	return frame
+	return apply_focus_mark(frame, eff, t, focus_rgb)
 
 
 def spot_style(eff):
-	"""這個 spotlight 該怎麼畫：code 專用效果／壓暗／單純螢光筆。
-
-	壓暗只用在程式碼走讀。為了襯一個標題把整頁壓暗，觀眾讀到的是
-	「畫面壞了」而不是「看這裡」——標題、條列、示意圖項目用螢光筆就夠
-	"""
-	if eff.get("style") == "code":
-		return "code"
-	return "highlight"
+	"""只有 code spotlight 需淡化非目標程式行；其餘由目標語意選標記。"""
+	return "code" if eff.get("style") == "code" else "focus"
 
 
 def apply_spotlight(frame, eff, t, dim_rgb, keep_box):
@@ -311,8 +287,8 @@ def apply_spotlight(frame, eff, t, dim_rgb, keep_box):
 	框選哪幾行由 apply_code_focus 在卡片內部處理
 	"""
 	b = keep_box
-	p = min(1.0, (t - eff["start_ms"]) / HL_WIPE_MS)
-	out = exit_alpha(t, eff["end_ms"], HL_WIPE_MS)
+	p = min(1.0, (t - eff["start_ms"]) / FOCUS_IN_MS)
+	out = exit_alpha(t, eff["end_ms"], FOCUS_IN_MS)
 	if out <= 0:
 		return frame
 	keep = frame[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]].copy()
@@ -366,13 +342,16 @@ def apply_camera(img, cam, t, canvas):
 	return zoom(img, cx, cy, scale, canvas)
 
 
-def transition_surface(canvas, theme):
-	"""與投影片相同外框的乾淨卡面；換頁時讓舊字退場後才出現新字。"""
+def transition_surface(canvas, theme, visual_style="cards"):
+	"""換頁用與場景相同的乾淨底面；cards 保留既有框線。"""
 	im = Image.new("RGB", (canvas["width"], canvas["height"]), rgb(theme["canvas"]["bg"]))
-	draw = ImageDraw.Draw(im)
-	for box in (HEADER_BOX, CONTENT_BOX):
-		draw.rectangle(box, fill=rgb(theme["card"]["fill"]),
-			outline=rgb(theme["card"]["edge"]), width=theme["card"]["width"])
+	if visual_style == "cards":
+		draw = ImageDraw.Draw(im)
+		for box in (HEADER_BOX, CONTENT_BOX):
+			draw.rectangle(box, fill=rgb(theme["card"]["fill"]),
+				outline=rgb(theme["card"]["edge"]), width=theme["card"]["width"])
+	elif visual_style != "explainer":
+		raise ValueError(f"未知視覺模式：{visual_style}")
 	return np.asarray(im)
 
 
@@ -409,8 +388,9 @@ def main():
 	timeline = json.load(open(os.path.join(out_dir, "timeline.json"), encoding="utf-8"))
 	theme = load_theme(timeline.get("theme") or lesson.get("theme", "warm"))
 	fx = theme["effects"]
-	fade_rgb, hl_rgb = rgb(fx["code_fade"]), rgb(fx["highlight"])
-	ul_rgb, bar_rgb = rgb(fx["underline"]), rgb(fx["spotlight_border"])
+	fade_rgb = rgb(fx["code_fade"])
+	focus_rgb = rgb(fx.get("focus", fx["spotlight_border"]))
+	focus_dark_rgb = rgb(fx.get("focus_on_dark", fx.get("focus", fx["spotlight_border"])))
 	dim_rgb = rgb(fx["dim"])
 
 	canvas, fps = timeline["canvas"], timeline["fps"]
@@ -424,7 +404,7 @@ def main():
 		np.array(Image.open(s["full_png"]).convert("RGB")),
 	) for s in timeline["scenes"]}
 
-	surface = transition_surface(canvas, theme)
+	surface = None
 
 	# 用輸出目錄名，才不會跟 lesson_id 不一致（同一份教材可能跑多種設定）
 	out_mp4 = os.path.join(out_dir, os.path.basename(out_dir.rstrip("/")) + ".mp4")
@@ -448,23 +428,25 @@ def main():
 		idx = next((i for i, s in enumerate(timeline["scenes"])
 			if s["start_ms"] <= t < s["end_ms"]), len(timeline["scenes"]) - 1)
 		scene = timeline["scenes"][idx]
+		visual_style = scene.get("visual_style", timeline.get("visual_style", "cards"))
 		base, full = pages[scene["slide_id"]]
 		frame = base.copy()
 		frame = apply_reveals(frame, full, scene, t, W)
 		if scene.get("intro"):
-			frame = apply_intro(frame, full, scene["intro"], t, rgb(theme["card"]["fill"]))
+			intro_bg = theme["canvas"]["bg"] if visual_style == "explainer" else theme["card"]["fill"]
+			frame = apply_intro(frame, full, scene["intro"], t, rgb(intro_bg))
 
 		for eff in active([e for e in scene["effects"] if e["type"] == "spotlight"], t):
 			if spot_style(eff) == "code":
-				# 程式講解才用聚光燈：壓暗程式碼卡以外的整頁，卡內維持逐行淡化。
-				# 兩者疊起來才是「只照亮正在講的那幾行」
-				frame = apply_spotlight(frame, eff, t, dim_rgb, rect(*CODE_BOX))
-				frame = apply_code_focus(frame, eff, t, fade_rgb, bar_rgb)
+				# cards 保留既有程式區域壓暗；全幅場景僅淡化非目標程式行。
+				if visual_style == "cards":
+					frame = apply_spotlight(frame, eff, t, dim_rgb, rect(*CODE_BOX))
+				frame = apply_code_focus(frame, eff, t, fade_rgb, focus_dark_rgb)
 			else:
-				frame = apply_highlight(frame, eff, t, hl_rgb)
+				frame = apply_semantic_focus(frame, eff, t, focus_rgb)
 
 		for eff in active([e for e in scene["effects"] if e["type"] == "laser"], t):
-			frame = apply_underline(frame, eff, t, ul_rgb)
+			frame = apply_semantic_focus(frame, eff, t, focus_rgb)
 
 		# 沒有鏡頭動作就完全不進 PIL 重取樣：連續次像素縮放會讓中文字與程式碼發糊
 		cams = active(scene["camera"], t)
@@ -476,6 +458,7 @@ def main():
 		# 換頁先回到乾淨卡面再帶入新頁，避免文字疊影與邊界裁字
 		if idx != last_idx:
 			trans_from, trans_until = last_frame, t + TRANS_MS
+			surface = transition_surface(canvas, theme, visual_style)
 			last_idx = idx
 		if trans_from is not None and t < trans_until:
 			arr = dip_to_surface(trans_from, arr, surface, 1 - (trans_until - t) / TRANS_MS)

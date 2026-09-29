@@ -5,9 +5,8 @@
 lint 就會拿錯的基準去檢查對的畫面。每個數值為什麼是這個值，見 docs/MOTION_SPEC.md。
 """
 
-HL_WIPE_MS = 380        # 螢光筆刷過
+FOCUS_IN_MS = 380        # 統一焦點側軌畫出
 DIM_IN_MS = 420         # 程式碼區域壓暗淡入
-UL_WIPE_MS = 330        # 馬克筆底線畫出
 TRANS_MS = 420          # 換頁回到乾淨卡面再進場
 INTRO_TITLE_MS = 480    # 首張 hook 標題進場
 INTRO_SUB_DELAY_MS = 120 # 副標延後進場
@@ -15,9 +14,6 @@ INTRO_SUB_MS = 480      # 副標進場
 INTRO_TOTAL_MS = 600    # 片頭落位
 CAMERA_MS = 600         # 鏡頭推近
 EXIT_RATIO = 0.7        # 退場時長 = 進場的 70%
-
-SCAN_MS = 520           # 掃描線行程
-SCAN_DELAY_MS = 450     # 掃描線要等換頁淡化走完才起掃
 
 STAGGER_MS = 60         # 依序進場的間隔
 STAGGER_BUDGET_MS = 400 # 一組錯開的總預算
@@ -30,11 +26,9 @@ MIN_GAP_MS = 80         # 兩個動態起點的最小間距，再近就讀成同
 
 def enter_ms(eff):
 	"""效果的進場時長。lint 要用它反推退場窗，渲染器要用它算進度"""
-	if eff["type"] == "laser":
-		return UL_WIPE_MS
 	if eff.get("style") == "code":
 		return DIM_IN_MS
-	return HL_WIPE_MS
+	return FOCUS_IN_MS
 
 
 def exit_ms(in_ms):

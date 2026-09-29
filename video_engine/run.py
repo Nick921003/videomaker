@@ -6,6 +6,7 @@
 	.venv/bin/python video_engine/run.py <教材> --sec 120        指定目標片長
 	.venv/bin/python video_engine/run.py <教材> --from synth     從某階段續跑
 	.venv/bin/python video_engine/run.py <教材> --until storyboard  產完分鏡表就停，等人審稿
+	.venv/bin/python video_engine/run.py <教材> --visual-style explainer  用全幅解說場景
 
 階段：lesson → slides → actions → validate → storyboard → synth → timeline → video
 審稿停在 storyboard——它排在語音合成前面，這時候改講稿不用重跑 TTS。
@@ -94,6 +95,13 @@ def main():
 	sec = opt("--sec")
 	layout = opt("--layout")
 	seed = opt("--seed")
+	if "--visual-style" in argv:
+		style_at = argv.index("--visual-style") + 1
+		if style_at >= len(argv) or argv[style_at].startswith("--"):
+			raise SystemExit("--visual-style 需要 cards 或 explainer")
+	visual_style = opt("--visual-style", "cards")
+	if visual_style not in ("cards", "explainer"):
+		raise SystemExit(f"未知視覺模式：{visual_style}（可用：cards, explainer）")
 	global JSON_EVENTS
 	JSON_EVENTS = "--json-events" in argv
 
@@ -114,9 +122,11 @@ def main():
 	if want("lesson"):
 		run("generate_lesson.py", [material, lesson], "階段 2　教材結構化（LLM）", LLM_PY, stage="lesson")
 	if want("slides"):
-		slides_args = [lesson, out_dir] + (["--layout", layout] if layout else []) + (["--seed", seed] if seed is not None else [])
+		slides_args = ([lesson, out_dir] + (["--layout", layout] if layout else [])
+			+ (["--seed", seed] if seed is not None else [])
+			+ (["--visual-style", visual_style] if visual_style != "cards" else []))
 		run("render_slides.py", slides_args,
-			"階段 3　投影片繪製與量測", stage="slides")
+			"階段 3　畫面繪製與量測", stage="slides")
 	if want("actions"):
 		run("generate_actions.py", [lesson, actions] + (["--sec", sec] if sec else []),
 			"階段 4　動作編排（LLM，內含驗證閘）", LLM_PY, stage="actions")
