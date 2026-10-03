@@ -58,26 +58,31 @@
 				{"act": "show", "target": "sysprops"},
 				{"act": "underline", "target": "sysprops:t_adv", "cue": "進階"}
 			]},
-			{"say": "按右下角的「環境變數」。", "do": [{"act": "click", "target": "mouse", "on": "sysprops:envbtn", "cue": "右下角"}]}
+			{"say": "按右下角的「環境變數」。", "do": [{"act": "click", "target": "mouse", "on": "sysprops:envbtn", "cue": "右下角"},
+				{"act": "focus", "target": "sysprops:envbtn", "with": "prev"}]}
 		]},
 		{"id": "vars", "title": "選使用者變數的 Path", "label": "③ 環境變數", "layout": {"stack": ["envvars"]}, "beats": [
 			{"say": "在上方的使用者變數裡，選取 Path，", "spoken": "在上方的使用者變數裡，選取 path，", "do": [
 				{"act": "show", "target": "envvars"},
+				{"act": "focus", "target": "envvars:user", "with": "prev"},
 				{"act": "click", "target": "mouse", "on": "envvars:u_path", "cue": "選取"}
 			]},
 			{"say": "再按「編輯」。下面的系統變數不用動。", "do": [
 				{"act": "click", "target": "mouse", "on": "envvars:u_edit", "cue": "編輯"},
-				{"act": "circle", "target": "envvars:sys", "cue": "系統變數"}
+				{"act": "wide", "cue": "系統變數"},
+				{"act": "circle", "target": "envvars:sys", "with": "prev"}
 			]}
 		]},
 		{"id": "add", "title": "新增編譯器所在的資料夾", "label": "④ 新增路徑", "layout": {"stack": ["editpath", "keep_tip"]}, "beats": [
 			{"say": "按「新增」，貼上編譯器所在的資料夾，", "do": [
 				{"act": "show", "target": "editpath"},
 				{"act": "click", "target": "mouse", "on": "editpath:b_new", "cue": "新增"},
-				{"act": "input", "target": "editpath:new", "text": "C:\\msys64\\ucrt64\\bin"}
+				{"act": "input", "target": "editpath:new", "text": "C:\\msys64\\ucrt64\\bin"},
+				{"act": "focus", "target": "editpath:new", "with": "prev"}
 			]},
 			{"say": "原本的項目一個都不要刪。", "do": [{"act": "circle", "target": "editpath:r0", "cue": "原本"}]},
 			{"say": "然後每個視窗都按「確定」，總共三次。", "do": [
+				{"act": "wide", "cue": "然後"},
 				{"act": "click", "target": "mouse", "on": "editpath:ok", "cue": "確定"},
 				{"act": "write", "target": "keep_tip", "with": "prev"}
 			]}

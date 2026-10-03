@@ -2,7 +2,7 @@
 """播放器目錄 → mp4。seek(t) 是純函式，所以影格切段平行渲染、各自編碼後串接。
 
 用法（需 webwright venv 的 Playwright）：
-  ~/.local/share/pipx/venvs/webwright/bin/python video_engine/board/export.py <播放器目錄> <輸出.mp4> [--fps 24] [--workers 6]
+  ~/.local/share/pipx/venvs/webwright/bin/python video_engine/board/export.py <播放器目錄> <輸出.mp4> [--fps 24] [--workers 4]
 
 音訊預設取播放器目錄裡的 audio.*（build.py --audio 放進去的）。
 """
@@ -50,7 +50,7 @@ def main():
 	ap.add_argument("player_dir")
 	ap.add_argument("out")
 	ap.add_argument("--fps", type=int, default=24)
-	ap.add_argument("--workers", type=int, default=6)
+	ap.add_argument("--workers", type=int, default=4)
 	ap.add_argument("--crf", type=int, default=18)
 	ap.add_argument("--audio")
 	ap.add_argument("--segment", nargs=3, type=int, metavar=("START", "END", "INDEX"), help=argparse.SUPPRESS)
