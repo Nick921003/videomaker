@@ -31,6 +31,7 @@
 	};
 	const sceneEnter = TL.scenes.map(s => s.t_enter);
 	const nextEnter = si => si + 1 < sceneEnter.length ? sceneEnter[si + 1] : Infinity;
+	api.setSceneEnds(sceneEnter.map((_, si) => nextEnter(si)));
 
 	let sizes, plan, cams, marks;
 
@@ -272,5 +273,5 @@
 		if (!exportMode) ui(); else render(0);
 		window.boardReady = true;
 	}
-	boot().catch(e => { errors.push(String(e && e.stack || e)); window.boardReady = true; window.boardFailed = String(e); });
+	boot().catch(e => { errors.push(String(e && e.stack || e)); window.boardReady = true; window.boardFailed = String(e && e.stack || e); });
 })();

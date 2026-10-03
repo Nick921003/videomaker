@@ -23,7 +23,7 @@ const Board = (() => {
 	}
 
 	function makeApi(ctx, theme) {
-		let drawT = 0, owner = null, boxes = [];
+		let drawT = 0, owner = null, boxes = [], sceneEnds = [];
 		function color(path) {
 			const v = path.split('.').reduce((o, k) => o && o[k], theme);
 			if (typeof v !== 'string') throw new Error(`theme 缺 ${path}`);
@@ -118,6 +118,8 @@ const Board = (() => {
 			ctx, color, font, measure, record, text, write, ink, rect, ellipse, hatch, pointer, fly,
 			clamp, mix, ease, expo, phase, seed,
 			setTime(t) { drawT = t; }, setOwner(id) { owner = id; },
+			// 元件動作留下的標記只活在該動作的場景：換場時刻起淡出
+			setSceneEnds(ends) { sceneEnds = ends; }, sceneEnd(i) { return sceneEnds[i] ?? Infinity; },
 			reset() { boxes = []; owner = null; }, boxes() { return boxes; },
 		};
 	}

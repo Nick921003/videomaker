@@ -65,8 +65,13 @@ def check_frame(info, objects):
 				problems.append(f"{b['owner']} 的{b['role']}超出鏡頭視窗：{b.get('value', '')} {round(b['x'])},{round(b['y'])},{round(b['w'])}x{round(b['h'])}")
 		for i, a in enumerate(solid):
 			for b in solid[i + 1:]:
-				if a["owner"] != b["owner"] and overlap(a, b) and inside(a, VIEW) and inside(b, VIEW):
+				if not (overlap(a, b) and inside(a, VIEW) and inside(b, VIEW)):
+					continue
+				if a["owner"] != b["owner"]:
 					problems.append(f"{a['owner']} 與 {b['owner']} 重疊：{a.get('value', a['role'])} / {b.get('value', b['role'])}")
+				elif a["role"] == b["role"] == "text":
+					# 同一物件內的文字互疊也是 bug（例：框內兩段字擠在同一行）
+					problems.append(f"{a['owner']} 內文字互疊：{a.get('value')} / {b.get('value')}")
 	return problems
 
 
@@ -98,6 +103,14 @@ def main():
 			for s in page.evaluate("board.scales()"):
 				if s["members"] and s["scale"] < SCALE_MIN:
 					problems.append(f"t={s['t']:.2f} 場景 {s['scene']} 版面縮到 {s['scale']:.2f} < {SCALE_MIN}：{s['members']}")
+			# 錨點必須能只靠 state 算出（不靠 draw 的副作用），否則鏡頭預算與跨物件標記會靜默失效
+			for act in tl["actions"]:
+				targets = [act["target"]] if act["target"] and ":" in act["target"] else []
+				targets += [v for k, v in act["args"].items() if k in ("to", "from") and isinstance(v, str) and ":" in v]
+				for target in targets:
+					for t in (act["t0"] + 0.01, act["t1"]):
+						if page.evaluate("([g, t]) => board.anchor(g, t)", [target, t]) is None:
+							problems.append(f"t={t:.2f} 錨點 {target} 無法由 anchors() 解析（{act['act']}）")
 			for t in sample_times(tl):
 				info = page.evaluate("t => board.seek(t)", t)
 				frames += 1

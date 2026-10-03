@@ -44,6 +44,10 @@
 5. **文字一律走 `api.text`／`api.write`，框線走 `api.rect`**（它們會記錄框給量測閘）。不要直接 `ctx.fillText`。
    純裝飾線條用 `api.ink`。填色背景可直接 `ctx.fillRect`，但顏色仍用 `api.color`。
 6. 鉛筆抖動只在描線中（`p < 1`），描完要穩定——`api.ink` 已處理，傳固定 `seed`（`Board.seed(obj.id + '…')`）即可。
+7. **錨點只能由 `state` 算出**：`anchors()` 不得依賴 `draw()` 寫進 state 的東西；`draw()` 不得改寫 `st`。
+   runtime 會在載入時不繪製就查錨點（鏡頭預算），量測閘也會這樣驗。
+8. **動作留下的標記只活在該場景**：指標、停止圈這類由動作產生的標記，從 `api.sceneEnd(a.scene)` 起 0.4 秒淡出。
+   物件本身的內容（格子的值、輸出文字）不受影響。
 
 ## api（`runtime/core.js`）
 

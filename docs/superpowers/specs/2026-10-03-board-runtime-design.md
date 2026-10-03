@@ -199,7 +199,7 @@ video_engine/board/
 
 - A＋C 重現：用既有 `master.wav` 與實測字幕時間，`c_string.scene.json` 產出的片與已接受版本並排，
   使用者判定「品質沒有退步」。
-- PATH 30 秒：同一 runtime、不新增手寫繪圖程式（只新增 `terminal`、`list` 元件），估時無聲版＋字幕先給使用者看分鏡。
+- PATH（估約 46 秒，比交接的 30 秒長，因保留教材強調的兩個坑）：同一 runtime、不新增手寫繪圖程式（只新增 `terminal`、`list` 元件），估時無聲版＋字幕先給使用者看分鏡。
   使用者同意後才跑本機 TTS 配音。
 - 兩支的 `scene.json` 各自小於 6 KB。
 - 單元測試＋量測閘全綠。
