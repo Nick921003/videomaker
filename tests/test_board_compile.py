@@ -188,3 +188,75 @@ class TestVisibilityAndEpochs(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+def one_scene(objects, do, say="一二三四五", **scene):
+	return {"version": 1, "objects": objects, "scenes": [{"id": "s", "beats": [{"say": say, "do": do}], **scene}]}
+
+
+class TestCodexReview(unittest.TestCase):
+	"""2026-10-03 Codex 對抗審查找到的十個案例。"""
+
+	def test_不支援的首個動作改成show且下一動作正常接續(self):
+		tl = compiled(one_scene([{"id": "q", "type": "note", "text": "Q"}], [{"act": "explode", "target": "q"}, {"act": "show", "target": "q"}]))
+		first, second = tl["actions"]
+		self.assertEqual((first["act"], first["t0"]), ("show", BC.LEAD_IN))
+		self.assertAlmostEqual(second["t0"], first["t1"])
+
+	def test_退化物件即使動作全被略過也要顯示保底文字(self):
+		doc = one_scene([{"id": "f", "type": "flowchart", "fallback": "A→B"}], [{"act": "trace", "target": "f"}], say="把內容呈現出來", layout={"stack": ["f"]})
+		tl = compiled(doc)
+		self.assertTrue(tl["visibility"]["f"])
+		self.assertEqual(tl["epochs"][-1]["tree"], {"stack": ["f"]})
+		self.assertEqual({g["kind"] for g in tl["gaps"]}, {"type", "action"})
+
+	def test_舊場景延後的動作不會把keep的物件拉回舊場(self):
+		doc = {"version": 1, "objects": [{"id": "q", "type": "note", "text": "Q"}, {"id": "p", "type": "note", "text": "P"}], "scenes": [
+			{"id": "a", "layout": {"stack": ["q"]}, "beats": [{"say": "一二三四五", "do": [
+				{"act": "show", "target": "q"}, {"act": "circle", "target": "q"}, {"act": "underline", "target": "q"}]}]},
+			{"id": "b", "keep": ["q"], "layout": {"stack": ["q", "p"]}, "beats": [{"say": "六七八九十", "do": [{"act": "show", "target": "p", "cue": "九"}]}]}]}
+		tl = compiled(doc, [{"t0": 0, "t1": 1}, {"t0": 1, "t1": 3}])
+		self.assertEqual(tl["epochs"][-1]["tree"], {"stack": ["q", "p"]})
+
+	def test_say_必須是字串(self):
+		with self.assertRaises(ValueError):
+			compiled(one_scene([{"id": "q", "type": "note", "text": "Q"}], [{"act": "show", "target": "q"}], say=123), [{"t0": 0, "t1": 2}])
+
+	def test_序列窗口認得with_prev繼承的起點(self):
+		doc = one_scene([{"id": "arr", "type": "cells", "count": 6}, {"id": "q", "type": "note", "text": "Q"}], [
+			{"act": "fill", "target": "arr", "values": ["A", "B", "C", "D", "E", "F"]},
+			{"act": "show", "target": "q", "cue": "八"},
+			{"act": "stop", "target": "arr", "index": 5, "with": "prev"}], say="一二三四五六七八九十")
+		tl = compiled(doc, [{"t0": 0, "t1": 4}])
+		fill, show, stop = tl["actions"]
+		self.assertAlmostEqual(stop["t0"], 2.8)
+		self.assertAlmostEqual(fill["t1"], 2.8 - BC.SEQ_MARGIN)
+
+	def test_同時刻的hide與show依動作順序(self):
+		tl = compiled(one_scene([{"id": "q", "type": "note", "text": "Q"}], [
+			{"act": "show", "target": "q"}, {"act": "hide", "target": "q"}, {"act": "show", "target": "q", "with": "prev"}]))
+		self.assertIsNone(tl["visibility"]["q"][-1][1])
+
+	def test_timing_拒絕倒置與負時間(self):
+		doc = one_scene([{"id": "q", "type": "note", "text": "Q"}], [{"act": "show", "target": "q", "cue": "五"}])
+		for bad in ([{"t0": 3, "t1": 2}], [{"t0": -5, "t1": -3}]):
+			with self.assertRaises(ValueError):
+				compiled(doc, bad)
+
+	def test_cells_索引與範圍都要驗證(self):
+		objs = [{"id": "c", "type": "cells", "count": 2, "values": ["A", "B"]}, {"id": "k", "type": "code", "lines": ["x"]}]
+		for act in ({"act": "fill", "target": "c", "start": -1, "values": ["X"]}, {"act": "fill", "target": "c", "start": 1, "values": ["X", "Y"]},
+				{"act": "point", "target": "c", "index": 2}, {"act": "stop", "target": "c", "index": -1},
+				{"act": "brace", "target": "c", "range": [1, 0], "label": "x"}, {"act": "highlight", "target": "k", "line": 99}):
+			with self.assertRaises(ValueError, msg=act):
+				compiled(one_scene(objs, [act]))
+
+	def test_append_以錨點為target時仍計入該清單(self):
+		tl = compiled(one_scene([{"id": "l", "type": "list", "rows": ["a"]}], [
+			{"act": "append", "target": "l:title", "text": "b"}, {"act": "circle", "target": "l:r1"}], say="新增然後圈起"))
+		self.assertEqual(tl["actions"][-1]["target"], "l:r1")
+
+	def test_terminal_行錨點有上限(self):
+		with self.assertRaises(ValueError):
+			compiled(one_scene([{"id": "t", "type": "terminal"}], [
+				{"act": "print", "target": "t", "lines": ["a"]}, {"act": "circle", "target": "t:line999"}], say="印出後圈選"))

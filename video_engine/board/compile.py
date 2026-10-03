@@ -87,13 +87,19 @@ class Compiler:
 					raise ValueError(f"{oid}（{obj['type']}）缺必填屬性 {key}")
 			objects[oid] = obj
 		self.objects = objects
-		appends = {}
+		appends, term_lines = {}, {}
 		for scene in self.doc["scenes"]:
 			for beat in scene["beats"]:
 				for a in beat.get("do", []):
+					oid = anchor_parts(a.get("target") or "")[0]
 					if a.get("act") == "append":
-						appends[a["target"]] = appends.get(a["target"], 0) + 1
+						appends[oid] = appends.get(oid, 0) + 1
+					elif a.get("act") in ("type", "restart"):
+						term_lines[oid] = term_lines.get(oid, 0) + 1
+					elif a.get("act") == "print":
+						term_lines[oid] = term_lines.get(oid, 0) + len(a.get("lines") or [])
 		self.total_appends = appends
+		self.term_lines = term_lines
 
 	def check_anchor(self, target):
 		obj_id, name = anchor_parts(target)
@@ -124,6 +130,9 @@ class Compiler:
 			return (0, len(obj["items"]))
 		if t == "list" and pat == "r{n}":
 			return (0, len(obj["rows"]) + self.total_appends.get(obj["id"], 0))
+		if t == "terminal" and pat == "line{n}":
+			# 上限取整片所有行數加最後的空 prompt，寬鬆但擋得住寫錯的編號
+			return (0, self.term_lines.get(obj["id"], 0) + 1)
 		return None
 
 	# ── beat 時間 ──
@@ -132,13 +141,18 @@ class Compiler:
 		flat = [(si, bi, b) for si, s in enumerate(self.doc["scenes"]) for bi, b in enumerate(s["beats"])]
 		if not flat:
 			raise ValueError("沒有任何 beat")
+		for si, bi, b in flat:
+			if not isinstance(b.get("say"), str) or not b["say"].strip():
+				raise ValueError(f"{self.doc['scenes'][si]['id']}/beat{bi} 的 say 必須是非空字串")
 		if self.timing is not None:
 			if len(self.timing) != len(flat):
 				raise ValueError(f"timing 筆數 {len(self.timing)} ≠ beat 數 {len(flat)}")
 			spans = [(float(x["t0"]), float(x["t1"])) for x in self.timing]
-			for (a0, a1), (b0, _) in zip(spans, spans[1:]):
-				if not a0 < a1 <= b0 + 1e-6:
-					raise ValueError("timing 必須遞增且不重疊")
+			for k, (a0, a1) in enumerate(spans):
+				if not 0 <= a0 < a1:
+					raise ValueError(f"timing 第 {k} 筆必須 0 ≤ t0 < t1：{a0}, {a1}")
+				if k + 1 < len(spans) and a1 > spans[k + 1][0] + 1e-6:
+					raise ValueError(f"timing 第 {k} 筆與下一筆重疊")
 		else:
 			spans, t, prev_scene = [], LEAD_IN, 0
 			for si, _, b in flat:
@@ -165,7 +179,8 @@ class Compiler:
 		appended = {}
 		for beat in self.beats:
 			raw_beat = self.doc["scenes"][beat["scene"]]["beats"][beat["i"]]
-			for k, raw in enumerate(raw_beat.get("do", [])):
+			kept = 0
+			for raw in raw_beat.get("do", []):
 				act = raw.get("act")
 				target = raw.get("target")
 				where = f"{self.doc['scenes'][beat['scene']]['id']}/beat{beat['i']}/{act}"
@@ -176,10 +191,11 @@ class Compiler:
 						raise ValueError(f"{where} 缺 target")
 					obj = self.objects[self.check_anchor(target)]
 					spec = self.action_spec(act, obj)
-				if spec is None:
-					self.gaps.append({"kind": "action", "object": obj["id"], "wanted": f"{obj.get('_fallback_of') or obj['type']}.{act}", "fallback": "skip"})
-					continue
 				args = {key: v for key, v in raw.items() if key not in ("act", "target", "cue", "with")}
+				if spec is None:
+					# 動作缺口：改成單純顯示目標，至少讓保底內容出現在畫面上
+					self.gaps.append({"kind": "action", "object": obj["id"], "wanted": f"{obj.get('_fallback_of') or obj['type']}.{act}", "fallback": "show"})
+					act, spec, args = "show", self.cat["generic_actions"]["show"], {}
 				for key in spec.get("req", []):
 					if key not in args:
 						raise ValueError(f"{where} 缺參數 {key}")
@@ -188,16 +204,38 @@ class Compiler:
 						self.check_anchor(args[key])
 				if raw.get("cue") is not None and raw["cue"] not in beat["say"]:
 					raise ValueError(f"{where} 的 cue「{raw['cue']}」不在句中：{beat['say']}")
+				self.check_indices(act, args, obj, where)
 				n = self.seq_count(spec, args, obj, appended, where)
 				if act == "append":
 					appended[obj["id"]] = appended.get(obj["id"], 0) + 1
 				actions.append({
-					"scene": beat["scene"], "beat": self.beats.index(beat), "first": k == 0,
+					"scene": beat["scene"], "beat": self.beats.index(beat), "first": kept == 0,
 					"act": act, "target": target, "obj": obj["id"] if obj else None,
 					"cue": raw.get("cue"), "with": raw.get("with"), "args": args, "n": n,
 					"spec": spec, "blocks": bool(spec.get("blocks")),
 				})
+				kept += 1
 		self.actions = actions
+
+	def check_indices(self, act, args, obj, where):
+		def index_ok(v, lo, hi):
+			return isinstance(v, int) and not isinstance(v, bool) and lo <= v < hi
+		if obj is None:
+			return
+		if obj["type"] == "cells":
+			count = obj["count"]
+			if act == "fill":
+				start = args.get("start", 0)
+				if not index_ok(start, 0, count) or start + len(args["values"]) > count:
+					raise ValueError(f"{where} 填入超出格數：start={start}，{len(args['values'])} 個值，共 {count} 格")
+			elif act in ("point", "stop") and not index_ok(args["index"], 0, count):
+				raise ValueError(f"{where} index 超出格數：{args['index']}")
+			elif act in ("scan", "brace"):
+				r = args["range"]
+				if not (isinstance(r, list) and len(r) == 2 and index_ok(r[0], 0, count) and index_ok(r[1], r[0], count)):
+					raise ValueError(f"{where} range 不合法：{r}")
+		elif obj["type"] == "code" and act == "highlight" and not index_ok(args["line"], 1, len(obj["lines"]) + 1):
+			raise ValueError(f"{where} line 超出行數：{args['line']}")
 
 	def seq_count(self, spec, args, obj, appended, where):
 		kind = spec.get("seq")
@@ -242,11 +280,12 @@ class Compiler:
 			scene_end[b["scene"]] = b["t1"]
 		prev = None
 		for idx, a in enumerate(self.actions):
-			start = self.anchored_start(a)
 			if a["with"] == "prev" and prev is not None and not a["first"]:
 				start = prev["t0"]
-			elif start is None:
-				start = prev["t1"]
+			else:
+				start = self.anchored_start(a)
+				if start is None:
+					start = prev["t1"]
 			a["t0"] = start
 			spec = a["spec"]
 			if a["n"] is not None:
@@ -265,13 +304,21 @@ class Compiler:
 
 	def window_end(self, idx, scene_end):
 		me = self.actions[idx]
-		for later in self.actions[idx + 1:]:
+		for j in range(idx + 1, len(self.actions)):
+			later = self.actions[j]
 			if later["scene"] != me["scene"]:
 				break
-			start = self.anchored_start(later)
+			start = self.known_start(j, idx)
 			if later["blocks"] and start is not None and start >= me["t0"]:
 				return start
 		return scene_end
+
+	def known_start(self, j, idx):
+		"""不依賴第 idx 個動作長度就能確定的起點；沿 with:prev 鏈往前追。"""
+		a = self.actions[j]
+		if a["with"] == "prev" and not a["first"]:
+			return self.known_start(j - 1, idx) if j - 1 > idx else None
+		return self.anchored_start(a)
 
 	def where(self, a):
 		return f"{self.doc['scenes'][a['scene']]['id']}/beat{self.beats[a['beat']]['i']}/{a['act']}"
@@ -325,17 +372,17 @@ class Compiler:
 				enters.append(max(prev_last, first["t0"] - SCENE_LEAD))
 		self.enters = enters
 		# 事件：(時間, 順序, 種類, 資料)
-		events = [(t, 0, "scene", si) for si, t in enumerate(enters)]
-		for b in self.beats:
+		events = [(t, 0, si, "scene", si) for si, t in enumerate(enters)]
+		for k, b in enumerate(self.beats):
 			if b["layout"]:
-				events.append((b["t0"], 1, "layout", b))
-		for a in self.actions:
+				events.append((b["t0"], 1, k, "layout", b))
+		for k, a in enumerate(self.actions):
 			if a["act"] == "hide":
-				events.append((a["t0"], 3, "hide", a))
+				events.append((a["t0"], 2, k, "hide", a))
 			elif a["act"] not in ("wide",):
 				for oid in self.referenced(a):
-					events.append((a["t0"], 2, "show", (oid, a["scene"])))
-		events.sort(key=lambda e: (e[0], e[1]))
+					events.append((a["t0"], 2, k, "show", (oid, a["scene"])))
+		events.sort(key=lambda e: e[:3])
 
 		vis = {oid: [] for oid in self.objects}
 		on = {}
@@ -343,7 +390,7 @@ class Compiler:
 		scene = 0
 		layout = scenes[0].get("layout")
 		epochs = []
-		for t, _, kind, data in events:
+		for t, _, _, kind, data in events:
 			if kind == "scene":
 				scene = data
 				layout = scenes[scene].get("layout")
@@ -357,7 +404,10 @@ class Compiler:
 				oid, s = data
 				if oid not in on:
 					on[oid] = t
-				home[oid] = s
+					home[oid] = s
+				elif s == scene:
+					# 已可見的物件被本場動作指到 → 搬來本場；上一場拖過換場點的動作不搬
+					home[oid] = s
 			elif kind == "hide":
 				oid = data["obj"]
 				if oid in on:
