@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>字串的終點 · 三種教學動畫樣本</title>
+<style>
+:root{color-scheme:light;--ink:#302b27;--muted:#756e64;--paper:#f7f4ed;--accent:#a04435;--edge:#ddd5c8}
+*{box-sizing:border-box}body{margin:0;background:#eeeae2;color:var(--ink);font-family:"Noto Sans CJK TC","Microsoft JhengHei",system-ui,sans-serif}
+main{max-width:1120px;margin:24px auto;padding:0 20px}header{display:flex;align-items:baseline;justify-content:space-between;gap:16px}h1{font-size:25px;font-weight:650;margin:0 0 6px}header p{color:var(--muted);font-size:13px;margin:0}.intro{font-size:14px;color:var(--muted);margin:3px 0 16px}
+#tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}button,select{font:inherit;cursor:pointer;color:var(--ink);border:1px solid var(--edge);border-radius:9px;background:var(--paper);min-height:44px}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:3px}#tabs button{text-align:left;padding:10px 14px;transition:background .15s}#tabs button[aria-selected=true]{background:#f8eee3;border-color:#aa7960;box-shadow:inset 0 -3px #aa7960}#tabs strong{display:block;font-size:15px}#tabs span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.screen{position:relative;background:#ece6da;border:1px solid #d1c6b5;border-radius:13px;overflow:hidden;box-shadow:0 6px 28px #4f3c2820}canvas{width:100%;height:auto;display:block;aspect-ratio:16/9}.controls{display:flex;gap:12px;align-items:center;margin:12px 0}.controls button{min-width:72px;padding:0 14px}#seek{flex:1;min-width:50px;accent-color:var(--accent);cursor:pointer;height:36px}#clock{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}select{padding:0 8px}.chapters{display:flex;gap:7px;flex-wrap:wrap}.chapters button{font-size:12px;min-height:34px;padding:5px 12px}.note{color:var(--muted);font-size:12px;line-height:1.7;margin:12px 0}details{font-size:12px;color:var(--muted);margin:12px 0 20px}summary{cursor:pointer}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+@media(max-width:650px){main{padding:0 10px;margin:14px auto}header{display:block}h1{font-size:21px}header p{margin-bottom:8px}#tabs{gap:5px}#tabs button{padding:8px}#tabs span{font-size:11px}#tabs strong{font-size:13px}.controls{gap:7px}.controls button{min-width:58px;padding:0 8px}#clock{font-size:11px}.intro{font-size:12px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>同一個概念，三種講解方式</h1><p>44 秒 · 無聲字幕樣本</p></header>
+<p class="intro">先看資訊怎麼出現、視線怎麼跟著走。切換樣本會保留目前進度。</p>
+<nav id="tabs" role="tablist" aria-label="動畫樣本">
+<button role="tab" aria-selected="true" tabindex="0" data-mode="paper"><strong>A · 紙上連續動畫</strong><span>長紙、鉛筆描線、鏡頭沿過程走</span></button>
+<button role="tab" aria-selected="false" tabindex="-1" data-mode="focus"><strong>B · 鏡頭聚焦講解</strong><span>放大當下的概念，少量圖形</span></button>
+<button role="tab" aria-selected="false" tabindex="-1" data-mode="code"><strong>C · 概念與程式走讀</strong><span>需要時才看程式，其餘聚焦資料</span></button>
+</nav>
+<div class="screen"><canvas id="canvas" width="1280" height="720" aria-label="C字串狀態動畫：形成Alice，讀到結束字元停止"></canvas><p id="accessible-caption" class="sr"></p></div>
+<div class="controls"><button id="play" aria-label="暫停">暫停</button><input id="seek" type="range" min="0" max="44" step="0.01" value="0" aria-label="播放進度"><span id="clock">00:00 / 00:44</span><select id="speed" aria-label="播放速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option></select></div>
+<nav class="chapters" aria-label="直接觀看場景"><button data-time="0">提出問題</button><button data-time="7.8">字串形成</button><button data-time="18">開始讀取</button><button data-time="26.5">遇到終點</button><button data-time="33">比較觀念</button></nav>
+<p class="note" id="style-note">像在一張筆記紙上，跟著同一個字串走過完整過程。</p>
+<details><summary>製作用量與來源</summary><p id="usage-note"></p><p>Gemini 整理教材；Claude 產生場景規格；三個呈現變體共用分鏡與字幕。這輪不生成 TTS。完整原始回應與紀錄保存在同一資料夾。</p></details>
+</main>
+<script id="lesson-data" type="application/json">__LESSON_DATA__</script>
+<script id="animation-logic">
+"use strict";
+// 文句、配色、時間表及幾何集中在這裡；render(t) 不依賴上一格。
+const DATA=JSON.parse(document.getElementById("lesson-data").textContent);
+const C={paper:"#ECE6DA",ink:"#2E2622",muted:"#796F62",accent:"#A04435",grid:"#C7D3CB",white:"#FFFDF7",clean:"#F7F8F5",panel:"#F0F2EE",code:"#19323B",codeText:"#F3F7F4"};
+const G={w:1280,h:720,paperW:1440,paperH:3000,x:220,cellW:110,step:130,cellH:120,ys:{formation:970,read_stop:1690,comparison:2410}};
+const VIEWS={question:[720,340,.94],formation:[720,975,.90],read:[760,1720,.86],terminator:[935,1785,1.24],comparison:[735,2470,.86],overview:[720,1470,.205]};
+const LABELS={hook:"看見問題",formation:"字串形成",read_stop:"一路讀到終點",comparison:"比較兩個量"};
+const canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d"),seek=document.getElementById("seek");
+const events=DATA.board.scenes.flatMap(s=>s.events),cameras=DATA.board.scenes.flatMap(s=>s.cameras).sort((a,b)=>a.time-b.time);
+const copies=events.filter(e=>e.type==="copy"),scans=events.filter(e=>e.type==="scan"),stop=events.find(e=>e.type==="stop");
+let mode="paper",time=0,playing=!matchMedia("(prefers-reduced-motion: reduce)").matches,speed=1,last=0;
+let pencilMode=true,drawTime=0,drawn=[];
+window.__errors=[];window.addEventListener("error",e=>window.__errors.push(e.message));
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));const ease=p=>{p=clamp(p);return p*p*(3-2*p)};const mix=(a,b,p)=>a+(b-a)*p;
+const sans='"Noto Sans CJK TC","Microsoft JhengHei",sans-serif',mono='"Noto Sans Mono CJK TC",Consolas,monospace';
+function stateAt(t){
+	t=clamp(t,0,43.999);const scene=DATA.board.scenes.find(s=>s.start<=t&&t<s.end);
+	const copied=copies.filter(e=>t>=e.time+e.duration).length;const printed=scans.filter(e=>t>=e.time+e.duration).length;
+	let cursor=0;for(const e of scans){if(t>=e.time)cursor=mix(Math.max(0,e.index-1),e.index,ease((t-e.time)/.42))}
+	if(t>=stop.time)cursor=mix(4,5,ease((t-stop.time)/.42));
+	const visible=scene.show.filter(id=>id!=="code_hint"||t<17.8).filter(id=>id!=="termination_note"||t>=26.2).filter(id=>id!=="cursor"||t>=16.5).filter(id=>id!=="output"||t>=17.1).filter(id=>id!=="array"||t>=7.8).filter(id=>id!=="source_literal"||t>=7.2).filter(id=>id!=="capacity_hint"||t>=3.6);
+	const cue=DATA.cues.find(c=>c.start<=t&&t<c.end);
+	return {t,scene:scene.template,caption:scene.caption,copied,printed,output:"Alice".slice(0,printed),cursor,stopped:t>=stop.time+.42,visible,subtitle:cue?cue.text:""};
+}
+function cameraAt(t){
+	let i=0;while(i+1<cameras.length&&cameras[i+1].time<=t)i++;
+	const now=cameras[i],a=VIEWS[cameras[Math.max(0,i-1)].focus],b=VIEWS[now.focus];
+	const d=now.mode==="swift"?.95:now.mode==="close"?.75:now.mode==="wide"?1.35:1.1;
+	const p=i===0?1:ease((t-now.time)/d),z=mix(a[2],b[2],p);return [mix(a[0]*a[2],b[0]*b[2],p)/z,mix(a[1]*a[2],b[1]*b[2],p)/z,z];
+}
+function ink(points,progress=1,color=C.ink,width=3,seed=0){
+	const p=clamp(progress);if(!p)return;let dense=[];
+	for(let i=1;i<points.length;i++)for(let j=0;j<8;j++){let q=j/8;dense.push([mix(points[i-1][0],points[i][0],q),mix(points[i-1][1],points[i][1],q)])}dense.push(points.at(-1));
+	const variant=pencilMode&&p<1?Math.floor(drawTime*12)%3:seed%3;
+	const count=Math.max(2,Math.floor(dense.length*p));ctx.save();ctx.strokeStyle=color;ctx.lineCap="round";ctx.lineJoin="round";
+	for(let pass=0;pass<(pencilMode?2:1);pass++){
+		ctx.lineWidth=pass?width*.5:width;ctx.globalAlpha=pass?.25:1;ctx.shadowColor=color;ctx.shadowBlur=pass?1.2:0;ctx.beginPath();
+		for(let i=0;i<count;i++){const [x,y]=dense[i],j=pencilMode?Math.sin(seed*3.17+i*1.91+variant*2.4)*1.1:0;const k=pencilMode?Math.cos(seed*2.13+i*2.17+variant*1.8)*.8:0;if(i)ctx.lineTo(x+j,y+k);else ctx.moveTo(x+j,y+k)}ctx.stroke();
+	}ctx.restore();
+}
+function rect(x,y,w,h,p=1,color=C.ink,fill=null,seed=0){if(fill){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h)}ink([[x,y],[x+w,y],[x+w,y+h],[x,y+h],[x,y]],p,color,2.7,seed)}
+function ellipse(x,y,rx,ry,p=1,color=C.accent,seed=13){const a=[];for(let i=0;i<=40;i++){let q=i/40*Math.PI*2;a.push([x+Math.cos(q)*rx,y+Math.sin(q)*ry])}ink(a,p,color,3.2,seed)}
+function text(x,y,value,size=32,color=C.ink,align="left",id="",monospace=false){
+	ctx.save();ctx.font=`${size>=46?600:400} ${size}px ${monospace?mono:sans}`;ctx.textAlign=align;ctx.textBaseline="middle";ctx.fillStyle=color;ctx.fillText(value,x,y);
+	const w=ctx.measureText(value).width,m=ctx.getTransform();let x0=x-(align==="center"?w/2:align==="right"?w:0);let a=new DOMPoint(x0,y-size*.6).matrixTransform(m),b=new DOMPoint(x0+w,y+size*.6).matrixTransform(m);drawn.push({id,value,x:a.x,y:a.y,w:b.x-a.x,h:b.y-a.y});ctx.restore();
+}
+function write(x,y,value,size,p,id="",color=C.ink){ctx.save();ctx.font=`600 ${size}px ${sans}`;const w=ctx.measureText(value).width;ctx.beginPath();ctx.rect(x-w/2-5,y-size,Math.ceil(clamp(p)*10)/10*(w+10),size*2);ctx.clip();text(x,y,value,size,color,"center",id);ctx.restore()}
+function row(x,y,cw,step,state,withTail=true){
+	const chars=[..."Alice","\\0"],h=cw*1.09;
+	for(let i=0;i<6;i++){
+		const known=i<state.copied;rect(x+i*step,y,cw,h,1,C.ink,known?C.white:null,40+i);
+		if(known)text(x+i*step+cw/2,y+h/2,chars[i],cw*.43,i===5?C.accent:C.ink,"center",`cell${i}`,true);
+		else{for(let j=1;j<5;j++)ink([[x+i*step+5,y+j*h/5],[x+i*step+cw-5,y+j*h/5-8]],1,C.grid,1,70+j)}
+	}
+	if(withTail){const tx=x+6*step+10;ink([[tx,y+h/2],[tx+25,y+h/2]],1,C.muted,2,88);rect(tx+40,y,cw*1.65,h,1,C.grid,null,87);text(tx+40+cw*.825,y+h*.4,"…",cw*.45,C.muted,"center");text(tx+40+cw*.825,y+h*.75,"其餘仍未知",cw*.17,C.muted,"center","unknown_tail")}
+}
+function pointer(x,y,state,cw){ellipse(x,y,cw*.22,cw*.18,1,C.accent,19);ink([[x-7,y+cw*.2],[x,y+cw*.32],[x+7,y+cw*.2]],1,C.accent,3,29)}
+function outputBox(x,y,w,h,state){rect(x,y,w,h,1,C.ink,C.white,119);text(x+24,y+24,"輸出",20,C.muted);text(x+w/2,y+h*.58,state.output,58,C.ink,"center","output_text",true)}
+const paper=document.createElement("canvas");paper.width=G.paperW;paper.height=G.paperH;const pc=paper.getContext("2d");pc.fillStyle=C.paper;pc.fillRect(0,0,paper.width,paper.height);pc.strokeStyle=C.grid;
+for(let x=0;x<=paper.width;x+=40){pc.globalAlpha=x%200===0?.5:.23;pc.lineWidth=x%200===0?1:.65;pc.beginPath();pc.moveTo(x,0);pc.lineTo(x,paper.height);pc.stroke()}
+for(let y=0;y<=paper.height;y+=40){pc.globalAlpha=y%200===0?.5:.23;pc.lineWidth=y%200===0?1:.65;pc.beginPath();pc.moveTo(0,y);pc.lineTo(paper.width,y);pc.stroke()}pc.globalAlpha=1;
+const shade=pc.createLinearGradient(0,0,55,0);shade.addColorStop(0,"#6B41271C");shade.addColorStop(1,"#6B412700");pc.fillStyle=shade;pc.fillRect(0,0,55,paper.height);
+function arrayY(t){if(t<16)return G.ys.formation;if(t<31)return mix(G.ys.formation,G.ys.read_stop,ease((t-16)/1));return mix(G.ys.read_stop,G.ys.comparison,ease((t-31)/1.1))}
+function worldScene(state,cam,paperStyle){
+	ctx.save();ctx.translate(G.w/2,304);ctx.scale(cam[2],cam[2]);ctx.translate(-cam[0],-cam[1]);
+	if(paperStyle){ctx.drawImage(paper,0,0);const path=[[170,540],[160,740],[175,1180],[150,1430],[170,2090],[150,2280],[160,2790]];ink(path,clamp(state.t/36),C.accent,2,61)}
+	const ys=[240,790,1480,2210];
+	DATA.board.scenes.forEach((s,i)=>{if(state.t>=s.start&&(paperStyle||state.scene===s.template)&&!(state.scene==="comparison"&&!paperStyle)){text(260,ys[i],LABELS[s.template],31,C.muted);ink([[260,ys[i]+25],[460,ys[i]+25]],ease((state.t-s.start)/.9),C.accent,3,100+i)}});
+	if(state.scene==="hook"){
+		write(720,335,"32 格，為什麼長度是 5？",53,(state.t-.3)/1.6,"question");
+		if(state.visible.includes("capacity_hint")){text(720,445,"容量 ≠ 長度",37,C.accent,"center","capacity_hint");ink([[550,477],[890,477]],ease((state.t-3.6)/1.2),C.accent,7,10)}
+	}
+	if(state.visible.includes("source_literal")){text(720,880,'"Alice"',63,C.ink,"center","source_literal",true);text(720,1150,"五個字母，連同結束字元一起放入",31,C.muted,"center","copy_note")}
+	const y=arrayY(state.t),x=G.x,cw=G.cellW,step=G.step;
+	if(state.visible.includes("array")){row(x,y,cw,step,state);text(x,y-88,"name：32 格空間",25,C.muted,"left","array_label")}
+	if(state.scene==="formation")for(const e of copies){if(state.t>=e.time&&state.t<e.time+e.duration){let p=ease((state.t-e.time)/e.duration);const ch=e.index<5?"Alice"[e.index]:"\\0";text(mix(600+e.index*45,x+e.index*step+cw/2,p),mix(883,y+cw/2,p)-Math.sin(p*Math.PI)*45,ch,40,e.index===5?C.accent:C.ink,"center","copy_flight",true)}}
+	if(state.visible.includes("code_hint")){rect(510,1515,560,70,1,C.grid,C.white,6);text(790,1550,'printf("%s", name);',32,C.ink,"center","code_hint",true)}
+	if(state.visible.includes("cursor"))pointer(x+state.cursor*step+cw/2,y-45,state,cw);
+	if(state.visible.includes("output"))outputBox(630,1890,480,105,state);
+	if(state.scene==="read_stop")for(const e of scans){if(state.t>=e.time+.4&&state.t<e.time+e.duration){const p=ease((state.t-e.time-.4)/(e.duration-.4));const x0=x+e.index*step+cw/2;const x1=870-73+e.index*29;text(mix(x0,x1,p),mix(y+65,1950,p),"Alice"[e.index],43,C.accent,"center","scan_flight",true)}}
+	if(state.visible.includes("termination_note")){ellipse(x+5*step+cw/2,y+cw*.54,75,86,ease((state.t-26.2)/.8));text(950,y+175,"到這裡就停",31,C.accent,"center","termination_note")}
+	if(state.visible.includes("comparison")){
+		ink([[x,y+155],[x+4*step+cw,y+155]],ease((state.t-31)/1.6),C.accent,4,9);
+		ink([[x,y+195],[x+5*step+cw,y+195]],ease((state.t-32)/1.2),C.ink,3,20);
+		const labels=[[360,"容量","32","宣告的格數"],[735,"長度","5","結束字元之前"],[1110,"至少需要","6","五個字母 + 結束字元"]];
+		for(const [px,label,num,note]of labels){text(px,2660,label,27,C.muted,"center",`metric_${label}`);text(px,2735,num,79,C.ink,"center");text(px,2802,note,21,C.muted,"center")}
+	}
+	ctx.restore();
+}
+function focusScene(state){
+	const focus=state.scene==="hook"?"question":state.scene==="formation"?"formation":state.scene==="comparison"?"comparison":state.t>=25.65&&state.t<28.2?"terminator":"read";
+	const cam=[...VIEWS[focus]];if(state.scene==="comparison")cam[1]=2580;
+	worldScene(state,cam,false);
+}
+function codeScene(state){
+	if(state.scene!=="read_stop"){focusScene(state);return}
+	const p=ease((state.t-17.8)/.65),x=mix(605,160,p),cw=mix(76,120,p),step=cw+12,y=270;
+	if(state.t<18.45){ctx.save();ctx.globalAlpha=1-p;ctx.fillStyle=C.code;ctx.fillRect(58,172,482,330);text(85,210,"執行到這一行",23,C.codeText);text(85,305,'printf("%s", name);',29,C.codeText,"left","code_hint",true);text(85,430,"印出字串",24,C.codeText);ctx.restore()}
+	row(x,y,cw,step,state,p>.9);text(x,y-88,"同一個 name 陣列",25,C.muted,"left","array_label");
+	if(state.visible.includes("cursor"))pointer(x+state.cursor*step+cw/2,y-47,state,cw);
+	if(state.visible.includes("output"))outputBox(mix(690,525,p),480,mix(395,560,p),100,state);
+	if(state.stopped){ellipse(x+5*step+cw/2,y+cw*.54,cw*.68,cw*.75,1,C.accent);text(890,440,"遇到 \\0，停止",28,C.accent,"center","termination_note")}
+}
+function screenCaption(state){
+	ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=mode==="paper"?C.paper:C.clean;ctx.fillRect(0,0,G.w,66);text(48,35,state.caption,28,C.ink,"left","caption");text(1235,35,"C 字串",19,C.muted,"right");
+	ctx.fillStyle=mode==="paper"?C.paper:C.clean;ctx.fillRect(0,615,G.w,105);
+	ctx.font=`26px ${sans}`;let rows=[],line="";for(const ch of state.subtitle){if(ctx.measureText(line+ch).width>1150){rows.push(line);line=ch}else line+=ch}if(line)rows.push(line);
+	rows.forEach((row,i)=>text(640,655+i*32,row,26,C.ink,"center","subtitle"));text(35,596,"概念示意",15,C.muted);
+	ctx.fillStyle=C.grid;ctx.fillRect(34,707,1212,3);ctx.fillStyle=C.accent;ctx.fillRect(34,707,1212*state.t/44,3);
+}
+function render(t){
+	t=clamp(Number(t)||0,0,44);drawTime=t;drawn=[];pencilMode=mode==="paper";ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,G.w,G.h);ctx.fillStyle=mode==="paper"?C.paper:C.clean;ctx.fillRect(0,0,G.w,G.h);
+	const s=stateAt(t);ctx.save();ctx.beginPath();ctx.rect(0,66,G.w,549);ctx.clip();
+	if(mode==="paper")worldScene(s,cameraAt(t),true);else if(mode==="focus")focusScene(s);else codeScene(s);ctx.restore();screenCaption(s);
+	seek.value=t;document.getElementById("clock").textContent=`00:${Math.floor(t).toString().padStart(2,"0")} / 00:44`;seek.setAttribute("aria-valuetext",`${t.toFixed(1)} 秒`);document.getElementById("accessible-caption").textContent=s.subtitle;
+	window.__lastState={...s,mode,camera:mode==="paper"?cameraAt(t):null,textBoxes:drawn};return window.__lastState;
+}
+function setMode(value){mode=value;document.querySelectorAll("[data-mode]").forEach(b=>{const on=b.dataset.mode===mode;b.setAttribute("aria-selected",String(on));b.tabIndex=on?0:-1});document.getElementById("style-note").textContent={paper:"像在一張筆記紙上，跟著同一個字串走過完整過程。",focus:"每個階段放大當下的概念，讓前一段資訊退場。",code:"先看正在執行的程式，再把注意力交回字串的變化。"}[mode];render(time)}
+function setPlaying(value){playing=value;document.getElementById("play").textContent=playing?"暫停":"播放";document.getElementById("play").setAttribute("aria-label",playing?"暫停":"播放")}
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
+document.getElementById("tabs").addEventListener("keydown",e=>{if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();const buttons=[...document.querySelectorAll("[data-mode]")],i=buttons.findIndex(b=>b.dataset.mode===mode),next=buttons[(i+(e.key==="ArrowRight"?1:2))%3];setMode(next.dataset.mode);next.focus()});
+document.getElementById("play").addEventListener("click",()=>setPlaying(!playing));seek.addEventListener("input",()=>{time=Number(seek.value);render(time)});document.getElementById("speed").addEventListener("change",e=>speed=Number(e.target.value));
+document.querySelectorAll("[data-time]").forEach(b=>b.addEventListener("click",()=>{time=Number(b.dataset.time);render(time)}));
+document.addEventListener("keydown",e=>{if(e.code==="Space"&&!e.target.matches("input,select,button")){e.preventDefault();setPlaying(!playing)}});
+window.render=render;window.stateAt=stateAt;window.setMode=setMode;window.setPreviewTime=(t)=>{setPlaying(false);time=clamp(t,0,44);return render(time)};
+const query=new URLSearchParams(location.hash.slice(1));if(query.get("mode"))mode=query.get("mode");if(query.has("t")){time=Number(query.get("t"));playing=false}
+document.getElementById("usage-note").textContent=`這次新增分鏡：${DATA.tokens.current_run_new_tokens.toLocaleString()} tokens；本支所用來源整理、口語稿與分鏡合計：${DATA.tokens.attributed_single_preview_tokens.toLocaleString()} tokens（含重用素材）；所有試驗累計：${DATA.tokens.experiment_total_tokens.toLocaleString()} tokens。`;
+setPlaying(playing);setMode(mode);function tick(now){if(last&&playing){time=(time+Math.min(.1,(now-last)/1000)*speed)%44;render(time)}last=now;requestAnimationFrame(tick)}requestAnimationFrame(tick);
+</script>
+</body>
+</html>
