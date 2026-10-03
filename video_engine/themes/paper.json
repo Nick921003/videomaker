@@ -1,0 +1,10 @@
+{
+	"name": "paper",
+	"label": "紙上連續動畫（A＋C）",
+	"canvas": {"bg": "#EDE5D9", "grid": "#E2DFD2", "margin": "#A34335"},
+	"card": {"fill": "#FFFCF4", "edge": "#302720"},
+	"text": {"title": "#302720", "body": "#302720", "muted": "#807769", "accent": "#A34335"},
+	"code": {"bg": "#19333E", "normal": "#EDF5F3", "highlight": "#32515C"},
+	"effects": {"pencil": "#302720", "highlight": "#D2AA78", "subtitle": "#EDE5D9"},
+	"typography": {"title": "bold-tc", "body": "regular-tc", "code": "mono-tc"}
+}
