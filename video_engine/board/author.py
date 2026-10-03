@@ -30,6 +30,7 @@ PRICE = {"in": 4.0, "out": 20.0, "cache_read": 0.20, "cache_write": 5.0}
 MAX_TOKENS = {"plan": 8000, "scene": 12000}
 MAX_REPAIRS = 2
 SAY_MAX = 40
+ENGLISH_OK = {"Windows"}  # 與 narrate.py 一致：實測唸得清楚的英文字
 CHARS_PER_SEC = 5.2
 PLAYWRIGHT_PY = os.path.expanduser("~/.local/share/pipx/venvs/webwright/bin/python")
 SPELLED = re.compile(r"(?<![A-Za-z])(?:[A-Za-z] ){1,}[A-Za-z](?![A-Za-z])|(?<![A-Za-z])[A-Z]{2,6}(?![A-Za-z])")
@@ -119,8 +120,13 @@ def converse(budget, stage, system, user, validate, failed_path=None):
 
 # ── 教材解析（確定性，不靠模型） ──
 
+def clean_title(t):
+	return re.sub(r"[*`]", "", t).strip()
+
+
 def headings(md):
-	return [(len(m.group(1)), re.sub(r"[*`]", "", m.group(2)).strip(), m.start()) for m in re.finditer(r"^(#{1,6})\s+(.+?)\s*$", md, re.M)]
+	# 教材的補充段落常包在引用區塊裡（> #### macOS），標題前的 > 也要認得
+	return [(len(m.group(1)), clean_title(m.group(2)), m.start()) for m in re.finditer(r"^(?:>\s*)?(#{1,6})\s+(.+?)\s*$", md, re.M)]
 
 
 def objectives_of(md):
@@ -148,10 +154,21 @@ def spelled(text):
 
 # ── 規劃 ──
 
+MAX_STORIES = 10
+
+
+def stories_of(plan):
+	return plan.get("stories") or plan.get("segments") or []
+
+
 def plan_problems(plan, md):
 	problems = []
 	n = len(objectives_of(md))
-	segs = plan.get("segments") or []
+	segs = stories_of(plan)
+	if len(segs) > MAX_STORIES:
+		problems.append(f"整理成 {len(segs)} 支太碎（上限 {MAX_STORIES}），能在同一畫面講完的請合併")
+	if not (plan.get("scope") or {}).get("covers"):
+		problems.append("缺 scope.covers（教材涵蓋範圍）")
 	ids = [s.get("id") for s in segs]
 	if len(set(ids)) != len(ids):
 		problems.append("小節 id 重複")
@@ -163,8 +180,10 @@ def plan_problems(plan, md):
 	for s in segs:
 		if not 40 <= s.get("sec", 0) <= 90:
 			problems.append(f"{s.get('id')} 的 sec={s.get('sec')} 不在 40–90")
+		if not s.get("question"):
+			problems.append(f"{s.get('id')} 缺 question（學生口吻的問題）")
 		for src in s.get("sources", []):
-			if src not in titles:
+			if clean_title(src) not in titles:
 				problems.append(f"{s.get('id')} 的 sources「{src}」不是教材中的標題（要逐字照抄，不含 #）")
 		for dep in s.get("after", []):
 			if dep not in ids:
@@ -181,8 +200,8 @@ def do_plan(md_path, out_dir, budget):
 	plan, repairs = converse(budget, "plan", system, md, lambda p: plan_problems(p, md))
 	with open(os.path.join(out_dir, "plan.json"), "w", encoding="utf-8") as f:
 		json.dump(plan, f, ensure_ascii=False, indent="\t")
-	for s in plan["segments"]:
-		print(f"  {s['id']} {'必看' if s.get('required') else '選看'} {s['sec']}s 目標{s['objectives']}：{s['title']}")
+	for s in stories_of(plan):
+		print(f"  {s['id']} {s['sec']}s 目標{s['objectives']}：{s.get('question') or s['title']}")
 	return plan
 
 
@@ -196,9 +215,13 @@ def narration_problems(doc, target):
 			chars += len(re.sub(r"\s", "", say))
 			if len(say) > SAY_MAX:
 				problems.append(f"say 超過 {SAY_MAX} 字，請拆句：{say}")
-			hit = spelled(b.get("spoken") or say)
+			spoken = b.get("spoken") or say
+			hit = spelled(spoken)
+			words = [w for w in re.findall(r"[A-Za-z]+", spoken) if w not in ENGLISH_OK]
 			if hit:
 				problems.append(f"旁白含逐字母縮寫 {hit}（TTS 會變氣音），請加 spoken 改中文說法：{say}")
+			elif words:
+				problems.append(f"旁白夾英文單字 {words}（TTS 會唸糊並吃掉後面的字），請加 spoken 改中文說法：{say}")
 	est = chars / CHARS_PER_SEC
 	if not 40 <= est <= 90 or abs(est - target) > target * .35:
 		problems.append(f"旁白 {chars} 字約 {est:.0f} 秒，目標 {target} 秒（約 {round(target * CHARS_PER_SEC)} 字），請增刪內容")
@@ -231,7 +254,7 @@ def do_scene(md_path, out_dir, seg_id, budget):
 		md = f.read()
 	with open(os.path.join(out_dir, "plan.json"), encoding="utf-8") as f:
 		plan = json.load(f)
-	seg = next(s for s in plan["segments"] if s["id"] == seg_id)
+	seg = next(s for s in stories_of(plan) if s["id"] == seg_id)
 	catalog = BC.load_catalog()
 	with open(os.path.join(HERE, "prompts", "scene.system.md"), encoding="utf-8") as f:
 		system = f.read()
@@ -239,12 +262,13 @@ def do_scene(md_path, out_dir, seg_id, budget):
 		system = system.replace("{{COMPONENTS}}", f.read())
 	with open(os.path.join(HERE, "examples", "c_string.scene.json"), encoding="utf-8") as f:
 		system = system.replace("{{EXAMPLE}}", f.read())
-	sources = [section(md, t) for t in seg.get("sources", [])]
+	sources = [section(md, clean_title(t)) for t in seg.get("sources", [])]
 	excerpt = "\n\n".join(s for s in sources if s) or md
 	objectives = objectives_of(md)
 	user = "\n".join([
 		f"單元：{plan.get('unit_title', '')}",
-		f"本節：{seg['title']}（目標 {seg['sec']} 秒，旁白約 {round(seg['sec'] * CHARS_PER_SEC)} 字）",
+		f"學生的問題：{seg.get('question', seg['title'])}" + (f"（其他問法：{'；'.join(seg.get('also_asks', []))}）" if seg.get("also_asks") else ""),
+		f"本支：{seg['title']}（目標 {seg['sec']} 秒，旁白約 {round(seg['sec'] * CHARS_PER_SEC)} 字）。整支影片就是在回答這個問題。",
 		"本節學習目標：" + "；".join(objectives[i - 1] for i in seg["objectives"] if 0 < i <= len(objectives)),
 		f"畫面要演出的過程：{seg.get('show', '')}",
 		"全單元統一用語：" + "；".join(f"{g['term']} 唸作「{g['say_as']}」" for g in plan.get("glossary", [])),

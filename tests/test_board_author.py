@@ -28,9 +28,15 @@ class TestMaterial(unittest.TestCase):
 
 
 class TestPlanGate(unittest.TestCase):
-	def plan(self, **seg):
-		base = {"id": "s1", "title": "t", "objectives": [1, 2, 3, 4, 5, 6, 7], "sec": 60, "after": [], "sources": ["2.2.1 PATH 是什麼？為什麼需要設定它？"]}
-		return {"segments": [{**base, **seg}]}
+	def plan(self, n=1, **seg):
+		base = {"id": "q1", "question": "為什麼打 gcc 說找不到？", "title": "t", "objectives": [1, 2, 3, 4, 5, 6, 7], "sec": 60, "after": [], "sources": ["2.2.1 PATH 是什麼？為什麼需要設定它？"]}
+		return {"scope": {"covers": ["環境建立"]}, "stories": [{**base, **seg, "id": f"q{k}"} for k in range(n)]}
+
+	def test_超過十支要求合併(self):
+		self.assertTrue(any("太碎" in p for p in BA.plan_problems(self.plan(n=11), MD)))
+
+	def test_引用區塊裡的標題也認得(self):
+		self.assertEqual(BA.plan_problems(self.plan(sources=["macOS"]), MD), [])
 
 	def test_合格計畫沒有問題(self):
 		self.assertEqual(BA.plan_problems(self.plan(), MD), [])
