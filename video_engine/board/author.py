@@ -237,6 +237,21 @@ def do_plan(md_path, out_dir, budget, target=None):
 
 # ── 小節分鏡 ──
 
+def apply_glossary(doc, glossary):
+	"""依單元詞彙表把旁白裡的英文術語換成中文唸法，寫進 spoken。程式處理，不花 tokens；換不掉的才交給閘退件。"""
+	terms = sorted((g for g in glossary if g.get("term") and g.get("say_as")), key=lambda g: -len(g["term"]))
+	for scene in doc.get("scenes", []):
+		for b in scene.get("beats", []):
+			text = b.get("spoken") or b.get("say", "")
+			for g in terms:
+				for term in re.split(r"\s*/\s*", g["term"]):
+					if re.search(r"[A-Za-z]", term):
+						text = re.sub(r"(?<![A-Za-z])" + re.escape(term) + r"(?![A-Za-z])", g["say_as"], text, flags=re.I)
+			if text != (b.get("spoken") or b.get("say", "")):
+				b["spoken"] = text
+	return doc
+
+
 def narration_problems(doc, target):
 	problems, chars = [], 0
 	for scene in doc.get("scenes", []):
@@ -305,7 +320,8 @@ def do_scene(md_path, out_dir, seg_id, budget, target=None):
 		"", "# 教材段落", excerpt,
 	])
 	print(f"分鏡：{seg_id} {seg['title']}（{seg['sec']}s）", flush=True)
-	doc, repairs = converse(budget, "scene", system, user, lambda d: scene_problems(d, seg["sec"], catalog),
+	glossary = plan.get("glossary", [])
+	doc, repairs = converse(budget, "scene", system, user, lambda d: scene_problems(apply_glossary(d, glossary), seg["sec"], catalog),
 		failed_path=os.path.join(out_dir, f"{seg_id}.failed.json"), target=target)
 	path = os.path.join(out_dir, f"{seg_id}.scene.json")
 	with open(path, "w", encoding="utf-8") as f:

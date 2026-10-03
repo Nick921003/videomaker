@@ -15,7 +15,7 @@
 				{"act": "show", "target": "term"},
 				{"act": "type", "target": "term", "text": "gcc --version", "cue": "輸入"}
 			]},
-			{"say": "它會拿出 PATH 這份資料夾清單，", "spoken": "它會拿出 path 這份資料夾清單，", "do": [
+			{"say": "它會拿出 PATH 這份資料夾清單，", "spoken": "它會拿出路徑變數這份資料夾清單，", "do": [
 				{"act": "show", "target": "path"},
 				{"act": "arrow", "target": "term:cmd", "to": "path:title", "with": "prev"}
 			]},
@@ -34,7 +34,7 @@
 				{"act": "underline", "target": "path:r2", "cue": "資料夾"},
 				{"act": "write", "target": "tip", "with": "prev"}
 			]},
-			{"say": "改完要重開終端機，新的 PATH 才會生效。", "spoken": "改完要重開終端機，新的 path 才會生效。", "do": [
+			{"say": "改完要重開終端機，新的 PATH 才會生效。", "spoken": "改完要重開終端機，新的路徑變數才會生效。", "do": [
 				{"act": "restart", "target": "term", "note": "新的終端機", "cue": "重開"}
 			]}
 		]},

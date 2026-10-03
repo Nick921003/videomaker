@@ -66,6 +66,16 @@ class TestNarrationGate(unittest.TestCase):
 		self.assertFalse(any("目標" in p for p in BA.narration_problems(self.doc("很" * 312), 60)))
 
 
+class TestGlossary(unittest.TestCase):
+	def test_詞彙表自動把英文術語換成中文唸法(self):
+		doc = {"scenes": [{"beats": [{"say": "在終端機打 gcc，系統去讀 PATH。"}, {"say": "按下 Windows 鍵"}]}]}
+		BA.apply_glossary(doc, [{"term": "GCC", "say_as": "編譯器"}, {"term": "PATH", "say_as": "路徑變數"}])
+		beats = doc["scenes"][0]["beats"]
+		self.assertEqual(beats[0]["spoken"], "在終端機打 編譯器，系統去讀 路徑變數。")
+		self.assertNotIn("spoken", beats[1])
+		self.assertFalse(BA.narration_problems(doc, 1) and any("英文" in p for p in BA.narration_problems(doc, 1)))
+
+
 class TestBudget(unittest.TestCase):
 	def test_最壞情況會超過上限就拒絕呼叫(self):
 		with tempfile.TemporaryDirectory() as d:
