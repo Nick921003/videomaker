@@ -19,6 +19,8 @@ VIEW = (0, HEADER, W, H - FOOTER)
 MOVE = 0.7
 SCALE_MIN = 0.55
 TOL = 1.5
+# 全景靜止時物件文字的最小實際字級（字幕 40px）。再小在筆電上縮放播放就讀不出來
+MIN_FONT = 20
 
 
 def inside(b, rect):
@@ -60,6 +62,9 @@ def check_frame(info, objects):
 			solid.append(b)
 	if settled:
 		for b in solid:
+			font = b["h"] / 1.24
+			if b["owner"] in info["members"] and b["role"] == "text" and font < MIN_FONT - 0.5:
+				problems.append(f"{b['owner']} 的字太小：「{b.get('value', '')}」只有 {font:.0f}px（< {MIN_FONT}），請用 focus 推近或減少同場物件")
 			# 只檢查當前版面的物件；舊場景的歷史物件本來就在畫面外
 			if b["owner"] in info["members"] and not inside(b, VIEW):
 				problems.append(f"{b['owner']} 的{b['role']}超出鏡頭視窗：{b.get('value', '')} {round(b['x'])},{round(b['y'])},{round(b['w'])}x{round(b['h'])}")
