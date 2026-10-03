@@ -4,98 +4,699 @@
 	"tag": "環境建立",
 	"corner_note": "Windows 11 示意",
 	"objects": [
-		{"id": "search", "type": "window", "body": [
-			{"field": {"id": "q"}},
-			{"list": {"rows": [{"id": "r0", "text": "編輯系統環境變數"}], "min_rows": 1}}
-		]},
-		{"id": "sysprops", "type": "window", "title": "系統內容",
-			"tabs": [{"id": "t_name", "text": "電腦名稱"}, {"id": "t_hw", "text": "硬體"}, {"id": "t_adv", "text": "進階", "active": true}, {"id": "t_prot", "text": "系統保護"}, {"id": "t_remote", "text": "遠端"}],
+		{
+			"id": "search",
+			"type": "window",
 			"body": [
-				{"group": {"title": "效能", "body": [{"buttons": {"items": [{"id": "perf", "text": "設定(S)..."}], "align": "right"}}]}},
-				{"group": {"title": "使用者設定檔", "body": [{"buttons": {"items": [{"id": "profile", "text": "設定(E)..."}], "align": "right"}}]}},
-				{"group": {"title": "啟動及修復", "body": [{"buttons": {"items": [{"id": "startup", "text": "設定(T)..."}], "align": "right"}}]}},
-				{"buttons": {"items": [{"id": "envbtn", "text": "環境變數(N)..."}], "align": "right"}}
+				{
+					"field": {
+						"id": "q"
+					}
+				},
+				{
+					"list": {
+						"rows": [
+							{
+								"id": "r0",
+								"text": "編輯系統環境變數"
+							}
+						],
+						"min_rows": 1
+					}
+				}
+			]
+		},
+		{
+			"id": "sysprops",
+			"type": "window",
+			"title": "系統內容",
+			"tabs": [
+				{
+					"id": "t_name",
+					"text": "電腦名稱"
+				},
+				{
+					"id": "t_hw",
+					"text": "硬體"
+				},
+				{
+					"id": "t_adv",
+					"text": "進階",
+					"active": true
+				},
+				{
+					"id": "t_prot",
+					"text": "系統保護"
+				},
+				{
+					"id": "t_remote",
+					"text": "遠端"
+				}
 			],
-			"footer": [{"id": "ok", "text": "確定"}, {"id": "cancel", "text": "取消"}, {"id": "apply", "text": "套用(A)"}]},
-		{"id": "envvars", "type": "window", "title": "環境變數", "body": [
-			{"group": {"id": "user", "title": "student 的使用者變數(U)", "body": [
-				{"table": {"columns": ["變數", "值"], "rows": [
-					{"id": "u_onedrive", "cells": ["OneDriveConsumer", "C:\\Users\\student\\OneDrive"]},
-					{"id": "u_path", "cells": ["Path", "C:\\Users\\student\\AppData\\Local\\..."]},
-					{"id": "u_temp", "cells": ["TEMP", "C:\\Users\\student\\AppData\\Local\\Temp"]}
-				]}},
-				{"buttons": {"items": [{"id": "u_new", "text": "新增(N)..."}, {"id": "u_edit", "text": "編輯(E)..."}, {"id": "u_del", "text": "刪除(D)"}], "align": "right"}}
-			]}},
-			{"group": {"id": "sys", "title": "系統變數(S)", "body": [
-				{"table": {"columns": ["變數", "值"], "rows": [
-					{"id": "s_comspec", "cells": ["ComSpec", "C:\\WINDOWS\\system32\\cmd.exe"]},
-					{"id": "s_os", "cells": ["OS", "Windows_NT"]},
-					{"id": "s_path", "cells": ["Path", "C:\\WINDOWS\\system32;..."]}
-				]}},
-				{"buttons": {"items": [{"id": "s_new", "text": "新增(W)..."}, {"id": "s_edit", "text": "編輯(I)..."}, {"id": "s_del", "text": "刪除(L)"}], "align": "right"}}
-			]}}
-		], "footer": [{"id": "ok", "text": "確定"}, {"id": "cancel", "text": "取消"}]},
-		{"id": "editpath", "type": "window", "title": "編輯環境變數", "body": [
-			{"list": {"rows": [{"id": "r0", "text": "%USERPROFILE%\\AppData\\Local\\Microsoft\\WindowsApps"}, {"id": "new", "text": ""}], "min_rows": 5,
-				"side": [[{"id": "b_new", "text": "新增(N)"}, {"id": "b_edit", "text": "編輯(E)"}, {"id": "b_browse", "text": "瀏覽(B)..."}, {"id": "b_del", "text": "刪除(D)"}],
-					[{"id": "b_up", "text": "上移(U)"}, {"id": "b_down", "text": "下移(O)"}], [{"id": "b_text", "text": "編輯文字(T)..."}]]}}
-		], "footer": [{"id": "ok", "text": "確定"}, {"id": "cancel", "text": "取消"}]},
-		{"id": "keep_tip", "type": "note", "text": "原本的項目不要刪，三個視窗都要按「確定」", "style": "small"},
-		{"id": "term", "type": "terminal", "title": "終端機（重新開啟）", "prompt": "C:\\cs101>"},
-		{"id": "sample", "type": "note", "text": "版本號依安裝而不同（教材示例）", "style": "small"},
-		{"id": "mouse", "type": "cursor"}
+			"body": [
+				{
+					"group": {
+						"title": "效能",
+						"body": [
+							{
+								"buttons": {
+									"items": [
+										{
+											"id": "perf",
+											"text": "設定(S)..."
+										}
+									],
+									"align": "right"
+								}
+							}
+						]
+					}
+				},
+				{
+					"group": {
+						"title": "使用者設定檔",
+						"body": [
+							{
+								"buttons": {
+									"items": [
+										{
+											"id": "profile",
+											"text": "設定(E)..."
+										}
+									],
+									"align": "right"
+								}
+							}
+						]
+					}
+				},
+				{
+					"group": {
+						"title": "啟動及修復",
+						"body": [
+							{
+								"buttons": {
+									"items": [
+										{
+											"id": "startup",
+											"text": "設定(T)..."
+										}
+									],
+									"align": "right"
+								}
+							}
+						]
+					}
+				},
+				{
+					"buttons": {
+						"items": [
+							{
+								"id": "envbtn",
+								"text": "環境變數(N)..."
+							}
+						],
+						"align": "right"
+					}
+				}
+			],
+			"footer": [
+				{
+					"id": "ok",
+					"text": "確定"
+				},
+				{
+					"id": "cancel",
+					"text": "取消"
+				},
+				{
+					"id": "apply",
+					"text": "套用(A)"
+				}
+			]
+		},
+		{
+			"id": "envvars",
+			"type": "window",
+			"title": "環境變數",
+			"body": [
+				{
+					"group": {
+						"id": "user",
+						"title": "student 的使用者變數(U)",
+						"body": [
+							{
+								"table": {
+									"columns": [
+										"變數",
+										"值"
+									],
+									"rows": [
+										{
+											"id": "u_onedrive",
+											"cells": [
+												"OneDriveConsumer",
+												"C:\\Users\\student\\OneDrive"
+											]
+										},
+										{
+											"id": "u_path",
+											"cells": [
+												"Path",
+												"C:\\Users\\student\\AppData\\Local\\..."
+											]
+										},
+										{
+											"id": "u_temp",
+											"cells": [
+												"TEMP",
+												"C:\\Users\\student\\AppData\\Local\\Temp"
+											]
+										}
+									]
+								}
+							},
+							{
+								"buttons": {
+									"items": [
+										{
+											"id": "u_new",
+											"text": "新增(N)..."
+										},
+										{
+											"id": "u_edit",
+											"text": "編輯(E)..."
+										},
+										{
+											"id": "u_del",
+											"text": "刪除(D)"
+										}
+									],
+									"align": "right"
+								}
+							}
+						]
+					}
+				},
+				{
+					"group": {
+						"id": "sys",
+						"title": "系統變數(S)",
+						"body": [
+							{
+								"table": {
+									"columns": [
+										"變數",
+										"值"
+									],
+									"rows": [
+										{
+											"id": "s_comspec",
+											"cells": [
+												"ComSpec",
+												"C:\\WINDOWS\\system32\\cmd.exe"
+											]
+										},
+										{
+											"id": "s_os",
+											"cells": [
+												"OS",
+												"Windows_NT"
+											]
+										},
+										{
+											"id": "s_path",
+											"cells": [
+												"Path",
+												"C:\\WINDOWS\\system32;..."
+											]
+										}
+									]
+								}
+							},
+							{
+								"buttons": {
+									"items": [
+										{
+											"id": "s_new",
+											"text": "新增(W)..."
+										},
+										{
+											"id": "s_edit",
+											"text": "編輯(I)..."
+										},
+										{
+											"id": "s_del",
+											"text": "刪除(L)"
+										}
+									],
+									"align": "right"
+								}
+							}
+						]
+					}
+				}
+			],
+			"footer": [
+				{
+					"id": "ok",
+					"text": "確定"
+				},
+				{
+					"id": "cancel",
+					"text": "取消"
+				}
+			]
+		},
+		{
+			"id": "editpath",
+			"type": "window",
+			"title": "編輯環境變數",
+			"body": [
+				{
+					"list": {
+						"rows": [
+							{
+								"id": "r0",
+								"text": "%USERPROFILE%\\AppData\\Local\\Microsoft\\WindowsApps"
+							},
+							{
+								"id": "new",
+								"text": ""
+							}
+						],
+						"min_rows": 5,
+						"side": [
+							[
+								{
+									"id": "b_new",
+									"text": "新增(N)"
+								},
+								{
+									"id": "b_edit",
+									"text": "編輯(E)"
+								},
+								{
+									"id": "b_browse",
+									"text": "瀏覽(B)..."
+								},
+								{
+									"id": "b_del",
+									"text": "刪除(D)"
+								}
+							],
+							[
+								{
+									"id": "b_up",
+									"text": "上移(U)"
+								},
+								{
+									"id": "b_down",
+									"text": "下移(O)"
+								}
+							],
+							[
+								{
+									"id": "b_text",
+									"text": "編輯文字(T)..."
+								}
+							]
+						]
+					}
+				}
+			],
+			"footer": [
+				{
+					"id": "ok",
+					"text": "確定"
+				},
+				{
+					"id": "cancel",
+					"text": "取消"
+				}
+			]
+		},
+		{
+			"id": "keep_tip",
+			"type": "note",
+			"text": "原本的項目不要刪，三個視窗都要按「確定」",
+			"style": "small"
+		},
+		{
+			"id": "term",
+			"type": "terminal",
+			"title": "終端機（重新開啟）",
+			"prompt": "C:\\cs101>"
+		},
+		{
+			"id": "sample",
+			"type": "note",
+			"text": "版本號依安裝而不同（教材示例）",
+			"style": "small"
+		},
+		{
+			"id": "checks",
+			"type": "list",
+			"title": "還是出現「不是內部或外部命令」？",
+			"rows": [
+				"① 終端機整個重開（VS Code 也要）",
+				"② 加的是資料夾，不是 gcc.exe",
+				"③ 用 where gcc 看實際路徑"
+			]
+		},
+		{
+			"id": "mouse",
+			"type": "cursor"
+		}
 	],
 	"scenes": [
-		{"id": "open", "title": "打開環境變數設定", "label": "① 搜尋設定", "layout": {"stack": ["search"]}, "beats": [
-			{"say": "按下 Windows 鍵，輸入「環境變數」，", "do": [
-				{"act": "show", "target": "search"},
-				{"act": "input", "target": "search:q", "text": "環境變數", "cue": "輸入"}
-			]},
-			{"say": "點選「編輯系統環境變數」。", "do": [{"act": "click", "target": "mouse", "on": "search:r0", "cue": "點選"}]}
-		]},
-		{"id": "props", "title": "系統內容：進階分頁", "label": "② 系統內容", "layout": {"stack": ["sysprops"]}, "beats": [
-			{"say": "跳出的視窗在「進階」分頁，", "do": [
-				{"act": "show", "target": "sysprops"},
-				{"act": "underline", "target": "sysprops:t_adv", "cue": "進階"}
-			]},
-			{"say": "按右下角的「環境變數」。", "do": [{"act": "click", "target": "mouse", "on": "sysprops:envbtn", "cue": "右下角"},
-				{"act": "focus", "target": "sysprops:envbtn", "with": "prev"}]}
-		]},
-		{"id": "vars", "title": "選使用者變數的 Path", "label": "③ 環境變數", "layout": {"stack": ["envvars"]}, "beats": [
-			{"say": "在上方的使用者變數裡，選取 Path，", "spoken": "在上方的使用者變數裡，選取 path，", "do": [
-				{"act": "show", "target": "envvars"},
-				{"act": "focus", "target": "envvars:user", "with": "prev"},
-				{"act": "click", "target": "mouse", "on": "envvars:u_path", "cue": "選取"}
-			]},
-			{"say": "再按「編輯」。下面的系統變數不用動。", "do": [
-				{"act": "click", "target": "mouse", "on": "envvars:u_edit", "cue": "編輯"},
-				{"act": "wide", "cue": "系統變數"},
-				{"act": "circle", "target": "envvars:sys", "with": "prev"}
-			]}
-		]},
-		{"id": "add", "title": "新增編譯器所在的資料夾", "label": "④ 新增路徑", "layout": {"stack": ["editpath", "keep_tip"]}, "beats": [
-			{"say": "按「新增」，貼上編譯器所在的資料夾，", "do": [
-				{"act": "show", "target": "editpath"},
-				{"act": "click", "target": "mouse", "on": "editpath:b_new", "cue": "新增"},
-				{"act": "input", "target": "editpath:new", "text": "C:\\msys64\\ucrt64\\bin"},
-				{"act": "focus", "target": "editpath:new", "with": "prev"}
-			]},
-			{"say": "原本的項目一個都不要刪。", "do": [{"act": "circle", "target": "editpath:r0", "cue": "原本"}]},
-			{"say": "然後每個視窗都按「確定」，總共三次。", "do": [
-				{"act": "wide", "cue": "然後"},
-				{"act": "click", "target": "mouse", "on": "editpath:ok", "cue": "確定"},
-				{"act": "write", "target": "keep_tip", "with": "prev"}
-			]}
-		]},
-		{"id": "verify", "title": "重開終端機，驗證", "label": "⑤ 驗證", "layout": {"stack": ["term", "sample"]}, "beats": [
-			{"say": "最後一定要重開終端機，再輸入版本指令。", "do": [
-				{"act": "show", "target": "term"},
-				{"act": "type", "target": "term", "text": "gcc --version", "cue": "輸入"}
-			]},
-			{"say": "看到版本資訊，就代表設定成功。", "do": [
-				{"act": "print", "target": "term", "lines": ["gcc (Rev1, Built by MSYS2 project) 13.2.0", "Copyright (C) 2023 Free Software Foundation, Inc."], "cue": "版本"},
-				{"act": "write", "target": "sample", "with": "prev"}
-			]}
-		]}
+		{
+			"id": "open",
+			"title": "打開環境變數設定",
+			"label": "① 搜尋設定",
+			"layout": {
+				"stack": [
+					"search"
+				]
+			},
+			"beats": [
+				{
+					"say": "按下 Windows 鍵，輸入「環境變數」，",
+					"do": [
+						{
+							"act": "show",
+							"target": "search"
+						},
+						{
+							"act": "input",
+							"target": "search:q",
+							"text": "環境變數",
+							"cue": "輸入"
+						}
+					]
+				},
+				{
+					"say": "點選「編輯系統環境變數」。",
+					"do": [
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "search:r0",
+							"cue": "點選"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "props",
+			"title": "系統內容：進階分頁",
+			"label": "② 系統內容",
+			"layout": {
+				"stack": [
+					"sysprops"
+				]
+			},
+			"beats": [
+				{
+					"say": "跳出的視窗在「進階」分頁，",
+					"do": [
+						{
+							"act": "show",
+							"target": "sysprops"
+						},
+						{
+							"act": "underline",
+							"target": "sysprops:t_adv",
+							"cue": "進階"
+						}
+					]
+				},
+				{
+					"say": "按右下角的「環境變數」。",
+					"do": [
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "sysprops:envbtn",
+							"cue": "右下角"
+						},
+						{
+							"act": "focus",
+							"target": "sysprops:envbtn",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "vars",
+			"title": "選使用者變數的 Path",
+			"label": "③ 環境變數",
+			"layout": {
+				"stack": [
+					"envvars"
+				]
+			},
+			"beats": [
+				{
+					"say": "在上方的使用者變數裡，選取 Path，",
+					"spoken": "在上方的使用者變數裡，選取 path，",
+					"do": [
+						{
+							"act": "show",
+							"target": "envvars"
+						},
+						{
+							"act": "focus",
+							"target": "envvars:user",
+							"with": "prev"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "envvars:u_path",
+							"cue": "選取"
+						}
+					]
+				},
+				{
+					"say": "再按「編輯」。下面的系統變數不用動。",
+					"do": [
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "envvars:u_edit",
+							"cue": "編輯"
+						},
+						{
+							"act": "wide",
+							"cue": "系統變數"
+						},
+						{
+							"act": "circle",
+							"target": "envvars:sys",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "add",
+			"title": "新增編譯器所在的資料夾",
+			"label": "④ 新增路徑",
+			"layout": {
+				"stack": [
+					"editpath",
+					"keep_tip"
+				]
+			},
+			"beats": [
+				{
+					"say": "按「新增」，貼上編譯器所在的資料夾，",
+					"do": [
+						{
+							"act": "show",
+							"target": "editpath"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "editpath:b_new",
+							"cue": "新增"
+						},
+						{
+							"act": "input",
+							"target": "editpath:new",
+							"text": "C:\\msys64\\ucrt64\\bin"
+						},
+						{
+							"act": "focus",
+							"target": "editpath:new",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "原本的項目一個都不要刪。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "editpath:r0",
+							"cue": "原本"
+						}
+					]
+				},
+				{
+					"say": "然後每個視窗都按「確定」，總共三次。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "然後"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "editpath:ok",
+							"cue": "確定"
+						},
+						{
+							"act": "write",
+							"target": "keep_tip",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "verify",
+			"title": "重開終端機，驗證",
+			"label": "⑤ 驗證",
+			"layout": {
+				"stack": [
+					"term",
+					"sample"
+				]
+			},
+			"beats": [
+				{
+					"say": "最後一定要重開終端機，再輸入版本指令。",
+					"do": [
+						{
+							"act": "show",
+							"target": "term"
+						},
+						{
+							"act": "type",
+							"target": "term",
+							"text": "gcc --version",
+							"cue": "輸入"
+						}
+					]
+				},
+				{
+					"say": "看到版本資訊，就代表設定成功。",
+					"do": [
+						{
+							"act": "print",
+							"target": "term",
+							"lines": [
+								"gcc (Rev1, Built by MSYS2 project) 13.2.0",
+								"Copyright (C) 2023 Free Software Foundation, Inc."
+							],
+							"cue": "版本"
+						},
+						{
+							"act": "write",
+							"target": "sample",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "debug",
+			"title": "還是找不到？三個檢查",
+			"label": "⑥ 除錯",
+			"keep": [
+				"term"
+			],
+			"layout": {
+				"row": [
+					"term",
+					"checks"
+				]
+			},
+			"beats": [
+				{
+					"say": "如果還是說找不到，先檢查三件事：",
+					"do": [
+						{
+							"act": "show",
+							"target": "checks"
+						}
+					]
+				},
+				{
+					"say": "終端機要整個重開，VS Code 裡的也算。",
+					"spoken": "終端機要整個重開，編輯器裡的終端機也算。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "checks:r0",
+							"cue": "重開"
+						}
+					]
+				},
+				{
+					"say": "加的是資料夾，不是執行檔本身。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "checks:r1",
+							"cue": "資料夾"
+						}
+					]
+				},
+				{
+					"say": "再用 where 指令，看系統實際找到哪一個。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "checks:r2",
+							"cue": "where"
+						},
+						{
+							"act": "type",
+							"target": "term",
+							"text": "where gcc",
+							"with": "prev"
+						},
+						{
+							"act": "print",
+							"target": "term",
+							"lines": [
+								"C:\\msys64\\ucrt64\\bin\\gcc.exe"
+							],
+							"cue": "實際"
+						}
+					]
+				},
+				{
+					"say": "列出多個時，排第一的才會被執行。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "term:line4",
+							"cue": "第一"
+						}
+					]
+				}
+			]
+		}
 	]
 }
