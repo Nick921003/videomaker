@@ -70,11 +70,13 @@ class TestBudget(unittest.TestCase):
 	def test_最壞情況會超過上限就拒絕呼叫(self):
 		with tempfile.TemporaryDirectory() as d:
 			b = BA.Budget(os.path.join(d, "usage.jsonl"), 0.10)
-			b.guard(1000, 1000)
-			usd = b.record("scene", {"in": 1000, "out": 3000, "cache_read": 0, "cache_write": 0})
+			b.guard("claude-opus-5-5", 1000, 1000)
+			usd = b.record("scene", "claude-opus-5-5", {"in": 1000, "out": 3000, "cache_read": 0, "cache_write": 0})
 			self.assertAlmostEqual(usd, (1000 * 4 + 3000 * 20) / 1e6)
+			# 同樣用量：Opus 最壞 US$0.185 會超過剩餘預算，Gemini 最壞 US$0.034 不會
 			with self.assertRaises(BA.BudgetExceeded):
-				b.guard(10000, 12000)
+				b.guard("claude-opus-5-5", 5000, 8000)
+			b.guard("gemini-3.8-flash", 5000, 8000)
 
 
 if __name__ == "__main__":

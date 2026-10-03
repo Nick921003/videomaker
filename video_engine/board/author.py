@@ -24,10 +24,14 @@ sys.path.insert(0, os.path.dirname(HERE))
 import compile as BC
 from build import build
 
-MODEL = "claude-opus-5-5"
-# USD／百萬 tokens（2026-10 牌價）；快取寫入以 5 分鐘快取計
-PRICE = {"in": 4.0, "out": 20.0, "cache_read": 0.20, "cache_write": 5.0}
-MAX_TOKENS = {"plan": 8000, "scene": 12000}
+# 分工（使用者原始設計）：整理教材用便宜的長文模型，分鏡需要教學與畫面判斷，用強模型
+DEFAULT_MODEL = {"plan": "google:gemini-3.8-flash", "scene": "anthropic:claude-opus-5-5"}
+# USD／百萬 tokens（2026-10 牌價）；Anthropic 快取寫入以 5 分鐘快取計，Gemini 思考 tokens 以輸出計價
+PRICE = {
+	"claude-opus-5-5": {"in": 4.0, "out": 20.0, "cache_read": 0.20, "cache_write": 5.0},
+	"gemini-3.8-flash": {"in": 0.75, "out": 3.75, "cache_read": 0.075, "cache_write": 0.75},
+}
+MAX_TOKENS = {"plan": 16000, "scene": 12000}
 MAX_REPAIRS = 2
 SAY_MAX = 40
 ENGLISH_OK = {"Windows"}  # 與 narrate.py 一致：實測唸得清楚的英文字
@@ -50,16 +54,18 @@ class Budget:
 		with open(self.path, encoding="utf-8") as f:
 			return sum(json.loads(line)["usd"] for line in f if line.strip())
 
-	def guard(self, input_tokens, max_tokens):
-		worst = (input_tokens * PRICE["cache_write"] + max_tokens * PRICE["out"]) / 1e6
+	def guard(self, model, input_tokens, max_tokens):
+		p = PRICE[model]
+		worst = (input_tokens * max(p["in"], p["cache_write"]) + max_tokens * p["out"]) / 1e6
 		if self.spent() + worst > self.cap:
 			raise BudgetExceeded(f"已花 US${self.spent():.3f}，本次最壞 US${worst:.3f}，會超過上限 US${self.cap:.2f}")
 
-	def record(self, stage, usage):
-		usd = (usage["in"] * PRICE["in"] + usage["out"] * PRICE["out"] + usage["cache_read"] * PRICE["cache_read"]
-			+ usage["cache_write"] * PRICE["cache_write"]) / 1e6
+	def record(self, stage, model, usage):
+		p = PRICE[model]
+		usd = (usage["in"] * p["in"] + usage["out"] * p["out"] + usage["cache_read"] * p["cache_read"]
+			+ usage["cache_write"] * p["cache_write"]) / 1e6
 		with open(self.path, "a", encoding="utf-8") as f:
-			f.write(json.dumps({"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "stage": stage, "model": MODEL, **usage, "usd": round(usd, 5)}) + "\n")
+			f.write(json.dumps({"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "stage": stage, "model": model, **usage, "usd": round(usd, 5)}) + "\n")
 		return usd
 
 
@@ -78,30 +84,54 @@ def first_json(text):
 	raise ValueError(f"回應裡找不到 JSON：{text[:200]}")
 
 
-def call(budget, stage, system, messages):
+def call_anthropic(budget, stage, model, system, messages):
 	import anthropic
 	client = anthropic.Anthropic()
 	sys_blocks = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
-	count = client.messages.count_tokens(model=MODEL, system=sys_blocks, messages=messages, thinking={"type": "adaptive"})
-	budget.guard(count.input_tokens, MAX_TOKENS[stage])
-	resp = client.messages.create(model=MODEL, max_tokens=MAX_TOKENS[stage], system=sys_blocks, messages=messages,
+	count = client.messages.count_tokens(model=model, system=sys_blocks, messages=messages, thinking={"type": "adaptive"})
+	budget.guard(model, count.input_tokens, MAX_TOKENS[stage])
+	resp = client.messages.create(model=model, max_tokens=MAX_TOKENS[stage], system=sys_blocks, messages=messages,
 		thinking={"type": "adaptive"}, output_config={"effort": "medium"})
 	u = resp.usage
 	usage = {"in": u.input_tokens, "out": u.output_tokens, "cache_read": u.cache_read_input_tokens or 0,
 		"cache_write": u.cache_creation_input_tokens or 0}
-	usd = budget.record(stage, usage)
-	print(f"  {stage}：輸入 {usage['in']}＋快取讀 {usage['cache_read']}＋快取寫 {usage['cache_write']}，輸出 {usage['out']}，US${usd:.4f}（累計 US${budget.spent():.4f}）", flush=True)
-	if resp.stop_reason == "max_tokens":
-		raise RuntimeError(f"{stage} 輸出達到上限 {MAX_TOKENS[stage]}")
 	text = next((b.text for b in resp.content if b.type == "text"), "")
+	return text, usage, resp.stop_reason == "max_tokens"
+
+
+def call_google(budget, stage, model, system, messages):
+	from google import genai
+	from google.genai import types
+	client = genai.Client()
+	contents = [types.Content(role="user" if m["role"] == "user" else "model", parts=[types.Part(text=m["content"])]) for m in messages]
+	count = client.models.count_tokens(model=model, contents=[types.Content(role="user", parts=[types.Part(text=system)])] + contents)
+	budget.guard(model, count.total_tokens, MAX_TOKENS[stage])
+	resp = client.models.generate_content(model=model, contents=contents, config=types.GenerateContentConfig(
+		system_instruction=system, max_output_tokens=MAX_TOKENS[stage], response_mime_type="application/json"))
+	u = resp.usage_metadata
+	cached = u.cached_content_token_count or 0
+	usage = {"in": (u.prompt_token_count or 0) - cached, "out": (u.candidates_token_count or 0) + (u.thoughts_token_count or 0),
+		"cache_read": cached, "cache_write": 0}
+	finish = resp.candidates[0].finish_reason if resp.candidates else None
+	return resp.text or "", usage, str(finish).endswith("MAX_TOKENS")
+
+
+def call(budget, stage, system, messages, target):
+	provider, model = target.split(":", 1)
+	text, usage, truncated = (call_google if provider == "google" else call_anthropic)(budget, stage, model, system, messages)
+	usd = budget.record(stage, model, usage)
+	print(f"  {stage}［{model}］：輸入 {usage['in']}＋快取讀 {usage['cache_read']}＋快取寫 {usage['cache_write']}，輸出 {usage['out']}，US${usd:.4f}（累計 US${budget.spent():.4f}）", flush=True)
+	if truncated:
+		raise RuntimeError(f"{stage} 輸出達到上限 {MAX_TOKENS[stage]}")
 	return text
 
 
-def converse(budget, stage, system, user, validate, failed_path=None):
+def converse(budget, stage, system, user, validate, failed_path=None, target=None):
+	target = target or DEFAULT_MODEL[stage]
 	"""呼叫 → 驗證 → 有問題就把問題清單丟回去，只修那些，最多 MAX_REPAIRS 次。"""
 	messages = [{"role": "user", "content": user}]
 	for attempt in range(MAX_REPAIRS + 1):
-		text = call(budget, stage, system, messages)
+		text = call(budget, stage, system, messages, target)
 		try:
 			data = first_json(text)
 			problems = validate(data)
@@ -191,13 +221,13 @@ def plan_problems(plan, md):
 	return problems
 
 
-def do_plan(md_path, out_dir, budget):
+def do_plan(md_path, out_dir, budget, target=None):
 	with open(md_path, encoding="utf-8") as f:
 		md = f.read()
 	with open(os.path.join(HERE, "prompts", "plan.system.md"), encoding="utf-8") as f:
 		system = f.read()
 	print(f"規劃：{md_path}（學習目標 {len(objectives_of(md))} 條）", flush=True)
-	plan, repairs = converse(budget, "plan", system, md, lambda p: plan_problems(p, md))
+	plan, repairs = converse(budget, "plan", system, md, lambda p: plan_problems(p, md), target=target)
 	with open(os.path.join(out_dir, "plan.json"), "w", encoding="utf-8") as f:
 		json.dump(plan, f, ensure_ascii=False, indent="\t")
 	for s in stories_of(plan):
@@ -249,7 +279,7 @@ def scene_problems(doc, target, catalog):
 	return problems or measure_problems(tl)
 
 
-def do_scene(md_path, out_dir, seg_id, budget):
+def do_scene(md_path, out_dir, seg_id, budget, target=None):
 	with open(md_path, encoding="utf-8") as f:
 		md = f.read()
 	with open(os.path.join(out_dir, "plan.json"), encoding="utf-8") as f:
@@ -276,7 +306,7 @@ def do_scene(md_path, out_dir, seg_id, budget):
 	])
 	print(f"分鏡：{seg_id} {seg['title']}（{seg['sec']}s）", flush=True)
 	doc, repairs = converse(budget, "scene", system, user, lambda d: scene_problems(d, seg["sec"], catalog),
-		failed_path=os.path.join(out_dir, f"{seg_id}.failed.json"))
+		failed_path=os.path.join(out_dir, f"{seg_id}.failed.json"), target=target)
 	path = os.path.join(out_dir, f"{seg_id}.scene.json")
 	with open(path, "w", encoding="utf-8") as f:
 		json.dump(doc, f, ensure_ascii=False, indent="\t")
@@ -293,6 +323,7 @@ def main():
 	ap.add_argument("out_dir")
 	ap.add_argument("segment", nargs="?")
 	ap.add_argument("--budget-usd", type=float, default=2.0)
+	ap.add_argument("--model", help="覆寫預設模型，例 anthropic:claude-opus-5-5 或 google:gemini-3.8-flash")
 	args = ap.parse_args()
 	os.makedirs(args.out_dir, exist_ok=True)
 	sys.path.insert(0, os.path.dirname(HERE))
@@ -301,9 +332,9 @@ def main():
 	budget = Budget(os.path.join(args.out_dir, "usage.jsonl"), args.budget_usd)
 	try:
 		if args.stage == "plan":
-			do_plan(args.md, args.out_dir, budget)
+			do_plan(args.md, args.out_dir, budget, args.model)
 		else:
-			do_scene(args.md, args.out_dir, args.segment, budget)
+			do_scene(args.md, args.out_dir, args.segment, budget, args.model)
 	except BudgetExceeded as e:
 		sys.exit(f"預算上限：{e}")
 	print(f"累計花費 US${budget.spent():.4f}／上限 US${budget.cap:.2f}")
