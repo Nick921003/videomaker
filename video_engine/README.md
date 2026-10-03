@@ -49,10 +49,10 @@
 ## 換模型
 
 ```bash
-VIDEO_ENGINE_LLM=google:gemini-3.7-flash .venv/bin/python video_engine/run.py <教材>
+VIDEO_ENGINE_LLM=google:gemini-3.8-flash .venv/bin/python video_engine/run.py <教材>
 ```
 
-沒設就用各階段預設（見 `llm.py`）：結構化 `claude-opus-5`、編排 `gemini-3.7-flash`。
+沒設就用各階段預設（見 `llm.py`）：結構化 `claude-opus-5-5`、編排 `gemini-3.8-flash`。
 LLM SDK 裝在獨立的 `.venv-llm`，避免 `google-genai` 連帶升級 pydantic 弄壞訓練環境。
 
 ## 改東西改哪裡
