@@ -16,7 +16,7 @@ def load(name):
 		return json.load(f)
 
 
-PLAN = {"unit_title": "環境建立", "glossary": [{"term": "PATH", "say_as": "路徑變數"}, {"term": "gcc", "say_as": "編譯器"}],
+PLAN = {"unit_title": "環境建立：VS Code + GCC", "glossary": [{"term": "PATH", "say_as": "路徑變數"}, {"term": "gcc", "say_as": "編譯器"}],
 	"stories": [{"id": "a", "title": "PATH 是什麼"}, {"id": "b", "title": "怎麼把 gcc 加進去"}]}
 
 
@@ -44,7 +44,17 @@ class TestCompose(unittest.TestCase):
 		self.assertEqual(ids[-1], "outro")
 		toc1 = next(s for s in self.doc["scenes"] if s["id"] == "toc1")
 		self.assertEqual(toc1["beats"][0]["spoken"], "第二個重點：怎麼把 編譯器 加進去。")
-		self.assertEqual(self.doc["scenes"][0]["beats"][0]["say"], "這支影片用兩個重點，帶你看懂環境建立。")
+		self.assertEqual(self.doc["scenes"][0]["beats"][0]["say"], "這支影片用兩個重點，帶你看懂環境建立：VS Code + GCC。")
+
+	def test_程式產生的旁白都不夾英文(self):
+		import narrate
+		PLAN["glossary"].append({"term": "VS Code", "say_as": "編輯器"})
+		doc = CO.compose(PLAN, [load("env_path"), load("env_path_howto")], ["a", "b"])
+		PLAN["glossary"].pop()
+		for s in doc["scenes"]:
+			if s["id"].startswith("toc") or s["id"] == "outro":
+				for b in s["beats"]:
+					self.assertIsNone(narrate.speech_problems(b.get("spoken") or b["say"]), b)
 
 
 if __name__ == "__main__":

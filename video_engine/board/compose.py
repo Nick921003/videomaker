@@ -84,6 +84,9 @@ def compose(plan, scenes, story_ids):
 		out["scenes"] += story["scenes"]
 	out["scenes"].append({"id": "outro", "title": f"{unit}：重點回顧", "label": "重點目錄", "keep": ["toc"],
 		"layout": {"stack": ["toc"]}, "beats": [{"say": "卡在哪一個重點，就回頭再看那一段。", "do": [{"act": "underline", "target": "toc:title"}]}]})
+	# 程式產生的開場、過場、收尾也要套唸法（單元標題常含 VS Code、GCC 這類縮寫）；各支內容已在生成時套過
+	generated = {"scenes": [s for s in out["scenes"] if s["id"].startswith("toc") or s["id"] == "outro"]}
+	apply_glossary(generated, glossary)
 	return out
 
 
