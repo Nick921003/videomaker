@@ -1,0 +1,22 @@
+{
+	"type": "window",
+	"body": [
+		{
+			"field": {
+				"id": "q"
+			}
+		},
+		{
+			"list": {
+				"rows": [
+					{
+						"id": "r0",
+						"text": "編輯系統環境變數"
+					}
+				],
+				"min_rows": 1
+			}
+		}
+	],
+	"_doc": "開始選單搜尋：field q＋結果列 r0；結果文字取自教材；以 Windows 11 繁中版真實截圖核對（docs/agy_results/2026-10-04-windows-path-ui-zh-tw.md）"
+}

@@ -50,7 +50,15 @@
 - 動作：`input` 在 `視窗id:元素id`（field 或清單列）逐字打入 `text`；要預留空白列給 input 就寫 `{"id": "new", "text": ""}`
 - 被 cursor 點到時：按鈕閃一下；清單列／表格列變成選取狀態
 - 錨點：每個有 `id` 的元素（分頁、輸入框、列、按鈕、group）
-- **介面文字只能用教材原文裡出現的字樣**（按鈕名稱含 `(N)` 這類快捷字母照抄），教材沒寫的不要編。
+- **下列畫面一律用 preset**（已用真實截圖核對過），物件只寫 `{"id": "…", "preset": "…"}`，要改標題等才另外覆寫屬性。
+  preset 以外的介面才自己寫，且**介面文字只能用教材原文裡出現的字樣**，教材沒寫的不要編。
+
+| preset | 畫面 | 可指的元素 id |
+| --- | --- | --- |
+| `win11.search` | 開始選單搜尋 | 輸入框 `q`；結果列 `r0`「編輯系統環境變數」 |
+| `win11.sys_props` | 系統內容・進階分頁 | 分頁 `t_name` `t_hw` `t_adv`（進階）`t_prot` `t_remote`；三個「設定」鈕 `perf` `profile` `startup`；`envbtn`「環境變數(N)...」；`ok` `cancel` `apply` |
+| `win11.env_vars` | 環境變數 | 群組 `user`（使用者變數）：列 `u_onedrive` `u_path`（Path）`u_temp`，鈕 `u_new` `u_edit`「編輯(E)...」`u_del`；群組 `sys`（系統變數）：列 `s_comspec` `s_os` `s_path`，鈕 `s_new` `s_edit` `s_del`；`ok` `cancel` |
+| `win11.edit_env_var` | 編輯環境變數（Path） | 清單列 `r0`（原有的 WindowsApps）、`new`（空白列，用 `input` 打字）；右側鈕 `b_new`「新增(N)」`b_edit` `b_browse` `b_del` `b_up` `b_down` `b_text`；`ok` `cancel` |
 
 ## cursor — 滑鼠游標（不佔版面，畫在最上層；整片只需一個）
 - 動作：`click` 移到 `on`（錨點）並點一下｜`move` 移到 `to`

@@ -287,3 +287,23 @@ class TestFloatingAndNamedAnchors(unittest.TestCase):
 		self.assertEqual(tl["epochs"][-1]["tree"], {"stack": ["w"]})
 		self.assertFalse(any("沒列到" in w for w in tl["warnings"]))
 		self.assertTrue(tl["visibility"]["m"])
+
+
+class TestPresets(unittest.TestCase):
+	def doc(self, obj, target="w:envbtn"):
+		return one_scene([obj, {"id": "m", "type": "cursor"}], [{"act": "click", "target": "m", "on": target}], layout={"stack": ["w"]})
+
+	def test_preset_展開成完整物件且錨點可用(self):
+		tl = compiled(self.doc({"id": "w", "preset": "win11.sys_props"}))
+		w = tl["objects"]["w"]
+		self.assertEqual((w["type"], w["title"], w["_preset"]), ("window", "系統內容", "win11.sys_props"))
+		self.assertNotIn("_doc", w)
+
+	def test_物件自己的屬性覆寫preset(self):
+		tl = compiled(self.doc({"id": "w", "preset": "win11.sys_props", "title": "自訂"}))
+		self.assertEqual(tl["objects"]["w"]["title"], "自訂")
+
+	def test_不存在的preset要報錯(self):
+		for name in ("win11.nope", "../catalog", "win11"):
+			with self.assertRaises(ValueError, msg=name):
+				compiled(self.doc({"id": "w", "preset": name}))

@@ -1,0 +1,133 @@
+{
+	"type": "window",
+	"title": "環境變數",
+	"body": [
+		{
+			"group": {
+				"id": "user",
+				"title": "student 的使用者變數(U)",
+				"body": [
+					{
+						"table": {
+							"columns": [
+								"變數",
+								"值"
+							],
+							"rows": [
+								{
+									"id": "u_onedrive",
+									"cells": [
+										"OneDriveConsumer",
+										"C:\\Users\\student\\OneDrive"
+									]
+								},
+								{
+									"id": "u_path",
+									"cells": [
+										"Path",
+										"C:\\Users\\student\\AppData\\Local\\..."
+									]
+								},
+								{
+									"id": "u_temp",
+									"cells": [
+										"TEMP",
+										"C:\\Users\\student\\AppData\\Local\\Temp"
+									]
+								}
+							]
+						}
+					},
+					{
+						"buttons": {
+							"items": [
+								{
+									"id": "u_new",
+									"text": "新增(N)..."
+								},
+								{
+									"id": "u_edit",
+									"text": "編輯(E)..."
+								},
+								{
+									"id": "u_del",
+									"text": "刪除(D)"
+								}
+							],
+							"align": "right"
+						}
+					}
+				]
+			}
+		},
+		{
+			"group": {
+				"id": "sys",
+				"title": "系統變數(S)",
+				"body": [
+					{
+						"table": {
+							"columns": [
+								"變數",
+								"值"
+							],
+							"rows": [
+								{
+									"id": "s_comspec",
+									"cells": [
+										"ComSpec",
+										"C:\\WINDOWS\\system32\\cmd.exe"
+									]
+								},
+								{
+									"id": "s_os",
+									"cells": [
+										"OS",
+										"Windows_NT"
+									]
+								},
+								{
+									"id": "s_path",
+									"cells": [
+										"Path",
+										"C:\\WINDOWS\\system32;..."
+									]
+								}
+							]
+						}
+					},
+					{
+						"buttons": {
+							"items": [
+								{
+									"id": "s_new",
+									"text": "新增(W)..."
+								},
+								{
+									"id": "s_edit",
+									"text": "編輯(I)..."
+								},
+								{
+									"id": "s_del",
+									"text": "刪除(L)"
+								}
+							],
+							"align": "right"
+						}
+					}
+				]
+			}
+		}
+	],
+	"footer": [
+		{
+			"id": "ok",
+			"text": "確定"
+		},
+		{
+			"id": "cancel",
+			"text": "取消"
+		}
+	],
+	"_doc": "環境變數（使用者變數＋系統變數）；以 Windows 11 繁中版真實截圖核對（docs/agy_results/2026-10-04-windows-path-ui-zh-tw.md）"
+}

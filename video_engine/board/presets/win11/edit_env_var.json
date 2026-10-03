@@ -1,0 +1,68 @@
+{
+	"type": "window",
+	"title": "編輯環境變數",
+	"body": [
+		{
+			"list": {
+				"rows": [
+					{
+						"id": "r0",
+						"text": "%USERPROFILE%\\AppData\\Local\\Microsoft\\WindowsApps"
+					},
+					{
+						"id": "new",
+						"text": ""
+					}
+				],
+				"min_rows": 5,
+				"side": [
+					[
+						{
+							"id": "b_new",
+							"text": "新增(N)"
+						},
+						{
+							"id": "b_edit",
+							"text": "編輯(E)"
+						},
+						{
+							"id": "b_browse",
+							"text": "瀏覽(B)..."
+						},
+						{
+							"id": "b_del",
+							"text": "刪除(D)"
+						}
+					],
+					[
+						{
+							"id": "b_up",
+							"text": "上移(U)"
+						},
+						{
+							"id": "b_down",
+							"text": "下移(O)"
+						}
+					],
+					[
+						{
+							"id": "b_text",
+							"text": "編輯文字(T)..."
+						}
+					]
+				]
+			}
+		}
+	],
+	"footer": [
+		{
+			"id": "ok",
+			"text": "確定"
+		},
+		{
+			"id": "cancel",
+			"text": "取消"
+		}
+	],
+	"_doc": "編輯環境變數（Path 清單，預留空白列 new 供 input）；以 Windows 11 繁中版真實截圖核對（docs/agy_results/2026-10-04-windows-path-ui-zh-tw.md）"
+}

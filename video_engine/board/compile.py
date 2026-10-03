@@ -87,6 +87,7 @@ class Compiler:
 	def normalize_objects(self):
 		objects = {}
 		for raw in self.doc["objects"]:
+			raw = self.expand_preset(raw)
 			obj = copy.deepcopy(raw)
 			oid = obj.get("id")
 			if not oid or ":" in oid or oid in objects:
@@ -115,6 +116,21 @@ class Compiler:
 						term_lines[oid] = term_lines.get(oid, 0) + len(a.get("lines") or [])
 		self.total_appends = appends
 		self.term_lines = term_lines
+
+	def expand_preset(self, raw):
+		"""已核對過的介面（例：win11.env_vars）：preset 提供全部屬性，物件自己寫的屬性覆寫它。"""
+		name = raw.get("preset")
+		if name is None:
+			return raw
+		path = os.path.join(HERE, "presets", *name.split(".")) + ".json"
+		if not re.fullmatch(r"[a-z0-9_]+(\.[a-z0-9_]+)+", name) or not os.path.exists(path):
+			raise ValueError(f"{raw.get('id')} 的 preset 不存在：{name}")
+		with open(path, encoding="utf-8") as f:
+			preset = json.load(f)
+		merged = {k: v for k, v in preset.items() if not k.startswith("_")}
+		merged.update({k: v for k, v in raw.items() if k != "preset"})
+		merged["_preset"] = name
+		return merged
 
 	def check_anchor(self, target):
 		obj_id, name = anchor_parts(target)

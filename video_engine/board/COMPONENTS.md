@@ -156,6 +156,10 @@ S=$(mktemp -d)
 - 錨點：每個有 `id` 的元素（分頁、field、清單列、表格列、按鈕、footer 按鈕、group 外框），全部由 state 算出。
 - 量測：以整片最大內容計（`input` 打進去的字也算），`measure` 不隨 t 改變。
 
+### 介面預設（presets/）
+- `presets/<平台>/<畫面>.json` 存已核對過的 window 屬性；scene 物件寫 `"preset": "win11.env_vars"`，編譯時展開，物件自己的屬性覆寫 preset。
+- 新增 preset 前必須以真實截圖核對文字與結構，`_doc` 註明出處。清單同步寫進 `prompts/components.md`（給 LLM 看）。
+
 ### cursor（游標，浮動物件）
 - `catalog` 標 `floating`：不佔版位、不在版面樹裡，只實作 `overlay`（世界座標），`draw` 留空，`measure` 回 `{w: 0, h: 0}`，`anchors` 回 `{}`。
 - `click`（`args.on`）：前 65% 從上一個位置以 ease 移到 `world.anchor(args.on)` 的中心，後 35% 畫點擊漣漪
