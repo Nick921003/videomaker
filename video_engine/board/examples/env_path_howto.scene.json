@@ -74,7 +74,7 @@
 			{"say": "按「新增」，貼上編譯器所在的資料夾，", "do": [
 				{"act": "show", "target": "editpath"},
 				{"act": "click", "target": "mouse", "on": "editpath:b_new", "cue": "新增"},
-				{"act": "input", "target": "editpath:new", "text": "C:\\msys64\\ucrt64\\bin", "cue": "貼上"}
+				{"act": "input", "target": "editpath:new", "text": "C:\\msys64\\ucrt64\\bin"}
 			]},
 			{"say": "原本的項目一個都不要刪。", "do": [{"act": "circle", "target": "editpath:r0", "cue": "原本"}]},
 			{"say": "然後每個視窗都按「確定」，總共三次。", "do": [
