@@ -127,6 +127,18 @@ timing.json ─┘   (絕對秒數、字幕)           ├─ 載入時：量字
 元件目錄同時存成 `board/catalog.json`（型別、必填屬性、動作與參數、錨點樣式、每項時長）。
 `compile.py` 用它驗證；測試確保 JS 端註冊的元件與目錄一致。子專案 3 會把它塞進 LLM prompt。
 
+### 外部元件參考
+
+依 `docs/HANDOFF_VIDEO_COMPONENT_RESEARCH_2026-10-03.md`（GPT 查證）。**借介面設計，不搬程式碼**：
+HyperFrames／Onda／Code Hike／Motion Canvas 都是 DOM 或 React 元件，綁各自的 runtime，
+Canvas 截圖拿不到；且已接受的是方格紙鉛筆風，外觀本來就得重畫，重畫外觀即元件的主要工作量。
+
+| 借什麼 | 來源 | 用在 |
+| --- | --- | --- |
+| command 逐字、輸出逐行、結尾留新 prompt、`cadence`；輸出行預留空間以透明度顯示 | HyperFrames `code-terminal-run` | `terminal`（本次） |
+| 程式 insert／replace／remove 變形、字元範圍 bbox 查詢 | Motion Canvas Code、Code Hike | `code` 的 diff 動作（子專案 2） |
+| 預期／實際左右對照的 slot | HyperFrames `comparison-split` | `compare` 元件（子專案 2） |
+
 ## 缺口與退化
 
 - 未知元件型別 → 改用 `note` 顯示 `fallback`（沒有就用 id），寫入缺口紀錄。
