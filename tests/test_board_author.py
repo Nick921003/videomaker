@@ -82,6 +82,14 @@ class TestGlossary(unittest.TestCase):
 		self.assertFalse(BA.narration_problems(doc, 1) and any("英文" in p for p in BA.narration_problems(doc, 1)))
 
 
+class TestLetters(unittest.TestCase):
+	def test_單獨字母自動換台灣口語唸法(self):
+		doc = {"scenes": [{"beats": [{"say": "C 是編譯式語言，-o 指定檔名。"}]}]}
+		BA.apply_glossary(doc, [])
+		self.assertEqual(doc["scenes"][0]["beats"][0]["spoken"], "西 是編譯式語言，-歐 指定檔名。")
+		self.assertFalse(any("英文" in p for p in BA.narration_problems(doc, 1)))
+
+
 class TestBudget(unittest.TestCase):
 	def test_最壞情況會超過上限就拒絕呼叫(self):
 		with tempfile.TemporaryDirectory() as d:

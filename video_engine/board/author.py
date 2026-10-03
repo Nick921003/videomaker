@@ -247,6 +247,11 @@ def do_plan(md_path, out_dir, budget, target=None):
 
 # ── 小節分鏡 ──
 
+# 單獨出現的字母照台灣口語唸（C 語言＝西語言）；整個單字或縮寫仍要靠詞彙表或 spoken
+LETTERS = dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ["欸", "逼", "西", "低", "依", "欸付", "基", "欸取", "愛", "傑", "開", "欸樓", "欸姆",
+	"恩", "歐", "披", "丘", "阿", "欸斯", "踢", "優", "威", "達布留", "欸克斯", "歪", "立"]))
+
+
 def apply_glossary(doc, glossary):
 	"""依單元詞彙表把旁白裡的英文術語換成中文唸法，寫進 spoken。程式處理，不花 tokens；換不掉的才交給閘退件。"""
 	terms = sorted((g for g in glossary if g.get("term") and g.get("say_as")), key=lambda g: -len(g["term"]))
@@ -257,6 +262,7 @@ def apply_glossary(doc, glossary):
 				for term in re.split(r"\s*/\s*", g["term"]):
 					if re.search(r"[A-Za-z]", term):
 						text = re.sub(r"(?<![A-Za-z])" + re.escape(term) + r"(?![A-Za-z])", g["say_as"], text, flags=re.I)
+			text = re.sub(r"(?<![A-Za-z])[A-Za-z](?![A-Za-z])", lambda m: LETTERS[m.group(0).upper()], text)
 			if text != (b.get("spoken") or b.get("say", "")):
 				b["spoken"] = text
 	return doc
@@ -283,14 +289,27 @@ def narration_problems(doc, target):
 	return problems
 
 
+CRASH_DIR = os.path.join(HERE, "..", "out", "check_crashes")
+
+
 def measure_problems(timeline):
 	with tempfile.TemporaryDirectory() as d:
 		build(timeline, d)
 		r = subprocess.run([PLAYWRIGHT_PY, os.path.join(HERE, "check.py"), d], capture_output=True, text=True)
 		if r.returncode == 0:
 			return []
-		with open(os.path.join(d, "check.json"), encoding="utf-8") as f:
-			return ["版面：" + p for p in json.load(f)["problems"]][:10]
+		report = os.path.join(d, "check.json")
+		if os.path.exists(report):
+			with open(report, encoding="utf-8") as f:
+				return ["版面：" + p for p in json.load(f)["problems"]][:10]
+	# 量測閘本身沒跑完：多半是元件遇到沒處理過的寫法而丟錯，是元件的 bug，存下時間軸供追查
+	os.makedirs(CRASH_DIR, exist_ok=True)
+	path = os.path.join(CRASH_DIR, time.strftime("%Y%m%d-%H%M%S") + ".timeline.json")
+	with open(path, "w", encoding="utf-8") as f:
+		json.dump(timeline, f, ensure_ascii=False)
+	last = (r.stderr.strip().splitlines() or ["（無訊息）"])[-1]
+	print(f"  量測閘執行失敗，時間軸存於 {path}：{last}", flush=True)
+	return [f"版面：畫面元件無法處理這份分鏡（{last[:200]}），請改用較單純的寫法"]
 
 
 def scene_problems(doc, target, catalog):
