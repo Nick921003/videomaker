@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Board</title>
+<style>
+	body { margin: 0; font-family: "Noto Sans CJK TC", "Microsoft JhengHei", sans-serif; }
+	main { max-width: 1280px; margin: 0 auto; padding: 12px; }
+	canvas { display: block; width: 100%; height: auto; }
+	nav { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+	nav input { flex: 1; }
+	nav button { padding: 6px 18px; }
+	body.export main { max-width: none; padding: 0; }
+	body.export canvas { width: 1920px; height: 1080px; }
+	body.export nav { display: none; }
+</style>
+</head>
+<body>
+<main>
+	<canvas id="board" width="1920" height="1080"></canvas>
+	<nav><button id="play">播放</button><input id="seek" type="range" min="0" step="0.01" aria-label="時間"><span id="clock"></span></nav>
+</main>
+<audio id="voice" preload="auto"></audio>
+<script src="board_data.js"></script>
+<script src="runtime/core.js"></script>
+<script src="runtime/layout.js"></script>
+<!-- COMPONENTS -->
+<script src="runtime/player.js"></script>
+</body>
+</html>

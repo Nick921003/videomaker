@@ -17,12 +17,12 @@
 			"styles": ["headline", "body", "accent", "code", "small"],
 			"anchors": [],
 			"actions": {
-				"write": {"per_char": 0.06, "min": 0.6, "max": 1.6, "blocks": true}
+				"write": {"per_char": 0.1, "min": 0.6, "max": 2.0, "blocks": true}
 			}
 		},
 		"cells": {
 			"req": ["count"],
-			"opt": ["label", "values", "tail", "index_labels"],
+			"opt": ["label", "values", "tail", "accent"],
 			"anchors": ["label", "i{n}"],
 			"actions": {
 				"fill": {"seq": "values", "per": [0.28, 0.6], "req": ["values"], "opt": ["from", "start"], "anchor_args": ["from"], "blocks": true},
@@ -53,7 +53,7 @@
 			"opt": [],
 			"anchors": ["m{n}"],
 			"actions": {
-				"reveal": {"seq": "items", "per": [0.3, 0.8], "blocks": true}
+				"reveal": {"seq": "items", "per": [0.3, 0.8], "opt": ["index"], "blocks": true}
 			}
 		},
 		"terminal": {

@@ -1,0 +1,9 @@
+{
+	"name": "notebook",
+	"label": "方格筆記本（A＋C 已接受版原色）",
+	"canvas": {"bg": "#ECE6DA", "grid": "#C7D3CB", "margin": "#A04435"},
+	"card": {"fill": "#FFFDF7", "edge": "#2E2622"},
+	"text": {"title": "#2E2622", "body": "#2E2622", "muted": "#796F62", "accent": "#A04435"},
+	"code": {"bg": "#19323B", "normal": "#F3F7F4", "muted": "#9DB1AE", "highlight": "#2F4E58", "error": "#F2A58E"},
+	"effects": {"pencil": "#2E2622", "highlight": "#D2AA78", "subtitle": "#ECE6DA"}
+}

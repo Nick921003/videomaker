@@ -211,6 +211,10 @@ class Compiler:
 				raise ValueError(f"{where} range 超出格數：{args['range']}")
 			return hi - lo + 1
 		if kind == "items":
+			if "index" in args:
+				if not 0 <= args["index"] < len(obj["items"]):
+					raise ValueError(f"{where} index 超出項目數：{args['index']}")
+				return 1
 			return len(obj["items"])
 		if kind == "chars":
 			return len(args["text"])
