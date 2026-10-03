@@ -41,7 +41,11 @@ def run(script, args, label, interpreter=None, stage=None):
 	t0 = time.time()
 	print(f"\n\033[1m▶ {label}\033[0m")
 	event(event="stage_start", stage=stage)
-	r = subprocess.run([interpreter or PY, os.path.join(HERE, script)] + args)
+	child_env = dict(os.environ)
+	if JSON_EVENTS and stage in ('lesson', 'actions'):
+		child_env['VIDEO_ENGINE_USAGE_EVENTS'] = '1'
+		child_env['VIDEO_ENGINE_USAGE_STAGE'] = stage
+	r = subprocess.run([interpreter or PY, os.path.join(HERE, script)] + args, env=child_env)
 	if r.returncode != 0:
 		event(event="stage_fail", stage=stage, code=r.returncode)
 		raise SystemExit(f"\n{label} 失敗（回傳碼 {r.returncode}），停在這裡")
