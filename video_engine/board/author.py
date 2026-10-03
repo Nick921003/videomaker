@@ -29,6 +29,7 @@ DEFAULT_MODEL = {"plan": "google:gemini-3.8-flash", "scene": "anthropic:claude-o
 # USD／百萬 tokens（2026-10 牌價）；Anthropic 快取寫入以 5 分鐘快取計，Gemini 思考 tokens 以輸出計價
 PRICE = {
 	"claude-opus-5-5": {"in": 4.0, "out": 20.0, "cache_read": 0.20, "cache_write": 5.0},
+	"claude-sonnet-5-5": {"in": 2.0, "out": 10.0, "cache_read": 0.20, "cache_write": 2.5},
 	"gemini-3.8-flash": {"in": 0.75, "out": 3.75, "cache_read": 0.075, "cache_write": 0.75},
 }
 MAX_TOKENS = {"plan": 16000, "scene": 12000}
