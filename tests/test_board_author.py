@@ -30,7 +30,13 @@ class TestMaterial(unittest.TestCase):
 class TestPlanGate(unittest.TestCase):
 	def plan(self, n=1, **seg):
 		base = {"id": "q1", "question": "為什麼打 gcc 說找不到？", "title": "t", "objectives": [1, 2, 3, 4, 5, 6, 7], "sec": 60, "after": [], "sources": ["2.2.1 PATH 是什麼？為什麼需要設定它？"]}
-		return {"scope": {"covers": ["環境建立"]}, "stories": [{**base, **seg, "id": f"q{k}"} for k in range(n)]}
+		return {"scope": {"covers": ["環境建立"]}, "stories": [{**base, **seg, "id": f"q{k}"} for k in range(n)],
+			"highlight": {"stories": [f"q{k}" for k in range(min(n, 3))] if n >= 3 else ["q0", "q0", "q0"], "total_sec": 200}}
+
+	def test_重點片要挑三到五支既有的問題(self):
+		plan = self.plan(n=4)
+		plan["highlight"]["stories"] = ["q0", "q9"]
+		self.assertTrue(any("highlight" in p for p in BA.plan_problems(plan, MD)))
 
 	def test_超過十支要求合併(self):
 		self.assertTrue(any("太碎" in p for p in BA.plan_problems(self.plan(n=11), MD)))

@@ -202,6 +202,13 @@ def plan_problems(plan, md):
 	ids = [s.get("id") for s in segs]
 	if len(set(ids)) != len(ids):
 		problems.append("小節 id 重複")
+	hl = plan.get("highlight") or {}
+	picked = hl.get("stories") or []
+	unknown = [h for h in picked if h not in [s.get("id") for s in segs]]
+	if not 3 <= len(picked) <= 5 or unknown:
+		problems.append(f"highlight.stories 要從 stories 挑 3–5 支（目前 {picked}，不存在：{unknown}）")
+	if not 120 <= (hl.get("total_sec") or 0) <= 360:
+		problems.append(f"highlight.total_sec={hl.get('total_sec')} 不在 120–360 秒")
 	covered = {o for s in segs for o in s.get("objectives", [])}
 	missing = [k for k in range(1, n + 1) if k not in covered]
 	if missing:
@@ -232,6 +239,8 @@ def do_plan(md_path, out_dir, budget, target=None):
 		json.dump(plan, f, ensure_ascii=False, indent="\t")
 	for s in stories_of(plan):
 		print(f"  {s['id']} {s['sec']}s 目標{s['objectives']}：{s.get('question') or s['title']}")
+	hl = plan.get("highlight", {})
+	print(f"  重點片 {hl.get('stories')} 約 {hl.get('total_sec')}s：{hl.get('why', '')}")
 	return plan
 
 
