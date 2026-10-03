@@ -11,7 +11,7 @@
 	],
 	"scenes": [
 		{"id": "search", "title": "輸入指令後，系統去哪裡找 gcc？", "label": "依序搜尋", "layout": {"row": ["term", "path"]}, "beats": [
-			{"say": "輸入 gcc 時，系統並不知道它在哪裡。", "spoken": "輸入 G C C 時，系統並不知道它在哪裡。", "do": [
+			{"say": "輸入編譯指令時，系統並不知道編譯器在哪裡。", "do": [
 				{"act": "show", "target": "term"},
 				{"act": "type", "target": "term", "text": "gcc --version", "cue": "輸入"}
 			]},
@@ -27,10 +27,10 @@
 			]}
 		]},
 		{"id": "fix", "title": "把 gcc 所在的資料夾加進 PATH", "label": "加入 PATH", "keep": ["term", "path"], "layout": {"row": ["term", {"stack": ["path", "tip"]}]}, "beats": [
-			{"say": "把 gcc 所在的資料夾，加到清單最後。", "spoken": "把 G C C 所在的資料夾，加到清單最後。", "do": [
+			{"say": "把編譯器所在的資料夾，加到清單最後。", "do": [
 				{"act": "append", "target": "path", "text": "C:\\msys64\\ucrt64\\bin", "cue": "加到"}
 			]},
-			{"say": "加的是資料夾，不是 gcc.exe 檔案。", "spoken": "加的是資料夾，不是 G C C 點 exe 檔案。", "do": [
+			{"say": "加的是資料夾，不是編譯器的執行檔。", "do": [
 				{"act": "underline", "target": "path:r2", "cue": "資料夾"},
 				{"act": "write", "target": "tip", "with": "prev"}
 			]},
@@ -43,7 +43,7 @@
 				{"act": "type", "target": "term", "text": "gcc --version", "cue": "輸入"},
 				{"act": "walk", "target": "path", "item": "gcc", "found": 2, "cue": "從頭"}
 			]},
-			{"say": "這次在新資料夾找到 gcc，就執行它。", "spoken": "這次在新資料夾找到 G C C，就執行它。", "do": [
+			{"say": "這次在新資料夾找到編譯器，就執行它。", "do": [
 				{"act": "circle", "target": "path:r2", "cue": "找到"},
 				{"act": "arrow", "target": "path:r2", "to": "term:cmd", "cue": "執行"}
 			]},
