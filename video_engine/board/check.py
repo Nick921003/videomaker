@@ -47,7 +47,7 @@ def sample_times(tl):
 	return sorted({round(min(max(t, 0), tl["duration"]), 2) for t in ts})
 
 
-def check_frame(info, objects):
+def check_frame(info, objects, scene_ids=()):
 	problems = []
 	for e in info["errors"]:
 		problems.append(f"JS 錯誤：{e}")
@@ -61,10 +61,17 @@ def check_frame(info, objects):
 		if b["owner"] in objects and b["role"] in ("text", "panel") and info["alpha"].get(b["owner"], 0) >= 0.99 and b["alpha"] >= 0.99:
 			solid.append(b)
 	if settled:
+		small = {}
 		for b in solid:
 			font = b["h"] / 1.24
 			if b["owner"] in info["members"] and b["role"] == "text" and font < MIN_FONT - 0.5:
-				problems.append(f"{b['owner']} 的字太小：「{b.get('value', '')}」只有 {font:.0f}px（< {MIN_FONT}），請用 focus 推近或減少同場物件")
+				small.setdefault(b["owner"], []).append(font)
+		# 彙整成一句可執行的修改建議（給 LLM 修正用，逐段列出它反而抓不到重點）
+		for owner, fonts in small.items():
+			others = [m for m in info["members"] if m != owner]
+			hint = f"跟 {others} 同框；讓它單獨一場，或" if others else ""
+			problems.append(f"場景 {scene_ids[info['scene']] if info['scene'] < len(scene_ids) else info['scene']} 的 {owner} 在全景時字太小：最小 {min(fonts):.0f}px（< {MIN_FONT}，共 {len(fonts)} 段），"
+				f"版面縮放 {info['scale']:.2f}。{hint}從它出現的那句就 focus 到要看的部分，直到換場都不要 wide")
 			# 只檢查當前版面的物件；舊場景的歷史物件本來就在畫面外
 			if b["owner"] in info["members"] and not inside(b, VIEW):
 				problems.append(f"{b['owner']} 的{b['role']}超出鏡頭視窗：{b.get('value', '')} {round(b['x'])},{round(b['y'])},{round(b['w'])}x{round(b['h'])}")
@@ -119,7 +126,7 @@ def main():
 			for t in sample_times(tl):
 				info = page.evaluate("t => board.seek(t)", t)
 				frames += 1
-				problems += [f"t={t:.2f} {m}" for m in check_frame(info, objects)]
+				problems += [f"t={t:.2f} {m}" for m in check_frame(info, objects, [s["id"] for s in tl["scenes"]])]
 			canvas = page.locator("#board")
 			shot = lambda t: hashlib.sha256((page.evaluate("t => (board.seek(t), 0)", t), canvas.screenshot())[1]).hexdigest()
 			probe = [round(tl["duration"] * k, 2) for k in (0.23, 0.51, 0.87)]

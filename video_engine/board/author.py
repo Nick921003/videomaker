@@ -96,7 +96,7 @@ def call(budget, stage, system, messages):
 	return text
 
 
-def converse(budget, stage, system, user, validate):
+def converse(budget, stage, system, user, validate, failed_path=None):
 	"""呼叫 → 驗證 → 有問題就把問題清單丟回去，只修那些，最多 MAX_REPAIRS 次。"""
 	messages = [{"role": "user", "content": user}]
 	for attempt in range(MAX_REPAIRS + 1):
@@ -111,6 +111,9 @@ def converse(budget, stage, system, user, validate):
 		print(f"  第 {attempt + 1} 次未過驗證閘：", *problems[:8], sep="\n    ", flush=True)
 		messages += [{"role": "assistant", "content": text},
 			{"role": "user", "content": "驗證閘回報以下問題，只修這些，其餘維持不變，輸出完整修正後的 JSON：\n- " + "\n- ".join(problems[:20])}]
+	if data is not None and failed_path:
+		with open(failed_path, "w", encoding="utf-8") as f:
+			json.dump({"problems": problems, "last": data}, f, ensure_ascii=False, indent="\t")
 	raise RuntimeError(f"{stage} 修正 {MAX_REPAIRS} 次仍未通過：{problems[:5]}")
 
 
@@ -248,7 +251,8 @@ def do_scene(md_path, out_dir, seg_id, budget):
 		"", "# 教材段落", excerpt,
 	])
 	print(f"分鏡：{seg_id} {seg['title']}（{seg['sec']}s）", flush=True)
-	doc, repairs = converse(budget, "scene", system, user, lambda d: scene_problems(d, seg["sec"], catalog))
+	doc, repairs = converse(budget, "scene", system, user, lambda d: scene_problems(d, seg["sec"], catalog),
+		failed_path=os.path.join(out_dir, f"{seg_id}.failed.json"))
 	path = os.path.join(out_dir, f"{seg_id}.scene.json")
 	with open(path, "w", encoding="utf-8") as f:
 		json.dump(doc, f, ensure_ascii=False, indent="\t")
