@@ -135,3 +135,32 @@ S=$(mktemp -d)
 ```
 
 `check.py` 必須印出「量測閘：取樣 N 格，通過」。**不准為了通過而修改 check.py、預期值或範例 JSON。**
+
+### window（鉛筆風線框對話框）
+- 用途：示範軟體操作。**只畫已核對過的介面文字**；畫面是手繪示意，不仿真截圖。
+- 參考截圖（只看結構與文字，不照抄外觀）：`/tmp/claude-1000/-home-pjw92-projects-GPT-SoVITS/8886ac47-22ec-41a6-8d08-b96f8b6d6bbe/scratchpad/winref/`。
+- 屬性（全部選填）：`title`、`tabs: [{id, text, active}]`、`body: [區塊]`、`footer: [{id, text}]`（靠右的按鈕列）。
+- 區塊（由上往下堆疊，間距 18）：
+  - `{"field": {id}}`：輸入框（寬滿版、高 64），內容由 `input` 打出，打字中顯示游標。
+  - `{"list": {rows: [{id, text}], min_rows, side?: [[按鈕…], [按鈕…]]}}`：有框清單，列高 52、mono 26；
+    `side` 是右側直排按鈕欄，內層陣列之間空一格。列寬以最長文字（含之後 `input` 打進去的）決定。
+  - `{"table": {columns: [..], rows: [{id, cells: [..]}]}}`：表頭 muted 24，各欄寬取該欄最長內容，列高 46，列間淡格線。
+  - `{"buttons": {items: [{id, text}], align: "left"|"right"}}`：按鈕列，按鈕高 52、字 26、左右內距 26。
+  - `{"group": {id?, title, body: [區塊]}}`：淡色（`canvas.grid`）鉛筆框，標題 muted 26 在框左上。
+- 外框：`card.fill` 底、鉛筆框；有 `title` 時頂端標題列高 60（標題 32、右側「✕」muted）＋分隔線。
+  有 `tabs` 時標題列下方一排分頁，active 的分頁用 pencil 框起、其餘 muted。內距 28。
+- 互動來自游標：`cursor` 的 `click` 動作（`args.on` 指到本視窗的某個 id）會出現在本視窗的 `acts` 裡。
+  點到**按鈕**：該按鈕在點擊瞬間（click 的最後 35%）填 `effects.highlight`，之後恢復。
+  點到**清單列或表格列**：該列從點擊瞬間起持續以 `effects.highlight` 底色標示為已選取（同一個清單／表格只有最後點的那列被選取）。
+- `input`（target `視窗:元素id`，`args.text`）：逐字打進該 field 或清單列，每項＝一字；打字中顯示游標。
+- 錨點：每個有 `id` 的元素（分頁、field、清單列、表格列、按鈕、footer 按鈕、group 外框），全部由 state 算出。
+- 量測：以整片最大內容計（`input` 打進去的字也算），`measure` 不隨 t 改變。
+
+### cursor（游標，浮動物件）
+- `catalog` 標 `floating`：不佔版位、不在版面樹裡，只實作 `overlay`（世界座標），`draw` 留空，`measure` 回 `{w: 0, h: 0}`，`anchors` 回 `{}`。
+- `click`（`args.on`）：前 65% 從上一個位置以 ease 移到 `world.anchor(args.on)` 的中心，後 35% 畫點擊漣漪
+  （強調色圓，半徑 8→34、透明度 1→0）。`move`（`args.to`）：只移動。
+- 位置是 t 的純函式：動作前的位置＝上一個動作目標錨點在**此刻**的中心（目標跟著鏡頭或版面移動時游標會跟著走）；
+  第一個動作開始前，游標從目標右下方（+140, +90）移入。
+- 外觀：經典箭頭游標（約 46px 高），`card.fill` 填色、`effects.pencil` 鉛筆描邊，尖端對準座標點。
+- 字級與尺寸在世界座標，**不隨版面縮放**；游標永遠畫在所有物件與標記之上。

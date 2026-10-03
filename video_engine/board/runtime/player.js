@@ -214,14 +214,14 @@
 		}
 		const world = {anchor: target => anchorAt(target, t, states), alpha: id => alpha[id] ?? 0, placement: id => placed[id] || null};
 		const floating = id => D.catalog.types[objects[id].type].floating;
-		for (const id of ids) {
-			const c = comp(id);
-			// 浮動物件沒有版位，只畫 overlay（例：游標）
-			if (!c.overlay || !(placed[id] || (floating(id) && alpha[id] >= .004))) continue;
+		const overlay = id => {
 			api.setOwner(id);
-			ctx.save(); ctx.globalAlpha = alpha[id]; c.overlay(api, objects[id], states[id], t, world); ctx.restore();
-		}
+			ctx.save(); ctx.globalAlpha = alpha[id]; comp(id).overlay(api, objects[id], states[id], t, world); ctx.restore();
+		};
+		for (const id of ids) if (comp(id).overlay && placed[id] && !floating(id)) overlay(id);
 		drawMarks(t, world);
+		// 浮動物件（游標）沒有版位，最後畫，永遠在最上層
+		for (const id of ids) if (comp(id).overlay && floating(id) && alpha[id] >= .004) overlay(id);
 		ctx.restore();
 		drawChrome(t);
 		return {
