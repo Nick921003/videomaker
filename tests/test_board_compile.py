@@ -260,3 +260,30 @@ class TestCodexReview(unittest.TestCase):
 		with self.assertRaises(ValueError):
 			compiled(one_scene([{"id": "t", "type": "terminal"}], [
 				{"act": "print", "target": "t", "lines": ["a"]}, {"act": "circle", "target": "t:line999"}], say="印出後圈選"))
+
+
+class TestFloatingAndNamedAnchors(unittest.TestCase):
+	def catalog(self):
+		cat = copy.deepcopy(CATALOG)
+		cat["types"]["panel"] = {"req": ["parts"], "opt": [], "anchors": ["{key}"], "actions": {}}
+		cat["types"]["pointer"] = {"req": [], "opt": [], "floating": True, "anchors": [], "actions": {
+			"click": {"dur": 0.8, "req": ["on"], "anchor_args": ["on"], "blocks": True}}}
+		return cat
+
+	def doc(self, on="w:ok"):
+		return one_scene([{"id": "w", "type": "panel", "parts": [{"button": "確定", "id": "ok"}, {"rows": [{"id": "r1", "text": "x"}]}]},
+			{"id": "m", "type": "pointer"}], [{"act": "show", "target": "w"}, {"act": "click", "target": "m", "on": on}], layout={"stack": ["w"]})
+
+	def test_具名錨點取自物件內宣告的id(self):
+		tl = BC.compile_scene(self.doc("w:r1"), None, self.catalog())
+		self.assertEqual(tl["actions"][-1]["args"]["on"], "w:r1")
+
+	def test_未宣告的具名錨點要報錯(self):
+		with self.assertRaises(ValueError):
+			BC.compile_scene(self.doc("w:nope"), None, self.catalog())
+
+	def test_浮動物件不進版面也不觸發漏列警告(self):
+		tl = BC.compile_scene(self.doc(), None, self.catalog())
+		self.assertEqual(tl["epochs"][-1]["tree"], {"stack": ["w"]})
+		self.assertFalse(any("沒列到" in w for w in tl["warnings"]))
+		self.assertTrue(tl["visibility"]["m"])

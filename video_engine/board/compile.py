@@ -50,6 +50,21 @@ def filter_tree(node, keep):
 	return {kind: kids}
 
 
+def declared_keys(node, top=True):
+	"""物件內任何一層宣告的 id，供 {key} 具名錨點使用（物件本身的 id 不算）。"""
+	keys = set()
+	if isinstance(node, dict):
+		if not top and isinstance(node.get("id"), str):
+			keys.add(node["id"])
+		for k, v in node.items():
+			if k != "id":
+				keys |= declared_keys(v, False)
+	elif isinstance(node, list):
+		for v in node:
+			keys |= declared_keys(v, False)
+	return keys
+
+
 def tree_ids(node):
 	if isinstance(node, str):
 		return [node]
@@ -109,6 +124,10 @@ class Compiler:
 			return obj_id
 		obj = self.objects[obj_id]
 		for pat in self.cat["types"][obj["type"]]["anchors"]:
+			if pat == "{key}":
+				if name in declared_keys(obj):
+					return obj_id
+				continue
 			m = re.fullmatch(pat.replace("{n}", r"(\d+)"), name)
 			if not m:
 				continue
@@ -414,7 +433,8 @@ class Compiler:
 					vis[oid].append([on.pop(oid), data["t1"]])
 				else:
 					self.warnings.append(f"{self.where(data)} 隱藏了尚未顯示的物件 {oid}")
-			members = {oid for oid in on if home.get(oid) == scene}
+			# 浮動物件（游標）不佔版位，畫在所有物件上方
+			members = {oid for oid in on if home.get(oid) == scene and not self.cat["types"][self.objects[oid]["type"]].get("floating")}
 			spec = layout or {"stack": [o["id"] for o in self.doc["objects"]]}
 			declared = tree_ids(spec)
 			for oid in declared:

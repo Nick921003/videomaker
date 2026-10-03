@@ -203,7 +203,7 @@
 		drawLabels(t);
 		const placed = {};
 		for (const id of ids) {
-			if (alpha[id] < .004) continue;
+			if (alpha[id] < .004 || D.catalog.types[objects[id].type].floating) continue;
 			const pl = placementAt(id, t);
 			if (!pl) continue;
 			placed[id] = pl;
@@ -213,9 +213,11 @@
 			ctx.restore();
 		}
 		const world = {anchor: target => anchorAt(target, t, states), alpha: id => alpha[id] ?? 0, placement: id => placed[id] || null};
+		const floating = id => D.catalog.types[objects[id].type].floating;
 		for (const id of ids) {
 			const c = comp(id);
-			if (!c.overlay || !placed[id]) continue;
+			// 浮動物件沒有版位，只畫 overlay（例：游標）
+			if (!c.overlay || !(placed[id] || (floating(id) && alpha[id] >= .004))) continue;
 			api.setOwner(id);
 			ctx.save(); ctx.globalAlpha = alpha[id]; c.overlay(api, objects[id], states[id], t, world); ctx.restore();
 		}
