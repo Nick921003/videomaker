@@ -86,7 +86,7 @@ class TestLetters(unittest.TestCase):
 	def test_單獨字母自動換台灣口語唸法(self):
 		doc = {"scenes": [{"beats": [{"say": "C 是編譯式語言，-o 指定檔名。"}]}]}
 		BA.apply_glossary(doc, [])
-		self.assertEqual(doc["scenes"][0]["beats"][0]["spoken"], "西 是編譯式語言，-歐 指定檔名。")
+		self.assertEqual(doc["scenes"][0]["beats"][0]["spoken"], "西 是編譯式語言，-o 指定檔名。")  # 貼著符號的字母是程式碼，不硬唸
 		self.assertFalse(any("英文" in p for p in BA.narration_problems(doc, 1)))
 
 
@@ -101,6 +101,159 @@ class TestBudget(unittest.TestCase):
 			with self.assertRaises(BA.BudgetExceeded):
 				b.guard("claude-opus-5-5", 5000, 8000)
 			b.guard("gemini-3.8-flash", 5000, 8000)
+
+
+class TestMarks(unittest.TestCase):
+	def scene(self, acts):
+		return {"scenes": [{"id": "loop", "beats": [{"say": "x", "do": acts}]}]}
+
+	def test_每場標註超過三個要退件(self):
+		doc = self.scene([{"act": "circle", "target": "a"}, {"act": "underline", "target": "b"}, {"act": "arrow", "target": "a", "to": "b"}, {"act": "brace", "target": "c", "range": [0, 1]}])
+		problems = BA.mark_problems(doc)
+		self.assertEqual(len(problems), 1)
+		self.assertIn("loop", problems[0])
+
+	def test_同一物件逐列圈只算一個(self):
+		doc = self.scene([{"act": "circle", "target": f"cycle:r{i}"} for i in range(4)] + [{"act": "arrow", "target": "cycle:r3", "to": "cycle:r0"}])
+		self.assertEqual(BA.mark_problems(doc), [])
+
+
+DOC = {"objects": [{"id": "a", "type": "note", "text": "甲"}, {"id": "b", "type": "note", "text": "乙"}],
+	"scenes": [{"id": "s1", "beats": [{"say": "第一句話", "do": []}]}, {"id": "s2", "beats": [{"say": "第二句話", "do": []}]}]}
+
+
+class TestPartialRepair(unittest.TestCase):
+	def test_問題能對到場景(self):
+		self.assertEqual(BA.problem_scenes(DOC, ["版面：t=1.0 場景 s2 的 b 在全景時字太小"]), {"s2"})
+		self.assertEqual(BA.problem_scenes(DOC, ["旁白夾英文單字 ['x']，請加 spoken 改中文說法：第一句話"]), {"s1"})
+		self.assertEqual(BA.problem_scenes(DOC, ["編譯失敗：s2/beat0/highlight 缺參數 line"]), {"s2"})
+
+	def test_有任何問題對不到場景就整份重寫(self):
+		self.assertIsNone(BA.problem_scenes(DOC, ["版面：t=1.0 場景 s2 的 b 字太小", "旁白 300 字約 58 秒，目標 70 秒"]))
+
+	def test_合併只換掉回傳的場景與物件(self):
+		patch = {"scenes": [{"id": "s2", "beats": [{"say": "改過的", "do": []}]}], "objects": [{"id": "b", "type": "note", "text": "丙"}, {"id": "c", "type": "note", "text": "丁"}]}
+		out = BA.merge_patch(DOC, patch)
+		self.assertEqual([s["id"] for s in out["scenes"]], ["s1", "s2"])
+		self.assertEqual(out["scenes"][1]["beats"][0]["say"], "改過的")
+		self.assertEqual(out["scenes"][0], DOC["scenes"][0])
+		self.assertEqual([o["text"] for o in out["objects"]], ["甲", "丙", "丁"])
+		self.assertEqual(DOC["scenes"][1]["beats"][0]["say"], "第二句話")
+
+	def test_合併不認得的場景要報錯(self):
+		with self.assertRaises(ValueError):
+			BA.merge_patch(DOC, {"scenes": [{"id": "zz", "beats": []}]})
+
+	def test_重寫只送出問題場景並用指定的重寫模型(self):
+		calls = []
+		replies = [json.dumps(DOC, ensure_ascii=False), json.dumps({"scenes": [{"id": "s2", "beats": [{"say": "好了", "do": []}]}]}, ensure_ascii=False)]
+
+		def fake(budget, stage, system, messages, target, light=False):
+			calls.append((target, light, messages))
+			return replies[len(calls) - 1]
+		validate = lambda d: [] if d["scenes"][1]["beats"][0]["say"] == "好了" else ["版面：t=1 場景 s2 的 b 字太小"]
+		orig, BA.call = BA.call, fake
+		try:
+			doc, repairs = BA.converse(None, "scene", "sys", "教材", validate, target="anthropic:x", repair_target="google:y", scenes_of=BA.problem_scenes)
+		finally:
+			BA.call = orig
+		self.assertEqual(repairs, 1)
+		self.assertEqual(doc["scenes"][0], DOC["scenes"][0])
+		self.assertEqual([c[0] for c in calls], ["anthropic:x", "google:y"])
+		self.assertTrue(calls[1][1])
+		ask = calls[1][2][-1]["content"]
+		self.assertIn("s2", ask)
+		self.assertEqual(calls[1][2][0]["content"], "教材")
+
+
+class TestRestoreTerms(unittest.TestCase):
+	def test_字幕裡的人造唸法換回原名但一般用語不動(self):
+		glossary = [{"term": "VS Code", "say_as": "微軟編輯器"}, {"term": "GCC", "say_as": "編譯器"}]
+		doc = {"scenes": [{"beats": [{"say": "微軟編輯器也要整個重開，編譯器才找得到。"}, {"say": "清單讀好了，微軟編輯器也要重開。"}]}]}
+		BA.restore_terms(doc, glossary, "教材：安裝 VS Code 與 GCC 編譯器")
+		self.assertEqual(doc["scenes"][0]["beats"][0]["say"], "VS Code 也要整個重開，編譯器才找得到。")
+		self.assertEqual(doc["scenes"][0]["beats"][1]["say"], "清單讀好了，VS Code 也要重開。")
+		dup = {"scenes": [{"beats": [{"say": "計數迴圈 for 的括號裡"}]}]}
+		BA.restore_terms(dup, [{"term": "for", "say_as": "計數迴圈"}], "教材：for 迴圈")
+		self.assertEqual(dup["scenes"][0]["beats"][0]["say"], "for 的括號裡")
+
+
+def op_doc(*presets):
+	objs = [{"id": f"w{i}", "preset": p} for i, p in enumerate(presets)]
+	scenes = [{"id": f"s{i}", "layout": {"stack": [f"w{i}"]}, "beats": [{"say": "按這裡", "do": [{"act": "show", "target": f"w{i}"}]}]} for i in range(len(presets))]
+	return {"objects": objs, "scenes": scenes}
+
+
+class TestScreens(unittest.TestCase):
+	def test_必演畫面都有依序出現就過(self):
+		need = ["win11.sys_props", "win11.env_vars", "win11.edit_env_var"]
+		self.assertEqual(BA.screen_problems(op_doc("win11.search", *need), need), [])
+
+	def test_漏了必演畫面要退件並說出是哪個(self):
+		need = ["win11.sys_props", "win11.env_vars", "win11.edit_env_var"]
+		problems = BA.screen_problems(op_doc("win11.sys_props", "win11.edit_env_var"), need)
+		self.assertEqual(len(problems), 1)
+		self.assertIn("環境變數", problems[0])
+
+	def test_順序顛倒要退件(self):
+		need = ["win11.env_vars", "win11.edit_env_var"]
+		problems = BA.screen_problems(op_doc("win11.edit_env_var", "win11.env_vars"), need)
+		self.assertTrue(problems and "順序" in problems[0], problems)
+
+	def test_規劃的必演畫面要是內建樣板(self):
+		self.assertEqual(BA.unknown_screens(["win11.env_vars", "win11.nope"]), ["win11.nope"])
+
+
+class TestNarrationCode(unittest.TestCase):
+	def beat(self, say):
+		return {"scenes": [{"id": "s1", "beats": [{"say": say}]}]}
+
+	def test_單獨字母照唸但程式符號旁的字母不硬唸(self):
+		doc = BA.apply_glossary(self.beat("C 語言加上 -o 參數"), [])
+		spoken = doc["scenes"][0]["beats"][0]["spoken"]
+		self.assertIn("西", spoken)
+		self.assertIn("-o", spoken)
+
+	def test_唸程式符號要退件並說改講作用(self):
+		doc = BA.apply_glossary(self.beat("按 Ctrl+S 存檔，再加 -o 參數"), [])
+		problems = BA.narration_problems(doc, 1)
+		self.assertTrue(any("程式" in p and "作用" in p for p in problems), problems)
+
+	def test_詞彙表可以給程式符號唸法(self):
+		glossary = [{"term": "-o", "say_as": "輸出檔名參數"}, {"term": "Ctrl+S", "say_as": "存檔快捷鍵"}]
+		doc = BA.apply_glossary(self.beat("按 Ctrl+S 存檔，再加 -o 參數"), glossary)
+		self.assertEqual(doc["scenes"][0]["beats"][0]["spoken"], "按 存檔快捷鍵 存檔，再加 輸出檔名參數 參數")
+
+	def test_唸法撞名要退件(self):
+		glossary = [{"term": "GCC", "say_as": "編譯器"}]
+		doc = BA.apply_glossary(self.beat("gcc 負責呼叫編譯器，產生執行檔"), glossary)
+		problems = BA.narration_problems(doc, 1, glossary)
+		self.assertTrue(any("撞" in p and "gcc 負責呼叫編譯器" in p for p in problems), problems)
+		ok = BA.apply_glossary(self.beat("gcc 會把程式翻成執行檔"), glossary)
+		self.assertFalse(any("撞" in p for p in BA.narration_problems(ok, 1, glossary)))
+
+
+class TestGlossaryPlan(unittest.TestCase):
+	def test_不同用語唸成同一個要退件(self):
+		plan = {"glossary": [{"term": "GCC", "say_as": "編譯器"}, {"term": "cc1", "say_as": "編譯器"}]}
+		self.assertTrue(any("唸成同一個" in p for p in BA.glossary_problems(plan)))
+		self.assertEqual(BA.glossary_problems({"glossary": [{"term": "GCC / gcc", "say_as": "編譯器"}]}), [])
+
+
+class TestSymbolsAndRepeats(unittest.TestCase):
+	def beat(self, say):
+		return {"scenes": [{"id": "s1", "beats": [{"say": say}]}]}
+
+	def test_純符號也套唸法而且長的先換(self):
+		glossary = [{"term": "<", "say_as": "小於"}, {"term": "<=", "say_as": "小於等於"}, {"term": "+=", "say_as": "累加運算"}]
+		doc = BA.apply_glossary(self.beat("條件寫 <= 還是 <，再用 += 加上去"), glossary)
+		self.assertEqual(doc["scenes"][0]["beats"][0]["spoken"], "條件寫 小於等於 還是 小於，再用 累加運算 加上去")
+
+	def test_唸法跟後面的字重複要退件(self):
+		glossary = [{"term": "for", "say_as": "計數迴圈"}]
+		doc = BA.apply_glossary(self.beat("for 迴圈的三個部分"), glossary)
+		problems = BA.narration_problems(doc, 1, glossary)
+		self.assertTrue(any("重複" in p for p in problems), problems)
 
 
 if __name__ == "__main__":

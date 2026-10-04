@@ -229,7 +229,7 @@ class Compiler:
 				args = {key: v for key, v in raw.items() if key not in ("act", "target", "cue", "with")}
 				if spec is None:
 					# 動作缺口：改成單純顯示目標，至少讓保底內容出現在畫面上
-					self.gaps.append({"kind": "action", "object": obj["id"], "wanted": f"{obj.get('_fallback_of') or obj['type']}.{act}", "fallback": "show"})
+					self.gaps.append({"kind": "action", "object": obj["id"], "wanted": f"{obj.get('_fallback_of') or obj['type']}.{act}", "fallback": "show", "where": where})
 					act, spec, args = "show", self.cat["generic_actions"]["show"], {}
 				for key in spec.get("req", []):
 					if key not in args:
