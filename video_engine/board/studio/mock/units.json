@@ -1,0 +1,18 @@
+[
+	{
+		"unit_id": "u_sha256_01",
+		"title": "二元搜尋演算法 (Binary Search)",
+		"created_at": "2026-10-04 14:20:00",
+		"planned": true,
+		"videos": 2,
+		"spent_usd": 0.08
+	},
+	{
+		"unit_id": "u_sha256_02",
+		"title": "遞迴與費氏數列 (Recursion & Fibonacci)",
+		"created_at": "2026-10-04 15:10:00",
+		"planned": false,
+		"videos": 0,
+		"spent_usd": 0.00
+	}
+]

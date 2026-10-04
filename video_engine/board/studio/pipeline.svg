@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 450" width="100%" height="100%">
+	<defs>
+		<marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+			<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2E2622" />
+		</marker>
+		<marker id="arrow-accent" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+			<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#A04435" />
+		</marker>
+		<marker id="arrow-muted" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+			<path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#796F62" />
+		</marker>
+		<style>
+			text { font-family: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+			.card { fill: #FFFDF7; stroke: #2E2622; stroke-width: 1.5px; }
+			.card-accent { fill: #FFFDF7; stroke: #A04435; stroke-width: 1.5px; }
+			.title { font-size: 13px; font-weight: 700; fill: #2E2622; }
+			.subtitle { font-size: 11px; fill: #796F62; }
+			.badge-free { fill: #ECE6DA; stroke: #796F62; stroke-width: 1px; rx: 4px; }
+			.badge-paid { fill: #ECE6DA; stroke: #A04435; stroke-width: 1px; rx: 4px; }
+			.badge-text-free { font-size: 10px; font-weight: 600; fill: #2E2622; }
+			.badge-text-paid { font-size: 10px; font-weight: 700; fill: #A04435; }
+			.connector { stroke: #2E2622; stroke-width: 1.5px; fill: none; }
+			.connector-accent { stroke: #A04435; stroke-width: 1.5px; fill: none; }
+			.connector-dash { stroke: #796F62; stroke-width: 1.5px; stroke-dasharray: 4 3; fill: none; }
+			.conn-label { font-size: 10px; fill: #796F62; font-weight: 500; }
+		</style>
+	</defs>
+
+	<!-- 背景底色 -->
+	<rect width="100%" height="100%" fill="#ECE6DA" rx="10" />
+
+	<!-- ================= 第一排：教材整理與分鏡 ================= -->
+	<!-- 1. 教材 md -->
+	<g transform="translate(30, 35)">
+		<rect class="card" width="130" height="76" rx="6" />
+		<text class="title" x="12" y="24">教材 md</text>
+		<text class="subtitle" x="12" y="42">Markdown 格式輸入</text>
+		<rect class="badge-free" x="12" y="50" width="60" height="18" />
+		<text class="badge-text-free" x="42" y="63" text-anchor="middle">輸入來源</text>
+	</g>
+
+	<!-- 連接線 1 -> 2 -->
+	<line class="connector" x1="160" y1="73" x2="194" y2="73" marker-end="url(#arrow)" />
+
+	<!-- 2. 教材整理 -->
+	<g transform="translate(200, 35)">
+		<rect class="card" width="175" height="76" rx="6" />
+		<text class="title" x="12" y="24">教材整理 (規劃)</text>
+		<text class="subtitle" x="12" y="42">Gemini 3.8 Flash</text>
+		<rect class="badge-paid" x="12" y="50" width="85" height="18" />
+		<text class="badge-text-paid" x="54" y="63" text-anchor="middle">~US$0.015</text>
+	</g>
+
+	<!-- 連接線 2 -> 3 -->
+	<line class="connector" x1="375" y1="73" x2="409" y2="73" marker-end="url(#arrow)" />
+
+	<!-- 3. 本機自我檢查 -->
+	<g transform="translate(415, 35)">
+		<rect class="card" width="170" height="76" rx="6" />
+		<text class="title" x="12" y="24">本機自我檢查</text>
+		<text class="subtitle" x="12" y="42">測試分鏡庫＋量測閘</text>
+		<rect class="badge-free" x="12" y="50" width="75" height="18" />
+		<text class="badge-text-free" x="49" y="63" text-anchor="middle">本機・免費</text>
+	</g>
+
+	<!-- 連接線 3 -> 4 -->
+	<line class="connector" x1="585" y1="73" x2="619" y2="73" marker-end="url(#arrow)" />
+
+	<!-- 4. 分鏡 -->
+	<g transform="translate(625, 35)">
+		<rect class="card" width="185" height="76" rx="6" />
+		<text class="title" x="12" y="24">分鏡 (scene.json)</text>
+		<text class="subtitle" x="12" y="42">Gemini 3.8 Flash</text>
+		<rect class="badge-paid" x="12" y="50" width="130" height="18" />
+		<text class="badge-text-paid" x="77" y="63" text-anchor="middle">每段 ~US$0.02–0.04</text>
+	</g>
+
+	<!-- ================= 第二排：驗證閘 ⇄ 修正 與 重點片側支 ================= -->
+	<!-- 連接線 4 -> 5 (向下) -->
+	<line class="connector" x1="715" y1="111" x2="715" y2="164" marker-end="url(#arrow)" />
+
+	<!-- 5. 驗證閘 -->
+	<g transform="translate(625, 170)">
+		<rect class="card" width="185" height="76" rx="6" />
+		<text class="title" x="12" y="24">驗證閘 (本機量測)</text>
+		<text class="subtitle" x="12" y="42">編譯/旁白/決定性</text>
+		<rect class="badge-free" x="12" y="50" width="75" height="18" />
+		<text class="badge-text-free" x="49" y="63" text-anchor="middle">本機・免費</text>
+	</g>
+
+	<!-- 雙向迴圈：5 驗證閘 ⇄ 5b 修正 -->
+	<path class="connector-accent" d="M 625 195 L 565 195" marker-end="url(#arrow-accent)" />
+	<text class="conn-label" x="595" y="189" text-anchor="middle" fill="#A04435">未過關</text>
+
+	<path class="connector" d="M 565 225 L 625 225" marker-end="url(#arrow)" />
+	<text class="conn-label" x="595" y="238" text-anchor="middle">修正後重驗</text>
+
+	<!-- 5b. 修正 -->
+	<g transform="translate(370, 170)">
+		<rect class="card-accent" width="190" height="76" rx="6" />
+		<text class="title" x="12" y="24" fill="#A04435">修正 (重寫場景)</text>
+		<text class="subtitle" x="12" y="42">Gemini (只改錯誤處，最多2次)</text>
+		<rect class="badge-paid" x="12" y="50" width="125" height="18" />
+		<text class="badge-text-paid" x="74" y="63" text-anchor="middle">~US$0.005–0.015</text>
+	</g>
+
+	<!-- 側支：3-5段 -> 重點片 -->
+	<path class="connector-dash" d="M 810 73 C 870 73, 870 140, 500 140 C 240 140, 210 145, 210 164" marker-end="url(#arrow-muted)" />
+	<rect x="270" y="131" width="120" height="18" fill="#ECE6DA" rx="3" />
+	<text class="conn-label" x="330" y="144" text-anchor="middle">3–5 段推薦組合</text>
+
+	<!-- 側支節點：重點片 -->
+	<g transform="translate(100, 170)">
+		<rect class="card" width="195" height="76" rx="6" />
+		<text class="title" x="12" y="24">重點片 (目錄過場)</text>
+		<text class="subtitle" x="12" y="42">程式串聯 (compose.py)</text>
+		<rect class="badge-free" x="12" y="50" width="120" height="18" />
+		<text class="badge-text-free" x="72" y="63" text-anchor="middle">免AI・本機・免費</text>
+	</g>
+
+	<!-- ================= 第三排：配音、出片、素材庫 ================= -->
+	<!-- 驗證閘通過 -> 配音 (轉折連線) -->
+	<path class="connector" d="M 715 246 C 715 285, 340 270, 240 299" marker-end="url(#arrow)" />
+	<rect x="420" y="268" width="60" height="16" fill="#ECE6DA" rx="2" />
+	<text class="conn-label" x="450" y="280" text-anchor="middle">驗證通過</text>
+
+	<!-- 重點片 -> 配音 (垂直連線) -->
+	<line class="connector" x1="197" y1="246" x2="197" y2="299" marker-end="url(#arrow)" />
+
+	<!-- 6. 配音 -->
+	<g transform="translate(100, 305)">
+		<rect class="card" width="195" height="76" rx="6" />
+		<text class="title" x="12" y="24">配音 (TTS)</text>
+		<text class="subtitle" x="12" y="42">GPT-SoVITS ＋ 漏字檢查</text>
+		<rect class="badge-free" x="12" y="50" width="75" height="18" />
+		<text class="badge-text-free" x="49" y="63" text-anchor="middle">本機・免費</text>
+	</g>
+
+	<!-- 連接線 6 -> 7 -->
+	<line class="connector" x1="295" y1="343" x2="349" y2="343" marker-end="url(#arrow)" />
+
+	<!-- 7. 出片 -->
+	<g transform="translate(355, 305)">
+		<rect class="card" width="220" height="76" rx="6" />
+		<text class="title" x="12" y="24">出片 (影音合成)</text>
+		<text class="subtitle" x="12" y="42">Canvas＋Playwright＋ffmpeg</text>
+		<rect class="badge-free" x="12" y="50" width="75" height="18" />
+		<text class="badge-text-free" x="49" y="63" text-anchor="middle">本機・免費</text>
+	</g>
+
+	<!-- 連接線 7 -> 8 -->
+	<line class="connector" x1="575" y1="343" x2="629" y2="343" marker-end="url(#arrow)" />
+
+	<!-- 8. 素材庫 -->
+	<g transform="translate(635, 305)">
+		<rect class="card" width="225" height="76" rx="6" />
+		<text class="title" x="12" y="24">素材庫 (靜態檔)</text>
+		<text class="subtitle" x="12" y="42">out/units/&lt;unit_id&gt;/</text>
+		<rect class="badge-free" x="12" y="50" width="135" height="18" />
+		<text class="badge-text-free" x="79" y="63" text-anchor="middle">全學生共用・靜態串流</text>
+	</g>
+
+	<!-- 底部總結與備註 -->
+	<g transform="translate(470, 420)">
+		<text text-anchor="middle" font-size="12" fill="#796F62">
+			3–5 分鐘單元影片合計約 US$0.12–0.16 (實測 US$0.148) ｜ 雙閘驗證保證品質 ｜ 本機零算力費出片
+		</text>
+	</g>
+</svg>
