@@ -48,8 +48,8 @@ class BudgetExceeded(RuntimeError):
 
 
 class Budget:
-	def __init__(self, path, cap):
-		self.path, self.cap = path, cap
+	def __init__(self, path, cap, item=None):
+		self.path, self.cap, self.item = path, cap, item
 
 	def spent(self):
 		if not os.path.exists(self.path):
@@ -68,7 +68,8 @@ class Budget:
 		usd = (usage["in"] * p["in"] + usage["out"] * p["out"] + usage["cache_read"] * p["cache_read"]
 			+ usage["cache_write"] * p["cache_write"]) / 1e6
 		with open(self.path, "a", encoding="utf-8") as f:
-			f.write(json.dumps({"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "stage": stage, "model": model, **usage, "usd": round(usd, 5)}) + "\n")
+			f.write(json.dumps({"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "stage": stage, "model": model, **usage,
+				"item": self.item, "usd": round(usd, 5)}) + "\n")
 		return usd
 
 
@@ -701,7 +702,8 @@ def main():
 	sys.path.insert(0, os.path.dirname(HERE))
 	import llm
 	llm.load_env()
-	budget = Budget(os.path.join(args.out_dir, "usage.jsonl"), args.budget_usd)
+	budget = Budget(os.path.join(args.out_dir, "usage.jsonl"), args.budget_usd,
+		item="analysis" if args.stage == "plan" else args.segment)
 	try:
 		if args.stage == "plan":
 			do_plan(args.md, args.out_dir, budget, args.model)

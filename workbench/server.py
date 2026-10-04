@@ -13,8 +13,8 @@ from pathlib import Path
 import re
 from urllib.parse import unquote, urlsplit
 
-from . import formats
-from .jobs import JobQueue, run_command, spent_usd
+from . import formats, usage
+from .jobs import JobQueue, run_command
 from .library import Library, read_json, safe_path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -126,7 +126,7 @@ class Studio:
 			raise APIError(404, "找不到檔案")
 
 	def _spent_usd(self, identifier):
-		return spent_usd(self._unit_dir(identifier), lambda relative: self._unit_path(identifier, relative))
+		return usage.unit_spent(self._unit_dir(identifier))
 
 	def _plan(self, identifier):
 		self._unit_path(identifier, "plan.json")

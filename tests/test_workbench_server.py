@@ -576,7 +576,7 @@ class TestTTSHealth(unittest.TestCase):
 		(directory / "q1" / "voice").mkdir(parents=True)
 		(directory / "usage.jsonl").write_text('{"usd": 0.1}\n', encoding="utf-8")
 		(directory / "q1" / "voice" / "tts_usage.jsonl").write_text('{"usd": 0.02}\n{"usd": 0.01}\n', encoding="utf-8")
-		self.assertAlmostEqual(BS.spent_usd(directory), 0.13)
+		self.assertAlmostEqual(BS.usage.unit_spent(directory), 0.13)
 
 
 if __name__ == "__main__":
