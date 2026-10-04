@@ -48,6 +48,12 @@
    runtime 會在載入時不繪製就查錨點（鏡頭預算），量測閘也會這樣驗。
 8. **動作留下的標記只活在該場景**：指標、停止圈這類由動作產生的標記，從 `api.sceneEnd(a.scene)` 起 0.4 秒淡出。
    物件本身的內容（格子的值、輸出文字）不受影響。
+9. **小標（`role: 'label'`）也算字**：量測閘會檢查它跟同一物件的內文、跟別的物件有沒有互疊。小標放在內容框外（上方），不要塞進框內角落。
+10. **錨點要跟畫出來的框對齊**：通用標記（圈、箭頭）以錨點為準來避讓鄰居；錨點比框寬或窄，圈就會壓到框線。
+
+通用標記（`circle`／`underline`／`arrow`）由 `player.js` 畫，不歸元件管：同一物件同一場只留最新的圈；
+圈的大小以錨點四周的空隙為限（扁長目標用膠囊形）；箭頭被擋住時改走兩物件間的空隙或從外側繞道，標籤沿路徑找空位。
+畫完後以 `api.recordPath` 記下路徑，量測閘檢查它有沒有穿過別的字或框（被圈的目標、箭頭兩端本身不算）。
 
 ## api（`runtime/core.js`）
 
@@ -60,6 +66,7 @@
 | `api.rect(x, y, w, h, p, {color, fill, width, seed, role})` | 鉛筆框；`fill` 為背景色 |
 | `api.ellipse(cx, cy, rx, ry, p, {color, seed})` | 強調圈，預設 accent |
 | `api.hatch(x, y, w, h, seed)` | 未知內容的淡斜線 |
+| `api.recordPath(points, role, {kind, target, skip})` | 記錄標記路徑（螢幕座標）給量測閘；`skip` 是本來就該碰到的框 |
 | `api.pointer(x, y, size, p)` | A＋C 的讀取指標（小圈＋箭頭） |
 | `api.fly(str, from{x,y}, to{x,y}, p, {size, color, lift})` | 弧線飛行字元，`p` 0→1 |
 | `api.phase(t, a, b)`、`api.ease`、`api.clamp`、`api.mix`、`Board.seed(str)` | 數學 |
@@ -90,7 +97,7 @@ A＋C 已接受版：`/home/pjw92/projects/videomaker/video_engine/out/state_cha
 
 ### output
 - 屬性：`label`；編譯器補 `_max_text`（整片最長文字）。
-- 卡片：`card.fill` 底鉛筆框，左上小標籤（muted 30），文字 mono 80。寬 = max(440, `_max_text` 寬 + 120)，高 150。
+- 卡片：小標籤（muted 30）在框外上方，高 46；下方 `card.fill` 底鉛筆框高 150，文字 mono 80。寬 = max(440, `_max_text` 寬 + 120, 小標寬)。
 - 文字**靠左成長、最終置中**：起點 x = (w − `_max_text` 寬) / 2。
 - 內容：每個 `args.to` 指向本物件的 `scan`，第 k 項結束時接上 `args.chars[k]`；`set`（target 是本物件）在 t1 時換成 `args.text`。
 - 錨點：`text`（目前文字的框；空字串時為起點處寬 0 的框）、`end`（目前文字尾端、寬一個字的框，下一個字落在這裡）。
@@ -123,6 +130,34 @@ A＋C 已接受版：`/home/pjw92/projects/videomaker/video_engine/out/state_cha
   第 k 項前 35% 標籤移到第 k 列，後段揭曉結果——非 `found` 的列右側寫「✗」（muted）且列文字轉 muted；
   `found` 那列右側寫「✓」（強調色）。沒有 `found` 時每列都是 ✗。結果保留到下一次 `walk` 開始時清除。
 - 錨點：`title`、`r{n}`（第 n 列卡片）。
+
+### vars（變數面板）
+- 屬性：`vars: [{id, name, type?, value?}]`（1–5 個）、`title?`。沒有 `value` 的變數＝未初始化，格子顯示「?」並加淡斜線（`api.hatch`）。
+- 版面（由上而下）：`title`（muted 30，有才佔 44）→ 算式列 CALC_H 52（整片有任何 `set` 帶 `calc` 才保留）→ 變數列 → 條件列 CHECK_H 64（整片有 `check` 才保留）。
+  變數列：各變數一欄，左右間距 40；每欄由上而下＝名稱列 48（`type` muted 28 ＋ 空格 ＋ `name` mono 36）、
+  值格 112 高（`card.fill` 底鉛筆框，值 mono 64 weight 600 置中）、歷史列 40（舊值 mono 28 muted，每個加一條鉛筆刪除線，空格分隔，只留最近 4 個，更早的以「…」開頭）。
+  欄寬＝max(160, 名稱寬, 整片出現過的所有值寬＋48, 算式寬＋24, 歷史 4 個的寬)。變數 > 4 個時排成兩行。
+- 動作（target `物件id:變數id`；`check` 的 target 是物件本身）：
+  - `declare`（`value?`）：該變數在 t0 前不畫，t0–t1 欄位淡入並手寫名稱；有 `value` 則從此值開始。沒被 declare 的變數一開場就在。
+  - `set`（`value`，`calc?`）：p＝(t−t0)/(t1−t0)。有 `calc`：0–0.4 在該欄上方算式列手寫 `calc`（accent mono 36）；
+    0.4–0.6 舊值被一條鉛筆線劃掉；0.6–1 新值手寫進格子、算式淡出。沒 `calc`：0–0.4 劃掉舊值，0.4–1 寫新值。
+    t1 之後舊值進歷史列。同一變數多次 set 依時間累積。
+  - `check`（`text`，`result?`）：條件列置中手寫「`text` → 成立 ✓」（result true，accent）或「`text` → 不成立 ✗」（false，muted）；
+    沒給 result 只寫 `text`。下一個 check 開始時上一個淡出；換場依規則 8 從 `api.sceneEnd(a.scene)` 淡出。
+- 錨點：每個變數 id → 該欄值格的框；`check` → 條件列文字框（沒有 check 時為條件列中央寬 0 的框）。錨點只由 state 算（規則 7）。
+- 量測（規則 3）：寬高以整片最大內容計，值變長版面也不跳。
+
+### stack（呼叫堆疊）
+- 屬性：`frames: [{id, name, vars: [{id, name, type?, value?}]}]`、`title?`。變數 id 在整個物件內唯一。
+- 版面：框由下往上疊（第一個框在最底），整片同時存在的框數最大值決定高度（規則 3）。每個框＝標頭列 52（`name` mono 34）＋變數列
+  （同 vars 的欄：名稱列 40、值格 88 高 mono 52 weight 600、歷史列 32 只留最近 3 個）。框寬＝所有框需要的最大寬，框間距 18。
+  最上面的框（active）用 accent 鉛筆框、其他用 pencil 框且標頭 muted。`title` 在最上方（muted 30）。
+- 動作：
+  - `push`（target 框 id）：t0 前不畫；t0–t1 框從上方 40px 處落下並淡入。沒有 push 的框一開場就在。
+  - `set`（target 變數 id，`value`，`calc?`）：同 vars 的 set（算式寫在該欄上方的框內空白，舊值劃掉進歷史）。
+  - `pop`（target 框 id，`value?`，`to?`）：0–0.5 框內寫出「return `value`」（accent）；0.5–1 框往上淡出；
+    有 `to` 時回傳值用 `overlay` 從該框飛到 `to` 變數的值格（`api.fly`，世界座標、字級乘版面縮放），t1 時 `to` 變數改成 `value`（舊值進歷史）。
+- 錨點：每個框 id → 框；每個變數 id → 值格；`top` → 目前最上面（已 push 未 pop）的框。只由 state 算（規則 7）。
 
 ## 驗收指令
 

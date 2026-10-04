@@ -329,6 +329,83 @@
 					"blocks": true
 				}
 			}
+		},
+		"vars": {
+			"req": [
+				"vars"
+			],
+			"opt": [
+				"title"
+			],
+			"anchors": [
+				"{key}",
+				"check"
+			],
+			"actions": {
+				"declare": {
+					"dur": 0.6,
+					"opt": [
+						"value"
+					],
+					"blocks": true
+				},
+				"set": {
+					"dur": 1.6,
+					"req": [
+						"value"
+					],
+					"opt": [
+						"calc"
+					],
+					"blocks": true
+				},
+				"check": {
+					"dur": 1.0,
+					"req": [
+						"text"
+					],
+					"opt": [
+						"result"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"stack": {
+			"req": [
+				"frames"
+			],
+			"opt": [
+				"title"
+			],
+			"anchors": [
+				"{key}",
+				"top"
+			],
+			"actions": {
+				"push": {
+					"dur": 0.9,
+					"blocks": true
+				},
+				"set": {
+					"dur": 1.6,
+					"req": [
+						"value"
+					],
+					"opt": [
+						"calc"
+					],
+					"blocks": true
+				},
+				"pop": {
+					"dur": 1.4,
+					"opt": [
+						"value",
+						"to"
+					],
+					"blocks": true
+				}
+			}
 		}
 	}
 }

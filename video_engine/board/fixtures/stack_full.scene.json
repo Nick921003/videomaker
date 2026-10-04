@@ -1,0 +1,18 @@
+{
+	"version": 1, "title": "傳值呼叫", "tag": "測試", "corner_note": "概念示意",
+	"objects": [
+		{"id": "s", "type": "stack", "title": "呼叫堆疊", "frames": [
+			{"id": "main", "name": "main()", "vars": [{"id": "main_x", "name": "x", "type": "int", "value": "3"}, {"id": "main_r", "name": "r", "type": "int"}]},
+			{"id": "add", "name": "add(3, 4)", "vars": [{"id": "add_a", "name": "a", "type": "int", "value": "3"}, {"id": "add_b", "name": "b", "type": "int", "value": "4"}]}
+		]}
+	],
+	"scenes": [
+		{"id": "call", "title": "呼叫 add", "label": "傳值", "layout": {"stack": ["s"]},
+			"beats": [
+				{"say": "main 呼叫 add，疊上一個新的框。", "do": [{"act": "push", "target": "s:add", "cue": "疊上"}]},
+				{"say": "a 是 x 的複製品，把 a 改成十。", "do": [{"act": "set", "target": "s:add_a", "value": "10", "calc": "3 + 7", "cue": "改成"}, {"act": "circle", "target": "s:main_x", "with": "prev"}]},
+				{"say": "main 的 x 還是三，沒有被改到。", "do": [{"act": "underline", "target": "s:main_x", "cue": "還是"}]},
+				{"say": "add 回傳十四，框被拿掉，答案存進 r。", "do": [{"act": "pop", "target": "s:add", "value": "14", "to": "main_r", "cue": "回傳"}, {"act": "arrow", "target": "s:main_x", "to": "s:main_r", "label": "沒被改"}]}
+			]}
+	]
+}

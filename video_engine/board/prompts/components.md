@@ -10,7 +10,7 @@
 ## cells — 一排格子（陣列、記憶體、字串的每個字元）
 - 屬性：`count`（必填，格數 ≤ 8）、`label` 格子上方標籤、`values` 初始值（null＝未知，畫成斜線）、`tail` 右側「…其餘」框的說明、`accent` 用強調色畫的值（例 `["\\0"]`）
 - 動作：
-  - `fill`：`values` 依序從 `from`（錨點，可省略）飛進格子；`start` 起始格
+  - `fill`：`values` 依序從 `from`（錨點，可省略；省略時值直接寫進格子）飛進格子；`start` 起始格
   - `scan`：讀取指標從 `range[0]` 走到 `range[1]`，每格的字元飛到 `to`（錨點，通常是 output 的 `:end`）
   - `point`：指標移到 `index` 格
   - `stop`：指標停在 `index` 格並圈起；`note` 可加一句短註記（≤ 8 字）
@@ -27,7 +27,27 @@
 - 動作：`highlight` 標記第 `line` 行（1 起算）
 - 錨點：`L{n}`
 
-## metrics — 並排的數字比較（2–4 欄）
+## vars — 變數面板（值會一步步改變：迴圈追蹤、累加、賦值、條件判斷）
+- 屬性：`vars: [{id, name, type, value}]`（1–5 個；`name` 顯示名稱，例 "sum"；`type` 可省略，例 "int"；
+  沒給 `value` ＝還沒初始化，顯示「?」垃圾值）、`title`（可省略）
+- 動作（target 寫 `物件id:變數id`，例 `v:sum`）：
+  `declare` 宣告（變數在這時才出現；可給 `value`）｜
+  `set` 改值，必給 `value`，**有運算就給 `calc`＝代入後的算式**（例 sum += i 在第二輪：`calc: "1 + 2"`、`value: "3"`），
+  畫面先寫出算式再落進格子，舊值劃掉留在旁邊｜
+  `check`（target 寫物件 id）判斷條件：`text` 寫代入後的條件（例 `"2 <= 5"`），`result` true／false
+- 錨點：每個變數 id（格子本身）、`check`（條件那一行）
+- **值會變的一律用 vars**（旁白說「i 變成二」，畫面就要 set）；metrics 只放不會變的數據
+
+## stack — 呼叫堆疊（函式呼叫、傳值、return、遞迴）
+- 屬性：`frames: [{id, name, vars: [{id, name, type, value}]}]`（依呼叫順序列出整片會出現的所有框；`name` 例 "add(3, 4)"、"fib(2)"；
+  變數 id 在整個 stack 內不能重複，例 `main_x`、`add_a`）、`title`（可省略）
+- 動作：`push`（target `物件id:框id`）把框疊上去（沒被 push 的框一開場就在，通常是 main）｜
+  `set`（target `物件id:變數id`，`value`，`calc` 可省略）跟 vars 一樣改值｜
+  `pop`（target `物件id:框id`，`value`＝回傳值，`to`＝接收回傳值的變數 id，例 `main_r`）把最上面的框拿掉，回傳值飛回呼叫者
+- 錨點：每個框 id、每個變數 id、`top`（目前最上面的框）
+- 傳值呼叫：push 的框裡的變數是**複製**的，改它不會動到呼叫者的變數——用 set 改框內的變數，再讓呼叫者的變數維持原值就演出來了
+
+## metrics — 並排的數字比較（2–4 欄，值不會變）
 - 屬性：`items: [{label, value, note}]`（value 短，例 "32"；note ≤ 10 字）
 - 動作：`reveal` 揭露（給 `index` 只揭露那一欄，不給就依序全部）
 - 錨點：`m{n}`
@@ -66,6 +86,7 @@
 
 ## 通用動作（任何物件或錨點都能用）
 - `show` 淡入、`hide` 淡出（物件會先自動在第一次被動作指到時出現，通常不必 show）
-- `circle` 圈起、`underline` 劃底線、`arrow` 從 target 畫箭頭到 `to`（可加 `label`）
+- `circle` 圈起（同一物件同時只留最新的圈，可逐列往下圈）、`underline` 劃底線、
+  `arrow` 從 target 畫箭頭到 `to`（可加 `label`；中間被擋住會自動繞道，標籤自動找空位）
   ——這三種標記換場時自動消失
 - `focus` 鏡頭推近 target（字太小或要看細節時用）、`wide` 拉回全景（不需 target）
