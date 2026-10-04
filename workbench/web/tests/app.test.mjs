@@ -84,13 +84,48 @@ test('外框實際載入總覽與路線圖，形式卡片能帶上焦點', async
 	});
 });
 
-test('四個預留頁與製作每一步都顯示下一步實作', async () => {
+test('其餘預留頁與製作每一步都顯示下一步實作', async () => {
 	await withApp(async (app, ids) => {
-		for (const route of ['make/1', 'make/2', 'make/3', 'make/4', 'pipelines?focus=video', 'library', 'usage']) {
+		for (const route of ['make/1', 'make/2', 'make/3', 'make/4', 'library', 'usage']) {
 			globalThis.location.hash = `#/${route}`;
 			await app.loadRoute();
 			assert.match(ids['page-host'].textContent, /下一步實作/);
 		}
+	});
+});
+
+test('流程頁接上總圖與 focus 路由，節點側欄讀取登記表，返回後收合步驟', async () => {
+	await withApp(async (app, ids) => {
+		globalThis.location.hash = '#/pipelines?focus=mindmap';
+		await app.loadRoute();
+		const host = ids['page-host'];
+		assert.doesNotMatch(host.textContent, /下一步實作/);
+		assert.match(host.textContent, /概念與關係生成/);
+		assert.match(host.textContent, /試跑後填入/);
+		const find = id => descendants(host).find(node => node.getAttribute('data-node-id') === id);
+		find('validate').dispatchEvent(new Event('click'));
+		assert.match(host.textContent, /樹狀結構、無循環/);
+		assert.match(host.textContent, /免費/);
+		const back = descendants(host).find(node => node.tagName === 'button' && node.textContent === '返回全圖');
+		back.dispatchEvent(new Event('click'));
+		assert.ok(find('ingest'));
+		assert.ok(find('analysis'));
+		assert.ok(find('comic'));
+		assert.equal(find('validate'), undefined);
+		find('comic').dispatchEvent(new Event('click'));
+		assert.match(host.textContent, /先用對話與情境拆解學生常見的誤解/);
+		assert.doesNotMatch(host.textContent, /概念與關係生成/);
+	});
+});
+
+test('未知的 focus 安全回到總圖', async () => {
+	await withApp(async (app, ids) => {
+		globalThis.location.hash = '#/pipelines?focus=missing';
+		await app.loadRoute();
+		assert.match(ids['page-host'].textContent, /教材整理/);
+		assert.match(ids['page-host'].textContent, /教材分析/);
+		assert.match(ids['page-host'].textContent, /素材庫/);
+		assert.doesNotMatch(ids['page-host'].textContent, /下一步實作/);
 	});
 });
 

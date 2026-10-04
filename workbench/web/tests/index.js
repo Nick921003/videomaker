@@ -4,3 +4,5 @@ import './api.test.mjs';
 import './overview.test.mjs';
 import './roadmap.test.mjs';
 import './app.test.mjs';
+import './diagram.test.mjs';
+import './panzoom.test.mjs';
