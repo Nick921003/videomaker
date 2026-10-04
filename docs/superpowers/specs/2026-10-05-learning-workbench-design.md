@@ -87,6 +87,7 @@ def is_done(unit, item) -> bool
 
 - `@step <step_id>`：切換目前步驟（一個子程式內有多步時用，如 author.py 的 分鏡→驗證→修正）。
 - `@error <code> <白話細節>`：失敗前印出，再以非零碼結束。
+- `@unit <unit_id>`：教材整理子程式建立教材後印出，工作結果帶上 `unit_id`。
 - 沒印 `@error` 的失敗：伺服器用 log 尾端比對 Gemini 暫時錯誤（429、503、UNAVAILABLE、RESOURCE_EXHAUSTED、timeout）→ `gemini_busy`，其餘 `unknown`。
 - 既有 CLI（author.py、narrate.py、check.py、selftest.py）補印 `@step`／`@error`，不改其他行為。
 
