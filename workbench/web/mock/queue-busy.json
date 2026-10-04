@@ -1,0 +1,84 @@
+{
+	"running": {
+		"job_id": "mock-q2-running",
+		"unit_id": "ff9e559208c9",
+		"item": "q2",
+		"format": "video",
+		"state": "running",
+		"steps": [
+			{
+				"id": "selftest",
+				"state": "done"
+			},
+			{
+				"id": "storyboard",
+				"state": "done"
+			},
+			{
+				"id": "validate",
+				"state": "done"
+			},
+			{
+				"id": "repair",
+				"state": "running"
+			},
+			{
+				"id": "narrate",
+				"state": "pending"
+			},
+			{
+				"id": "render",
+				"state": "pending"
+			}
+		],
+		"current": "repair",
+		"log": [
+			"@step storyboard",
+			"分鏡已產生",
+			"@step validate",
+			"邊界條件需要補充畫面",
+			"@step repair"
+		],
+		"spent_usd": 0.035,
+		"error": null
+	},
+	"queued": [
+		{
+			"job_id": "mock-q3-queued",
+			"unit_id": "ff9e559208c9",
+			"item": "q3",
+			"format": "video",
+			"state": "queued",
+			"steps": [
+				{
+					"id": "selftest",
+					"state": "pending"
+				},
+				{
+					"id": "storyboard",
+					"state": "pending"
+				},
+				{
+					"id": "validate",
+					"state": "pending"
+				},
+				{
+					"id": "repair",
+					"state": "pending"
+				},
+				{
+					"id": "narrate",
+					"state": "pending"
+				},
+				{
+					"id": "render",
+					"state": "pending"
+				}
+			],
+			"current": null,
+			"log": [],
+			"spent_usd": 0,
+			"error": null
+		}
+	]
+}

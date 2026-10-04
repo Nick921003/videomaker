@@ -1,0 +1,23 @@
+[
+	{
+		"unit_id": "ff9e559208c9",
+		"title": "迴圈",
+		"created_at": "2026-10-04T08:00:00Z",
+		"analyzed": true,
+		"points": 5,
+		"products": {
+			"video": 3,
+			"highlight": true,
+			"mindmap": true,
+			"slides": true
+		},
+		"spent_usd": 0.287,
+		"source_ref": {
+			"platform": "bridgeai",
+			"course": "c-intro",
+			"unit": "loops",
+			"topic": "loop-basics",
+			"revision": "1"
+		}
+	}
+]

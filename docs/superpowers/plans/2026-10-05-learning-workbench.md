@@ -255,7 +255,7 @@ Dependency order: **M0 first**. After that, Codex runs B1→B6 in sequence while
 - `GET /api/v1/units/<id>`: `items` lists every point plus highlight, mindmap and slides. Each item has status from the jobs and `is_done`, `estimate_usd`, `cost_usd` (from usage rows of that item), `duration` (ffprobe-free: read `timeline.json` total if present, else null), `files` (from `outputs`) and `job_id` (latest).
 - `Library.write_manifest(uid, items)` runs after each successful job. `GET .../manifest` builds it fresh if missing. Each product's `embed_url` is `/embed/<uid>/<item>`.
 - Static routes:
-	- `GET /` → `workbench/web/index.html`.
+	- `GET /` → **302 redirect to `/web/index.html`**, so relative asset paths work both here and under the mock static server.
 	- `GET /web/<path>` → files under `workbench/web/` (safe path).
 	- `GET /embed/<uid>/<item>` → `workbench/embed.html`.
 	- `GET /media/<uid>/<path>` keeps Range support.
@@ -279,6 +279,7 @@ Dependency order: **M0 first**. After that, Codex runs B1→B6 in sequence while
 **Files:** create `workbench/web/index.html`, `styles.css`, `js/app.mjs`, `js/router.mjs`, `js/api.mjs`, `js/pages/overview.mjs`, `js/pages/roadmap.mjs`, `tests/router.test.mjs`.
 
 **Interfaces (produces):**
+- All asset and mock paths in `index.html` and modules are **relative** (`styles.css`, `js/app.mjs`, `mock/units.json`). The real server serves the page at `/web/index.html`; the mock static server serves it at `/index.html`. API calls use absolute `/api/v1/...`.
 - `api.mjs`:
 	- `api.get(path)` and `api.post(path, body)` against `/api/v1`. With `?mock=1` they read `web/mock/*.json` instead, using a fixed table from endpoint to file.
 	- In mock mode, `POST /generate` returns ids and `GET /jobs/<id>` simulates progress: the current step advances every 2 s through the format's steps, and a job for item `q4` fails with `gemini_busy`.

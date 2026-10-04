@@ -1,0 +1,156 @@
+{
+	"contract_version": "1.1",
+	"title": "迴圈",
+	"slides": [
+		{
+			"slide_id": "intro",
+			"role": "hook",
+			"title": "為什麼需要迴圈？",
+			"layout": "bullets",
+			"blocks": [
+				{
+					"type": "bullets",
+					"items": [
+						"依條件重複執行",
+						"觀察每一圈的變數值"
+					]
+				}
+			],
+			"speaker_notes": "先想一想：把相同的工作重複三次，可以如何描述？",
+			"source_quote": "迴圈讓程式依條件重複執行。",
+			"takeaway": "迴圈把重複的工作交給程式。"
+		},
+		{
+			"slide_id": "cycle",
+			"role": "concept",
+			"title": "每一圈的過程",
+			"layout": "steps",
+			"blocks": [
+				{
+					"type": "steps",
+					"items": [
+						"檢查條件",
+						"執行本體",
+						"更新變數",
+						"回到條件判斷"
+					]
+				}
+			],
+			"speaker_notes": "逐圈指出三個步驟，確認更新後才回到條件。",
+			"source_quote": "for 迴圈每一圈依序檢查條件、執行本體、更新變數。",
+			"takeaway": "每圈依序檢查條件、執行本體、更新變數。"
+		},
+		{
+			"slide_id": "trace",
+			"role": "example",
+			"title": "跟著變數走三圈",
+			"layout": "code",
+			"blocks": [
+				{
+					"type": "code",
+					"language": "c",
+					"lines": [
+						"for (int i = 0; i < 3; i++) {",
+						"\tprintf(\"%d\\n\", i);",
+						"}"
+					]
+				}
+			],
+			"speaker_notes": "逐次讀出 i 的值：零、一、二；變成三時條件不成立。",
+			"source_quote": "for 迴圈每一圈依序檢查條件、執行本體、更新變數。",
+			"takeaway": "先看條件，再判斷是否執行本體。"
+		},
+		{
+			"slide_id": "boundary",
+			"role": "pitfall",
+			"title": "為什麼多跑一次？",
+			"layout": "compare",
+			"blocks": [
+				{
+					"type": "compare",
+					"left": {
+						"title": "i < 3",
+						"items": [
+							"執行時 i 為 0、1、2",
+							"共三圈"
+						]
+					},
+					"right": {
+						"title": "i <= 3",
+						"items": [
+							"執行時 i 為 0、1、2、3",
+							"共四圈"
+						]
+					}
+				}
+			],
+			"speaker_notes": "兩側都從零開始，每圈加一，只有邊界條件不同。",
+			"source_quote": "邊界條件決定迴圈執行幾次，< 與 <= 可能相差一次。",
+			"takeaway": "包含邊界值可能讓迴圈多跑一次。"
+		},
+		{
+			"slide_id": "choice",
+			"role": "concept",
+			"title": "while 和 for 怎麼選？",
+			"layout": "compare",
+			"blocks": [
+				{
+					"type": "compare",
+					"left": {
+						"title": "for",
+						"items": [
+							"次數明確",
+							"初值、條件、更新集中寫"
+						]
+					},
+					"right": {
+						"title": "while",
+						"items": [
+							"依條件持續執行",
+							"留意變數是否有更新"
+						]
+					}
+				}
+			],
+			"speaker_notes": "先看重複工作的停止方式，再選擇容易讀懂的寫法。",
+			"source_quote": "for 適合次數明確的重複，while 適合依條件持續執行。",
+			"takeaway": "次數明確可用 for，依條件持續可用 while。"
+		},
+		{
+			"slide_id": "stop",
+			"role": "pitfall",
+			"title": "迴圈為什麼停不下來？",
+			"layout": "bullets",
+			"blocks": [
+				{
+					"type": "bullets",
+					"items": [
+						"檢查條件是否一直成立",
+						"確認變數會朝停止條件更新"
+					]
+				}
+			],
+			"speaker_notes": "先追蹤變數是否更新，再檢查條件有沒有機會不成立。",
+			"source_quote": "條件一直成立且變數沒有更新時，迴圈可能停不下來。",
+			"takeaway": "條件與更新要一起檢查。"
+		},
+		{
+			"slide_id": "nested",
+			"role": "summary",
+			"title": "巢狀迴圈怎麼數次數？",
+			"layout": "bullets",
+			"blocks": [
+				{
+					"type": "bullets",
+					"items": [
+						"外圈每一次都讓內圈完整執行",
+						"固定外圈兩次、內圈三次，共六次"
+					]
+				}
+			],
+			"speaker_notes": "用兩列三格逐次計數，最後複習每圈順序與停止條件。",
+			"source_quote": "巢狀迴圈中，內圈對每一次外圈都會完整執行。",
+			"takeaway": "先數每次外圈的內圈次數，再累加。"
+		}
+	]
+}

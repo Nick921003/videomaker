@@ -1,0 +1,86 @@
+{
+	"unit_id": "ff9e559208c9",
+	"title": "迴圈",
+	"source_ref": {
+		"platform": "bridgeai",
+		"course": "c-intro",
+		"unit": "loops",
+		"topic": "loop-basics",
+		"revision": "1"
+	},
+	"products": [
+		{
+			"item": "q1",
+			"format": "video",
+			"label": "第 1 點影片：每一圈的過程",
+			"files": {
+				"video": "q1/video.mp4"
+			},
+			"duration": 60.2,
+			"cost_usd": 0.053,
+			"embed_url": "/embed/ff9e559208c9/q1",
+			"created_at": "2026-10-05T09:20:00Z"
+		},
+		{
+			"item": "q2",
+			"format": "video",
+			"label": "第 2 點影片：多跑一次的原因",
+			"files": {
+				"video": "q2/video.mp4"
+			},
+			"duration": 75.4,
+			"cost_usd": 0.0575,
+			"embed_url": "/embed/ff9e559208c9/q2",
+			"created_at": "2026-10-05T09:20:00Z"
+		},
+		{
+			"item": "q3",
+			"format": "video",
+			"label": "第 3 點影片：while 和 for 的選擇",
+			"files": {
+				"video": "q3/video.mp4"
+			},
+			"duration": 65.1,
+			"cost_usd": 0.0495,
+			"embed_url": "/embed/ff9e559208c9/q3",
+			"created_at": "2026-10-05T09:20:00Z"
+		},
+		{
+			"item": "highlight",
+			"format": "highlight",
+			"label": "重點片",
+			"files": {
+				"video": "highlight/video.mp4"
+			},
+			"duration": 200.7,
+			"cost_usd": 0.06,
+			"embed_url": "/embed/ff9e559208c9/highlight",
+			"created_at": "2026-10-05T09:20:00Z"
+		},
+		{
+			"item": "mindmap",
+			"format": "mindmap",
+			"label": "心智圖",
+			"files": {
+				"svg": "mindmap/mindmap.svg"
+			},
+			"duration": null,
+			"cost_usd": 0.008,
+			"embed_url": "/embed/ff9e559208c9/mindmap",
+			"created_at": "2026-10-05T09:20:00Z"
+		},
+		{
+			"item": "slides",
+			"format": "slides",
+			"label": "簡報",
+			"files": {
+				"deck": "slides/deck.json",
+				"pptx": "slides/deck.pptx"
+			},
+			"duration": null,
+			"cost_usd": 0.009,
+			"embed_url": "/embed/ff9e559208c9/slides",
+			"created_at": "2026-10-05T09:20:00Z"
+		}
+	]
+}
