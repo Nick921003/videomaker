@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """scene.json → 配音 master.wav＋timing.json（每句實測起訖）。
 
-用法：.venv/bin/python video_engine/board/narrate.py <scene.json> <輸出目錄> [--speed 0.95]
+用法：.venv/bin/python video_engine/board/narrate.py <scene.json> <輸出目錄> [--speed 0.95] [--tts sovits|gemini]
 
 每句唸 `spoken`（沒有就唸 `say`），以文字雜湊快取：改一句只重合成那一句。
 需要 GPT-SoVITS 服務（.env 的 TTS_API_URL）。合成與驗收重試沿用 synth.py。
@@ -21,6 +21,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 
+import gemini_tts
 import synth
 from compile import BEAT_GAP, LEAD_IN, SCENE_GAP
 
@@ -81,7 +82,16 @@ def main():
 	ap.add_argument("out_dir")
 	ap.add_argument("--speed", type=float, default=0.95)
 	ap.add_argument("--allow-spelled", action="store_true", help="確定要唸縮寫或英文單字時才用")
+	ap.add_argument("--tts", choices=["sovits", "gemini"], default="gemini", help="gemini＝Gemini TTS（預設，付費，記花費）；sovits＝本機王老師（免費，需要 :9880）")
+	ap.add_argument("--tts-model", default="gemini-3.8-flash-tts")
+	ap.add_argument("--voice", default="Charon", help="Gemini 內建聲音名稱")
+	ap.add_argument("--english", default="auto", metavar="PLAN_JSON|auto|off",
+		help="Gemini 專用：英文單字照原文唸（唸 say），只把程式符號（<=、-o、Ctrl+S）依 plan 詞彙表換成中文；auto＝找分鏡旁的 plan.json")
 	args = ap.parse_args()
+	gemini = args.tts == "gemini"
+	if gemini:
+		import llm
+		llm.load_env()
 	with open(args.scene, encoding="utf-8") as f:
 		doc = json.load(f)
 	audio_dir = os.path.join(args.out_dir, "audio")
@@ -94,12 +104,31 @@ def main():
 			cache = {r["digest"]: r for r in json.load(f)["beats"]}
 
 	beats = [(si, b) for si, s in enumerate(doc["scenes"]) for b in s["beats"]]
+	plan_path = None
+	if gemini and args.english != "off":
+		plan_path = args.english
+		if args.english == "auto":
+			here = os.path.dirname(os.path.abspath(args.scene))
+			plan_path = next((p for p in (os.path.join(here, "plan.json"), os.path.join(os.path.dirname(here), "plan.json")) if os.path.exists(p)), None)
+			if plan_path is None:
+				print("找不到 plan.json，程式符號沒有唸法可換，改唸 spoken（中文說法）", flush=True)
+	if plan_path:
+		with open(plan_path, encoding="utf-8") as f:
+			symbols = [g for g in json.load(f).get("glossary", []) if re.search(r"[^A-Za-z0-9\s/]", g.get("term", ""))]
+		symbols.sort(key=lambda g: -len(g["term"]))
+		for _, b in beats:
+			text = b["say"]
+			for g in symbols:
+				for term in re.split(r"\s*/\s*", g["term"]):
+					text = text.replace(term, g["say_as"])
+			b["spoken"] = text
 	bad = [f"{p}：{b.get('spoken') or b['say']}" for _, b in beats if (p := speech_problems(b.get("spoken") or b["say"]))]
-	if bad and not args.allow_spelled:
+	if bad and not args.allow_spelled and not gemini:
 		# 王老師語料沒有逐字母縮寫、英文單字也極少（見 memory gptsovits-ar-failure-modes）
 		raise SystemExit("講稿請改中文說法（畫面可保留英文，旁白寫在 spoken）：\n  " + "\n  ".join(bad))
 
-	key = voice_key(args.speed)
+	key = f"gemini|{gemini_tts.AUDIO_FORMAT}|{args.tts_model}|{args.voice}|{args.speed}|{hashlib.sha1(gemini_tts.prompt_for('', args.speed).encode()).hexdigest()[:8]}" if gemini else voice_key(args.speed)
+	usage_path, spent, calls = os.path.join(args.out_dir, "tts_usage.jsonl"), 0.0, 0
 	records, meta, todo, unchecked = [None] * len(beats), {}, [], []
 	for k, (si, b) in enumerate(beats):
 		text = b.get("spoken") or b["say"]
@@ -134,7 +163,13 @@ def main():
 		for k in todo:
 			si, text, digest, wav = meta[k]
 			print(f"[{k + 1}/{len(beats)}] 合成（第 {rnd} 輪）{text}", flush=True)
-			info, ok = synth_keep_raw(text, args.speed, wav, os.path.join(raw_dir, f"{k:02d}_{digest}.r{rnd}"))
+			if gemini:
+				info, ok, usage = gemini_tts.synth_gemini(text, wav, args.tts_model, args.voice, args.speed)
+				spent, calls = spent + usage["usd"], calls + 1
+				with open(usage_path, "a", encoding="utf-8") as f:
+					f.write(json.dumps({"beat": k, "round": rnd, **usage}, ensure_ascii=False) + "\n")
+			else:
+				info, ok = synth_keep_raw(text, args.speed, wav, os.path.join(raw_dir, f"{k:02d}_{digest}.r{rnd}"))
 			records[k] = {"digest": digest, "text": text, "ok": ok, **info, "scene": si, "wav": os.path.basename(wav), "round": rnd}
 		unchecked, todo = todo, []
 	records = [{**r, "ok": r["ok"] and r.get("asr", {}).get("ok", False)} for r in records]
@@ -164,11 +199,17 @@ def main():
 	with open(os.path.join(args.out_dir, "timing.json"), "w", encoding="utf-8") as f:
 		json.dump(timing, f, ensure_ascii=False)
 	with open(report_path, "w", encoding="utf-8") as f:
-		json.dump({"speed": args.speed, "total": round(t, 3), "beats": records}, f, ensure_ascii=False, indent="\t")
+		json.dump({"speed": args.speed, "tts": args.tts, "tts_usd_this_run": round(spent, 6), "total": round(t, 3), "beats": records}, f, ensure_ascii=False, indent="\t")
 	bad = [r for r in records if not r["ok"]]
 	print(f"{master}：{t:.2f}s，{len(records)} 句，{len(bad)} 句未過驗收（音量或內容）")
 	for r in bad:
 		print(f"  未過：{r['text']}　{r.get('asr', {}).get('problems', '')}")
+	if gemini:
+		total_usd = 0.0
+		if os.path.exists(usage_path):
+			with open(usage_path, encoding="utf-8") as f:
+				total_usd = sum(json.loads(line)["usd"] for line in f if line.strip())
+		print(f"Gemini 配音（{args.tts_model}／{args.voice}）：本次 {calls} 次呼叫 US${spent:.4f}，這個資料夾累計 US${total_usd:.4f}")
 
 
 if __name__ == "__main__":
