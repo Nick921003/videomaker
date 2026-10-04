@@ -191,6 +191,8 @@ def converse(budget, stage, system, user, validate, failed_path=None, target=Non
 	data, partial, problems = None, False, []
 	if start is not None:
 		data = start
+		if stage == "scene":
+			print("@step validate", flush=True)
 		problems = validate(data)
 		if not problems:
 			return data, 0
@@ -205,10 +207,14 @@ def converse(budget, stage, system, user, validate, failed_path=None, target=Non
 		elif attempt and data is None:
 			messages = messages + [{"role": "user", "content": FULL_ASK + "\n- " + "\n- ".join(problems[:20])}]
 		repairing = attempt > 0 or start is not None
+		if stage == "scene":
+			print("@step repair" if repairing else "@step storyboard", flush=True)
 		text = call(budget, stage, system, messages, repair_target if repairing else target, light=repairing)
 		try:
 			got = first_json(text)
 			data = merge_patch(data, got) if partial else got
+			if stage == "scene":
+				print("@step validate", flush=True)
 			problems = validate(data)
 		except ValueError as e:
 			problems = [str(e)]
@@ -220,6 +226,7 @@ def converse(budget, stage, system, user, validate, failed_path=None, target=Non
 	if data is not None and failed_path:
 		with open(failed_path, "w", encoding="utf-8") as f:
 			json.dump({"problems": problems, "last": data}, f, ensure_ascii=False, indent="\t")
+	print("@error repair_exhausted " + "；".join(problems[:2]), flush=True)
 	raise RuntimeError(f"{stage} 修正 {MAX_REPAIRS} 次仍未通過：{problems[:5]}")
 
 
@@ -316,6 +323,7 @@ def plan_problems(plan, md):
 
 
 def do_plan(md_path, out_dir, budget, target=None):
+	print("@step plan", flush=True)
 	with open(md_path, encoding="utf-8") as f:
 		md = f.read()
 	with open(os.path.join(HERE, "prompts", "plan.system.md"), encoding="utf-8") as f:
@@ -615,6 +623,7 @@ def preflight():
 	r = subprocess.run([sys.executable, os.path.join(HERE, "selftest.py"), "--quick"], capture_output=True, text=True)
 	print("  " + (r.stdout.strip().splitlines() or ["（無輸出）"])[-1], flush=True)
 	if r.returncode:
+		print("@error selftest " + ((r.stdout + r.stderr).strip().splitlines() or ["本機自我檢查沒過"])[-1], flush=True)
 		sys.exit("本機自我檢查沒過，先修元件再呼叫 AI：\n" + r.stdout[-2000:] + r.stderr[-500:])
 
 
@@ -648,6 +657,7 @@ def do_scene(md_path, out_dir, seg_id, budget, target=None, repair_target=None, 
 		"", "# 教材段落", excerpt,
 	])
 	print(f"分鏡：{seg_id} {seg['title']}（{seg['sec']}s）", flush=True)
+	print("@step selftest", flush=True)
 	preflight()
 	glossary = plan.get("glossary", [])
 	failed_path = os.path.join(out_dir, f"{seg_id}.failed.json")
@@ -662,6 +672,7 @@ def do_scene(md_path, out_dir, seg_id, budget, target=None, repair_target=None, 
 		# 免費修正：太擠的場景自動推近，過了就不用叫模型重寫
 		if auto_focus(d, problems):
 			print("  自動推近太擠的場景後重新驗證", flush=True)
+			print("@step validate", flush=True)
 			problems = check()
 		return problems
 	doc, repairs = converse(budget, "scene", system, user, validate,
@@ -697,6 +708,7 @@ def main():
 		else:
 			do_scene(args.md, args.out_dir, args.segment, budget, args.model, args.repair_model, args.resume)
 	except BudgetExceeded as e:
+		print(f"@error budget {e}", flush=True)
 		sys.exit(f"預算上限：{e}")
 	print(f"累計花費 US${budget.spent():.4f}／上限 US${budget.cap:.2f}")
 

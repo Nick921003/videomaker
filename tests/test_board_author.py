@@ -1,8 +1,11 @@
+from contextlib import redirect_stdout
+import io
 import json
 import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BOARD = os.path.join(ROOT, "video_engine", "board")
@@ -12,6 +15,65 @@ import author as BA
 
 with open(os.path.join(BOARD, "examples", "env_setup.md"), encoding="utf-8") as f:
 	MD = f.read()
+
+
+class TestMarkers(unittest.TestCase):
+	def test_scene_markers_with_fake_model(self):
+		with tempfile.TemporaryDirectory() as directory:
+			md = os.path.join(directory, "material.md")
+			with open(md, "w", encoding="utf-8") as handle:
+				handle.write(MD)
+			with open(os.path.join(directory, "plan.json"), "w", encoding="utf-8") as handle:
+				json.dump({"stories": [{"id": "q1", "title": "工具", "sec": 60, "objectives": [1]}]}, handle)
+			output = io.StringIO()
+			with redirect_stdout(output), patch.object(BA, "preflight"), \
+				patch.object(BA, "call", return_value=json.dumps({"objects": [], "scenes": []})), \
+				patch.object(BA, "scene_problems", return_value=[]):
+				BA.do_scene(md, directory, "q1", None)
+			self.assertEqual([line for line in output.getvalue().splitlines() if line.startswith("@")],
+				["@step selftest", "@step storyboard", "@step validate"])
+			self.assertTrue(os.path.isfile(os.path.join(directory, "q1.scene.json")))
+
+	def test_repair_markers_preserve_call_count_and_exception(self):
+		output = io.StringIO()
+		with redirect_stdout(output), patch.object(BA, "call", return_value='{"scenes": []}') as call:
+			with self.assertRaises(RuntimeError):
+				BA.converse(None, "scene", "sys", "user", lambda doc: ["問題一", "問題二", "問題三"])
+		self.assertEqual(call.call_count, BA.MAX_REPAIRS + 1)
+		markers = [line for line in output.getvalue().splitlines() if line.startswith("@")]
+		self.assertEqual(markers[:2], ["@step storyboard", "@step validate"])
+		self.assertEqual(markers.count("@step repair"), BA.MAX_REPAIRS)
+		self.assertEqual(markers[-1], "@error repair_exhausted 問題一；問題二")
+
+	def test_preflight_failure_marker_preserves_exit(self):
+		output = io.StringIO()
+		with redirect_stdout(output), patch.object(BA.subprocess, "run") as run:
+			run.return_value.returncode = 1
+			run.return_value.stdout = "元件坏了\n"
+			run.return_value.stderr = ""
+			with self.assertRaises(SystemExit):
+				BA.preflight()
+		self.assertIn("@error selftest", output.getvalue())
+
+	def test_plan_marker_is_flushed(self):
+		with tempfile.TemporaryDirectory() as directory:
+			md = os.path.join(directory, "material.md")
+			with open(md, "w", encoding="utf-8") as handle:
+				handle.write(MD)
+			with redirect_stdout(io.StringIO()), patch.object(BA, "call", return_value='{"stories": []}'), \
+				patch.object(BA, "plan_problems", return_value=[]), patch.object(BA, "print", wraps=print, create=True) as printed:
+				BA.do_plan(md, directory, None)
+			printed.assert_any_call("@step plan", flush=True)
+
+	def test_budget_marker_preserves_system_exit(self):
+		with tempfile.TemporaryDirectory() as directory:
+			with redirect_stdout(io.StringIO()), patch.object(BA.sys, "argv", ["author.py", "plan", "unused.md", directory]), \
+				patch("llm.load_env"), patch.object(BA, "do_plan", side_effect=BA.BudgetExceeded("已達上限")), \
+				patch.object(BA, "print", wraps=print, create=True) as printed:
+				with self.assertRaises(SystemExit) as error:
+					BA.main()
+			self.assertEqual(error.exception.code, "預算上限：已達上限")
+			printed.assert_any_call("@error budget 已達上限", flush=True)
 
 
 class TestMaterial(unittest.TestCase):

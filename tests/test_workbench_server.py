@@ -10,6 +10,8 @@ import unittest
 from unittest.mock import patch
 
 from workbench import server as BS
+from workbench.jobs import JobQueue
+from tests.workbench_shapes import SHAPES, assert_shape
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -170,6 +172,24 @@ class TestStudio(unittest.TestCase):
 		self.assertEqual(detail["jobs"], [])
 		self.assertFalse(detail["planned"])
 
+	def test_existing_routes_enqueue_registry_items_and_analysis(self):
+		self.assertIsInstance(self.studio.job_queue, JobQueue)
+		unit, _ = self.unit(planned=False)
+		jid = self.api("POST", f"/api/units/{unit}/plan")["job_id"]
+		analysis = self.wait_job(jid)
+		assert_shape(analysis, SHAPES["job"])
+		self.assertEqual(analysis["format"], "analysis")
+		self.assertEqual([step["id"] for step in analysis["steps"]], ["selftest", "plan"])
+		response = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q2", "q1"]})
+		self.assertEqual(response["job_id"], response["job_ids"][0])
+		self.assertEqual(len(response["job_ids"]), 2)
+		for jid, item in zip(response["job_ids"], ["q2", "q1"]):
+			job = self.wait_job(jid)
+			assert_shape(job, SHAPES["job"])
+			self.assertEqual(job["item"], item)
+			self.assertEqual(job["format"], "video")
+		assert_shape(self.studio.job_queue.queue(), SHAPES["queue"])
+
 	def test_fixture_detail_estimates_and_usage(self):
 		unit, directory = self.unit(fixture=True)
 		(directory / "usage.jsonl").write_text('{"usd":0.015}\n{"usd":0.025}\n', encoding="utf-8")
@@ -234,9 +254,12 @@ class TestStudio(unittest.TestCase):
 		self.runner.release.set()
 		self.assertEqual(self.wait_job(job_id)["state"], "done")
 		self.assertEqual(self.api("POST", f"/api/units/{unit}/plan"), {"job_id": None, "planned": True})
-		job_id = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q2", "q1", "q2"]})["job_id"]
-		job = self.wait_job(job_id)
-		self.assertEqual(job["state"], "done", job)
+		response = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q2", "q1", "q2"]})
+		job_id = response["job_id"]
+		self.assertEqual(len(response["job_ids"]), 2)
+		batch = [self.wait_job(jid) for jid in response["job_ids"]]
+		job = batch[0]
+		self.assertTrue(all(result["state"] == "done" for result in batch), batch)
 		self.assertEqual([Path(c[1]).name for c in self.runner.commands], ["selftest.py", "author.py"] +
 			["author.py", "narrate.py", "compile.py", "build.py", "check.py", "export.py"] * 2)
 		self.assertEqual(self.runner.commands[0][2:], ["--quick"])
@@ -255,7 +278,8 @@ class TestStudio(unittest.TestCase):
 		self.assertEqual(len(self.health_calls), 3)
 		self.assertLessEqual(len(job["log"]), 40)
 		self.assertIn("測試輸出 44", job["log"])
-		self.assertAlmostEqual(job["spent_usd"], 0.065)
+		self.assertTrue(all(result["spent_usd"] == 0.025 for result in batch))
+		self.assertAlmostEqual(self.api("GET", "/api/units/" + unit)["spent_usd"], 0.065)
 		persisted = json.loads((directory / "jobs" / (job_id + ".json")).read_text(encoding="utf-8"))
 		self.assertEqual(persisted["state"], "done")
 		detail = self.api("GET", "/api/units/" + unit)
@@ -300,14 +324,15 @@ class TestStudio(unittest.TestCase):
 		job_id = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1"]})["job_id"]
 		job = self.wait_job(job_id)
 		self.assertEqual(job["state"], "failed")
-		self.assertEqual(job["error"], "配音伺服器沒開（:9880）")
+		self.assertEqual(job["error"]["code"], "unknown")
+		self.assertIn("配音伺服器沒開（:9880）", job["error"]["reason"])
 		self.assertEqual([Path(c[1]).name for c in self.runner.commands], ["author.py"])
 		self.tts_up = True
 		self.runner.fail = "check.py"
 		job_id = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1"]})["job_id"]
 		job = self.wait_job(job_id)
 		self.assertEqual(job["state"], "failed")
-		self.assertIn("驗證", job["error"])
+		self.assertIn("驗證", job["error"]["reason"])
 		self.assertNotIn("export.py", [Path(c[1]).name for c in self.runner.commands])
 		self.assertEqual(sum(Path(c[1]).name == "author.py" for c in self.runner.commands), 1)
 		self.assertEqual(self.api("GET", "/api/units/" + unit)["plan"]["stories"][0]["status"], "failed")
@@ -334,7 +359,9 @@ class TestStudio(unittest.TestCase):
 		self.addCleanup(self.runner.release.set)
 		first = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1"]})["job_id"]
 		self.assertTrue(self.runner.entered.wait(2))
-		second = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1", "q2"]})["job_id"]
+		response = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1", "q2"]})
+		self.assertEqual(response["job_ids"][0], first)
+		second = response["job_ids"][1]
 		self.runner.release.set()
 		self.assertEqual(self.wait_job(first)["state"], "done")
 		self.assertEqual(self.wait_job(second)["state"], "done")
@@ -354,12 +381,13 @@ class TestStudio(unittest.TestCase):
 		unit, _ = self.unit()
 		self.runner.release.clear()
 		self.addCleanup(self.runner.release.set)
-		job_id = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1", "q2", "q3"]})["job_id"]
+		response = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1", "q2", "q3"]})
 		self.assertTrue(self.runner.entered.wait(2))
 		stories = self.api("GET", "/api/units/" + unit)["plan"]["stories"]
 		self.assertEqual([story["status"] for story in stories], ["running", "queued", "queued"])
 		self.runner.release.set()
-		self.assertEqual(self.wait_job(job_id)["state"], "done")
+		for jid in response["job_ids"]:
+			self.assertEqual(self.wait_job(jid)["state"], "done")
 
 	def test_partial_export_is_unavailable_and_can_be_retried(self):
 		unit, directory = self.unit()
@@ -407,7 +435,8 @@ class TestStudio(unittest.TestCase):
 		for n in (0, 1):
 			job = restored.get_job(f"{n:032x}")
 			self.assertEqual(job["state"], "failed")
-			self.assertIn("重啟", job["error"])
+			self.assertEqual(job["error"]["code"], "interrupted")
+			self.assertIn("重啟", job["error"]["reason"])
 			self.assertEqual(json.loads((directory / "jobs" / (f"{n:032x}.json")).read_text())["state"], "failed")
 		self.assertEqual(restored.get_job(f"{2:032x}")["state"], "done")
 		self.assertEqual(self.runner.commands, [])
@@ -423,6 +452,45 @@ class TestStudio(unittest.TestCase):
 		self.addCleanup(restored.close)
 		self.assertEqual(restored.get_job(job_id)["state"], "failed")
 		self.assertEqual(self.runner.commands, [])
+
+	def test_legacy_batch_keeps_completed_points_and_per_point_costs(self):
+		unit, directory = self.unit()
+		self.studio.close()
+		(directory / "q1").mkdir()
+		(directory / "q1/video.mp4").write_bytes(b"complete video")
+		(directory / "q3").mkdir()
+		(directory / "q3/video.mp4").write_bytes(b"reused video")
+		write_json(directory / "jobs" / ("f" * 32 + ".json"), {
+			"job_id": "f" * 32, "unit_id": unit, "kind": "stories", "stories": ["q3"],
+			"completed": ["q3"], "target": "q3", "state": "done", "log": [], "error": None,
+			"costs": {"q3": 0.025}, "spent_usd": 0.025, "created_at": "2026-10-04"})
+		for index, state in enumerate(("failed", "running")):
+			jid = f"{index:032x}"
+			write_json(directory / "jobs" / (jid + ".json"), {
+				"job_id": jid, "unit_id": unit, "kind": "stories", "stories": ["q1", "q2", "q3"],
+				"completed": ["q1"], "target": "q2" if state == "failed" else "q1", "state": state,
+				"log": [], "spent_usd": 0.05, "error": None, "costs": {"q1": 0.025, "q2": 0.01},
+				"created_at": "2026-10-05"})
+			restored = BS.Studio(self.out, command_runner=self.runner, tts_checker=self.health, tts_mode="sovits")
+			try:
+				stories = restored.get_unit(unit)["plan"]["stories"]
+				self.assertEqual(stories[0]["status"], "done")
+				self.assertIsNotNone(stories[0]["video"])
+				self.assertAlmostEqual(stories[0]["cost_usd"], 0.025 * (index + 1))
+				self.assertAlmostEqual(stories[1]["cost_usd"], 0.01 * (index + 1))
+				self.assertEqual(stories[2]["status"], "done")
+				self.assertIsNotNone(stories[2]["video"])
+			finally:
+				restored.close()
+
+	def test_registry_commands_reject_escaping_output_symlink(self):
+		unit, directory = self.unit()
+		(directory / "q1").mkdir()
+		(directory / "q1/voice").symlink_to(self.static, target_is_directory=True)
+		response = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1"]})
+		self.assertEqual(self.wait_job(response["job_id"])["state"], "failed")
+		self.assertNotIn("narrate.py", [Path(command[1]).name for command in self.runner.commands])
+		self.assertFalse((self.static / "timing.json").exists())
 
 	def test_static_media_range_and_traversal(self):
 		unit, directory = self.unit()

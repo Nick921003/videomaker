@@ -180,6 +180,7 @@ def main():
 			print(f"    {m}")
 	print(f"自我檢查：{len(items)} 份，{'通過' if not failed else f'{len(failed)} 份有問題'}")
 	if failed:
+		print(f"@error selftest {failed[0][2][0]}", flush=True)
 		sys.exit(1)
 	os.makedirs(OUT, exist_ok=True)
 	with open(STAMP, "w", encoding="utf-8") as f:

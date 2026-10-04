@@ -4,23 +4,18 @@
 用法：.venv/bin/python -m workbench.server [--port 8765] [--out video_engine/out/units]
 """
 import argparse
-import copy
 import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
-import math
 import mimetypes
 import os
 from pathlib import Path
-import queue
 import re
-import subprocess
-import threading
-from datetime import datetime, timezone
 from urllib.parse import unquote, urlsplit
-import uuid
 
-from .library import Library, read_json, safe_path, write_json
+from . import formats
+from .jobs import JobQueue, run_command, spent_usd
+from .library import Library, read_json, safe_path
 
 ROOT = Path(__file__).resolve().parents[1]
 BOARD_DIR = ROOT / "video_engine/board"
@@ -43,31 +38,6 @@ class APIError(Exception):
 	def __init__(self, status, message):
 		super().__init__(message)
 		self.status = status
-
-
-def spent_usd(directory, path_resolver=None):
-	"""規劃＋分鏡（usage.jsonl）加上各段 Gemini 配音（*/voice/tts_usage.jsonl）。"""
-	directory = Path(directory)
-	resolve = path_resolver or (lambda relative: safe_path(directory, relative))
-	return round(_sum_usd(resolve("usage.jsonl")) + sum(_sum_usd(resolve(p.relative_to(directory)))
-		for p in directory.glob("**/tts_usage.jsonl")), 6)
-
-
-def _sum_usd(path):
-	total = 0.0
-	try:
-		with Path(path).open(encoding="utf-8") as handle:
-			for line in handle:
-				try:
-					value = json.loads(line).get("usd")
-					if type(value) in (int, float) and math.isfinite(value):
-						total += value
-				except (ValueError, AttributeError):
-					# 子行程可能正寫到最後一行，下一次輪詢再讀。
-					continue
-	except FileNotFoundError:
-		pass
-	return round(total, 8)
 
 
 def bigrams(text):
@@ -98,15 +68,6 @@ def tts_health():
 		connection.close()
 
 
-def run_command(command, log):
-	environment = dict(os.environ, PYTHONUNBUFFERED="1")
-	with subprocess.Popen(command, cwd=ROOT, env=environment, stdout=subprocess.PIPE,
-		stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1) as process:
-		for line in process.stdout:
-			log(line.rstrip("\r\n"))
-		return process.wait()
-
-
 class Studio:
 	def __init__(self, out, command_runner=None, tts_checker=None, tts_mode=None):
 		self.tts_mode = tts_mode or TTS_MODE
@@ -114,19 +75,33 @@ class Studio:
 		self.out = self.library.root
 		self.command_runner = command_runner or run_command
 		self.tts_checker = tts_checker or tts_health
-		self.lock = threading.RLock()
-		self.jobs = {}
-		self.pending = queue.Queue()
-		self.stopping = threading.Event()
-		self._restore_jobs()
 		self.tts_available = self._tts_ready()
-		self.worker = threading.Thread(target=self._work, name="影片工作佇列", daemon=True)
-		self.worker.start()
+		self.job_queue = JobQueue(self.library, self._run_command, formats, tts_mode=self.tts_mode)
+		self.lock = self.job_queue.lock
 
 	def close(self):
-		self.stopping.set()
-		self.pending.put(None)
-		self.worker.join(timeout=3)
+		self.job_queue.close()
+
+	def _run_command(self, argv, on_line):
+		cli = Path(argv[1]).name
+		if cli == "narrate.py":
+			self.tts_available = self._tts_ready()
+			if not self.tts_available:
+				raise RuntimeError("配音伺服器沒開（:9880）")
+			Path(argv[3]).mkdir(parents=True, exist_ok=True)
+		code = self.command_runner(argv, on_line)
+		if code:
+			label = {"check.py": "驗證", "export.py": "出片", "selftest.py": "本機自我檢查"}.get(cli, cli)
+			on_line(f"{label}失敗（結束碼 {code}），請查看工作紀錄")
+		elif cli == "author.py":
+			path = Path(argv[4]) / ("plan.json" if argv[2] == "plan" else f"{argv[5]}.scene.json")
+			if not path.is_file():
+				raise RuntimeError("生成程序沒有產生預期的規劃或分鏡檔案")
+		elif cli == "export.py":
+			path = Path(argv[3])
+			if not path.is_file() or not path.stat().st_size:
+				raise RuntimeError("出片程序沒有產生影片")
+		return code
 
 	def _tts_ready(self):
 		if self.tts_mode != "sovits":
@@ -179,11 +154,13 @@ class Studio:
 			return {"unit_id": identifier, "created": created}
 
 	def _unit_jobs(self, identifier):
-		return [job for job in self.jobs.values() if job["unit_id"] == identifier]
+		return [self.job_queue.get(jid) for jid, job in self.job_queue.jobs.items() if job["unit_id"] == identifier]
 
 	def _targets(self, job, story):
-		return job["kind"] == "highlight" if story == "highlight" else (
-			job["kind"] == "stories" and story in job.get("stories", []))
+		if "kind" in job:
+			return job["kind"] == "highlight" if story == "highlight" else (
+				job["kind"] == "stories" and story in job.get("stories", []))
+		return job["item"] == story
 
 	def _video_ready(self, identifier, story):
 		video = self._unit_path(identifier, f"{story}/video.mp4")
@@ -192,11 +169,11 @@ class Studio:
 		for job in reversed(self._unit_jobs(identifier)):
 			if not self._targets(job, story):
 				continue
-			if story in job.get("completed", []) or job["state"] == "done":
+			if job["state"] == "done" or story in job.get("completed", []):
 				return True
-			if job["state"] == "failed" and job.get("target", story) == story:
+			if job["state"] == "failed" and ("kind" not in job or job.get("target", story) == story):
 				return False
-			if job["state"] == "running" and job.get("target") == story:
+			if job["state"] == "running" and ("kind" not in job or job.get("target") == story):
 				return False
 		return True
 
@@ -206,16 +183,15 @@ class Studio:
 		active = active or next((j for j in jobs if j["state"] == "queued"), None)
 		ready = self._video_ready(identifier, story)
 		status = "done" if ready else active["state"] if active else "failed" if jobs and jobs[-1]["state"] == "failed" else "none"
-		if active and not ready and active["kind"] == "stories" and active.get("target") != story:
-			status = "queued"
-		if active and story == active.get("target") and story not in active.get("completed", []):
+		if active and active["state"] == "running":
 			status, ready = "running", False
 		duration = None
 		if ready:
 			report = read_json(self._unit_path(identifier, f"{story}/video.export.json"), {})
 			timeline = read_json(self._unit_path(identifier, f"{story}/timeline.json"), {})
 			duration = report.get("duration", timeline.get("duration"))
-		costs = [j["costs"][story] for j in self._unit_jobs(identifier) if story in j.get("costs", {})]
+		costs = [j["costs"][story] if "kind" in j else j["spent_usd"] for j in self._unit_jobs(identifier)
+			if ("kind" in j and story in j.get("costs", {})) or ("kind" not in j and self._targets(j, story))]
 		return {"status": status, "video": f"/media/{identifier}/{story}/video.mp4" if ready else None,
 			"duration": duration, "cost_usd": round(sum(costs), 8) if costs else None,
 			"estimate_usd": 0.0 if ready or self._unit_path(identifier, f"{story}.scene.json").is_file() else ESTIMATE_USD}
@@ -286,208 +262,54 @@ class Studio:
 		return {"kind": "no_match", "story": None, "score": score,
 			"reason": "素材庫尚未找到對應的問題故事", "video": None}
 
-	def _save_job(self, job):
-		job["spent_usd"] = self._spent_usd(job["unit_id"])
-		path = self._unit_path(job["unit_id"], f"jobs/{job['job_id']}.json")
-		write_json(path, job)
-
-	def _restore_jobs(self):
-		paths = []
-		for identifier in self.library.unit_ids():
-			try:
-				directory = self._unit_path(identifier, "jobs")
-			except (APIError, OSError, ValueError):
-				continue
-			paths.extend((identifier, path) for path in directory.glob("*.json"))
-		for identifier, path in sorted(paths):
-			if not JOB_ID.fullmatch(path.stem):
-				continue
-			try:
-				path = self._unit_path(identifier, f"jobs/{path.name}")
-				job = read_json(path)
-			except (APIError, OSError, ValueError, RecursionError):
-				continue
-			if (not isinstance(job, dict) or job.get("unit_id") != identifier or job.get("job_id") != path.stem
-				or job.get("kind") not in ("plan", "stories", "highlight")
-				or job.get("state") not in ("queued", "running", "done", "failed")):
-				continue
-			self.jobs[job["job_id"]] = job
-		self.jobs = dict(sorted(self.jobs.items(), key=lambda item: item[1].get("created_at", "")))
-		for job in self.jobs.values():
-			if job["state"] not in ("done", "failed"):
-				job.update(state="failed", error="伺服器重啟，未完成的工作已停止")
-				job["log"] = [*job.get("log", []), job["error"]][-40:]
-				self._save_job(job)
-
 	def get_job(self, identifier):
-		with self.lock:
-			job = self.jobs.get(identifier)
-			if job is None:
-				raise APIError(404, "找不到工作")
-			result = copy.deepcopy(job)
-			result["spent_usd"] = self._spent_usd(job["unit_id"])
-			result["log"] = result.get("log", [])[-40:]
-			return result
+		try:
+			return self.job_queue.get(identifier)
+		except KeyError:
+			raise APIError(404, "找不到工作")
+
+	def _active_job(self, identifier, item):
+		return next((job["job_id"] for job in self._unit_jobs(identifier)
+			if job["item"] == item and job["state"] in ("queued", "running")), None)
+
+	def _check_queue(self):
+		if self.job_queue.stopping.is_set():
+			raise APIError(503, "伺服器正在停止")
 
 	def enqueue_plan(self, identifier):
 		with self.lock:
 			if self._unit_path(identifier, "plan.json").is_file():
 				return {"job_id": None, "planned": True}
-			return self._enqueue(identifier, "plan", [])
+			self._check_queue()
+			jid = self._active_job(identifier, "analysis")
+			if jid is None:
+				view = formats.UnitView(identifier, self._unit_dir(identifier), None, self.tts_mode)
+				jid = self.job_queue.enqueue_stage(identifier, "analysis", formats.stages.analysis_commands(view))
+			return {"job_id": jid}
 
 	def enqueue_videos(self, identifier, payload):
 		with self.lock:
 			self._unit_dir(identifier)
 			plan = self._plan(identifier)
 			if set(payload) == {"highlight"} and payload["highlight"] is True:
-				kind = "highlight"
 				stories = plan.get("highlight", {}).get("stories", [])
-				known = {s["id"] for s in plan["stories"]}
-				if not stories or any(s not in known for s in stories):
+				known = {story["id"] for story in plan["stories"]}
+				if not stories or any(story not in known for story in stories):
 					raise APIError(409, "教材規劃沒有可生成的重點片")
-				if self._video_ready(identifier, "highlight"):
-					return {"job_id": None}
+				items = ["highlight"]
 			elif set(payload) == {"stories"} and isinstance(payload["stories"], list) and payload["stories"]:
-				kind = "stories"
-				known = {s["id"] for s in plan["stories"]}
-				if any(not isinstance(s, str) or s not in known for s in payload["stories"]):
+				known = {story["id"] for story in plan["stories"]}
+				if any(not isinstance(story, str) or story not in known for story in payload["stories"]):
 					raise APIError(400, "請選擇教材規劃中的段落")
-				stories = [s for s in dict.fromkeys(payload["stories"]) if not self._video_ready(identifier, s)]
-				if not stories:
-					return {"job_id": None}
+				items = list(dict.fromkeys(payload["stories"]))
 			else:
 				raise APIError(400, "請提供段落清單或重點片選項")
-			return self._enqueue(identifier, kind, stories)
-
-	def _enqueue(self, identifier, kind, stories):
-		if self.stopping.is_set():
-			raise APIError(503, "伺服器正在停止")
-		for job in self._unit_jobs(identifier):
-			if job["kind"] == kind and job.get("stories", []) == stories and job["state"] in ("queued", "running"):
-				return {"job_id": job["job_id"]}
-		job_id = uuid.uuid4().hex
-		job = {"job_id": job_id, "unit_id": identifier, "kind": kind, "state": "queued", "stage": "等待",
-			"log": [], "spent_usd": 0.0, "error": None, "stories": list(stories), "completed": [], "costs": {},
-			"created_at": datetime.now(timezone.utc).isoformat()}
-		self._save_job(job)
-		self.jobs[job_id] = job
-		self.pending.put(job_id)
-		return {"job_id": job_id}
-
-	def _update(self, job, **changes):
-		with self.lock:
-			job.update(changes)
-			self._save_job(job)
-
-	def _log(self, job, line):
-		with self.lock:
-			job["log"] = [*job["log"], line][-40:]
-			self._save_job(job)
-
-	def _step(self, job, stage, cli, args):
-		self._update(job, stage=stage)
-		python = PLAYWRIGHT_PY if cli in ("check", "export") else PROJECT_PY
-		command = [str(python), str(BOARD_DIR / (cli + ".py")), *map(str, args)]
-		code = self.command_runner(command, lambda line: self._log(job, line))
-		if code != 0:
-			raise RuntimeError(f"{stage}失敗（結束碼 {code}），請查看工作紀錄")
-
-	def _author(self, job, story=None):
-		identifier = job["unit_id"]
-		directory = self._unit_dir(identifier)
-		stage = "scene" if story else "plan"
-		args = [stage, self._unit_path(identifier, "material.md"), directory]
-		if story:
-			args.append(story)
-			# 上次失敗存了草稿：從草稿接著修，不重寫第一版
-			if self._unit_path(identifier, f"{story}.failed.json").is_file():
-				args.append("--resume")
-		else:
-			# author 目前只在分鏡內建自檢，規劃也先過免費閘。
-			self._step(job, "本機自我檢查", "selftest", ["--quick"])
-		args.extend(["--model", MODEL, "--budget-usd", "0.50"])
-		before = self._spent_usd(identifier)
-		try:
-			self._step(job, f"分鏡 {story}" if story else "規劃", "author", args)
-		finally:
-			if story:
-				with self.lock:
-					job["costs"][story] = round(job["costs"].get(story, 0) + self._spent_usd(identifier) - before, 8)
-					self._save_job(job)
-		path = self._unit_path(identifier, f"{story}.scene.json" if story else "plan.json")
-		if not path.is_file():
-			raise RuntimeError("生成程序沒有產生預期的規劃或分鏡檔案")
-
-	def _scene(self, job, story):
-		path = self._unit_path(job["unit_id"], f"{story}.scene.json")
-		if not path.is_file():
-			self._author(job, story)
-		return path
-
-	def _render(self, job, story, scene):
-		self._update(job, target=story, stage=f"配音 {story}")
-		self.tts_available = self._tts_ready()
-		if not self.tts_available:
-			raise RuntimeError("配音伺服器沒開（:9880）")
-		identifier = job["unit_id"]
-		output = self._unit_path(identifier, story)
-		output.mkdir(parents=True, exist_ok=True)
-		voice = self._unit_path(identifier, f"{story}/voice")
-		player = self._unit_path(identifier, f"{story}/player")
-		timeline = self._unit_path(identifier, f"{story}/timeline.json")
-		video = self._unit_path(identifier, f"{story}/video.mp4")
-		self._step(job, f"配音 {story}", "narrate", [scene, voice, "--tts", self.tts_mode])
-		self._step(job, f"編譯 {story}", "compile", [scene, timeline, "--timing",
-			self._unit_path(identifier, f"{story}/voice/timing.json"), "--gaps", self._unit_path(identifier, f"{story}/gaps.jsonl")])
-		self._step(job, f"播放器 {story}", "build", [timeline, player, "--audio", self._unit_path(identifier, f"{story}/voice/master.wav")])
-		self._step(job, f"驗證 {story}", "check", [player])
-		self._step(job, f"出片 {story}", "export", [player, video])
-		if not video.is_file() or video.stat().st_size == 0:
-			raise RuntimeError("出片程序沒有產生影片")
-		self._update(job, completed=[*job["completed"], story])
-
-	def _execute(self, job):
-		identifier = job["unit_id"]
-		directory = self._unit_dir(identifier)
-		if job["kind"] == "plan":
-			if not self._unit_path(identifier, "plan.json").is_file():
-				self._author(job)
-			self._plan(identifier)
-		elif job["kind"] == "stories":
-			for story in job["stories"]:
-				if self._video_ready(identifier, story):
-					self._update(job, completed=[*job["completed"], story])
-					continue
-				self._update(job, target=story)
-				self._render(job, story, self._scene(job, story))
-		else:
-			if self._video_ready(identifier, "highlight"):
-				self._update(job, completed=["highlight"])
-				return
-			for story in job["stories"]:
-				self._scene(job, story)
-			scene = self._unit_path(identifier, "highlight.scene.json")
-			self._step(job, "串接重點片", "compose", [self._unit_path(identifier, "plan.json"), directory, scene])
-			self._render(job, "highlight", scene)
-
-	def _work(self):
-		while not self.stopping.is_set():
-			identifier = self.pending.get()
-			try:
-				if identifier is None or self.stopping.is_set():
-					return
-				job = self.jobs[identifier]
-				self._update(job, state="running")
-				try:
-					self._execute(job)
-				except Exception as exc:
-					message = str(exc) if isinstance(exc, RuntimeError) else "工作執行失敗，請檢查檔案與本機執行環境"
-					self._log(job, message)
-					self._update(job, state="failed", error=message)
-				else:
-					self._update(job, state="done", stage="完成")
-			finally:
-				self.pending.task_done()
+			items = [item for item in items if not self._video_ready(identifier, item)]
+			if not items:
+				return {"job_id": None}
+			self._check_queue()
+			jids = [self._active_job(identifier, item) or self.job_queue.enqueue(identifier, item) for item in items]
+			return {"job_id": jids[0], "job_ids": jids}
 
 
 class StudioHTTPServer(ThreadingHTTPServer):

@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-import threading
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -202,7 +202,7 @@ class TestFormatCommands(unittest.TestCase):
 			(self.unit.dir / f"{item}.scene.json").write_text("{}", encoding="utf-8")
 		self.assertEqual(module.commands(self.unit, "highlight"), [compose, *self.render_chain("highlight", scene)])
 
-	def test_video_and_highlight_match_existing_server_commands(self):
+	def test_video_and_highlight_match_server_queue_commands(self):
 		for item in ("q2", "highlight"):
 			for state in ("missing", "failed", "existing"):
 				with self.subTest(item=item, state=state):
@@ -216,30 +216,22 @@ class TestFormatCommands(unittest.TestCase):
 					commands = module.commands(self.unit, item)
 					expected = [[str(server.PLAYWRIGHT_PY if command.python == "playwright" else server.PROJECT_PY),
 						*command.argv] for command in commands]
-					studio = object.__new__(server.Studio)
-					studio.tts_mode = self.unit.tts_mode
-					studio._unit_dir = lambda uid: self.unit.dir
-					studio._unit_path = lambda uid, relative: self.unit.dir / relative
-					studio._video_ready = lambda uid, story: False
-					studio._tts_ready = lambda: True
-					studio._update = lambda job, **changes: job.update(changes)
-					studio._spent_usd = lambda uid: 0.0
-					studio._save_job = lambda job: None
-					studio._log = lambda job, line: None
-					studio.lock = threading.RLock()
 					actual = []
 					def runner(argv, log):
 						actual.append(argv)
-						if Path(argv[1]).name == "author.py":
-							(self.unit.dir / f"{argv[5]}.scene.json").write_text("{}", encoding="utf-8")
-						elif Path(argv[1]).name == "export.py":
-							Path(argv[3]).write_bytes(b"mp4")
 						return 0
-					studio.command_runner = runner
-					job = {"unit_id": self.unit.id, "kind": "highlight" if item == "highlight" else "stories",
-						"stories": PLAN["highlight"]["stories"] if item == "highlight" else [item],
-						"completed": [], "costs": {}}
-					studio._execute(job)
+					library = SimpleNamespace(root=self.unit.dir.parent,
+						unit_ids=lambda: [], unit_dir=lambda uid: self.unit.dir,
+						path=lambda uid, relative: self.unit.dir / relative, plan=lambda uid: PLAN)
+					job_queue = server.JobQueue(library, runner, formats, tts_mode=self.unit.tts_mode)
+					try:
+						jid = job_queue.enqueue(self.unit.id, item)
+						deadline = time.monotonic() + 3
+						while job_queue.get(jid)["state"] in ("queued", "running") and time.monotonic() < deadline:
+							time.sleep(0.005)
+						self.assertEqual(job_queue.get(jid)["state"], "done")
+					finally:
+						job_queue.close()
 					self.assertEqual(actual, expected)
 
 	def test_sovits_is_forwarded_for_both_video_formats(self):

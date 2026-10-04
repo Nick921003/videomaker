@@ -173,6 +173,9 @@ def main():
 			records[k] = {"digest": digest, "text": text, "ok": ok, **info, "scene": si, "wav": os.path.basename(wav), "round": rnd}
 		unchecked, todo = todo, []
 	records = [{**r, "ok": r["ok"] and r.get("asr", {}).get("ok", False)} for r in records]
+	for k, rec in enumerate(records):
+		if rec.get("asr", {}).get("missing"):
+			print(f"@error tts_missing 第 {k + 1} 句", flush=True)
 
 	# 接成一條：開頭留白、句間停頓、換場多停一點，跟 compile.py 估時的節奏一致
 	pieces, timing, t, sr, prev_scene = [], [], 0.0, None, 0
