@@ -261,3 +261,9 @@ video_engine/board/
 - 不接 `run.py`、不改既有 Pillow 管線、不改共用 theme 與 schema。
 - 不呼叫付費 LLM。TTS 需經使用者同意。
 - 不做角色動畫、不做 3D、不引入 GSAP／HyperFrames 等 npm 依賴。
+
+## 狀態註記
+
+- 2026-10-04 後續修正：通用標記避讓（箭頭直線→兩物件間折線→外側繞道、標籤找空位、同物件只留最新的圈、圈依空隙縮放）、量測閘納入標記與小標、鏡頭自動跟隨畫面外的動作（commit 待補 hash）
+- 2026-10-04 後續修正：本機自我檢查 selftest.py＋測試分鏡庫 fixtures/（付費前自動跑）；只重寫出問題的場景（--repair-model、--resume）；必演畫面 screens；旁白程式符號／唸法撞名／唸法重複檢查（commit 待補 hash）
+- 2026-10-04 後續修正：新元件 vars（變數面板）、stack（呼叫堆疊）；正式流程定為 Gemini 全包（規劃＋分鏡＋修正），配音預設 Gemini 3.8 Flash TTS 英文原音（narrate.py --tts sovits 可改回本機）；影片工作室獨立頁見 2026-10-04-board-studio-design.md（commit 待補 hash）
