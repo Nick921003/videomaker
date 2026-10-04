@@ -175,7 +175,7 @@ Dependency order: **M0 first**. After that, Codex runs B1→B6 in sequence while
 		- scene prints `@step selftest` before its self-check, `@step storyboard` before the first model call, `@step validate` before each validation pass, and `@step repair` before each repair call.
 		- When it gives up it prints `@error repair_exhausted <first two problems joined by ；>`.
 		- `BudgetExceeded` prints `@error budget <msg>`, and a self-check failure prints `@error selftest <msg>`.
-	- `narrate.py`: when words are still missing after the last round, print `@error tts_missing 第 N 句`.
+	- `narrate.py`: when words are still missing after the last round, print `@error tts_missing 第 N 句`. (Superseded in B6: this becomes `@warn`.)
 	- `selftest.py`: on failure, print `@error selftest <first failure>`.
 
 - [ ] Tests:
@@ -234,6 +234,14 @@ Dependency order: **M0 first**. After that, Codex runs B1→B6 in sequence while
 - [ ] Run the full suite. Expected: PASS.
 
 ### Task B6 (Codex): `/api/v1`, manifest, embed, static
+
+**Decision update (2026-10-05, user): a TTS word-missing result is a WARNING, not a failure.** In this task also:
+- Contract: add `"warnings": [{"code": str, "detail": str}]` to `SHAPES["job"]` and `SHAPES["item"]` in `tests/workbench_shapes.py`. Add the field to every job and unit mock (one q2 warning `tts_missing` / `第 3 句` in `unit-done.json`); keep `test_workbench_mock` green.
+- `jobs.py`: `parse_marker` also recognises `@warn <code> <detail>` → `("warn", code, detail)`. Warnings are appended to `job["warnings"]` and never fail the job. Remove `tts_missing` from the failure path, but keep its reason text for display.
+- `narrate.py`: print `@warn tts_missing 第 N 句` instead of `@error`. Add a `--redo 3,5` flag (1-based beats) that ignores the audio cache for those beats only.
+- Check how narrate's ASR comparison treats English words, code tokens and glossary readings (e.g. `<=` spoken as 小於等於). If they are compared as-is, compare the spoken form instead, or skip those tokens, so they cannot raise false warnings. Add a test with a fake ASR result.
+- Endpoint `POST /api/v1/units/<id>/items/<item>/renarrate {"beats": [int]}` enqueues a job for that item: narrate with `--redo`, then the render chain (it ignores `is_done`). Unit items carry the latest job's `warnings`.
+
 
 **Files:**
 - Modify: `workbench/server.py`, `workbench/library.py` (manifest).
@@ -342,6 +350,9 @@ Dependency order: **M0 first**. After that, Codex runs B1→B6 in sequence while
 - [ ] Mock mode: the user verifies both steps fit one screen with 5 points, and with 12 points (the list scrolls inside its box).
 
 ### Task F4 (AGY): 製作 ③ 生成, ④ 成品, viewers, embed
+
+**Decision update:** in ④, an item with `warnings` shows a soft notice 「第 N 句可能漏唸（檢查也可能誤判，請聽一下）」 next to the player. A 「重配這句」 button calls the renarrate endpoint and returns to ③ to show progress.
+
 
 **Files:** create `js/pages/make-generate.mjs`, `js/pages/make-products.mjs`, `js/viewers/video.mjs`, `js/viewers/svg.mjs`, `js/viewers/deck.mjs`; replace `workbench/embed.html`.
 

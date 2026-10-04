@@ -87,6 +87,7 @@ def is_done(unit, item) -> bool
 
 - `@step <step_id>`：切換目前步驟（一個子程式內有多步時用，如 author.py 的 分鏡→驗證→修正）。
 - `@error <code> <白話細節>`：失敗前印出，再以非零碼結束。
+- `@warn <code> <白話細節>`：不中斷的提醒，記進工作與成品的 `warnings`，成品照樣產出（2026-10-05 決定：漏唸不判失敗）。
 - `@unit <unit_id>`：教材整理子程式建立教材後印出，工作結果帶上 `unit_id`。
 - 沒印 `@error` 的失敗：伺服器用 log 尾端比對 Gemini 暫時錯誤（429、503、UNAVAILABLE、RESOURCE_EXHAUSTED、timeout）→ `gemini_busy`，其餘 `unknown`。
 - 既有 CLI（author.py、narrate.py、check.py、selftest.py）補印 `@step`／`@error`，不改其他行為。
@@ -98,7 +99,7 @@ def is_done(unit, item) -> bool
 | gemini_busy | Gemini 暫時忙碌或連線中斷 | 等 1–2 分鐘再按「重試」 | 是 |
 | repair_exhausted | 分鏡還有 N 個問題（列前 2 個） | 重試會從失敗草稿接著修，約 US$0.01 | 是 |
 | quote_mismatch | AI 引用的句子在教材裡找不到 | 重試，約 US$0.005 | 是 |
-| tts_missing | 第 X 句配音一直漏字 | 重試；仍失敗就改寫那一句 | 是 |
+| tts_missing（提醒，不是失敗） | 第 X 句可能漏唸（檢查也可能誤判） | ④ 點進去聽；需要就按「重配這句」 | — |
 | budget | 這份教材已花到上限 US$0.50 | 少選幾點或提高上限 | 否 |
 | selftest | 元件檢查沒過，為了不浪費錢沒有呼叫 AI | 回報開發者 | 否 |
 | too_large | 超過 5 MB／30 頁／6 萬字 | 拆小再上傳 | 否 |
@@ -139,8 +140,9 @@ jobs/<job_id>.json
 | `GET /api/v1/units/<id>` | `{"unit_id", "title", "source_ref", "spent_usd", "analysis": null|{"unit_title", "scope": {"covers", "not_covers"}, "points": [{"id", "question", "also_asks", "title", "sec", "objectives", "screens", "show"}], "glossary": [{"term", "say_as"}], "highlight": {"points", "total_sec", "why"}}, "items": [{"item", "format", "label", "status": "none|queued|running|done|failed", "estimate_usd", "cost_usd", "duration", "files", "job_id"}]}` |
 | `POST /api/v1/units/<id>/analyze` | → `{"job_id"}`；已分析回 `{"job_id": null, "analyzed": true}` |
 | `POST /api/v1/units/<id>/generate` | `{"items": ["q1", "q3", "highlight", "mindmap", "slides"]}` → `{"job_ids": [...]}`（一個 item 一個工作，依序排隊；已完成的略過） |
-| `GET /api/v1/jobs/<id>` | `{"job_id", "unit_id", "item", "format", "state": "queued|running|done|failed", "steps": [{"id", "state": "pending|running|done|failed|skipped"}], "current", "log": [最後 40 行], "spent_usd", "error": null|{"code", "reason", "advice", "retry"}}` |
+| `GET /api/v1/jobs/<id>` | `{"job_id", "unit_id", "item", "format", "state": "queued|running|done|failed", "steps": [{"id", "state": "pending|running|done|failed|skipped"}], "current", "log": [最後 40 行], "spent_usd", "error": null|{"code", "reason", "advice", "retry"}, "warnings": [{"code", "detail"}]}`（成品 item 也帶同樣的 `warnings`） |
 | `POST /api/v1/jobs/<id>/retry` | → `{"job_id"}` |
+| `POST /api/v1/units/<id>/items/<item>/renarrate` | `{"beats": [句號（從 1 起）]}` → `{"job_id"}`：只重配這幾句（不用快取），再重新出片 |
 | `GET /api/v1/queue` | `{"running": job|null, "queued": [job...]}`（導覽列小圓點、③的排隊清單） |
 | `GET /api/v1/usage` | `{"totals": {"today", "all", "by_model": {...}}, "units": [{"unit_id", "title", "usd", "items": [{"item", "label", "usd", "calls": [{"at", "step", "model", "in", "out", "usd"}]}]}]}` |
 | `POST /api/v1/ask` | 沿用現有比對（雙字組 Jaccard ≥ 0.18；不呼叫 AI） |
