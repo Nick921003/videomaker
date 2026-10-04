@@ -368,7 +368,8 @@
 						}
 					}
 				} else if (b.list) {
-					api.rect(lx, ly, bLayout.data.rowW, bLayout.data.h, 1, {color: api.color('effects.pencil'), role: 'panel'});
+					// 清單框與列錨點同寬（列寬＝可用寬扣掉右側按鈕欄），選取底色與圈才不會凸出框外
+					api.rect(lx, ly, lw - (bLayout.data.sideW ? bLayout.data.sideW + 20 : 0), bLayout.data.h, 1, {color: api.color('effects.pencil'), role: 'panel'});
 					b.list.rows.forEach(r => {
 						const rb = st.layout[r.id];
 						if (st.selections[r.id]) {

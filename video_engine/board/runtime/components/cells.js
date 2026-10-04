@@ -48,7 +48,8 @@
 					for (let k = 0; k < a.n; k++) {
 						const k_t0 = a.t0 + k * per;
 						const k_t1 = k_t0 + per;
-						if (t >= k_t1) {
+						// from 可省略：沒有起點就直接寫進格子，不畫飛行
+						if (t >= (a.args.from ? k_t1 : k_t0)) {
 							st.values[start + k] = chars[k];
 						} else if (t >= k_t0) {
 							st.fills.push({

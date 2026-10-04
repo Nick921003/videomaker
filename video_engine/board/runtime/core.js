@@ -42,6 +42,14 @@ const Board = (() => {
 			const a = new DOMPoint(x, y).matrixTransform(m), b = new DOMPoint(x + w, y + h).matrixTransform(m);
 			boxes.push({owner, role, x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y), alpha: ctx.globalAlpha, ...extra});
 		}
+		// 紀錄標記的筆畫路徑（螢幕座標）；skip 是它本來就該碰到的框（被圈的目標、箭頭兩端），量測閘不算穿過
+		function recordPath(points, role = 'stroke', extra = {}) {
+			const m = ctx.getTransform(), at = (x, y) => { const q = new DOMPoint(x, y).matrixTransform(m); return [q.x, q.y]; };
+			const pts = points.map(([x, y]) => at(x, y));
+			const skip = (extra.skip || []).map(r => { const [x0, y0] = at(r.x, r.y), [x1, y1] = at(r.x + r.w, r.y + r.h); return {x: x0, y: y0, w: x1 - x0, h: y1 - y0}; });
+			const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]), x = Math.min(...xs), y = Math.min(...ys);
+			boxes.push({owner, role, x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y, alpha: ctx.globalAlpha, ...extra, pts, skip});
+		}
 		function text(str, x, y, o = {}) {
 			str = String(str);
 			if (!str || ctx.globalAlpha * (o.alpha ?? 1) < .004) return 0;
@@ -115,7 +123,7 @@ const Board = (() => {
 			text(str, mix(from.x, to.x, q), mix(from.y, to.y, q) - Math.sin(q * Math.PI) * lift, {role: 'overlay', align: 'center', mono: true, ...o});
 		}
 		return {
-			ctx, color, font, measure, record, text, write, ink, rect, ellipse, hatch, pointer, fly,
+			ctx, color, font, measure, record, recordPath, text, write, ink, rect, ellipse, hatch, pointer, fly,
 			clamp, mix, ease, expo, phase, seed,
 			setTime(t) { drawT = t; }, setOwner(id) { owner = id; },
 			// 元件動作留下的標記只活在該動作的場景：換場時刻起淡出

@@ -3,7 +3,8 @@
 	Board.register('cursor', {
 		measure(obj, api, acts) { return {w: 0, h: 0}; },
 		state(obj, acts, t, api) {
-			const objActs = (acts || []).filter(a => a.obj === obj.id);
+			// 只有移動與點擊會改變游標位置；圈、顯示隱藏等通用動作不算
+			const objActs = (acts || []).filter(a => a.obj === obj.id && (a.act === 'move' || a.act === 'click'));
 			let pos = null;
 			let ripple = null;
 			
