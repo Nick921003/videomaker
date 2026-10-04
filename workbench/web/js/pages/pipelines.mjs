@@ -1,22 +1,7 @@
 import { api } from '../api.mjs';
 import { el, intro } from '../ui.mjs';
-import { layoutMap, layoutSteps, render } from '../diagram.mjs';
+import { layoutMap, render } from '../diagram.mjs';
 import { attach } from '../panzoom.mjs';
-
-function branchLayout(format) {
-	if (!format.steps?.length) return { nodes: [format], edges: [], groups: {} };
-	const steps = layoutSteps(format.steps);
-	const width = Math.max(...steps.map(step => step.x + step.w));
-	const center = format.x + format.w / 2;
-	const nodes = steps.map(step => ({ ...step, x: step.x + center - width / 2, y: step.y + format.y + format.h + 64 }));
-	const bottom = Math.max(...nodes.map(node => node.y + node.h));
-	const library = { id: 'library', label: '素材庫', sub: '完成後收進素材庫', x: format.x, y: bottom + 64,
-		w: format.w, h: format.h, kind: 'output', detail: '完成的素材與成品清單，會一起收進素材庫。' };
-	const edges = [{ from: format.id, to: nodes[0].id },
-		...nodes.slice(1).map((node, i) => ({ from: nodes[i].id, to: node.id })),
-		{ from: nodes.at(-1).id, to: 'library' }];
-	return { nodes: [format, ...nodes, library], edges, groups: {} };
-}
 
 function field(label, value) {
 	const row = el('div', 'pipeline-field');
@@ -73,7 +58,9 @@ export async function renderPipelines(query = {}) {
 	let disposed = false;
 
 	function refocus(animateMs = 350) {
-		const bounds = JSON.parse(svg.getAttribute('data-bounds'));
+		// 展開某個形式時鏡頭對準那一列，否則看全貌。
+		const row = activeFormat && current.groups[activeFormat];
+		const bounds = row ? { x: row.x - 32, y: row.y - 48, w: row.w + 64, h: row.h + 96 } : JSON.parse(svg.getAttribute('data-bounds'));
 		controls?.focus(bounds, animateMs);
 	}
 
@@ -122,18 +109,17 @@ export async function renderPipelines(query = {}) {
 	}
 
 	function selectNode(node) {
-		if (node.kind === 'format' || node.kind === 'planned') {
-			if (activeFormat !== node.id) {
-				activeFormat = node.id;
-				current = branchLayout(node);
-				render(viewport, current, { mode: 'explain', onNodeClick: selectNode });
-				context.textContent = node.kind === 'planned' ? `${node.label} · 規劃中` : `${node.label} · ${node.steps.length} 個步驟`;
-				back.disabled = false;
-				svg.focus?.();
-			}
+		const isFormat = node.kind === 'format' || node.kind === 'planned';
+		if (isFormat && activeFormat !== node.id) {
+			activeFormat = node.id;
+			current = node.kind === 'format' ? layoutMap(registry, { expanded: node.id }) : map;
+			render(viewport, current, { mode: 'explain', onNodeClick: selectNode });
+			context.textContent = node.kind === 'planned' ? `${node.label} · 規劃中` : `${node.label} · ${node.steps.length} 個步驟`;
+			back.disabled = false;
+			svg.focus?.();
 		}
 		showPanel(node);
-		refocus();
+		if (isFormat) refocus();
 	}
 
 	const svg = render(viewport, current, { mode: 'explain', onNodeClick: selectNode });

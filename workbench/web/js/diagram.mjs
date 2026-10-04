@@ -11,34 +11,60 @@ function node(id, label, sub, x, y, kind, data = {}) {
 	return { ...data, id, label, sub, x, y, w: W, h: H, kind };
 }
 
-export function layoutMap(publicFormats = {}) {
+// 總圖由左到右：教材 → 整理 → 分析 → 各形式（直排一欄）→ 素材庫；圖可以比畫面大，靠縮放拖曳看。
+const COL = W + 96;
+const FAN = 200;
+const PITCH = H + 36;
+const GROUP_GAP = 44;
+
+export function layoutMap(publicFormats = {}, { expanded = null } = {}) {
 	const formats = Array.isArray(publicFormats) ? publicFormats : publicFormats.formats ?? [];
 	const stages = publicFormats.stages ?? [];
+	const ordered = [...formats.filter(format => format.status !== 'planned'), ...formats.filter(format => format.status === 'planned')];
+	const formatX = 2 * COL + W + FAN;
+	let y = 0;
+	const rows = ordered.map((format, i) => {
+		if (i && format.status === 'planned' && ordered[i - 1].status !== 'planned') y += GROUP_GAP;
+		const row = { format, y };
+		y += PITCH;
+		return row;
+	});
+	const height = rows.length ? y - PITCH + H : H;
+	const middle = (height - H) / 2;
 	const nodes = [
-		node('material', '教材', '從一份教材開始', 32, 16, 'source', { detail: '貼上文字，或匯入 md、txt、PDF、PPTX 教材。' }),
-		node('ingest', '教材整理', '文字與閱讀順序', 328, 16, 'stage', stages.find(stage => stage.id === 'ingest')),
-		node('analysis', '教材分析', '學生問題與概念', 624, 16, 'stage', stages.find(stage => stage.id === 'analysis')),
+		node('material', '教材', '從一份教材開始', 0, middle, 'source', { detail: '貼上文字，或匯入 md、txt、PDF、PPTX 教材。' }),
+		node('ingest', '教材整理', '文字與閱讀順序', COL, middle, 'stage', stages.find(stage => stage.id === 'ingest')),
+		node('analysis', '教材分析', '學生問題與概念', 2 * COL, middle, 'stage', stages.find(stage => stage.id === 'analysis')),
 	];
-	const rows = Math.max(1, Math.ceil(formats.length / 3));
-	const library = node('library', '素材庫', '完成的素材，共同收藏', 984, 208 + (rows - 1) * DY / 2, 'output',
-		{ detail: '收錄完成的影片、心智圖、簡報與成品清單，讓學生用問題找到合適的教材。' });
 	const edges = [{ from: 'material', to: 'ingest' }, { from: 'ingest', to: 'analysis' }];
 	const groups = {};
-	for (const [i, format] of formats.entries()) {
+	const tails = [];
+	let right = formatX + W;
+	for (const { format, y: rowY } of rows) {
 		const planned = format.status === 'planned';
-		const entry = node(format.id, displayName(format), `${format.scope === 'point' ? '逐點' : '整份'} · ${planned ? '規劃中' : '點開看步驟'}`,
-			32 + (i % 3) * DX, 208 + Math.floor(i / 3) * DY, planned ? 'planned' : 'format', format);
+		const open = format.id === expanded && !planned && format.steps?.length;
+		const entry = node(format.id, displayName(format), `${format.scope === 'point' ? '逐點' : '整份'} · ${planned ? '規劃中' : open ? '已展開' : '點開看步驟'}`,
+			formatX, rowY, planned ? 'planned' : 'format', format);
 		nodes.push(entry);
-		groups[entry.id] = { x: entry.x, y: entry.y, w: entry.w, h: entry.h };
-		const center = entry.x + W / 2;
-		// 分流與收集線走卡片之間的留白，不穿過節點。
-		edges.push({ from: 'analysis', to: entry.id, points: [
-			[864, 72], [896, 72], [896, entry.y - 24], [center, entry.y - 24], [center, entry.y],
-		] }, { from: entry.id, to: 'library', points: [
-			[center, entry.y + H], [center, entry.y + H + 24], [944, entry.y + H + 24],
-			[944, library.y + H / 2], [library.x, library.y + H / 2],
-		] });
+		edges.push({ from: 'analysis', to: entry.id, planned });
+		let last = entry;
+		if (open) {
+			for (const [i, step] of format.steps.entries()) {
+				const stepNode = node(`${format.id}:${step.id}`, step.name,
+					`${String(i + 1).padStart(2, '0')} · ${step.paid ? '模型處理' : '本機處理'}`,
+					formatX + (i + 1) * COL, rowY, 'step', { ...step, stepId: step.id, format: format.id });
+				nodes.push(stepNode);
+				edges.push({ from: last.id, to: stepNode.id });
+				last = stepNode;
+			}
+		}
+		right = Math.max(right, last.x + last.w);
+		groups[entry.id] = { x: entry.x, y: entry.y, w: last.x + last.w - entry.x, h: H };
+		tails.push({ id: last.id, planned });
 	}
+	const library = node('library', '素材庫', '完成的素材，共同收藏', right + FAN, middle, 'output',
+		{ detail: '收錄完成的影片、心智圖、簡報與成品清單，讓學生用問題找到合適的教材。' });
+	for (const tail of tails) edges.push({ from: tail.id, to: 'library', planned: tail.planned });
 	if (!formats.length) edges.push({ from: 'analysis', to: 'library' });
 	return { nodes: [...nodes, library], edges, groups };
 }
@@ -75,12 +101,11 @@ function labelLines(text, width) {
 }
 
 function edgePath(from, to) {
-	if (to.y === from.y && to.x > from.x) return `M ${from.x + from.w} ${from.y + from.h / 2} H ${to.x}`;
-	if (to.y > from.y) {
-		const lane = to.y - 28;
-		return `M ${from.x + from.w} ${from.y + from.h / 2} h 24 V ${lane} H ${to.x + to.w / 2} V ${to.y}`;
-	}
-	return `M ${from.x + from.w} ${from.y + from.h / 2} L ${to.x} ${to.y + to.h / 2}`;
+	const x1 = from.x + from.w, y1 = from.y + from.h / 2, x2 = to.x, y2 = to.y + to.h / 2;
+	if (Math.abs(y1 - y2) < 0.5) return `M ${x1} ${y1} H ${x2}`;
+	// 平滑弧線：從右側中點出、從左側中點進，不繞路。
+	const bend = Math.max(48, (x2 - x1) / 2);
+	return `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`;
 }
 
 export function render(container, layout, { mode = 'explain', onNodeClick } = {}) {
@@ -109,8 +134,8 @@ export function render(container, layout, { mode = 'explain', onNodeClick } = {}
 		const from = byId.get(edge.from);
 		const to = byId.get(edge.to);
 		if (!from || !to) continue;
-		const d = edge.points ? edge.points.map(([x, y], i) => `${i ? 'L' : 'M'} ${x} ${y}`).join(' ') : edgePath(from, to);
-		content.append(svgElement('path', { d, class: `diagram-edge${from.kind === 'planned' || to.kind === 'planned' ? ' is-planned' : ''}`,
+		const planned = edge.planned || from.kind === 'planned' || to.kind === 'planned';
+		content.append(svgElement('path', { d: edgePath(from, to), class: `diagram-edge${planned ? ' is-planned' : ''}`,
 			'marker-end': `url(#${marker})`, 'aria-hidden': 'true' }));
 	}
 	for (const node of layout.nodes) {
