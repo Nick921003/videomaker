@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """獨立影片工作室：教材素材庫、學生提問與單一 CLI 工作佇列。
 
-用法：.venv/bin/python video_engine/board/studio_server.py [--port 8765] [--out video_engine/out/units]
+用法：.venv/bin/python -m workbench.server [--port 8765] [--out video_engine/out/units]
 """
 import argparse
 import copy
-import hashlib
 import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -21,9 +20,11 @@ from datetime import datetime, timezone
 from urllib.parse import unquote, urlsplit
 import uuid
 
-HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
-STUDIO_DIR = HERE / "studio"
+from .library import Library, read_json, safe_path, write_json
+
+ROOT = Path(__file__).resolve().parents[1]
+BOARD_DIR = ROOT / "video_engine/board"
+STUDIO_DIR = BOARD_DIR / "studio"
 PROJECT_PY = ROOT / ".venv/bin/python"
 PLAYWRIGHT_PY = Path("~/.local/share/pipx/venvs/webwright/bin/python").expanduser()
 MODEL = "google:gemini-3.8-flash"
@@ -32,7 +33,6 @@ ESTIMATE_USD = 0.055
 # 配音：gemini（預設，英文照原文唸）或 sovits（本機王老師，免費，需要 :9880）
 TTS_MODE = os.environ.get("BOARD_TTS", "gemini")
 MAX_BODY = 4 * 1024 * 1024
-UNIT_ID = re.compile(r"[a-f0-9]{12}")
 STORY_ID = re.compile(r"[a-z][a-z0-9_-]{0,31}")
 JOB_ID = re.compile(r"[a-f0-9]{32}")
 LANGUAGES = ("Python", "Java", "JavaScript", "TypeScript", "C++", "C#", "C", "Ruby", "Go",
@@ -45,39 +45,12 @@ class APIError(Exception):
 		self.status = status
 
 
-def unit_id(markdown):
-	return hashlib.sha256(markdown.encode("utf-8")).hexdigest()[:12]
-
-
-def read_json(path, default=None):
-	try:
-		with path.open(encoding="utf-8") as handle:
-			return json.load(handle)
-	except FileNotFoundError:
-		return default
-
-
-def write_json(path, value):
-	path.parent.mkdir(parents=True, exist_ok=True)
-	temporary = path.with_suffix(".tmp")
-	with temporary.open("w", encoding="utf-8") as handle:
-		json.dump(value, handle, ensure_ascii=False, indent="\t", allow_nan=False)
-	os.replace(temporary, path)
-
-
-def safe_path(root, relative):
-	root = root.resolve()
-	path = (root / relative).resolve()
-	try:
-		path.relative_to(root)
-	except ValueError:
-		raise APIError(404, "找不到檔案")
-	return path
-
-
-def spent_usd(directory):
+def spent_usd(directory, path_resolver=None):
 	"""規劃＋分鏡（usage.jsonl）加上各段 Gemini 配音（*/voice/tts_usage.jsonl）。"""
-	return round(_sum_usd(directory / "usage.jsonl") + sum(_sum_usd(p) for p in Path(directory).glob("**/tts_usage.jsonl")), 6)
+	directory = Path(directory)
+	resolve = path_resolver or (lambda relative: safe_path(directory, relative))
+	return round(_sum_usd(resolve("usage.jsonl")) + sum(_sum_usd(resolve(p.relative_to(directory)))
+		for p in directory.glob("**/tts_usage.jsonl")), 6)
 
 
 def _sum_usd(path):
@@ -137,8 +110,8 @@ def run_command(command, log):
 class Studio:
 	def __init__(self, out, command_runner=None, tts_checker=None, tts_mode=None):
 		self.tts_mode = tts_mode or TTS_MODE
-		self.out = Path(out).resolve()
-		self.out.mkdir(parents=True, exist_ok=True)
+		self.library = Library(out)
+		self.out = self.library.root
 		self.command_runner = command_runner or run_command
 		self.tts_checker = tts_checker or tts_health
 		self.lock = threading.RLock()
@@ -164,15 +137,25 @@ class Studio:
 			return False
 
 	def _unit_dir(self, identifier):
-		if not isinstance(identifier, str) or not UNIT_ID.fullmatch(identifier):
+		try:
+			return self.library.unit_dir(identifier)
+		except KeyError:
 			raise APIError(404, "找不到教材")
-		directory = safe_path(self.out, identifier)
-		if not directory.is_dir() or not (directory / "meta.json").is_file():
-			raise APIError(404, "找不到教材")
-		return directory
 
-	def _plan(self, directory):
-		plan = read_json(directory / "plan.json")
+	def _unit_path(self, identifier, relative):
+		try:
+			return self.library.path(identifier, relative)
+		except KeyError:
+			raise APIError(404, "找不到教材")
+		except ValueError:
+			raise APIError(404, "找不到檔案")
+
+	def _spent_usd(self, identifier):
+		return spent_usd(self._unit_dir(identifier), lambda relative: self._unit_path(identifier, relative))
+
+	def _plan(self, identifier):
+		self._unit_path(identifier, "plan.json")
+		plan = self.library.plan(identifier)
 		if plan is None:
 			raise APIError(409, "請先規劃教材")
 		stories = plan.get("stories", [])
@@ -188,18 +171,12 @@ class Studio:
 			raise APIError(400, "請提供教材 Markdown 內容")
 		if title is not None and not isinstance(title, str):
 			raise APIError(400, "教材標題必須是文字")
-		identifier = unit_id(markdown)
 		with self.lock:
-			directory = safe_path(self.out, identifier)
-			if (directory / "meta.json").is_file():
-				return {"unit_id": identifier, "created": False}
-			if not title or not title.strip():
-				title = next((line.lstrip("# ").strip() for line in markdown.splitlines() if line.strip()), "未命名教材")
-			directory.mkdir(parents=True, exist_ok=True)
-			(directory / "material.md").write_text(markdown, encoding="utf-8")
-			write_json(directory / "meta.json", {"title": title.strip()[:200],
-				"created_at": datetime.now(timezone.utc).isoformat(timespec="seconds")})
-			return {"unit_id": identifier, "created": True}
+			try:
+				identifier, created = self.library.create_unit(markdown, title)
+			except ValueError:
+				raise APIError(404, "找不到檔案")
+			return {"unit_id": identifier, "created": created}
 
 	def _unit_jobs(self, identifier):
 		return [job for job in self.jobs.values() if job["unit_id"] == identifier]
@@ -208,8 +185,8 @@ class Studio:
 		return job["kind"] == "highlight" if story == "highlight" else (
 			job["kind"] == "stories" and story in job.get("stories", []))
 
-	def _video_ready(self, identifier, directory, story):
-		video = safe_path(directory, f"{story}/video.mp4")
+	def _video_ready(self, identifier, story):
+		video = self._unit_path(identifier, f"{story}/video.mp4")
 		if not video.is_file() or video.stat().st_size == 0:
 			return False
 		for job in reversed(self._unit_jobs(identifier)):
@@ -223,11 +200,11 @@ class Studio:
 				return False
 		return True
 
-	def _artifact(self, identifier, directory, story):
+	def _artifact(self, identifier, story):
 		jobs = [j for j in self._unit_jobs(identifier) if self._targets(j, story)]
 		active = next((j for j in jobs if j["state"] == "running"), None)
 		active = active or next((j for j in jobs if j["state"] == "queued"), None)
-		ready = self._video_ready(identifier, directory, story)
+		ready = self._video_ready(identifier, story)
 		status = "done" if ready else active["state"] if active else "failed" if jobs and jobs[-1]["state"] == "failed" else "none"
 		if active and not ready and active["kind"] == "stories" and active.get("target") != story:
 			status = "queued"
@@ -235,43 +212,42 @@ class Studio:
 			status, ready = "running", False
 		duration = None
 		if ready:
-			report = read_json(safe_path(directory, f"{story}/video.export.json"), {})
-			timeline = read_json(safe_path(directory, f"{story}/timeline.json"), {})
+			report = read_json(self._unit_path(identifier, f"{story}/video.export.json"), {})
+			timeline = read_json(self._unit_path(identifier, f"{story}/timeline.json"), {})
 			duration = report.get("duration", timeline.get("duration"))
 		costs = [j["costs"][story] for j in self._unit_jobs(identifier) if story in j.get("costs", {})]
 		return {"status": status, "video": f"/media/{identifier}/{story}/video.mp4" if ready else None,
 			"duration": duration, "cost_usd": round(sum(costs), 8) if costs else None,
-			"estimate_usd": 0.0 if ready or safe_path(directory, f"{story}.scene.json").is_file() else ESTIMATE_USD}
+			"estimate_usd": 0.0 if ready or self._unit_path(identifier, f"{story}.scene.json").is_file() else ESTIMATE_USD}
 
 	def get_unit(self, identifier):
 		with self.lock:
-			directory = self._unit_dir(identifier)
-			meta = read_json(directory / "meta.json")
-			plan = read_json(directory / "plan.json")
+			self._unit_dir(identifier)
+			meta = self.library.meta(identifier)
+			self._unit_path(identifier, "plan.json")
+			plan = self.library.plan(identifier)
 			if plan is not None:
-				plan = self._plan(directory)
+				plan = self._plan(identifier)
 				for story in plan["stories"]:
 					story.setdefault("also_asks", [])
 					story.setdefault("screens", [])
-					story.update(self._artifact(identifier, directory, story["id"]))
+					story.update(self._artifact(identifier, story["id"]))
 				highlight = plan.get("highlight")
 				if highlight is not None:
-					highlight.update(self._artifact(identifier, directory, "highlight"))
+					highlight.update(self._artifact(identifier, "highlight"))
 					selected = set(highlight.get("stories", []))
 					highlight["estimate_usd"] = 0.0 if highlight["video"] else round(sum(
 						s["estimate_usd"] for s in plan["stories"] if s["id"] in selected), 8)
 			return {"unit_id": identifier, "title": meta["title"], "planned": plan is not None,
-				"spent_usd": spent_usd(directory), "plan": plan,
+				"spent_usd": self._spent_usd(identifier), "plan": plan,
 				"jobs": [j["job_id"] for j in self._unit_jobs(identifier)]}
 
 	def list_units(self):
 		with self.lock:
 			units = []
-			for entry in sorted(self.out.iterdir()):
-				if not UNIT_ID.fullmatch(entry.name) or not (entry / "meta.json").is_file():
-					continue
-				detail = self.get_unit(entry.name)
-				meta = read_json(entry / "meta.json")
+			for identifier in self.library.unit_ids():
+				detail = self.get_unit(identifier)
+				meta = self.library.meta(identifier)
 				plan = detail["plan"] or {}
 				artifacts = [*plan.get("stories", []), plan.get("highlight") or {}]
 				units.append({key: detail[key] for key in ("unit_id", "title", "planned", "spent_usd")})
@@ -298,7 +274,7 @@ class Studio:
 			return {"kind": "story", "story": best["id"], "score": score,
 				"reason": "問題對應這段問題故事", "video": best["video"]}
 		scope_score = max((jaccard(question, text) for text in plan.get("scope", {}).get("not_covers", [])), default=0.0)
-		material = (self._unit_dir(identifier) / "material.md").read_text(encoding="utf-8")
+		material = self._unit_path(identifier, "material.md").read_text(encoding="utf-8")
 		for language in LANGUAGES:
 			pattern = re.compile(r"(?<![A-Za-z0-9_])" + re.escape(language) + r"(?![A-Za-z0-9_])", re.I)
 			if pattern.search(question) and not pattern.search(material):
@@ -311,19 +287,23 @@ class Studio:
 			"reason": "素材庫尚未找到對應的問題故事", "video": None}
 
 	def _save_job(self, job):
-		job["spent_usd"] = spent_usd(self._unit_dir(job["unit_id"]))
-		path = safe_path(self.out, f"{job['unit_id']}/jobs/{job['job_id']}.json")
+		job["spent_usd"] = self._spent_usd(job["unit_id"])
+		path = self._unit_path(job["unit_id"], f"jobs/{job['job_id']}.json")
 		write_json(path, job)
 
 	def _restore_jobs(self):
-		paths = sorted(self.out.glob("*/jobs/*.json"))
-		for path in paths:
-			identifier = path.parent.parent.name
-			if not UNIT_ID.fullmatch(identifier) or not JOB_ID.fullmatch(path.stem):
+		paths = []
+		for identifier in self.library.unit_ids():
+			try:
+				directory = self._unit_path(identifier, "jobs")
+			except (APIError, OSError, ValueError):
+				continue
+			paths.extend((identifier, path) for path in directory.glob("*.json"))
+		for identifier, path in sorted(paths):
+			if not JOB_ID.fullmatch(path.stem):
 				continue
 			try:
-				self._unit_dir(identifier)
-				path = safe_path(self.out, str(path.relative_to(self.out)))
+				path = self._unit_path(identifier, f"jobs/{path.name}")
 				job = read_json(path)
 			except (APIError, OSError, ValueError, RecursionError):
 				continue
@@ -345,35 +325,34 @@ class Studio:
 			if job is None:
 				raise APIError(404, "找不到工作")
 			result = copy.deepcopy(job)
-			result["spent_usd"] = spent_usd(self._unit_dir(job["unit_id"]))
+			result["spent_usd"] = self._spent_usd(job["unit_id"])
 			result["log"] = result.get("log", [])[-40:]
 			return result
 
 	def enqueue_plan(self, identifier):
 		with self.lock:
-			directory = self._unit_dir(identifier)
-			if (directory / "plan.json").is_file():
+			if self._unit_path(identifier, "plan.json").is_file():
 				return {"job_id": None, "planned": True}
 			return self._enqueue(identifier, "plan", [])
 
 	def enqueue_videos(self, identifier, payload):
 		with self.lock:
-			directory = self._unit_dir(identifier)
-			plan = self._plan(directory)
+			self._unit_dir(identifier)
+			plan = self._plan(identifier)
 			if set(payload) == {"highlight"} and payload["highlight"] is True:
 				kind = "highlight"
 				stories = plan.get("highlight", {}).get("stories", [])
 				known = {s["id"] for s in plan["stories"]}
 				if not stories or any(s not in known for s in stories):
 					raise APIError(409, "教材規劃沒有可生成的重點片")
-				if self._video_ready(identifier, directory, "highlight"):
+				if self._video_ready(identifier, "highlight"):
 					return {"job_id": None}
 			elif set(payload) == {"stories"} and isinstance(payload["stories"], list) and payload["stories"]:
 				kind = "stories"
 				known = {s["id"] for s in plan["stories"]}
 				if any(not isinstance(s, str) or s not in known for s in payload["stories"]):
 					raise APIError(400, "請選擇教材規劃中的段落")
-				stories = [s for s in dict.fromkeys(payload["stories"]) if not self._video_ready(identifier, directory, s)]
+				stories = [s for s in dict.fromkeys(payload["stories"]) if not self._video_ready(identifier, s)]
 				if not stories:
 					return {"job_id": None}
 			else:
@@ -408,81 +387,88 @@ class Studio:
 	def _step(self, job, stage, cli, args):
 		self._update(job, stage=stage)
 		python = PLAYWRIGHT_PY if cli in ("check", "export") else PROJECT_PY
-		command = [str(python), str(HERE / (cli + ".py")), *map(str, args)]
+		command = [str(python), str(BOARD_DIR / (cli + ".py")), *map(str, args)]
 		code = self.command_runner(command, lambda line: self._log(job, line))
 		if code != 0:
 			raise RuntimeError(f"{stage}失敗（結束碼 {code}），請查看工作紀錄")
 
-	def _author(self, job, directory, story=None):
+	def _author(self, job, story=None):
+		identifier = job["unit_id"]
+		directory = self._unit_dir(identifier)
 		stage = "scene" if story else "plan"
-		args = [stage, directory / "material.md", directory]
+		args = [stage, self._unit_path(identifier, "material.md"), directory]
 		if story:
 			args.append(story)
 			# 上次失敗存了草稿：從草稿接著修，不重寫第一版
-			if (directory / f"{story}.failed.json").is_file():
+			if self._unit_path(identifier, f"{story}.failed.json").is_file():
 				args.append("--resume")
 		else:
 			# author 目前只在分鏡內建自檢，規劃也先過免費閘。
 			self._step(job, "本機自我檢查", "selftest", ["--quick"])
 		args.extend(["--model", MODEL, "--budget-usd", "0.50"])
-		before = spent_usd(directory)
+		before = self._spent_usd(identifier)
 		try:
 			self._step(job, f"分鏡 {story}" if story else "規劃", "author", args)
 		finally:
 			if story:
 				with self.lock:
-					job["costs"][story] = round(job["costs"].get(story, 0) + spent_usd(directory) - before, 8)
+					job["costs"][story] = round(job["costs"].get(story, 0) + self._spent_usd(identifier) - before, 8)
 					self._save_job(job)
-		path = directory / (f"{story}.scene.json" if story else "plan.json")
+		path = self._unit_path(identifier, f"{story}.scene.json" if story else "plan.json")
 		if not path.is_file():
 			raise RuntimeError("生成程序沒有產生預期的規劃或分鏡檔案")
 
-	def _scene(self, job, directory, story):
-		path = safe_path(directory, f"{story}.scene.json")
+	def _scene(self, job, story):
+		path = self._unit_path(job["unit_id"], f"{story}.scene.json")
 		if not path.is_file():
-			self._author(job, directory, story)
+			self._author(job, story)
 		return path
 
-	def _render(self, job, directory, story, scene):
+	def _render(self, job, story, scene):
 		self._update(job, target=story, stage=f"配音 {story}")
 		self.tts_available = self._tts_ready()
 		if not self.tts_available:
 			raise RuntimeError("配音伺服器沒開（:9880）")
-		output = safe_path(directory, story)
+		identifier = job["unit_id"]
+		output = self._unit_path(identifier, story)
 		output.mkdir(parents=True, exist_ok=True)
-		voice, player = output / "voice", output / "player"
-		timeline = output / "timeline.json"
+		voice = self._unit_path(identifier, f"{story}/voice")
+		player = self._unit_path(identifier, f"{story}/player")
+		timeline = self._unit_path(identifier, f"{story}/timeline.json")
+		video = self._unit_path(identifier, f"{story}/video.mp4")
 		self._step(job, f"配音 {story}", "narrate", [scene, voice, "--tts", self.tts_mode])
-		self._step(job, f"編譯 {story}", "compile", [scene, timeline, "--timing", voice / "timing.json", "--gaps", output / "gaps.jsonl"])
-		self._step(job, f"播放器 {story}", "build", [timeline, player, "--audio", voice / "master.wav"])
+		self._step(job, f"編譯 {story}", "compile", [scene, timeline, "--timing",
+			self._unit_path(identifier, f"{story}/voice/timing.json"), "--gaps", self._unit_path(identifier, f"{story}/gaps.jsonl")])
+		self._step(job, f"播放器 {story}", "build", [timeline, player, "--audio", self._unit_path(identifier, f"{story}/voice/master.wav")])
 		self._step(job, f"驗證 {story}", "check", [player])
-		self._step(job, f"出片 {story}", "export", [player, output / "video.mp4"])
-		if not (output / "video.mp4").is_file() or (output / "video.mp4").stat().st_size == 0:
+		self._step(job, f"出片 {story}", "export", [player, video])
+		if not video.is_file() or video.stat().st_size == 0:
 			raise RuntimeError("出片程序沒有產生影片")
 		self._update(job, completed=[*job["completed"], story])
 
 	def _execute(self, job):
-		directory = self._unit_dir(job["unit_id"])
+		identifier = job["unit_id"]
+		directory = self._unit_dir(identifier)
 		if job["kind"] == "plan":
-			if not (directory / "plan.json").is_file():
-				self._author(job, directory)
-			self._plan(directory)
+			if not self._unit_path(identifier, "plan.json").is_file():
+				self._author(job)
+			self._plan(identifier)
 		elif job["kind"] == "stories":
 			for story in job["stories"]:
-				if self._video_ready(job["unit_id"], directory, story):
+				if self._video_ready(identifier, story):
 					self._update(job, completed=[*job["completed"], story])
 					continue
 				self._update(job, target=story)
-				self._render(job, directory, story, self._scene(job, directory, story))
+				self._render(job, story, self._scene(job, story))
 		else:
-			if self._video_ready(job["unit_id"], directory, "highlight"):
+			if self._video_ready(identifier, "highlight"):
 				self._update(job, completed=["highlight"])
 				return
 			for story in job["stories"]:
-				self._scene(job, directory, story)
-			scene = safe_path(directory, "highlight.scene.json")
-			self._step(job, "串接重點片", "compose", [directory / "plan.json", directory, scene])
-			self._render(job, directory, "highlight", scene)
+				self._scene(job, story)
+			scene = self._unit_path(identifier, "highlight.scene.json")
+			self._step(job, "串接重點片", "compose", [self._unit_path(identifier, "plan.json"), directory, scene])
+			self._render(job, "highlight", scene)
 
 	def _work(self):
 		while not self.stopping.is_set():
@@ -588,6 +574,12 @@ class StudioHandler(BaseHTTPRequestHandler):
 				self.wfile.write(data)
 				remaining -= len(data)
 
+	def _static_path(self, relative):
+		try:
+			return safe_path(self.server.studio_dir, relative)
+		except ValueError:
+			raise APIError(404, "找不到檔案")
+
 	def _dispatch(self):
 		path = unquote(urlsplit(self.path).path)
 		studio = self.server.studio
@@ -601,14 +593,14 @@ class StudioHandler(BaseHTTPRequestHandler):
 				self.end_headers()
 				return
 			if path.startswith("/studio/"):
-				return self._file(safe_path(self.server.studio_dir, path[len("/studio/"):]))
+				return self._file(self._static_path(path[len("/studio/"):]))
 			if path.startswith("/media/"):
 				parts = path.split("/", 3)
 				if len(parts) != 4:
 					raise APIError(404, "找不到檔案")
-				return self._file(safe_path(studio._unit_dir(parts[2]), parts[3]))
+				return self._file(studio._unit_path(parts[2], parts[3]))
 			if path == "/api/pipelines":
-				pipelines = read_json(safe_path(self.server.studio_dir, "pipelines.json"))
+				pipelines = read_json(self._static_path("pipelines.json"))
 				if pipelines is None:
 					raise APIError(404, "找不到流程說明")
 				return self._json(200, pipelines)

@@ -9,7 +9,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from video_engine.board import studio_server as BS
+from workbench import server as BS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -445,7 +445,7 @@ class TestStudio(unittest.TestCase):
 		self.assertEqual(self.request("GET", "/studio/app.js")[0], 200)
 		self.assertIn("application/json", self.request("GET", f"/media/{unit}/plan.json")[1]["Content-Type"])
 		(directory / "escape").symlink_to(self.static / "index.html")
-		for path in ("/studio/%2e%2e/studio_server.py", f"/media/{unit}/../other/meta.json", f"/media/{unit}/escape"):
+		for path in ("/studio/%2e%2e/server.py", f"/media/{unit}/../other/meta.json", f"/media/{unit}/escape"):
 			with self.subTest(path=path):
 				self.api("GET", path, expected=404)
 

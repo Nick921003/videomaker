@@ -7,7 +7,7 @@
 
 | 項目 | 決定 |
 |---|---|
-| 後端主體 | 影片工作室伺服器（`video_engine/board/studio_server.py`）搬到 `workbench/` 擴充；舊 `serve.py` 不改 |
+| 後端主體 | 影片工作室伺服器（原 `video_engine/board/studio_server.py`）搬到 `workbench/server.py` 擴充；舊 `serve.py` 不改 |
 | 擴充方式 | **教材形式登記表**：一種教材一個 Python 檔；伺服器、架構圖、用量頁都讀登記表，新增形式不改伺服器 |
 | 教材與形式 | 分析出的「幾點」是共用骨架：影片逐點做，重點片／心智圖／簡報整份做 |
 | 模型 | 全部 Gemini 3.8 Flash（心智圖、簡報的子程式設 `VIDEO_ENGINE_LLM=google:gemini-3.8-flash`）；配音 Gemini 3.8 Flash TTS |
@@ -37,7 +37,7 @@
 
 ```
 workbench/
-  server.py        HTTP 路由（由 studio_server.py 以 git mv 搬來再擴充）
+  server.py        HTTP 路由（由原 video_engine/board/studio_server.py 搬來再擴充）
   library.py       素材庫：所有 out/units/<id>/ 的讀寫都經過這裡（日後換雲端儲存只改這檔）
   jobs.py          單一工作佇列、子程式執行、@step／@error 解析、錯誤查表
   usage.py         讀取並彙整用量紀錄

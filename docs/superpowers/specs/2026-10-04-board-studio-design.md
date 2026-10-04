@@ -13,7 +13,7 @@
 ```
 瀏覽器 video_engine/board/studio/（index.html、app.js、styles.css、pipeline.svg）
    │  fetch JSON
-studio_server.py（標準庫 http.server，不加新套件）
+studio_server.py（現為 workbench/server.py；標準庫 http.server，不加新套件）
    │  單一工作佇列（一次一個，TTS 只有一台）
 既有 CLI：author.py plan/scene → compose.py → narrate.py → compile.py → build.py → check.py → export.py
    │

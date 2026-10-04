@@ -5,7 +5,7 @@
 
 **Goal:** Turn the board video studio into the multi-format learning workbench described in `docs/superpowers/specs/2026-10-05-learning-workbench-design.md`, ready to demo on 2026-10-14.
 
-**Architecture:** `workbench/server.py` (moved from `video_engine/board/studio_server.py`) serves `/api/v1` and a zero-build frontend. A format registry (`workbench/formats/`) declares each material type: its steps, the subprocess commands that implement them, its outputs and its preview. One job queue runs subprocesses that report progress through `@step`/`@error`/`@unit` stdout markers. Each unit lives on disk under `video_engine/out/units/<unit_id>/`.
+**Architecture:** `workbench/server.py` (moved from the board package) serves `/api/v1` and a zero-build frontend. A format registry (`workbench/formats/`) declares each material type: its steps, the subprocess commands that implement them, its outputs and its preview. One job queue runs subprocesses that report progress through `@step`/`@error`/`@unit` stdout markers. Each unit lives on disk under `video_engine/out/units/<unit_id>/`.
 
 **Tech Stack:** Python 3 stdlib (http.server, threading, subprocess, unittest); existing modules in `video_engine/board/`, `studio/` and `video_engine/`; native HTML/CSS/ES modules; `node --test` (Node 22) for pure JS.
 
@@ -25,7 +25,7 @@
 
 ```
 workbench/__init__.py
-workbench/server.py          HTTP routes, wiring (moved from video_engine/board/studio_server.py)
+workbench/server.py          HTTP routes, wiring (moved from the board package)
 workbench/library.py         unit folders: ids, meta, plan, paths, manifest
 workbench/jobs.py            queue, StepTracker, markers, error table
 workbench/usage.py           read + summarize usage rows
@@ -74,10 +74,10 @@ Dependency order: **M0 first**. After that, Codex runs B1→B6 in sequence while
 ### Task B1 (Codex): move server, extract library
 
 **Files:**
-- `git mv video_engine/board/studio_server.py workbench/server.py`
-- `git mv tests/test_board_studio.py tests/test_workbench_server.py`
+- Move the board server to `workbench/server.py` using `git mv`.
+- Move the board server tests to `tests/test_workbench_server.py` using `git mv`.
 - Create: `workbench/__init__.py`, `workbench/library.py`, `tests/test_workbench_library.py`
-- Modify: every reference found by `rtk proxy grep -rn "studio_server" --include=*.py --include=*.md --include=*.json .`. Do not change docs under `docs/superpowers/specs/` except paths.
+- Modify: references to the moved server in Python, Markdown and JSON (search with `rg`). Do not change docs under `docs/superpowers/specs/` except paths.
 
 **Interfaces (produces):**
 - `library.unit_id(markdown: str) -> str`: sha256 of the markdown, first 12 hex chars. This is the existing behaviour.
