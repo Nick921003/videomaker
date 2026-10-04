@@ -16,6 +16,8 @@ W, H, HEADER, FOOTER = 1920, 1080, 96, 160
 VIEW = (0, HEADER, W, H - FOOTER)
 MOVE = 0.7
 SCALE_MIN = 0.55
+# 有推近鏡頭的場景，版面可以更小（讀不讀得到改由推近後的實際字級把關），但不能小過這個
+SCALE_FLOOR = 0.4
 TOL = 1.5
 # 全景靜止時物件文字的最小實際字級（字幕 40px）。再小在筆電上縮放播放就讀不出來
 MIN_FONT = 20
@@ -171,8 +173,9 @@ def main():
 			types = set(page.evaluate("board.types"))
 			if types != set(catalog["types"]) and not (args.partial and types <= set(catalog["types"])):
 				problems.append(f"已註冊元件 {sorted(types)} ≠ 目錄 {sorted(catalog['types'])}")
+			focused = {e["scene"] for e in tl["camera"] if e["kind"] == "focus"}
 			for s in page.evaluate("board.scales()"):
-				if s["members"] and s["scale"] < SCALE_MIN:
+				if s["members"] and s["scale"] < (SCALE_FLOOR if s["scene"] in focused else SCALE_MIN):
 					problems.append(f"t={s['t']:.2f} 場景 {tl['scenes'][s['scene']]['id']} 版面縮到 {s['scale']:.2f} < {SCALE_MIN}：{s['members']}")
 			# 錨點必須能只靠 state 算出（不靠 draw 的副作用），否則鏡頭預算與跨物件標記會靜默失效
 			for act in tl["actions"]:

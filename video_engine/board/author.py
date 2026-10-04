@@ -133,7 +133,8 @@ def call(budget, stage, system, messages, target, light=False):
 
 
 PATCH_ASK = ("驗證閘回報的問題只出在場景 {ids}。只輸出要改的部分，格式："
-	'{{"scenes": [修正後的完整場景], "objects": [新增或修改的物件]}}；沒改的場景與物件不要輸出。問題：')
+	'{{"scenes": [修正後的完整場景], "objects": [新增或修改的物件]}}；沒改的場景與物件不要輸出。'
+	"一場太擠可以拆成兩場：新場景給新的 id，放在原場景後面一起輸出。問題：")
 FULL_ASK = "驗證閘回報以下問題，只修這些，其餘維持不變，輸出完整修正後的 JSON："
 
 
@@ -155,11 +156,18 @@ def merge_patch(doc, patch):
 	if not isinstance(patch, dict) or not isinstance(patch.get("scenes", []), list) or not isinstance(patch.get("objects", []), list):
 		raise ValueError("修正片段格式不對：要 {\"scenes\": [...], \"objects\": [...]}")
 	out = copy.deepcopy(doc)
-	where = {s["id"]: i for i, s in enumerate(out["scenes"])}
+	cursor = None
 	for s in patch.get("scenes", []):
-		if not isinstance(s, dict) or s.get("id") not in where:
-			raise ValueError(f"修正片段的場景 {s.get('id') if isinstance(s, dict) else s} 不在原分鏡裡")
-		out["scenes"][where[s["id"]]] = s
+		if not isinstance(s, dict) or not isinstance(s.get("id"), str):
+			raise ValueError("修正片段的場景缺 id")
+		ids = [x["id"] for x in out["scenes"]]
+		if s["id"] in ids:
+			cursor = ids.index(s["id"])
+			out["scenes"][cursor] = s
+		else:
+			# 新場景（例：太擠被要求拆成兩場）：接在前一個修正的場景後面，沒有就接在最後
+			cursor = len(out["scenes"]) if cursor is None else cursor + 1
+			out["scenes"].insert(cursor, s)
 	objs = {o["id"]: i for i, o in enumerate(out["objects"])}
 	for o in patch.get("objects", []):
 		if not isinstance(o, dict) or "id" not in o:
@@ -369,13 +377,33 @@ def restore_terms(doc, glossary, md):
 	return doc
 
 
+def tone_down(doc, keep=2):
+	"""免費修正：驚嘆號整支片只留前兩個，其餘改句號（驚嘆號一多就很像 AI 在喊口號）。"""
+	left = keep
+	for scene in doc.get("scenes", []):
+		for b in scene.get("beats", []):
+			out = []
+			for ch in b.get("say", ""):
+				if ch in "！!":
+					ch = "！" if left > 0 else "。"
+					left -= 1
+				out.append(ch)
+			b["say"] = "".join(out)
+			if b.get("spoken"):
+				b["spoken"] = re.sub(r"[！!]", "。", b["spoken"]) if "！" not in b["say"] else b["spoken"]
+	return doc
+
+
 def narration_problems(doc, target, glossary=()):
-	problems, chars = [], 0
+	problems, chars, seen = [], 0, {}
 	terms = [g for g in glossary if g.get("term") and g.get("say_as") and re.search(r"[A-Za-z]", g["term"])]
 	for scene in doc.get("scenes", []):
 		for b in scene.get("beats", []):
 			say = b.get("say", "")
 			chars += len(re.sub(r"\s", "", say))
+			if say and say in seen:
+				problems.append(f"旁白重複（場景 {seen[say]} 已經講過），請刪掉或改寫：{say}")
+			seen.setdefault(say, scene.get("id"))
 			if len(say) > SAY_MAX:
 				problems.append(f"say 超過 {SAY_MAX} 字，請拆句：{say}")
 			spoken = b.get("spoken") or say
@@ -450,6 +478,55 @@ def screen_problems(doc, screens):
 	return []
 
 
+CROWDED = ("在全景時字太小", "版面縮到")
+
+
+def auto_focus(doc, problems):
+	"""太擠被判字太小的場景：開場就把鏡頭推近到第一個動作的目標，之後交給 runtime 的鏡頭跟隨（不呼叫 LLM）。
+	回傳有沒有改；已經有 focus 的場景不動，免得跟模型自己的鏡頭打架。"""
+	changed = False
+	for scene in doc.get("scenes", []):
+		if not any(f"場景 {scene.get('id')} " in p and any(k in p for k in CROWDED) for p in problems):
+			continue
+		acts = [a for b in scene.get("beats", []) for a in b.get("do", [])]
+		if any(a.get("act") == "focus" for a in acts) or not scene.get("beats"):
+			continue
+		first = next((a for a in acts if a.get("act") not in ("show", "hide", "wide", "focus") and a.get("target")), None)
+		if first is None:
+			continue
+		for b in scene["beats"]:
+			b["do"] = [a for a in b.get("do", []) if a.get("act") != "wide"]
+		# 放在第一句的動作最後：物件通常在第一句才 show，太早推近會找不到目標
+		scene["beats"][0].setdefault("do", []).append({"act": "focus", "target": first["target"]})
+		changed = True
+	return changed
+
+
+MAX_OBJECTS = 2
+
+
+def layout_ids(node):
+	if isinstance(node, str):
+		return [node]
+	if isinstance(node, dict) and len(node) == 1:
+		return [i for k in next(iter(node.values())) for i in layout_ids(k)]
+	return []
+
+
+def crowd_problems(doc):
+	"""主體要大、重點要清楚：每場 layout 最多 2 個主要物件（small note 不算）。"""
+	small = {o["id"] for o in doc.get("objects", []) if o.get("type") == "note" and o.get("style") == "small"}
+	problems = []
+	for scene in doc.get("scenes", []):
+		ids = []
+		for node in [scene.get("layout")] + [b.get("layout") for b in scene.get("beats", [])]:
+			ids += [i for i in layout_ids(node) if i not in ids]
+		main = [i for i in ids if i not in small]
+		if len(main) > MAX_OBJECTS:
+			problems.append(f"場景 {scene.get('id')} 同時放了 {len(main)} 個主要物件 {main}，上限 {MAX_OBJECTS}：拆成兩場（用 keep 帶主角過去），每樣才夠大")
+	return problems
+
+
 MAX_MARKS = 3
 MARK_ACTS = ("circle", "underline", "arrow", "brace")
 
@@ -506,6 +583,7 @@ def scene_problems(doc, target, catalog, glossary=()):
 	problems += [f"編譯警告：{w}" for w in tl["warnings"]]
 	problems += narration_problems(doc, target, glossary)
 	problems += mark_problems(doc)
+	problems += crowd_problems(doc)
 	return problems or measure_problems(tl)
 
 
@@ -555,7 +633,15 @@ def do_scene(md_path, out_dir, seg_id, budget, target=None, repair_target=None, 
 		with open(failed_path, encoding="utf-8") as f:
 			start = json.load(f)["last"]
 		print("  從上次失敗的草稿接著修", flush=True)
-	doc, repairs = converse(budget, "scene", system, user, lambda d: screen_problems(d, screens) + scene_problems(apply_glossary(restore_terms(d, glossary, md), glossary), seg["sec"], catalog, glossary),
+	def validate(d):
+		check = lambda: screen_problems(d, screens) + scene_problems(apply_glossary(restore_terms(tone_down(d), glossary, md), glossary), seg["sec"], catalog, glossary)
+		problems = check()
+		# 免費修正：太擠的場景自動推近，過了就不用叫模型重寫
+		if auto_focus(d, problems):
+			print("  自動推近太擠的場景後重新驗證", flush=True)
+			problems = check()
+		return problems
+	doc, repairs = converse(budget, "scene", system, user, validate,
 		failed_path=failed_path, target=target, repair_target=repair_target, scenes_of=problem_scenes, start=start)
 	path = os.path.join(out_dir, f"{seg_id}.scene.json")
 	with open(path, "w", encoding="utf-8") as f:

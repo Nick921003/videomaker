@@ -140,9 +140,18 @@ class TestPartialRepair(unittest.TestCase):
 		self.assertEqual([o["text"] for o in out["objects"]], ["甲", "丙", "丁"])
 		self.assertEqual(DOC["scenes"][1]["beats"][0]["say"], "第二句話")
 
-	def test_合併不認得的場景要報錯(self):
+	def test_合併可以把一場拆成兩場(self):
+		patch = {"scenes": [{"id": "s1", "beats": [{"say": "前半", "do": []}]}, {"id": "s1b", "beats": [{"say": "後半", "do": []}]}]}
+		out = BA.merge_patch(DOC, patch)
+		self.assertEqual([s["id"] for s in out["scenes"]], ["s1", "s1b", "s2"])
+
+	def test_合併只有新場景時接在最後(self):
+		out = BA.merge_patch(DOC, {"scenes": [{"id": "zz", "beats": []}]})
+		self.assertEqual([s["id"] for s in out["scenes"]], ["s1", "s2", "zz"])
+
+	def test_合併格式不對要報錯(self):
 		with self.assertRaises(ValueError):
-			BA.merge_patch(DOC, {"scenes": [{"id": "zz", "beats": []}]})
+			BA.merge_patch(DOC, {"scenes": [{"beats": []}]})
 
 	def test_重寫只送出問題場景並用指定的重寫模型(self):
 		calls = []
@@ -254,6 +263,38 @@ class TestSymbolsAndRepeats(unittest.TestCase):
 		doc = BA.apply_glossary(self.beat("for 迴圈的三個部分"), glossary)
 		problems = BA.narration_problems(doc, 1, glossary)
 		self.assertTrue(any("重複" in p for p in problems), problems)
+
+
+class TestAutoFocus(unittest.TestCase):
+	def test_太擠的場景開場自動推近到第一個動作(self):
+		doc = {"scenes": [{"id": "arr", "beats": [{"say": "a", "do": [{"act": "show", "target": "code"}]}, {"say": "b", "do": [{"act": "brace", "target": "cells", "range": [0, 4]}, {"act": "wide"}]}]}]}
+		self.assertTrue(BA.auto_focus(doc, ["版面：t=3 場景 arr 的 code 在全景時字太小：最小 14px"]))
+		self.assertEqual(doc["scenes"][0]["beats"][0]["do"][-1], {"act": "focus", "target": "cells"})
+		self.assertFalse(any(a["act"] == "wide" for b in doc["scenes"][0]["beats"] for a in b["do"]))
+		self.assertFalse(BA.auto_focus(doc, ["版面：t=3 場景 arr 的 code 在全景時字太小：最小 14px"]))
+
+
+class TestTone(unittest.TestCase):
+	def test_驚嘆號只留前兩個(self):
+		doc = {"scenes": [{"id": "a", "beats": [{"say": "成立！"}, {"say": "也成立！"}, {"say": "又成立！", "spoken": "又成立！"}]}]}
+		BA.tone_down(doc)
+		self.assertEqual([b["say"] for b in doc["scenes"][0]["beats"]], ["成立！", "也成立！", "又成立。"])
+		self.assertEqual(doc["scenes"][0]["beats"][2]["spoken"], "又成立。")
+
+	def test_重複的旁白要退件並對到場景(self):
+		doc = {"scenes": [{"id": "a", "beats": [{"say": "五格的編號是零到四。"}]}, {"id": "b", "beats": [{"say": "五格的編號是零到四。"}]}]}
+		problems = [p for p in BA.narration_problems(doc, 1) if "重複" in p]
+		self.assertEqual(len(problems), 1)
+		self.assertEqual(BA.problem_scenes(doc, problems), {"a", "b"})
+
+
+class TestCrowd(unittest.TestCase):
+	def test_每場最多兩個主要物件_small_note_不算(self):
+		doc = {"objects": [{"id": "c", "type": "code"}, {"id": "a", "type": "cells"}, {"id": "v", "type": "vars"}, {"id": "n", "type": "note", "style": "small"}],
+			"scenes": [{"id": "ok", "layout": {"stack": ["c", "a", "n"]}, "beats": []}, {"id": "bad", "layout": {"row": ["c", {"stack": ["a", "v"]}]}, "beats": []}]}
+		problems = BA.crowd_problems(doc)
+		self.assertEqual(len(problems), 1)
+		self.assertIn("場景 bad ", problems[0])
 
 
 if __name__ == "__main__":

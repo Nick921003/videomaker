@@ -53,6 +53,11 @@
 			let target = L.defaultView(ev.scene);
 			if (ev.kind === 'focus') {
 				rect = rect || anchorAt(ev.target, ev.t + Math.max(ev.dur, MOVE));
+				if (!rect) {
+					// 目標還沒出現（例：focus 寫在 show 之前）：等它在本場第一次出現再推近，不要退回全景
+					const on = (TL.visibility[split(ev.target)[0]] || []).map(v => v[0]).find(t0 => t0 >= ev.t - 1e-6 && t0 < nextEnter(ev.scene));
+					if (on != null) rect = anchorAt(ev.target, on + MOVE + .05);
+				}
 				if (rect) target = L.focusView(rect, ev.scene);
 			}
 			const start = cams.length ? cameraEval(cams.length - 1, ev.t) : target;
@@ -69,8 +74,9 @@
 			if (r.x >= v.cx - hw && r.x + r.w <= v.cx + hw && r.y >= v.cy - hh && r.y + r.h <= v.cy + hh) return;
 			const x = Math.min(c.rect.x, r.x), y = Math.min(c.rect.y, r.y);
 			const both = {x, y, w: Math.max(c.rect.x + c.rect.w, r.x + r.w) - x, h: Math.max(c.rect.y + c.rect.h, r.y + r.h) - y};
-			const fits = both.w <= VIEW.w && both.h <= VIEW.h;
-			pushCam({t: Math.max(p.t - .3, c.t), dur: MOVE, kind: 'focus', target: p.target, scene: p.scene}, fits ? both : r);
+			// 一起框住要能放大到 1.2 倍以上才值得；否則等於拉回全景、字又變小，改成只框新目標
+			const zBoth = Math.min(VIEW.w * .55 / both.w, VIEW.h * .55 / both.h);
+			pushCam({t: Math.max(p.t - .3, c.t), dur: MOVE, kind: 'focus', target: p.target, scene: p.scene}, zBoth >= 1.2 ? both : r);
 		};
 		const skip = new Set(['focus', 'wide', 'show', 'hide']);
 		const pending = [];

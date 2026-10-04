@@ -267,3 +267,5 @@ video_engine/board/
 - 2026-10-04 後續修正：通用標記避讓（箭頭直線→兩物件間折線→外側繞道、標籤找空位、同物件只留最新的圈、圈依空隙縮放）、量測閘納入標記與小標、鏡頭自動跟隨畫面外的動作（commit 待補 hash）
 - 2026-10-04 後續修正：本機自我檢查 selftest.py＋測試分鏡庫 fixtures/（付費前自動跑）；只重寫出問題的場景（--repair-model、--resume）；必演畫面 screens；旁白程式符號／唸法撞名／唸法重複檢查（commit 待補 hash）
 - 2026-10-04 後續修正：新元件 vars（變數面板）、stack（呼叫堆疊）；正式流程定為 Gemini 全包（規劃＋分鏡＋修正），配音預設 Gemini 3.8 Flash TTS 英文原音（narrate.py --tts sovits 可改回本機）；影片工作室獨立頁見 2026-10-04-board-studio-design.md（commit 待補 hash）
+- 2026-10-04 後續修正：新元件 pipeline（流程管線）、scale（數值標尺）；cells（位址、對調、輸入緩衝區讀走）、code（前後對照、行內片段錨點）、output（接著印）、terminal（等待輸入）擴充（commit 待補 hash）
+- 2026-10-04 後續修正：工作室端到端測試修正——拆場合併、失敗草稿接著修、太擠場景自動推近、推近目標晚出現時等它、每場最多 2 個主要物件、旁白口語化規則與重複／驚嘆號處理（commit 待補 hash）

@@ -477,6 +477,15 @@ class TestStudio(unittest.TestCase):
 		self.assertIn("error", json.loads(response.read()))
 
 
+	def test_失敗過的段落重新生成時從草稿接著修(self):
+		unit, directory = self.unit()
+		(directory / "q1.failed.json").write_text('{"problems": [], "last": {}}', encoding="utf-8")
+		job_id = self.api("POST", f"/api/units/{unit}/videos", {"stories": ["q1"]})["job_id"]
+		self.wait_job(job_id)
+		author = [c for c in self.runner.commands if Path(c[1]).name == "author.py"][0]
+		self.assertIn("--resume", author)
+
+
 class TestTTSHealth(unittest.TestCase):
 	def test_http_500_is_up_and_refused_is_down(self):
 		with patch.object(BS.http.client, "HTTPConnection") as connection:

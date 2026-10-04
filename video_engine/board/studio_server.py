@@ -418,6 +418,9 @@ class Studio:
 		args = [stage, directory / "material.md", directory]
 		if story:
 			args.append(story)
+			# 上次失敗存了草稿：從草稿接著修，不重寫第一版
+			if (directory / f"{story}.failed.json").is_file():
+				args.append("--resume")
 		else:
 			# author 目前只在分鏡內建自檢，規劃也先過免費閘。
 			self._step(job, "本機自我檢查", "selftest", ["--quick"])
