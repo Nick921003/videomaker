@@ -1,0 +1,177 @@
+{
+	"version": 1,
+	"title": "cells元件擴充",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "buffer",
+			"type": "cells",
+			"count": 3,
+			"label": "輸入緩衝區",
+			"values": [
+				"1",
+				"2",
+				"\\n"
+			],
+			"addrs": [
+				"0x1000",
+				"0x1001",
+				"0x1002"
+			]
+		},
+		{
+			"id": "out",
+			"type": "output",
+			"label": "讀取結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "swap",
+			"title": "交換兩格的數字",
+			"label": "擴充驗收",
+			"layout": {
+				"stack": [
+					"buffer",
+					"out"
+				]
+			},
+			"beats": [
+				{
+					"say": "顯示緩衝區與輸出框。",
+					"do": [
+						{
+							"act": "show",
+							"target": "buffer",
+							"cue": "緩衝區"
+						},
+						{
+							"act": "show",
+							"target": "out",
+							"cue": "輸出框"
+						}
+					]
+				},
+				{
+					"say": "交換前兩格，再交換回來。",
+					"do": [
+						{
+							"act": "swap",
+							"target": "buffer",
+							"cue": "交換前",
+							"a": 0,
+							"b": 1
+						},
+						{
+							"act": "swap",
+							"target": "buffer",
+							"cue": "交換回來",
+							"a": 0,
+							"b": 1
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "consume",
+			"title": "讀走數字，換行留著",
+			"label": "擴充驗收",
+			"layout": {
+				"stack": [
+					"buffer",
+					"out"
+				]
+			},
+			"beats": [
+				{
+					"say": "讀走兩個數字，飛到輸出尾端。",
+					"do": [
+						{
+							"act": "consume",
+							"target": "buffer",
+							"cue": "讀走",
+							"count": 2,
+							"to": "out:end"
+						}
+					]
+				},
+				{
+					"say": "接著把同樣的數字加到輸出。",
+					"do": [
+						{
+							"act": "append",
+							"target": "out",
+							"cue": "加到",
+							"text": "12"
+						}
+					]
+				},
+				{
+					"say": "圈出還留在緩衝區的換行。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "buffer:i2",
+							"cue": "圈出"
+						}
+					]
+				},
+				{
+					"say": "畫底線，再用箭頭連到讀取結果。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "buffer:i2",
+							"cue": "底線"
+						},
+						{
+							"act": "arrow",
+							"target": "buffer:i2",
+							"cue": "箭頭",
+							"to": "out:end",
+							"label": "留下換行"
+						}
+					]
+				}
+			],
+			"keep": [
+				"buffer",
+				"out"
+			]
+		},
+		{
+			"id": "discard",
+			"title": "取走剩下的一格",
+			"label": "擴充驗收",
+			"layout": {
+				"stack": [
+					"buffer",
+					"out"
+				]
+			},
+			"beats": [
+				{
+					"say": "最後讀走換行，不指定目的地。",
+					"do": [
+						{
+							"act": "consume",
+							"target": "buffer",
+							"cue": "讀走",
+							"count": 1
+						}
+					]
+				},
+				{
+					"say": "輸出仍是剛才讀到的兩個數字。",
+					"do": []
+				}
+			],
+			"keep": [
+				"buffer",
+				"out"
+			]
+		}
+	]
+}

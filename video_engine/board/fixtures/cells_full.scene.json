@@ -1,0 +1,198 @@
+{
+	"version": 1,
+	"title": "格子元件：full",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "cells",
+			"type": "cells",
+			"count": 4,
+			"label": "字串陣列",
+			"values": [
+				"A",
+				null,
+				null,
+				null
+			],
+			"tail": "其餘未知",
+			"accent": [
+				"\\0"
+			]
+		},
+		{
+			"id": "source",
+			"type": "note",
+			"text": "\"BC\""
+		},
+		{
+			"id": "result",
+			"type": "output"
+		}
+	],
+	"scenes": [
+		{
+			"id": "operate",
+			"title": "填入與讀取",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"source",
+					"cells",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "先顯示來源，把字元填入格子。",
+					"do": [
+						{
+							"act": "show",
+							"target": "source"
+						},
+						{
+							"act": "show",
+							"target": "cells",
+							"with": "prev"
+						},
+						{
+							"act": "fill",
+							"target": "cells",
+							"cue": "填入",
+							"values": [
+								"B",
+								"C",
+								"\\0"
+							],
+							"from": "source",
+							"start": 1
+						}
+					]
+				},
+				{
+					"say": "指向第一格，接著依序讀取字元。",
+					"do": [
+						{
+							"act": "point",
+							"target": "cells",
+							"cue": "指向",
+							"index": 0
+						},
+						{
+							"act": "scan",
+							"target": "cells",
+							"cue": "讀取",
+							"range": [
+								0,
+								2
+							],
+							"to": "result:end"
+						}
+					]
+				},
+				{
+					"say": "遇到結束字元，就停在最後一格。",
+					"do": [
+						{
+							"act": "stop",
+							"target": "cells",
+							"cue": "停在",
+							"index": 3,
+							"note": "字串結束"
+						}
+					]
+				},
+				{
+					"say": "用括線標出三個字元的範圍。",
+					"do": [
+						{
+							"act": "brace",
+							"target": "cells",
+							"cue": "括線",
+							"range": [
+								0,
+								2
+							],
+							"label": "三個字元"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"source",
+					"cells",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "cells:i2",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "cells:i2",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "cells:i2",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "cells:i2",
+							"cue": "箭頭",
+							"to": "result:end",
+							"label": "結果"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "cells",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "cells",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"source",
+				"cells",
+				"result"
+			]
+		}
+	]
+}

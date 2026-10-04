@@ -1,0 +1,244 @@
+# 元件撰寫契約
+
+新增或修改 `runtime/components/*.js` 前必讀。規則來自 `docs/superpowers/specs/2026-10-03-board-runtime-design.md`。
+
+## 不可改的檔案
+
+`catalog.json`、`compile.py`、`build.py`、`check.py`、`runtime/core.js`、`runtime/layout.js`、`runtime/player.js`、`examples/*.json`。
+覺得非改不可 → 停下來回報理由，不要自己改。
+
+## 介面
+
+每個元件一個檔案，classic script，IIFE 包起來，呼叫 `Board.register(type, impl)`。`type` 必須等於 `catalog.json` 的型別名。
+
+```js
+'use strict';
+(() => {
+	Board.register('cells', {
+		measure(obj, api, acts) { return {w, h}; },        // 自然尺寸（縮放前），整片固定
+		state(obj, acts, t, api) { return {...}; },          // t 時刻的狀態，純函式
+		draw(api, obj, st, t) { },                           // 在本地座標 [0,w]×[0,h] 內畫
+		anchors(obj, st, api) { return {name: {x,y,w,h}}; }, // 本地座標；名稱不含物件 id
+		overlay(api, obj, st, t, world) { },                 // 選填：世界座標，畫跨物件的東西（飛行字元）
+	});
+})();
+```
+
+- `obj`：timeline 裡的物件（scene.json 原樣＋編譯器補的 `_max_text` 等底線欄位）。
+- `acts`：**跟這個物件有關的所有動作**，依時間排序。包含 `target` 是本物件的，以及參數錨點指向本物件的
+  （例：`output` 會收到 `scan` 動作，因為該動作的 `args.to` 是 `out:end`；`note` 會收到 `fill`，因為 `args.from` 指向它）。
+  用 `a.obj === obj.id` 區分「我是 target」。
+- 動作物件：`{scene, beat, act, target, obj, args, n, t0, t1}`。`n` 是序列項目數（非序列為 null）。
+  **序列第 k 項（0 起算）的時段 = `[t0 + k·per, t0 + (k+1)·per]`，`per = (t1 - t0) / n`。**
+- `world.anchor('out:end')` → 該錨點此刻的世界座標框，或 null。`world.alpha(id)`、`world.placement(id)`。
+
+## 硬規則（`tests/test_board_build.py` 與 `check.py` 會擋）
+
+1. **純函式**：只依賴參數。禁用 `Math.random`、`Date.now`、`performance.now`、`new Date(`。游標閃爍用 `Math.floor(t * 2) % 2`。
+2. **不寫色碼**：一律 `api.color('鍵')`。可用的鍵（`themes/notebook.json`）：
+   `canvas.bg` `canvas.grid` `canvas.margin` `card.fill` `card.edge` `text.title` `text.body` `text.muted` `text.accent`
+   `code.bg` `code.normal` `code.muted` `code.highlight` `code.error` `effects.pencil` `effects.highlight`。
+3. **尺寸以整片最大內容量測**：輸出框用 `obj._max_text`，清單含之後才 `append` 的列，終端機含整場最多的行數。
+   `measure` 的回傳值不得隨 t 改變；內容增長不准推動版面。
+4. **draw 不出界**：`draw` 只畫在 `[0,w]×[0,h]`。跨物件的飛行字元畫在 `overlay`。
+5. **文字一律走 `api.text`／`api.write`，框線走 `api.rect`**（它們會記錄框給量測閘）。不要直接 `ctx.fillText`。
+   純裝飾線條用 `api.ink`。填色背景可直接 `ctx.fillRect`，但顏色仍用 `api.color`。
+6. 鉛筆抖動只在描線中（`p < 1`），描完要穩定——`api.ink` 已處理，傳固定 `seed`（`Board.seed(obj.id + '…')`）即可。
+7. **錨點只能由 `state` 算出**：`anchors()` 不得依賴 `draw()` 寫進 state 的東西；`draw()` 不得改寫 `st`。
+   runtime 會在載入時不繪製就查錨點（鏡頭預算），量測閘也會這樣驗。
+8. **動作留下的標記只活在該場景**：指標、停止圈這類由動作產生的標記，從 `api.sceneEnd(a.scene)` 起 0.4 秒淡出。
+   物件本身的內容（格子的值、輸出文字）不受影響。
+9. **小標（`role: 'label'`）也算字**：量測閘會檢查它跟同一物件的內文、跟別的物件有沒有互疊。小標放在內容框外（上方），不要塞進框內角落。
+10. **錨點要跟畫出來的框對齊**：通用標記（圈、箭頭）以錨點為準來避讓鄰居；錨點比框寬或窄，圈就會壓到框線。
+
+通用標記（`circle`／`underline`／`arrow`）由 `player.js` 畫，不歸元件管：同一物件同一場只留最新的圈；
+圈的大小以錨點四周的空隙為限（扁長目標用膠囊形）；箭頭被擋住時改走兩物件間的空隙或從外側繞道，標籤沿路徑找空位。
+畫完後以 `api.recordPath` 記下路徑，量測閘檢查它有沒有穿過別的字或框（被圈的目標、箭頭兩端本身不算）。
+
+## api（`runtime/core.js`）
+
+| 函式 | 說明 |
+| --- | --- |
+| `api.text(str, x, y, {size, weight, mono, color, align, alpha, role})` | `y` 是垂直中線；回傳寬度 |
+| `api.write(str, x, y, p, opts)` | 手寫揭露，`p` 0→1 |
+| `api.measure(str, {size, weight, mono})` | `{w, h}` |
+| `api.ink(points, p, {color, width, seed})` | 鉛筆折線 |
+| `api.rect(x, y, w, h, p, {color, fill, width, seed, role})` | 鉛筆框；`fill` 為背景色 |
+| `api.ellipse(cx, cy, rx, ry, p, {color, seed})` | 強調圈，預設 accent |
+| `api.hatch(x, y, w, h, seed)` | 未知內容的淡斜線 |
+| `api.recordPath(points, role, {kind, target, skip})` | 記錄標記路徑（螢幕座標）給量測閘；`skip` 是本來就該碰到的框 |
+| `api.pointer(x, y, size, p)` | A＋C 的讀取指標（小圈＋箭頭） |
+| `api.fly(str, from{x,y}, to{x,y}, p, {size, color, lift})` | 弧線飛行字元，`p` 0→1 |
+| `api.phase(t, a, b)`、`api.ease`、`api.clamp`、`api.mix`、`Board.seed(str)` | 數學 |
+
+## 字級（1080p 自然尺寸）
+
+標題 80／內文 48／標籤 36／小字 30／程式 42／格內字元 64／輸出字 80／大數字 118。字型由 api 決定，元件只傳 `mono: true`。
+
+## 視覺參考
+
+A＋C 已接受版：`/home/pjw92/projects/videomaker/video_engine/out/state_change_ac_20261001/movie.html`（720p，數值乘 1.5 即 1080p）。
+對照函式：`row()`＝cells、`pointer()`＝`api.pointer`、`outputBox()`＝output、`codeScene`／C 段深色面板＝code、
+`comparison` 三欄＝metrics、`copies`／`scans` 的飛行字元＝fill／scan 的 overlay、`termination_note` 的圈＝stop。
+
+## 各元件規格
+
+### cells
+- 屬性：`count`、`label`、`values`（初始值，null＝未知）、`tail`（右側「其餘」框的文字，無則不畫）、`accent`（用強調色畫的值，例 `["\\0"]`）。
+- 版面（上到下）：標籤列（小字 36、muted）→ 指標區（高 ≈ 0.55 格）→ 格子列（格寬 150、間距 26、高 = 格寬 × 1.09）→
+  停止註記列（若有 `stop` 帶 `note`）→ 每個 `brace` 一列（高 76）。右側：短連接線＋tail 框（寬 = 格寬 × 1.65，內畫「…」與 tail 文字）。
+- 已知格：`card.fill` 底、鉛筆框、格內字元置中（mono 64，accent 值用 `text.accent`）。未知格：`api.hatch`。
+- `fill`：第 k 項，字元從 `args.from` 錨點中心飛到第 `start+k` 格中心（overlay），該項結束時格子變成已知。
+- `point`：指標在 dur 內滑到 `index` 上方。指標自第一個 point／scan／stop 起出現，之後一直在。
+- `scan`：第 k 項前 40% 指標滑到第 `lo+k` 格，後 60% 該格字元（`args.chars[k]`）飛到 `args.to` 錨點中心（overlay，強調色）。
+- `stop`：指標滑到 `index`，該格畫強調圈（之後一直在），`note` 文字以強調色寫在該格正下方的停止註記列。
+- `brace`：第 j 個 brace 畫在第 j 個 brace 列：範圍左緣到右緣的鉛筆線（第一個用強調色，其餘 pencil）＋線下置中標籤。
+- 錨點：`label`、`i{n}`（第 n 格的框）。
+
+### output
+- 屬性：`label`；編譯器補 `_max_text`（整片最長文字）。
+- 卡片：小標籤（muted 30）在框外上方，高 46；下方 `card.fill` 底鉛筆框高 150，文字 mono 80。寬 = max(440, `_max_text` 寬 + 120, 小標寬)。
+- 文字**靠左成長、最終置中**：起點 x = (w − `_max_text` 寬) / 2。
+- 內容：每個 `args.to` 指向本物件的 `scan`，第 k 項結束時接上 `args.chars[k]`；`set`（target 是本物件）在 t1 時換成 `args.text`。
+- 錨點：`text`（目前文字的框；空字串時為起點處寬 0 的框）、`end`（目前文字尾端、寬一個字的框，下一個字落在這裡）。
+
+### code
+- 屬性：`lines`、`caption`、`footer`。深色面板 `code.bg` 直接填色（不畫鉛筆框，但要 `api.record` 一個 panel 框：用 `api.rect(..., {fill, color: api.color('code.bg')})` 亦可）。
+- caption 在上（`code.muted` 36）、程式行 mono 42（`code.normal`）、footer 在下（`code.muted` 36）。左右內距 56。
+- `highlight`：`args.line`（1 起算）那行底下鋪 `code.highlight` 色帶，dur 內淡入，之後一直在。
+- 錨點：`L{n}`（1 起算）。
+
+### metrics
+- 屬性：`items: [{label, value, note}]`，橫排等寬三欄，欄寬 = 三欄內容最大寬 + 80。
+- 每欄：label（muted 36）→ value（118、weight 600、`text.body`）→ note（muted 30）。
+- `reveal`：有 `args.index` 只揭露該項；沒有就依序揭露全部（序列）。揭露前不畫（但空間保留）。value 用 `api.write`。
+- 錨點：`m{n}`。
+
+### terminal
+- 屬性：`title`（預設「終端機」）、`prompt`（預設 `C:\>`）。深色面板 `code.bg`；上方標題列高 56（`code.muted` 30），下方內容區。
+- 每行 mono 34、行高 50、內距 36。提示字元 `code.muted`，指令與輸出 `code.normal`，`print` 的 `style: "error"` 用 `code.error`。
+- `type`：新的一行出現「prompt＋空白」，`args.text` 逐字打出（每項＝一字），打字中游標實心，閒置時以 `Math.floor(t * 2) % 2` 閃爍。
+- `print`：`args.lines` 逐行出現（每項＝一行，0.15 秒淡入）；全部印完後下一行出現新的空白 prompt（帶游標）。
+- `restart`：dur 前 40% 內容淡出，中段在內容區置中顯示 `args.note`（`code.muted`），最後 30% 出現全新的空白 prompt；之前的行全部清掉。
+- 尺寸：模擬整片，以「兩次 restart 之間最多同時存在的行數（含最後的空 prompt）」與最長一行決定；最小寬 760。
+- 錨點：`cmd`（最近一次 `type` 的指令文字框；尚未打字時為 prompt 尾端寬 0 框）、`line{n}`（本次 session 第 n 行，0 起算）。
+
+### list
+- 屬性：`title`、`rows`。標題（muted 34）在上；每列一張 `card.fill` 鉛筆框卡片，mono 34，列高 74、列距 14、左右內距 28，右側保留 70 放結果符號。
+- `append`：新列接在最後，dur 內 `api.write` 寫出；之前不畫（空間保留）。
+- `walk`：每項＝一列。`args.item`（例 "gcc"）畫成小標籤（強調色框＋文字），在卡片左側逐列下移：
+  第 k 項前 35% 標籤移到第 k 列，後段揭曉結果——非 `found` 的列右側寫「✗」（muted）且列文字轉 muted；
+  `found` 那列右側寫「✓」（強調色）。沒有 `found` 時每列都是 ✗。結果保留到下一次 `walk` 開始時清除。
+- 錨點：`title`、`r{n}`（第 n 列卡片）。
+
+### vars（變數面板）
+- 屬性：`vars: [{id, name, type?, value?}]`（1–5 個）、`title?`。沒有 `value` 的變數＝未初始化，格子顯示「?」並加淡斜線（`api.hatch`）。
+- 版面（由上而下）：`title`（muted 30，有才佔 44）→ 算式列 CALC_H 52（整片有任何 `set` 帶 `calc` 才保留）→ 變數列 → 條件列 CHECK_H 64（整片有 `check` 才保留）。
+  變數列：各變數一欄，左右間距 40；每欄由上而下＝名稱列 48（`type` muted 28 ＋ 空格 ＋ `name` mono 36）、
+  值格 112 高（`card.fill` 底鉛筆框，值 mono 64 weight 600 置中）、歷史列 40（舊值 mono 28 muted，每個加一條鉛筆刪除線，空格分隔，只留最近 4 個，更早的以「…」開頭）。
+  欄寬＝max(160, 名稱寬, 整片出現過的所有值寬＋48, 算式寬＋24, 歷史 4 個的寬)。變數 > 4 個時排成兩行。
+- 動作（target `物件id:變數id`；`check` 的 target 是物件本身）：
+  - `declare`（`value?`）：該變數在 t0 前不畫，t0–t1 欄位淡入並手寫名稱；有 `value` 則從此值開始。沒被 declare 的變數一開場就在。
+  - `set`（`value`，`calc?`）：p＝(t−t0)/(t1−t0)。有 `calc`：0–0.4 在該欄上方算式列手寫 `calc`（accent mono 36）；
+    0.4–0.6 舊值被一條鉛筆線劃掉；0.6–1 新值手寫進格子、算式淡出。沒 `calc`：0–0.4 劃掉舊值，0.4–1 寫新值。
+    t1 之後舊值進歷史列。同一變數多次 set 依時間累積。
+  - `check`（`text`，`result?`）：條件列置中手寫「`text` → 成立 ✓」（result true，accent）或「`text` → 不成立 ✗」（false，muted）；
+    沒給 result 只寫 `text`。下一個 check 開始時上一個淡出；換場依規則 8 從 `api.sceneEnd(a.scene)` 淡出。
+- 錨點：每個變數 id → 該欄值格的框；`check` → 條件列文字框（沒有 check 時為條件列中央寬 0 的框）。錨點只由 state 算（規則 7）。
+- 量測（規則 3）：寬高以整片最大內容計，值變長版面也不跳。
+
+### stack（呼叫堆疊）
+- 屬性：`frames: [{id, name, vars: [{id, name, type?, value?}]}]`、`title?`。變數 id 在整個物件內唯一。
+- 版面：框由下往上疊（第一個框在最底），整片同時存在的框數最大值決定高度（規則 3）。每個框＝標頭列 52（`name` mono 34）＋變數列
+  （同 vars 的欄：名稱列 40、值格 88 高 mono 52 weight 600、歷史列 32 只留最近 3 個）。框寬＝所有框需要的最大寬，框間距 18。
+  最上面的框（active）用 accent 鉛筆框、其他用 pencil 框且標頭 muted。`title` 在最上方（muted 30）。
+- 動作：
+  - `push`（target 框 id）：t0 前不畫；t0–t1 框從上方 40px 處落下並淡入。沒有 push 的框一開場就在。
+  - `set`（target 變數 id，`value`，`calc?`）：同 vars 的 set（算式寫在該欄上方的框內空白，舊值劃掉進歷史）。
+  - `pop`（target 框 id，`value?`，`to?`）：0–0.5 框內寫出「return `value`」（accent）；0.5–1 框往上淡出；
+    有 `to` 時回傳值用 `overlay` 從該框飛到 `to` 變數的值格（`api.fly`，世界座標、字級乘版面縮放），t1 時 `to` 變數改成 `value`（舊值進歷史）。
+- 錨點：每個框 id → 框；每個變數 id → 值格；`top` → 目前最上面（已 push 未 pop）的框。只由 state 算（規則 7）。
+
+### pipeline（流程管線）
+- 屬性：`stages: [{id, label, note?}]`（2–6 站）、`items: [{id, text, at}]`（資料卡，`at`＝一開場所在的站 id）、`direction`（row 預設／column）、`title?`。
+- 版面：各站是鉛筆框卡片（`label` mono 34 置中，寬＝max(180, 標籤寬＋40)，高 96），站與站之間 64px 鉛筆箭頭；
+  每站下方保留 item 區（可放 2 張資料卡疊放，卡片 mono 30，`card.fill` 小框）；站下方再留 note 列（muted 26，整片有 note 才保留）。
+  `direction: column` 時改成直排、箭頭朝下、item 區在站的右側。
+- 動作：
+  - `step`（target 站 id，`note?`）：該站變成目前站（accent 框、淡淡的 effects.highlight 底），其他站 pencil 框；有 note 就在站下方手寫。
+    狀態持續到下一個 step；換場依規則 8 淡掉。
+  - `move`（target 資料卡 id，`to`＝站 id，`text?`）：資料卡沿兩站之間的箭頭走一段弧線移到目的站；抵達（p>0.7）時若有 `text`，
+    卡片文字由舊變新（舊字往上淡出、新字手寫），例 hello.c → hello.i。位置與文字整片累積。
+  - `reject`（target 站 id，`back_to`＝站 id，`text?`）：從該站畫一條往回的彎箭頭（accent，走站列上方）到 back_to，`text` 寫在箭頭上方（例「編譯錯誤」）。
+    下一個 reject 或換場時淡掉。
+- 錨點：每個站 id → 站框；每個資料卡 id → 卡片目前位置的框（由 state 算，移動中取插值位置）。
+- 量測：整片最多同站資料卡數、最長卡片文字（含 move 的 text）、最長 note 決定尺寸。
+
+### scale（數值標尺）
+- 屬性：`min`、`max`（數字）、`zones: [{id, from, to, label, kind}]`（kind：ok 正常／edge 邊界／bad 異常）、`ticks: [數字]`、`unit?`、`title?`。
+- 版面：寬 1100 的水平數線（鉛筆線＋兩端小箭頭），線下標 ticks（mono 28 muted）與 unit；zones 用線上方 14px 高的淡色帶
+  （ok＝canvas.grid、edge＝effects.highlight、bad＝code.error 淡化 alpha 0.35），帶上方寫 label（26 muted）。
+  probe 標記在線上方，預留一列 probe 標籤高度（整片最多同時幾個 probe 決定是否錯開成兩層）。
+- 動作（target 物件本身，`zone` 除外）：
+  - `probe`（`value`，`label?`，`result?`：pass／fail）：一個倒三角探針從上方落到 value 位置，下方小圓點；
+    label（mono 30）寫在探針上方；result 在 label 右邊加 ✓（accent）或 ✗（muted）。探針留到換場（規則 8）。第 n 個 probe 的錨點是 `p{n}`。
+  - `mark`（`value`，`label`）：在 value 處畫一條直立刻度並寫 label（accent 28）。留到換場。
+  - `zone`（target `物件id:zone id`）：該 zone 的色帶加粗並描 accent 邊框，持續到下一個 zone 或換場。
+- 錨點：每個 zone id → 色帶框；`p{n}` → 第 n 個（從 0 起，依時間）probe 的標籤框（還沒落下時取最終位置）。
+- 值超出 [min, max] 時夾在兩端並在旁邊加「…」。
+
+### 既有元件的小擴充
+- **cells**：`addrs: ["0x1000", …]`（每格下方小字 mono 24 muted，保留一列 36 高）。
+  `swap`（`a`、`b` 兩個格子 index）：兩個值沿弧線互換（一個從上方、一個從下方），t1 後兩格的值交換。
+  `consume`（`count`，`to?` 錨點）：從左邊取走 `count` 個還有值的格子——值飛到 `to`（有給才飛，用 overlay＋`api.fly`），
+  被取走的格子變空（淡斜線）並在格子上方小字標「已讀走」；剩下的值不動（例：scanf 讀走數字，`\n` 還留在緩衝區）。
+- **code**：`diff: {"add": [行號…], "del": [行號…]}`——新增行左側 gutter 標「+」並加 effects.highlight 淡底，刪除行標「−」、文字 muted 並加刪除線。
+  `marks: [{id, line, text}]`——行內片段的具名錨點（`{key}`），框住該行第一次出現 `text` 的位置；給圈、底線、箭頭用（例：圈出 `==`）。
+- **output**：`append`（`text`）：接在目前文字後面逐字出現；`text` 可含 `\n` 換行。多行時字級改 56，行距 1.3；整片最長文字由編譯器放在 `_max_text`（含換行）。
+- **terminal**：`input`（`text`）：程式在等使用者輸入——先在最後一行尾端閃 0.6 秒游標，再逐字打出 `text`（code.normal 色），不加 prompt。
+  用法：`print` 印出「請輸入：」後接 `input`。
+
+## 驗收指令
+
+```bash
+S=$(mktemp -d)
+.venv/bin/python video_engine/board/compile.py video_engine/board/examples/<ex>.scene.json $S/tl.json --gaps /dev/null
+.venv/bin/python video_engine/board/build.py $S/tl.json $S/out
+~/.local/share/pipx/venvs/webwright/bin/python video_engine/board/check.py $S/out --partial
+.venv/bin/python -m unittest tests.test_board_build tests.test_board_compile
+```
+
+`check.py` 必須印出「量測閘：取樣 N 格，通過」。**不准為了通過而修改 check.py、預期值或範例 JSON。**
+
+### window（鉛筆風線框對話框）
+- 用途：示範軟體操作。**只畫已核對過的介面文字**；畫面是手繪示意，不仿真截圖。
+- 參考截圖（只看結構與文字，不照抄外觀）：`/tmp/claude-1000/-home-pjw92-projects-GPT-SoVITS/8886ac47-22ec-41a6-8d08-b96f8b6d6bbe/scratchpad/winref/`。
+- 屬性（全部選填）：`title`、`tabs: [{id, text, active}]`、`body: [區塊]`、`footer: [{id, text}]`（靠右的按鈕列）。
+- 區塊（由上往下堆疊，間距 18）：
+  - `{"field": {id}}`：輸入框（寬滿版、高 64），內容由 `input` 打出，打字中顯示游標。
+  - `{"list": {rows: [{id, text}], min_rows, side?: [[按鈕…], [按鈕…]]}}`：有框清單，列高 52、mono 26；
+    `side` 是右側直排按鈕欄，內層陣列之間空一格。列寬以最長文字（含之後 `input` 打進去的）決定。
+  - `{"table": {columns: [..], rows: [{id, cells: [..]}]}}`：表頭 muted 24，各欄寬取該欄最長內容，列高 46，列間淡格線。
+  - `{"buttons": {items: [{id, text}], align: "left"|"right"}}`：按鈕列，按鈕高 52、字 26、左右內距 26。
+  - `{"group": {id?, title, body: [區塊]}}`：淡色（`canvas.grid`）鉛筆框，標題 muted 26 在框左上。
+- 外框：`card.fill` 底、鉛筆框；有 `title` 時頂端標題列高 60（標題 32、右側「✕」muted）＋分隔線。
+  有 `tabs` 時標題列下方一排分頁，active 的分頁用 pencil 框起、其餘 muted。內距 28。
+- 互動來自游標：`cursor` 的 `click` 動作（`args.on` 指到本視窗的某個 id）會出現在本視窗的 `acts` 裡。
+  點到**按鈕**：該按鈕在點擊瞬間（click 的最後 35%）填 `effects.highlight`，之後恢復。
+  點到**清單列或表格列**：該列從點擊瞬間起持續以 `effects.highlight` 底色標示為已選取（同一個清單／表格只有最後點的那列被選取）。
+- `input`（target `視窗:元素id`，`args.text`）：逐字打進該 field 或清單列，每項＝一字；打字中顯示游標。
+- 錨點：每個有 `id` 的元素（分頁、field、清單列、表格列、按鈕、footer 按鈕、group 外框），全部由 state 算出。
+- 量測：以整片最大內容計（`input` 打進去的字也算），`measure` 不隨 t 改變。
+
+### 介面預設（presets/）
+- `presets/<平台>/<畫面>.json` 存已核對過的 window 屬性；scene 物件寫 `"preset": "win11.env_vars"`，編譯時展開，物件自己的屬性覆寫 preset。
+- 新增 preset 前必須以真實截圖核對文字與結構，`_doc` 註明出處。清單同步寫進 `prompts/components.md`（給 LLM 看）。
+
+### cursor（游標，浮動物件）
+- `catalog` 標 `floating`：不佔版位、不在版面樹裡，只實作 `overlay`（世界座標），`draw` 留空，`measure` 回 `{w: 0, h: 0}`，`anchors` 回 `{}`。
+- `click`（`args.on`）：前 65% 從上一個位置以 ease 移到 `world.anchor(args.on)` 的中心，後 35% 畫點擊漣漪
+  （強調色圓，半徑 8→34、透明度 1→0）。`move`（`args.to`）：只移動。
+- 位置是 t 的純函式：動作前的位置＝上一個動作目標錨點在**此刻**的中心（目標跟著鏡頭或版面移動時游標會跟著走）；
+  第一個動作開始前，游標從目標右下方（+140, +90）移入。
+- 外觀：經典箭頭游標（約 46px 高），`card.fill` 填色、`effects.pencil` 鉛筆描邊，尖端對準座標點。
+- 字級與尺寸在世界座標，**不隨版面縮放**；游標永遠畫在所有物件與標記之上。

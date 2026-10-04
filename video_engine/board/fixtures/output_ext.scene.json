@@ -1,0 +1,148 @@
+{
+	"version": 1,
+	"title": "output元件擴充",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "out",
+			"type": "output",
+			"label": "逐字輸出"
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "換行後繼續印"
+		}
+	],
+	"scenes": [
+		{
+			"id": "append",
+			"title": "接著印出文字",
+			"label": "擴充驗收",
+			"layout": {
+				"stack": [
+					"out",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "顯示輸出框，先印出兩個數字。",
+					"do": [
+						{
+							"act": "show",
+							"target": "out",
+							"cue": "輸出框"
+						},
+						{
+							"act": "append",
+							"target": "out",
+							"cue": "印出",
+							"text": "12"
+						}
+					]
+				},
+				{
+					"say": "接上第三個數字，再加入換行。",
+					"do": [
+						{
+							"act": "append",
+							"target": "out",
+							"cue": "第三個",
+							"text": "3"
+						},
+						{
+							"act": "append",
+							"target": "out",
+							"cue": "換行",
+							"text": "\n"
+						}
+					]
+				},
+				{
+					"say": "下一行接著印出四十二。",
+					"do": [
+						{
+							"act": "append",
+							"target": "out",
+							"cue": "接著",
+							"text": "42"
+						}
+					]
+				},
+				{
+					"say": "再次換行，最後印出完成。",
+					"do": [
+						{
+							"act": "append",
+							"target": "out",
+							"cue": "換行",
+							"text": "\n"
+						},
+						{
+							"act": "append",
+							"target": "out",
+							"cue": "印出",
+							"text": "完成"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "檢查多行錨點",
+			"label": "擴充驗收",
+			"layout": {
+				"stack": [
+					"out",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈出多行輸出，顯示換行提示。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "out:text",
+							"cue": "圈出"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "提示"
+						}
+					]
+				},
+				{
+					"say": "在輸出內容下方畫底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "out:text",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從文字尾端畫箭頭連到提示。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "out:end",
+							"cue": "箭頭",
+							"to": "result",
+							"label": "文字尾端"
+						}
+					]
+				}
+			],
+			"keep": [
+				"out",
+				"result"
+			]
+		}
+	]
+}

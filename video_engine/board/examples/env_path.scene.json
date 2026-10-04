@@ -1,0 +1,56 @@
+{
+	"version": 1,
+	"title": "PATH：系統怎麼找到 gcc",
+	"tag": "環境建立",
+	"corner_note": "Windows 示意",
+	"objects": [
+		{"id": "term", "type": "terminal", "title": "終端機", "prompt": "C:\\cs101>"},
+		{"id": "path", "type": "list", "title": "PATH（資料夾清單）", "rows": ["C:\\Windows\\system32", "C:\\Windows"]},
+		{"id": "tip", "type": "note", "text": "加的是資料夾，不是 gcc.exe", "style": "small"},
+		{"id": "sample", "type": "note", "text": "版本號依安裝而不同（教材示例）", "style": "small"}
+	],
+	"scenes": [
+		{"id": "search", "title": "輸入指令後，系統去哪裡找 gcc？", "label": "依序搜尋", "layout": {"row": ["term", "path"]}, "beats": [
+			{"say": "輸入編譯指令時，系統並不知道編譯器在哪裡。", "do": [
+				{"act": "show", "target": "term"},
+				{"act": "type", "target": "term", "text": "gcc --version", "cue": "輸入"}
+			]},
+			{"say": "它會拿出 PATH 這份資料夾清單，", "spoken": "它會拿出路徑變數這份資料夾清單，", "do": [
+				{"act": "show", "target": "path"},
+				{"act": "arrow", "target": "term:cmd", "to": "path:title", "with": "prev"}
+			]},
+			{"say": "從第一個資料夾開始，依序找。", "do": [
+				{"act": "walk", "target": "path", "item": "gcc", "cue": "第一個"}
+			]},
+			{"say": "整串找完都沒有，就出現這行錯誤。", "do": [
+				{"act": "print", "target": "term", "lines": ["'gcc' 不是內部或外部命令、", "可執行的程式或批次檔。"], "style": "error", "cue": "這行"}
+			]}
+		]},
+		{"id": "fix", "title": "把 gcc 所在的資料夾加進 PATH", "label": "加入 PATH", "keep": ["term", "path"], "layout": {"row": ["term", {"stack": ["path", "tip"]}]}, "beats": [
+			{"say": "把編譯器所在的資料夾，加到清單最後。", "do": [
+				{"act": "append", "target": "path", "text": "C:\\msys64\\ucrt64\\bin", "cue": "加到"}
+			]},
+			{"say": "加的是資料夾，不是編譯器的執行檔。", "do": [
+				{"act": "underline", "target": "path:r2", "cue": "資料夾"},
+				{"act": "write", "target": "tip", "with": "prev"}
+			]},
+			{"say": "改完要重開終端機，新的 PATH 才會生效。", "spoken": "改完要重開終端機，新的路徑變數才會生效。", "do": [
+				{"act": "restart", "target": "term", "note": "新的終端機", "cue": "重開"}
+			]}
+		]},
+		{"id": "verify", "title": "重新搜尋，這次找到了", "label": "驗證", "keep": ["term", "path"], "layout": {"row": ["term", {"stack": ["path", "sample"]}]}, "beats": [
+			{"say": "再輸入一次，系統又從頭依序找，", "do": [
+				{"act": "type", "target": "term", "text": "gcc --version", "cue": "輸入"},
+				{"act": "walk", "target": "path", "item": "gcc", "found": 2, "cue": "從頭"}
+			]},
+			{"say": "這次在新資料夾找到編譯器，就執行它。", "do": [
+				{"act": "circle", "target": "path:r2", "cue": "找到"},
+				{"act": "arrow", "target": "path:r2", "to": "term:cmd", "cue": "執行"}
+			]},
+			{"say": "看到版本資訊，就代表設定成功。", "do": [
+				{"act": "print", "target": "term", "lines": ["gcc (Rev1, Built by MSYS2 project) 13.2.0", "Copyright (C) 2023 Free Software Foundation, Inc."], "cue": "版本"},
+				{"act": "write", "target": "sample", "with": "prev"}
+			]}
+		]}
+	]
+}

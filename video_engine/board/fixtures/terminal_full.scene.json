@@ -1,0 +1,170 @@
+{
+	"version": 1,
+	"title": "終端機元件：full",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "terminal",
+			"type": "terminal",
+			"title": "編譯器檢查",
+			"prompt": "C:\\cs101>"
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "觀察結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "commands",
+			"title": "輸入與重新開啟",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"terminal",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "輸入編譯指令，旁邊顯示提示。",
+					"do": [
+						{
+							"act": "type",
+							"target": "terminal",
+							"cue": "輸入",
+							"text": "gcc main.c"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "提示"
+						}
+					]
+				},
+				{
+					"say": "印出兩行錯誤，觀察目前狀態。",
+					"do": [
+						{
+							"act": "print",
+							"target": "terminal",
+							"cue": "印出",
+							"lines": [
+								"找不到編譯器",
+								"請檢查路徑變數"
+							],
+							"style": "error"
+						}
+					]
+				},
+				{
+					"say": "重開終端機，清除原本的內容。",
+					"do": [
+						{
+							"act": "restart",
+							"target": "terminal",
+							"cue": "重開",
+							"note": "新的終端機"
+						}
+					]
+				},
+				{
+					"say": "再次輸入指令，再印出檢查結果。",
+					"do": [
+						{
+							"act": "type",
+							"target": "terminal",
+							"cue": "輸入",
+							"text": "where gcc"
+						},
+						{
+							"act": "print",
+							"target": "terminal",
+							"cue": "印出",
+							"lines": [
+								"找不到檔案",
+								"請重新檢查設定"
+							],
+							"style": "error"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"terminal",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "terminal:line1",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "terminal:line1",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "terminal:line1",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "terminal:line1",
+							"cue": "箭頭",
+							"to": "result",
+							"label": "結果"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "terminal",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "terminal",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"terminal",
+				"result"
+			]
+		}
+	]
+}

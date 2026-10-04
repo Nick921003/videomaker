@@ -1,0 +1,15 @@
+{
+	"version": 1, "title": "變數最少參數", "tag": "測試", "corner_note": "概念示意",
+	"objects": [
+		{"id": "v", "type": "vars", "vars": [{"id": "x", "name": "x"}, {"id": "y", "name": "y", "value": "5"}]}
+	],
+	"scenes": [
+		{"id": "basic", "title": "沒初始化的變數", "label": "垃圾值", "layout": {"stack": ["v"]},
+			"beats": [
+				{"say": "x 還沒給值，裡面是不明的數字。", "do": [{"act": "circle", "target": "v:x", "cue": "還沒"}]},
+				{"say": "把 x 設成七。", "do": [{"act": "set", "target": "v:x", "value": "7", "cue": "設成"}]},
+				{"say": "宣告 z，再檢查 x 比 y 大。", "do": [{"act": "declare", "target": "v:y", "cue": "宣告"}, {"act": "check", "target": "v", "text": "x > y", "cue": "檢查"}]},
+				{"say": "最後把整個面板框起來。", "do": [{"act": "underline", "target": "v", "cue": "框起來"}, {"act": "arrow", "target": "v:x", "to": "v:y"}]}
+			]}
+	]
+}

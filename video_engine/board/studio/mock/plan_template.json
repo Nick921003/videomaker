@@ -1,0 +1,40 @@
+{
+	"scope": {
+		"covers": ["核心演算法邏輯", "邊界狀況與指標計算", "時間與空間複雜度"],
+		"not_covers": ["非標準庫外部語法", "進階自訂樹狀結構"]
+	},
+	"stories": [
+		{
+			"id": "q1",
+			"question": "這個演算法的核心前提是什麼？",
+			"also_asks": ["為什麼不能直接執行？"],
+			"title": "演算法前提與概念",
+			"sec": 60,
+			"screens": ["流程圖解", "結構展示"],
+			"show": "圖解展示前提的重要性",
+			"status": "none",
+			"video": null,
+			"estimate_usd": 0.035
+		},
+		{
+			"id": "q2",
+			"question": "邊界交錯時會發生什麼？",
+			"also_asks": ["迴圈何時終止？"],
+			"title": "邊界交錯分析",
+			"sec": 65,
+			"screens": ["指標模擬", "刻度尺"],
+			"show": "動態演示指標移動過程",
+			"status": "none",
+			"video": null,
+			"estimate_usd": 0.035
+		}
+	],
+	"highlight": {
+		"stories": ["q1", "q2"],
+		"total_sec": 125,
+		"why": "整合核心前提與邊界防護兩大關鍵",
+		"status": "none",
+		"video": null,
+		"estimate_usd": 0.07
+	}
+}

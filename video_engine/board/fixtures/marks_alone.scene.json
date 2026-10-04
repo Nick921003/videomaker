@@ -1,0 +1,106 @@
+{
+	"version": 1,
+	"title": "孤立標記與直接連線",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "single",
+			"type": "note",
+			"text": "先編譯",
+			"style": "small"
+		},
+		{
+			"id": "left",
+			"type": "note",
+			"text": "編譯程式"
+		},
+		{
+			"id": "right",
+			"type": "note",
+			"text": "執行程式"
+		}
+	],
+	"scenes": [
+		{
+			"id": "alone",
+			"title": "單一小字卡",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"single"
+				]
+			},
+			"beats": [
+				{
+					"say": "畫面只留一張小字卡。",
+					"do": [
+						{
+							"act": "write",
+							"target": "single",
+							"cue": "小字卡"
+						}
+					]
+				},
+				{
+					"say": "圈起這張孤立的小字卡。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "single",
+							"cue": "圈起"
+						}
+					]
+				},
+				{
+					"say": "再替字卡畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "single",
+							"cue": "底線"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "pair",
+			"title": "兩張字卡直接相連",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"left",
+					"right"
+				]
+			},
+			"beats": [
+				{
+					"say": "左右各放一張字卡，中間保持空白。",
+					"do": [
+						{
+							"act": "show",
+							"target": "left"
+						},
+						{
+							"act": "show",
+							"target": "right",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "從編譯畫出箭頭，連到執行。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "left",
+							"cue": "箭頭",
+							"to": "right"
+						}
+					]
+				}
+			]
+		}
+	]
+}

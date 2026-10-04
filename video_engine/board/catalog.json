@@ -1,0 +1,537 @@
+{
+	"version": 1,
+	"fallback_type": "note",
+	"generic_actions": {
+		"show": {
+			"dur": 0.45
+		},
+		"hide": {
+			"dur": 0.4
+		},
+		"circle": {
+			"dur": 0.7
+		},
+		"underline": {
+			"dur": 0.6
+		},
+		"arrow": {
+			"dur": 0.8,
+			"req": [
+				"to"
+			],
+			"opt": [
+				"label"
+			],
+			"anchor_args": [
+				"to"
+			]
+		},
+		"focus": {
+			"dur": 0.9
+		},
+		"wide": {
+			"dur": 0.9,
+			"no_target": true
+		}
+	},
+	"types": {
+		"note": {
+			"req": [
+				"text"
+			],
+			"opt": [
+				"style"
+			],
+			"styles": [
+				"headline",
+				"body",
+				"accent",
+				"code",
+				"small"
+			],
+			"anchors": [],
+			"actions": {
+				"write": {
+					"per_char": 0.1,
+					"min": 0.6,
+					"max": 2.0,
+					"blocks": true
+				}
+			}
+		},
+		"cells": {
+			"req": [
+				"count"
+			],
+			"opt": [
+				"label",
+				"values",
+				"tail",
+				"accent",
+				"addrs"
+			],
+			"anchors": [
+				"label",
+				"i{n}"
+			],
+			"actions": {
+				"fill": {
+					"seq": "values",
+					"per": [
+						0.28,
+						0.6
+					],
+					"req": [
+						"values"
+					],
+					"opt": [
+						"from",
+						"start"
+					],
+					"anchor_args": [
+						"from"
+					],
+					"blocks": true
+				},
+				"scan": {
+					"seq": "range",
+					"per": [
+						0.3,
+						0.9
+					],
+					"req": [
+						"range"
+					],
+					"opt": [
+						"to"
+					],
+					"anchor_args": [
+						"to"
+					],
+					"blocks": true
+				},
+				"point": {
+					"dur": 0.45,
+					"req": [
+						"index"
+					],
+					"blocks": true
+				},
+				"stop": {
+					"dur": 0.8,
+					"req": [
+						"index"
+					],
+					"opt": [
+						"note"
+					],
+					"blocks": true
+				},
+				"brace": {
+					"dur": 0.9,
+					"req": [
+						"range",
+						"label"
+					],
+					"blocks": true
+				},
+				"swap": {
+					"dur": 1.2,
+					"req": [
+						"a",
+						"b"
+					],
+					"blocks": true
+				},
+				"consume": {
+					"dur": 1.0,
+					"req": [
+						"count"
+					],
+					"opt": [
+						"to"
+					],
+					"anchor_args": [
+						"to"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"output": {
+			"req": [],
+			"opt": [
+				"label",
+				"max_text",
+				"text"
+			],
+			"anchors": [
+				"text",
+				"end"
+			],
+			"actions": {
+				"set": {
+					"dur": 0.5,
+					"req": [
+						"text"
+					],
+					"blocks": true
+				},
+				"append": {
+					"dur": 0.8,
+					"req": [
+						"text"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"code": {
+			"req": [
+				"lines"
+			],
+			"opt": [
+				"caption",
+				"footer",
+				"diff",
+				"marks"
+			],
+			"anchors": [
+				"L{n}",
+				"{key}"
+			],
+			"actions": {
+				"highlight": {
+					"dur": 0.5,
+					"req": [
+						"line"
+					]
+				}
+			}
+		},
+		"metrics": {
+			"req": [
+				"items"
+			],
+			"opt": [],
+			"anchors": [
+				"m{n}"
+			],
+			"actions": {
+				"reveal": {
+					"seq": "items",
+					"per": [
+						0.3,
+						0.8
+					],
+					"opt": [
+						"index"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"terminal": {
+			"req": [],
+			"opt": [
+				"title",
+				"prompt"
+			],
+			"anchors": [
+				"cmd",
+				"line{n}"
+			],
+			"actions": {
+				"type": {
+					"seq": "chars",
+					"per": [
+						0.035,
+						0.1
+					],
+					"req": [
+						"text"
+					],
+					"blocks": true
+				},
+				"print": {
+					"seq": "lines",
+					"per": [
+						0.2,
+						0.6
+					],
+					"req": [
+						"lines"
+					],
+					"opt": [
+						"style"
+					],
+					"blocks": true
+				},
+				"restart": {
+					"dur": 1.2,
+					"opt": [
+						"note"
+					],
+					"blocks": true
+				},
+				"input": {
+					"seq": "chars",
+					"per": [
+						0.08,
+						0.16
+					],
+					"req": [
+						"text"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"list": {
+			"req": [
+				"rows"
+			],
+			"opt": [
+				"title"
+			],
+			"anchors": [
+				"title",
+				"r{n}"
+			],
+			"actions": {
+				"walk": {
+					"seq": "walk",
+					"per": [
+						0.35,
+						0.9
+					],
+					"opt": [
+						"found",
+						"item"
+					],
+					"blocks": true
+				},
+				"append": {
+					"dur": 0.9,
+					"req": [
+						"text"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"window": {
+			"req": [],
+			"opt": [
+				"title",
+				"tabs",
+				"body",
+				"footer"
+			],
+			"anchors": [
+				"{key}"
+			],
+			"actions": {
+				"input": {
+					"seq": "chars",
+					"per": [
+						0.05,
+						0.12
+					],
+					"req": [
+						"text"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"cursor": {
+			"req": [],
+			"opt": [],
+			"floating": true,
+			"anchors": [],
+			"actions": {
+				"click": {
+					"dur": 1.0,
+					"req": [
+						"on"
+					],
+					"anchor_args": [
+						"on"
+					],
+					"blocks": true
+				},
+				"move": {
+					"dur": 0.8,
+					"req": [
+						"to"
+					],
+					"anchor_args": [
+						"to"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"vars": {
+			"req": [
+				"vars"
+			],
+			"opt": [
+				"title"
+			],
+			"anchors": [
+				"{key}",
+				"check"
+			],
+			"actions": {
+				"declare": {
+					"dur": 0.6,
+					"opt": [
+						"value"
+					],
+					"blocks": true
+				},
+				"set": {
+					"dur": 1.6,
+					"req": [
+						"value"
+					],
+					"opt": [
+						"calc"
+					],
+					"blocks": true
+				},
+				"check": {
+					"dur": 1.0,
+					"req": [
+						"text"
+					],
+					"opt": [
+						"result"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"stack": {
+			"req": [
+				"frames"
+			],
+			"opt": [
+				"title"
+			],
+			"anchors": [
+				"{key}",
+				"top"
+			],
+			"actions": {
+				"push": {
+					"dur": 0.9,
+					"blocks": true
+				},
+				"set": {
+					"dur": 1.6,
+					"req": [
+						"value"
+					],
+					"opt": [
+						"calc"
+					],
+					"blocks": true
+				},
+				"pop": {
+					"dur": 1.4,
+					"opt": [
+						"value",
+						"to"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"pipeline": {
+			"req": [
+				"stages"
+			],
+			"opt": [
+				"title",
+				"items",
+				"direction"
+			],
+			"anchors": [
+				"{key}"
+			],
+			"actions": {
+				"step": {
+					"dur": 0.6,
+					"opt": [
+						"note"
+					],
+					"blocks": true
+				},
+				"move": {
+					"dur": 1.2,
+					"req": [
+						"to"
+					],
+					"opt": [
+						"text"
+					],
+					"blocks": true
+				},
+				"reject": {
+					"dur": 1.0,
+					"req": [
+						"back_to"
+					],
+					"opt": [
+						"text"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"scale": {
+			"req": [
+				"min",
+				"max"
+			],
+			"opt": [
+				"zones",
+				"ticks",
+				"unit",
+				"title"
+			],
+			"anchors": [
+				"{key}",
+				"p{n}"
+			],
+			"actions": {
+				"probe": {
+					"dur": 1.0,
+					"req": [
+						"value"
+					],
+					"opt": [
+						"label",
+						"result"
+					],
+					"blocks": true
+				},
+				"mark": {
+					"dur": 0.7,
+					"req": [
+						"value",
+						"label"
+					],
+					"blocks": true
+				},
+				"zone": {
+					"dur": 0.6,
+					"blocks": true
+				}
+			}
+		}
+	}
+}

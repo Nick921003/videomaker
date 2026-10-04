@@ -1,0 +1,112 @@
+{
+	"version": 1,
+	"title": "terminal元件擴充",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "term",
+			"type": "terminal",
+			"title": "程式讀取輸入",
+			"prompt": "C:\\>"
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "輸入四十二"
+		}
+	],
+	"scenes": [
+		{
+			"id": "input",
+			"title": "等候使用者輸入",
+			"label": "擴充驗收",
+			"layout": {
+				"stack": [
+					"term",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "程式印出請輸入的提示。",
+					"do": [
+						{
+							"act": "print",
+							"target": "term",
+							"cue": "印出",
+							"lines": [
+								"請輸入："
+							]
+						}
+					]
+				},
+				{
+					"say": "游標等待後，輸入四十二。",
+					"do": [
+						{
+							"act": "input",
+							"target": "term",
+							"cue": "輸入",
+							"text": "42"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "輸入接在提示之後",
+			"label": "擴充驗收",
+			"layout": {
+				"stack": [
+					"term",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈出輸入那一行，顯示結果。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "term:line1",
+							"cue": "圈出"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "結果"
+						}
+					]
+				},
+				{
+					"say": "替輸入那一行畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "term:line1",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "用箭頭連到輸入結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "term:line1",
+							"cue": "箭頭",
+							"to": "result",
+							"label": "使用者輸入"
+						}
+					]
+				}
+			],
+			"keep": [
+				"term",
+				"result"
+			]
+		}
+	]
+}

@@ -1,0 +1,27 @@
+{
+	"version": 1, "title": "迴圈追蹤", "tag": "測試", "corner_note": "概念示意",
+	"objects": [
+		{"id": "code", "type": "code", "lines": ["int sum = 0;", "for (int i = 1; i <= 3; i++) {", "    sum += i;", "}"]},
+		{"id": "v", "type": "vars", "title": "記憶體裡的變數", "vars": [
+			{"id": "i", "name": "i", "type": "int", "value": "1"},
+			{"id": "sum", "name": "sum", "type": "int", "value": "0"},
+			{"id": "tmp", "name": "tmp", "type": "int"}
+		]}
+	],
+	"scenes": [
+		{"id": "trace", "title": "每一輪怎麼跑", "label": "迴圈追蹤", "layout": {"row": ["code", "v"]},
+			"beats": [
+				{"say": "先檢查條件，一小於等於三，成立。", "do": [{"act": "check", "target": "v", "text": "1 <= 3", "result": true, "cue": "檢查"}]},
+				{"say": "主體把 i 加進 sum，零加一等於一。", "do": [{"act": "set", "target": "v:sum", "value": "1", "calc": "0 + 1", "cue": "加進"}]},
+				{"say": "接著 i 加一，變成二。", "do": [{"act": "set", "target": "v:i", "value": "2", "calc": "1 + 1", "cue": "加一"}, {"act": "circle", "target": "v:i", "with": "prev"}]},
+				{"say": "再檢查一次，二小於等於三，還是成立。", "do": [{"act": "check", "target": "v", "text": "2 <= 3", "result": true, "cue": "再檢查"}, {"act": "underline", "target": "v:check", "with": "prev"}]}
+			]},
+		{"id": "more", "title": "跑到條件不成立", "label": "結束", "keep": ["code", "v"], "layout": {"row": ["code", "v"]},
+			"beats": [
+				{"say": "sum 變成三，i 變成三。", "do": [{"act": "set", "target": "v:sum", "value": "3", "calc": "1 + 2", "cue": "sum"}, {"act": "set", "target": "v:i", "value": "3", "calc": "2 + 1", "cue": "i 變成"}]},
+				{"say": "sum 變成六，i 變成四。", "do": [{"act": "set", "target": "v:sum", "value": "6", "calc": "3 + 3", "cue": "sum"}, {"act": "set", "target": "v:i", "value": "4", "calc": "3 + 1", "cue": "i 變成"}]},
+				{"say": "四小於等於三不成立，迴圈結束。", "do": [{"act": "check", "target": "v", "text": "4 <= 3", "result": false, "cue": "不成立"}, {"act": "arrow", "target": "v:sum", "to": "code", "label": "最後結果"}]},
+				{"say": "宣告一個暫存變數，先放進十。", "do": [{"act": "declare", "target": "v:tmp", "value": "10", "cue": "宣告"}, {"act": "set", "target": "v:tmp", "value": "12", "calc": "10 + 2"}]}
+			]}
+	]
+}
