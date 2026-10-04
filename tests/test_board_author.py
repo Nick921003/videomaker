@@ -297,5 +297,16 @@ class TestCrowd(unittest.TestCase):
 		self.assertIn("場景 bad ", problems[0])
 
 
+class TestAiTone(unittest.TestCase):
+	def test_AI腔用語要退件而且對得到場景(self):
+		doc = {"scenes": [{"id": "a", "beats": [{"say": "這正是最常見的差一錯誤。"}, {"say": "隨著 i 增加，條件會不成立。"}]},
+			{"id": "b", "beats": [{"say": "不是寫錯，而是忘了等號。"}, {"say": "不是零，而是一。"}]}]}
+		problems = BA.ai_tone_problems(doc)
+		self.assertEqual(len(problems), 2)
+		self.assertIn("這正是", problems[0])
+		self.assertIn("第二次", problems[1])
+		self.assertEqual(BA.problem_scenes(doc, problems), {"a", "b"})
+
+
 if __name__ == "__main__":
 	unittest.main()

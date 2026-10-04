@@ -377,6 +377,28 @@ def restore_terms(doc, glossary, md):
 	return doc
 
 
+# AI 腔用語（整理自 speak-human-tw「說人話」的 AI 寫作痕跡，MIT）；只收教學口語幾乎不會這樣講的高信心詞，避免誤殺
+AI_PHRASES = ("這正是", "這意味著", "換句話說", "你可能已經發現", "說到底", "歸根究柢", "本質上", "核心在於", "關鍵在於",
+	"真正的問題在於", "讓我們", "接下來帶", "話不多說", "說真的", "老實說", "講白了", "值得注意的是", "總的來說",
+	"綜上所述", "總而言之", "不僅", "展現了", "體現了", "彰顯了", "扮演著", "就不會再", "其實很簡單", "完全不同了")
+
+
+def ai_tone_problems(doc):
+	"""旁白 AI 腔：命中詞表，或「不是…而是」超過一次。每個問題附原句，修正時只改那一場。"""
+	problems, contrast = [], 0
+	for scene in doc.get("scenes", []):
+		for b in scene.get("beats", []):
+			say = b.get("say", "")
+			hits = [p for p in AI_PHRASES if p in say]
+			if re.search(r"不是.{1,12}?而是", say):
+				contrast += 1
+				if contrast > 1:
+					hits.append("不是…而是（第二次）")
+			if hits:
+				problems.append(f"旁白有 AI 腔 {hits}：改成老師當場會講的話——直接講事情、不下金句、不預告：{say}")
+	return problems
+
+
 def tone_down(doc, keep=2):
 	"""免費修正：驚嘆號整支片只留前兩個，其餘改句號（驚嘆號一多就很像 AI 在喊口號）。"""
 	left = keep
@@ -582,6 +604,7 @@ def scene_problems(doc, target, catalog, glossary=()):
 	problems = [f"{g['where'] + ' ' if g.get('where') else ''}用了不存在的元件或動作 {g['wanted']}，請改用目錄內的" for g in tl["gaps"]]
 	problems += [f"編譯警告：{w}" for w in tl["warnings"]]
 	problems += narration_problems(doc, target, glossary)
+	problems += ai_tone_problems(doc)
 	problems += mark_problems(doc)
 	problems += crowd_problems(doc)
 	return problems or measure_problems(tl)

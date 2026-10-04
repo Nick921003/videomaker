@@ -269,3 +269,4 @@ video_engine/board/
 - 2026-10-04 後續修正：新元件 vars（變數面板）、stack（呼叫堆疊）；正式流程定為 Gemini 全包（規劃＋分鏡＋修正），配音預設 Gemini 3.8 Flash TTS 英文原音（narrate.py --tts sovits 可改回本機）；影片工作室獨立頁見 2026-10-04-board-studio-design.md（commit 待補 hash）
 - 2026-10-04 後續修正：新元件 pipeline（流程管線）、scale（數值標尺）；cells（位址、對調、輸入緩衝區讀走）、code（前後對照、行內片段錨點）、output（接著印）、terminal（等待輸入）擴充（commit 待補 hash）
 - 2026-10-04 後續修正：工作室端到端測試修正——拆場合併、失敗草稿接著修、太擠場景自動推近、推近目標晚出現時等它、每場最多 2 個主要物件、旁白口語化規則與重複／驚嘆號處理（commit 待補 hash）
+- 2026-10-05 後續修正：旁白 AI 腔規則（改編自 speak-human-tw，MIT）與免費詞語檢查——28 個高信心 AI 用語、「不是…而是」整支最多一次，抓到只重寫該場景（commit 待補 hash）
