@@ -1,0 +1,138 @@
+{
+	"version": 1,
+	"title": "清單元件：min",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "list",
+			"type": "list",
+			"rows": [
+				"C:\\Windows",
+				"C:\\tools"
+			]
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "觀察結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "walk",
+			"title": "新增與逐列查找",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"list",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "顯示清單，並在末尾新增資料夾。",
+					"do": [
+						{
+							"act": "show",
+							"target": "list"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"with": "prev"
+						},
+						{
+							"act": "append",
+							"target": "list",
+							"cue": "新增",
+							"text": "C:\\mingw\\bin"
+						}
+					]
+				},
+				{
+					"say": "依序檢查每個資料夾是否有編譯器。",
+					"do": [
+						{
+							"act": "walk",
+							"target": "list",
+							"cue": "依序"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"list",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "list",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "list",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "list",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "list",
+							"cue": "箭頭",
+							"to": "result"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "list",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "list",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"list",
+				"result"
+			]
+		}
+	]
+}

@@ -1,0 +1,134 @@
+{
+	"version": 1,
+	"title": "輸出元件：full",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "output",
+			"type": "output",
+			"label": "程式輸出",
+			"max_text": "12345678",
+			"text": "初始"
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "觀察結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "set",
+			"title": "替換輸出",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"output",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "先顯示輸出框與提示文字。",
+					"do": [
+						{
+							"act": "show",
+							"target": "output",
+							"cue": "輸出框"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "提示"
+						}
+					]
+				},
+				{
+					"say": "把輸出替換成程式算出的數字。",
+					"do": [
+						{
+							"act": "set",
+							"target": "output",
+							"cue": "替換",
+							"text": "7"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"output",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "output:text",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "output:text",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "output:text",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "output:text",
+							"cue": "箭頭",
+							"to": "result",
+							"label": "結果"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "output",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "output",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"output",
+				"result"
+			]
+		}
+	]
+}

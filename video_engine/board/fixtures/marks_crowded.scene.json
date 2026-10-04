@@ -1,0 +1,258 @@
+{
+	"version": 1,
+	"title": "擁擠標記與繞路箭頭",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "a",
+			"type": "note",
+			"text": "原始程式"
+		},
+		{
+			"id": "b",
+			"type": "note",
+			"text": "編譯階段"
+		},
+		{
+			"id": "c",
+			"type": "note",
+			"text": "執行結果"
+		},
+		{
+			"id": "paths",
+			"type": "list",
+			"rows": [
+				"C:\\Windows",
+				"C:\\tools",
+				"C:\\mingw\\bin",
+				"C:\\backup"
+			]
+		},
+		{
+			"id": "code",
+			"type": "code",
+			"lines": [
+				"int n = 3;",
+				"n += 4;",
+				"printf(\"%d\", n);",
+				"return 0;"
+			]
+		},
+		{
+			"id": "term",
+			"type": "terminal"
+		}
+	],
+	"scenes": [
+		{
+			"id": "obstacle",
+			"title": "中間字卡需要繞路",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"a",
+					"b",
+					"c"
+				]
+			},
+			"beats": [
+				{
+					"say": "三張字卡依序排成一個直排。",
+					"do": [
+						{
+							"act": "show",
+							"target": "a"
+						},
+						{
+							"act": "show",
+							"target": "b",
+							"with": "prev"
+						},
+						{
+							"act": "show",
+							"target": "c",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "箭頭從第一張繞過中間，連到最後。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "a",
+							"cue": "箭頭",
+							"to": "c",
+							"label": "執行流程"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "rows",
+			"title": "逐列圈起四個資料夾",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"paths"
+				]
+			},
+			"beats": [
+				{
+					"say": "先圈起清單的第一列。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "paths:r0",
+							"cue": "圈起"
+						}
+					]
+				},
+				{
+					"say": "下一拍改圈第二列。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "paths:r1",
+							"cue": "改圈"
+						}
+					]
+				},
+				{
+					"say": "下一拍改圈第三列。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "paths:r2",
+							"cue": "改圈"
+						}
+					]
+				},
+				{
+					"say": "最後改圈第四列，再用箭頭回到第一列。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "paths:r3",
+							"cue": "改圈"
+						},
+						{
+							"act": "arrow",
+							"target": "paths:r3",
+							"cue": "箭頭",
+							"to": "paths:r0",
+							"label": "重新搜尋"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "code",
+			"title": "相鄰程式行的圈與底線",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"code"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起第二行，觀察這一步運算。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "code:L2",
+							"cue": "圈起"
+						}
+					]
+				},
+				{
+					"say": "再替第二行畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "code:L2",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "接著圈起第三行的輸出。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "code:L3",
+							"cue": "圈起"
+						}
+					]
+				},
+				{
+					"say": "再替第三行畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "code:L3",
+							"cue": "底線"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "terminal",
+			"title": "終端機中間行標記",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"term"
+				]
+			},
+			"beats": [
+				{
+					"say": "輸入指令，印出三行檢查結果。",
+					"do": [
+						{
+							"act": "type",
+							"target": "term",
+							"cue": "輸入",
+							"text": "where gcc"
+						},
+						{
+							"act": "print",
+							"target": "term",
+							"cue": "印出",
+							"lines": [
+								"開始檢查",
+								"找到編譯器",
+								"檢查完成"
+							]
+						}
+					]
+				},
+				{
+					"say": "圈起中間那行找到的結果。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "term:line2",
+							"cue": "圈起"
+						}
+					]
+				},
+				{
+					"say": "再替中間那行畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "term:line2",
+							"cue": "底線"
+						}
+					]
+				}
+			]
+		}
+	]
+}

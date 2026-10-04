@@ -1,0 +1,136 @@
+{
+	"version": 1,
+	"title": "數值元件：min",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "metrics",
+			"type": "metrics",
+			"items": [
+				{
+					"label": "容量",
+					"value": "4",
+					"note": "宣告的格數"
+				},
+				{
+					"label": "長度",
+					"value": "3",
+					"note": "不含結束字元"
+				},
+				{
+					"label": "至少需要",
+					"value": "4",
+					"note": "包含結束字元"
+				}
+			]
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "觀察結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "reveal",
+			"title": "揭露數值",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"metrics",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "依序揭露全部數值，顯示提示。",
+					"do": [
+						{
+							"act": "reveal",
+							"target": "metrics",
+							"cue": "揭露"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "提示"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"metrics",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "metrics",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "metrics",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "metrics",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "metrics",
+							"cue": "箭頭",
+							"to": "result"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "metrics",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "metrics",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"metrics",
+				"result"
+			]
+		}
+	]
+}

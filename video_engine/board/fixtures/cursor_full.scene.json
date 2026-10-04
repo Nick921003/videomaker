@@ -1,0 +1,128 @@
+{
+	"version": 1,
+	"title": "游標元件：full",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "mouse",
+			"type": "cursor"
+		},
+		{
+			"id": "win",
+			"preset": "win11.sys_props"
+		}
+	],
+	"scenes": [
+		{
+			"id": "operate",
+			"title": "移動與點擊",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"win"
+				]
+			},
+			"beats": [
+				{
+					"say": "先顯示視窗，移動游標到操作位置。",
+					"do": [
+						{
+							"act": "show",
+							"target": "win"
+						},
+						{
+							"act": "move",
+							"target": "mouse",
+							"cue": "移動",
+							"to": "win:t_adv"
+						}
+					]
+				},
+				{
+					"say": "點擊目標，觀察按鈕或選取狀態。",
+					"do": [
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "點擊",
+							"on": "win:envbtn"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"win"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "mouse",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "mouse",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "mouse",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "mouse",
+							"cue": "箭頭",
+							"to": "win:envbtn",
+							"label": "結果"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "mouse",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "mouse",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"mouse",
+				"win"
+			]
+		}
+	]
+}

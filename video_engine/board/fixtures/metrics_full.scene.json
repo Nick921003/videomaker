@@ -1,0 +1,160 @@
+{
+	"version": 1,
+	"title": "數值元件：full",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "metrics",
+			"type": "metrics",
+			"items": [
+				{
+					"label": "容量",
+					"value": "4",
+					"note": "宣告的格數"
+				},
+				{
+					"label": "長度",
+					"value": "3",
+					"note": "不含結束字元"
+				},
+				{
+					"label": "至少需要",
+					"value": "4",
+					"note": "包含結束字元"
+				}
+			]
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "觀察結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "reveal",
+			"title": "揭露數值",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"metrics",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "先揭露容量，並顯示提示。",
+					"do": [
+						{
+							"act": "reveal",
+							"target": "metrics",
+							"cue": "容量",
+							"index": 0
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "提示"
+						}
+					]
+				},
+				{
+					"say": "再揭露字串長度這一欄。",
+					"do": [
+						{
+							"act": "reveal",
+							"target": "metrics",
+							"cue": "長度",
+							"index": 1
+						}
+					]
+				},
+				{
+					"say": "最後揭露至少需要的格數。",
+					"do": [
+						{
+							"act": "reveal",
+							"target": "metrics",
+							"cue": "至少",
+							"index": 2
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"metrics",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "metrics:m1",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "metrics:m1",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "metrics:m1",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "metrics:m1",
+							"cue": "箭頭",
+							"to": "result",
+							"label": "結果"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "metrics",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "metrics",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"metrics",
+				"result"
+			]
+		}
+	]
+}
