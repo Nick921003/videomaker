@@ -159,6 +159,45 @@ A＋C 已接受版：`/home/pjw92/projects/videomaker/video_engine/out/state_cha
     有 `to` 時回傳值用 `overlay` 從該框飛到 `to` 變數的值格（`api.fly`，世界座標、字級乘版面縮放），t1 時 `to` 變數改成 `value`（舊值進歷史）。
 - 錨點：每個框 id → 框；每個變數 id → 值格；`top` → 目前最上面（已 push 未 pop）的框。只由 state 算（規則 7）。
 
+### pipeline（流程管線）
+- 屬性：`stages: [{id, label, note?}]`（2–6 站）、`items: [{id, text, at}]`（資料卡，`at`＝一開場所在的站 id）、`direction`（row 預設／column）、`title?`。
+- 版面：各站是鉛筆框卡片（`label` mono 34 置中，寬＝max(180, 標籤寬＋40)，高 96），站與站之間 64px 鉛筆箭頭；
+  每站下方保留 item 區（可放 2 張資料卡疊放，卡片 mono 30，`card.fill` 小框）；站下方再留 note 列（muted 26，整片有 note 才保留）。
+  `direction: column` 時改成直排、箭頭朝下、item 區在站的右側。
+- 動作：
+  - `step`（target 站 id，`note?`）：該站變成目前站（accent 框、淡淡的 effects.highlight 底），其他站 pencil 框；有 note 就在站下方手寫。
+    狀態持續到下一個 step；換場依規則 8 淡掉。
+  - `move`（target 資料卡 id，`to`＝站 id，`text?`）：資料卡沿兩站之間的箭頭走一段弧線移到目的站；抵達（p>0.7）時若有 `text`，
+    卡片文字由舊變新（舊字往上淡出、新字手寫），例 hello.c → hello.i。位置與文字整片累積。
+  - `reject`（target 站 id，`back_to`＝站 id，`text?`）：從該站畫一條往回的彎箭頭（accent，走站列上方）到 back_to，`text` 寫在箭頭上方（例「編譯錯誤」）。
+    下一個 reject 或換場時淡掉。
+- 錨點：每個站 id → 站框；每個資料卡 id → 卡片目前位置的框（由 state 算，移動中取插值位置）。
+- 量測：整片最多同站資料卡數、最長卡片文字（含 move 的 text）、最長 note 決定尺寸。
+
+### scale（數值標尺）
+- 屬性：`min`、`max`（數字）、`zones: [{id, from, to, label, kind}]`（kind：ok 正常／edge 邊界／bad 異常）、`ticks: [數字]`、`unit?`、`title?`。
+- 版面：寬 1100 的水平數線（鉛筆線＋兩端小箭頭），線下標 ticks（mono 28 muted）與 unit；zones 用線上方 14px 高的淡色帶
+  （ok＝canvas.grid、edge＝effects.highlight、bad＝code.error 淡化 alpha 0.35），帶上方寫 label（26 muted）。
+  probe 標記在線上方，預留一列 probe 標籤高度（整片最多同時幾個 probe 決定是否錯開成兩層）。
+- 動作（target 物件本身，`zone` 除外）：
+  - `probe`（`value`，`label?`，`result?`：pass／fail）：一個倒三角探針從上方落到 value 位置，下方小圓點；
+    label（mono 30）寫在探針上方；result 在 label 右邊加 ✓（accent）或 ✗（muted）。探針留到換場（規則 8）。第 n 個 probe 的錨點是 `p{n}`。
+  - `mark`（`value`，`label`）：在 value 處畫一條直立刻度並寫 label（accent 28）。留到換場。
+  - `zone`（target `物件id:zone id`）：該 zone 的色帶加粗並描 accent 邊框，持續到下一個 zone 或換場。
+- 錨點：每個 zone id → 色帶框；`p{n}` → 第 n 個（從 0 起，依時間）probe 的標籤框（還沒落下時取最終位置）。
+- 值超出 [min, max] 時夾在兩端並在旁邊加「…」。
+
+### 既有元件的小擴充
+- **cells**：`addrs: ["0x1000", …]`（每格下方小字 mono 24 muted，保留一列 36 高）。
+  `swap`（`a`、`b` 兩個格子 index）：兩個值沿弧線互換（一個從上方、一個從下方），t1 後兩格的值交換。
+  `consume`（`count`，`to?` 錨點）：從左邊取走 `count` 個還有值的格子——值飛到 `to`（有給才飛，用 overlay＋`api.fly`），
+  被取走的格子變空（淡斜線）並在格子上方小字標「已讀走」；剩下的值不動（例：scanf 讀走數字，`\n` 還留在緩衝區）。
+- **code**：`diff: {"add": [行號…], "del": [行號…]}`——新增行左側 gutter 標「+」並加 effects.highlight 淡底，刪除行標「−」、文字 muted 並加刪除線。
+  `marks: [{id, line, text}]`——行內片段的具名錨點（`{key}`），框住該行第一次出現 `text` 的位置；給圈、底線、箭頭用（例：圈出 `==`）。
+- **output**：`append`（`text`）：接在目前文字後面逐字出現；`text` 可含 `\n` 換行。多行時字級改 56，行距 1.3；整片最長文字由編譯器放在 `_max_text`（含換行）。
+- **terminal**：`input`（`text`）：程式在等使用者輸入——先在最後一行尾端閃 0.6 秒游標，再逐字打出 `text`（code.normal 色），不加 prompt。
+  用法：`print` 印出「請輸入：」後接 `input`。
+
 ## 驗收指令
 
 ```bash

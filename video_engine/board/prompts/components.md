@@ -10,6 +10,7 @@
 ## cells — 一排格子（陣列、記憶體、字串的每個字元）
 - 屬性：`count`（必填，格數 ≤ 8）、`label` 格子上方標籤、`values` 初始值（null＝未知，畫成斜線）、`tail` 右側「…其餘」框的說明、`accent` 用強調色畫的值（例 `["\\0"]`）
 - 動作：
+- 擴充：`addrs` 格子下方的記憶體位址｜`swap`（`a`、`b`）兩格互換｜`consume`（`count`，`to` 可省略）從左邊讀走 count 個值（輸入緩衝區：scanf 讀走數字、`\n` 留下）
   - `fill`：`values` 依序從 `from`（錨點，可省略；省略時值直接寫進格子）飛進格子；`start` 起始格
   - `scan`：讀取指標從 `range[0]` 走到 `range[1]`，每格的字元飛到 `to`（錨點，通常是 output 的 `:end`）
   - `point`：指標移到 `index` 格
@@ -21,11 +22,13 @@
 - 屬性：`label`（例「輸出」）
 - 動作：被 cells 的 `scan` 寫入（文字逐字長出）；`set` 直接換成 `text`
 - 錨點：`text` 目前文字、`end` 文字尾端（下一個字落點）
+- 擴充：`append`（`text`）接著印（多個 printf；`\n` 換行）
 
 ## code — 深色程式碼面板
 - 屬性：`lines`（必填，每行 ≤ 40 字元）、`caption` 上方說明、`footer` 下方說明
 - 動作：`highlight` 標記第 `line` 行（1 起算）
 - 錨點：`L{n}`
+- 擴充：`diff: {add: [行號], del: [行號]}` 前後對照｜`marks: [{id, line, text}]` 行內片段錨點（圈出 `==`、`;`）
 
 ## vars — 變數面板（值會一步步改變：迴圈追蹤、累加、賦值、條件判斷）
 - 屬性：`vars: [{id, name, type, value}]`（1–5 個；`name` 顯示名稱，例 "sum"；`type` 可省略，例 "int"；
@@ -47,6 +50,18 @@
 - 錨點：每個框 id、每個變數 id、`top`（目前最上面的框）
 - 傳值呼叫：push 的框裡的變數是**複製**的，改它不會動到呼叫者的變數——用 set 改框內的變數，再讓呼叫者的變數維持原值就演出來了
 
+## pipeline — 流程管線（編譯四階段、輸入→處理→輸出、Git 工作區→暫存區→倉庫、狀態機）
+- 屬性：`stages: [{id, label, note}]`（2–6 站）、`items: [{id, text, at}]`（在站之間移動的資料卡，`at`＝起始站）、`direction`（row／column）、`title`
+- 動作：`step`（target `物件id:站id`）亮起目前這一站，可加 `note`｜`move`（target `物件id:卡片id`，`to`＝站 id，`text` 可省略）
+  資料卡移到下一站，給 `text` 就在抵達時變身（例 hello.c → hello.i）｜`reject`（target 站 id，`back_to`＝站 id，`text`）畫退回箭頭（例「編譯錯誤」）
+- 錨點：每個站 id、每個卡片 id
+
+## scale — 數值標尺（邊界測試、門檻判斷、範圍）
+- 屬性：`min`、`max`、`zones: [{id, from, to, label, kind}]`（kind：ok／edge／bad）、`ticks: [數字]`、`unit`、`title`
+- 動作（target 物件 id）：`probe` 測試值落點（`value`，`label`，`result`：pass／fail）｜`mark` 標刻度（`value`，`label`）｜
+  `zone`（target `物件id:zone id`）亮起一個區間
+- 錨點：每個 zone id、`p0` `p1`…（第幾個 probe）
+
 ## metrics — 並排的數字比較（2–4 欄，值不會變）
 - 屬性：`items: [{label, value, note}]`（value 短，例 "32"；note ≤ 10 字）
 - 動作：`reveal` 揭露（給 `index` 只揭露那一欄，不給就依序全部）
@@ -56,6 +71,7 @@
 - 屬性：`title`、`prompt`（例 `C:\cs101>`）
 - 動作：`type` 逐字打出指令 `text`｜`print` 印出 `lines`（`style: "error"` 為錯誤紅字），印完自動出現新提示字元｜`restart` 關掉重開（清空），`note` 可寫「新的終端機」
 - 錨點：`cmd` 最近打的指令、`line{n}` 本次開啟後的第 n 行（0 起算，提示字元＋指令那行也算一行）
+- 擴充：`input`（`text`）程式等使用者輸入時打字（先 `print` 印「請輸入：」）
 
 ## list — 依序檢查的清單（資料夾清單、步驟清單）
 - 屬性：`rows`（必填，每列 ≤ 28 字元）、`title`

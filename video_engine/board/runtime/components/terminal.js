@@ -1,26 +1,60 @@
 'use strict';
 (() => {
+	function build(s_acts, t0) {
+		const lines = [];
+		let current_prompt = {kind: 'prompt', text: '', t0, type: null};
+		lines.push(current_prompt);
+		for (const a of s_acts) {
+			if (a.act === 'restart') break;
+			if (a.act === 'type') {
+				if (!current_prompt) {
+					current_prompt = {kind: 'prompt', text: '', t0: a.t0, type: null};
+					lines.push(current_prompt);
+				}
+				current_prompt.type = a;
+			} else if (a.act === 'print') {
+				a.args.lines.forEach((l, i) => {
+					lines.push({kind: 'print', text: l, style: a.args.style, t0: a.t0 + i * (a.t1 - a.t0) / a.n});
+				});
+				current_prompt = {kind: 'prompt', text: '', t0: a.t1, type: null};
+				lines.push(current_prompt);
+			} else if (a.act === 'input') {
+				// print 留的空 prompt 不屬於程式輸入，游標接回最後的輸出行。
+				if (current_prompt && !current_prompt.type && lines[lines.length - 1] === current_prompt) lines.pop();
+				let line = lines[lines.length - 1];
+				if (!line || line.kind === 'prompt') {
+					line = {kind: 'print', text: '', t0: a.t0};
+					lines.push(line);
+				}
+				if (!line.inputs) line.inputs = [];
+				line.inputs.push(a);
+				current_prompt = null;
+			}
+		}
+		return lines;
+	}
+
 	Board.register('terminal', {
 		measure(obj, api, acts) {
 			const prompt = (obj.prompt || 'C:\\>') + ' ';
 			const oNormal = { size: 34, mono: true };
 			let maxW = 0, maxLines = 1;
-			let currentLines = 1;
 			maxW = Math.max(maxW, api.measure(prompt, oNormal).w);
 
 			const objActs = (acts || []).filter(a => a.obj === obj.id);
+			let session = [];
 			for (const a of objActs) {
-				if (a.act === 'type') {
-					maxW = Math.max(maxW, api.measure(prompt + a.args.text, oNormal).w);
-				} else if (a.act === 'print') {
-					for (const l of a.args.lines) {
-						maxW = Math.max(maxW, api.measure(l, oNormal).w);
-					}
-					currentLines += a.args.lines.length + 1;
-					maxLines = Math.max(maxLines, currentLines);
-				} else if (a.act === 'restart') {
+				if (a.act === 'restart') {
 					if (a.args.note) maxW = Math.max(maxW, api.measure(a.args.note, oNormal).w);
-					currentLines = 1;
+					session = [];
+					continue;
+				}
+				session.push(a);
+				const lines = build(session, 0);
+				maxLines = Math.max(maxLines, lines.length);
+				for (const l of lines) {
+					const text = l.kind === 'prompt' ? prompt + (l.type ? l.type.args.text : '') : l.text + (l.inputs || []).map(a => a.args.text).join('');
+					maxW = Math.max(maxW, api.measure(text, oNormal).w);
 				}
 			}
 			const w = Math.max(760, maxW + 36 * 2);
@@ -63,28 +97,6 @@
 				}
 			}
 
-			function build(s_acts, t0) {
-				const lines = [];
-				let current_prompt = { kind: 'prompt', text: '', t0, type: null };
-				lines.push(current_prompt);
-				for (const a of s_acts) {
-					if (a.act === 'restart') break;
-					if (a.act === 'type') {
-						current_prompt.type = a;
-					} else if (a.act === 'print') {
-						a.args.lines.forEach((l, i) => {
-							lines.push({
-								kind: 'print', text: l, style: a.args.style,
-								t0: a.t0 + i * (a.t1 - a.t0) / a.n
-							});
-						});
-						current_prompt = { kind: 'prompt', text: '', t0: a.t1, type: null };
-						lines.push(current_prompt);
-					}
-				}
-				return lines;
-			}
-
 			const lines = is_restart_fade ? build(prev_acts, prev_start) : build(session_acts, s_start);
 			
 			const size = this.measure(obj, api, acts);
@@ -92,7 +104,6 @@
 			const lineBoxes = []; 
 			let cmdAnchor = null;
 			
-			// Compute anchors data during state
 			lines.forEach((l, i) => {
 				if (t < l.t0) return;
 				
@@ -129,6 +140,19 @@
 						cmdAnchor = { x: 36 + promptW + textW, y: y - 25, w: 0, h: 50 };
 					}
 				} else if (l.kind === 'print') {
+					l.inputText = '';
+					l.typing = false;
+					l.inputCursor = false;
+					for (const a of l.inputs || []) {
+						if (t < a.t0) continue;
+						const chars = Array.from(a.args.text);
+						const wait = Math.min(.6, .3 * (a.t1 - a.t0)), start = a.t0 + wait;
+						const p = t >= a.t1 ? 1 : api.clamp((t - start) / (a.t1 - start));
+						l.inputText += chars.slice(0, Math.floor(p * chars.length)).join('');
+						l.typing = t >= start && t < a.t1;
+						l.inputCursor = true;
+					}
+					l.textW = api.measure(l.text + l.inputText, {size: 34, mono: true}).w;
 					lineBoxes[i] = { y: y - 25, h: 50 };
 				}
 				y += 50;
@@ -177,7 +201,17 @@
 				} else if (l.kind === 'print') {
 					const alpha = api.clamp((st.t - l.t0) / 0.15);
 					const col = l.style === 'error' ? 'code.error' : 'code.normal';
-					api.text(l.text, 36, y, { size: 34, color: api.color(col), mono: true, alpha });
+					if (l.style === 'error' && l.inputText) {
+						const printW = api.measure(l.text, {size: 34, mono: true}).w;
+						api.text(l.text, 36, y, {size: 34, color: api.color(col), mono: true, alpha});
+						api.text(l.inputText, 36 + printW, y, {size: 34, color: api.color('code.normal'), mono: true, alpha});
+					} else {
+						api.text(l.text + l.inputText, 36, y, {size: 34, color: api.color(col), mono: true, alpha});
+					}
+					if (l.inputCursor && i === st.lines.length - 1 && (l.typing || Math.floor(st.t * 2) % 2 === 0)) {
+						api.ctx.fillStyle = api.color('code.normal');
+						api.ctx.fillRect(36 + l.textW + 2, y - 17, 18, 34);
+					}
 				}
 				y += 50;
 			});

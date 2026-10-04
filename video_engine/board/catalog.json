@@ -67,7 +67,8 @@
 				"label",
 				"values",
 				"tail",
-				"accent"
+				"accent",
+				"addrs"
 			],
 			"anchors": [
 				"label",
@@ -133,6 +134,27 @@
 						"label"
 					],
 					"blocks": true
+				},
+				"swap": {
+					"dur": 1.2,
+					"req": [
+						"a",
+						"b"
+					],
+					"blocks": true
+				},
+				"consume": {
+					"dur": 1.0,
+					"req": [
+						"count"
+					],
+					"opt": [
+						"to"
+					],
+					"anchor_args": [
+						"to"
+					],
+					"blocks": true
 				}
 			}
 		},
@@ -154,6 +176,13 @@
 						"text"
 					],
 					"blocks": true
+				},
+				"append": {
+					"dur": 0.8,
+					"req": [
+						"text"
+					],
+					"blocks": true
 				}
 			}
 		},
@@ -163,10 +192,13 @@
 			],
 			"opt": [
 				"caption",
-				"footer"
+				"footer",
+				"diff",
+				"marks"
 			],
 			"anchors": [
-				"L{n}"
+				"L{n}",
+				"{key}"
 			],
 			"actions": {
 				"highlight": {
@@ -239,6 +271,17 @@
 					"dur": 1.2,
 					"opt": [
 						"note"
+					],
+					"blocks": true
+				},
+				"input": {
+					"seq": "chars",
+					"per": [
+						0.08,
+						0.16
+					],
+					"req": [
+						"text"
 					],
 					"blocks": true
 				}
@@ -403,6 +446,89 @@
 						"value",
 						"to"
 					],
+					"blocks": true
+				}
+			}
+		},
+		"pipeline": {
+			"req": [
+				"stages"
+			],
+			"opt": [
+				"title",
+				"items",
+				"direction"
+			],
+			"anchors": [
+				"{key}"
+			],
+			"actions": {
+				"step": {
+					"dur": 0.6,
+					"opt": [
+						"note"
+					],
+					"blocks": true
+				},
+				"move": {
+					"dur": 1.2,
+					"req": [
+						"to"
+					],
+					"opt": [
+						"text"
+					],
+					"blocks": true
+				},
+				"reject": {
+					"dur": 1.0,
+					"req": [
+						"back_to"
+					],
+					"opt": [
+						"text"
+					],
+					"blocks": true
+				}
+			}
+		},
+		"scale": {
+			"req": [
+				"min",
+				"max"
+			],
+			"opt": [
+				"zones",
+				"ticks",
+				"unit",
+				"title"
+			],
+			"anchors": [
+				"{key}",
+				"p{n}"
+			],
+			"actions": {
+				"probe": {
+					"dur": 1.0,
+					"req": [
+						"value"
+					],
+					"opt": [
+						"label",
+						"result"
+					],
+					"blocks": true
+				},
+				"mark": {
+					"dur": 0.7,
+					"req": [
+						"value",
+						"label"
+					],
+					"blocks": true
+				},
+				"zone": {
+					"dur": 0.6,
 					"blocks": true
 				}
 			}

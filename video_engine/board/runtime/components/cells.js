@@ -3,6 +3,7 @@
 	const CELL_W = 150, CELL_GAP = 26, CELL_H = CELL_W * 1.09;
 	const PTR_H = CELL_W * 0.55;
 	const LABEL_H = 50, STOP_H = 50, BRACE_H = 76;
+	const ADDR_H = 36, CONSUME_H = 36;
 	const TAIL_W = CELL_W * 1.65;
 
 	function cellRect(i) {
@@ -22,6 +23,8 @@
 			const hasStopNote = acts.some(a => a.act === 'stop' && a.args && a.args.note && a.obj === obj.id);
 			const braces = acts.filter(a => a.act === 'brace' && a.obj === obj.id).length;
 			let h = LABEL_H + PTR_H + CELL_H;
+			if (obj.addrs && obj.addrs.length) h += ADDR_H;
+			if (acts.some(a => a.obj === obj.id && a.act === 'consume')) h += CONSUME_H;
 			if (hasStopNote) h += STOP_H;
 			h += braces * BRACE_H;
 			return {w, h};
@@ -34,7 +37,12 @@
 				stops: [],
 				braces: [],
 				fills: [],
-				scans: []
+				scans: [],
+				swaps: [],
+				consumes: [],
+				consumed: {},
+				moving: [],
+				consumeH: acts.some(a => a.obj === obj.id && a.act === 'consume') ? CONSUME_H : 0
 			};
 			const count = obj.count || 0;
 			for (let i = st.values.length; i < count; i++) st.values.push(null);
@@ -51,6 +59,7 @@
 						// from 可省略：沒有起點就直接寫進格子，不畫飛行
 						if (t >= (a.args.from ? k_t1 : k_t0)) {
 							st.values[start + k] = chars[k];
+							delete st.consumed[start + k];
 						} else if (t >= k_t0) {
 							st.fills.push({
 								from: a.args.from,
@@ -60,6 +69,36 @@
 							});
 						}
 					}
+				} else if (a.obj === obj.id && a.act === 'swap') {
+					const i = a.args.a, j = a.args.b;
+					if (t >= a.t1) {
+						[st.values[i], st.values[j]] = [st.values[j], st.values[i]];
+						if (st.values[i] != null) delete st.consumed[i];
+						if (st.values[j] != null) delete st.consumed[j];
+					} else {
+						const p = api.clamp((t - a.t0) / (a.t1 - a.t0));
+						const end = api.sceneEnd(a.scene), alpha = 1 - Board.phase(t, end, end + .4);
+						[[i, j, 60], [j, i, -60]].forEach(([fromIndex, toIndex, lift]) => {
+							if (st.values[fromIndex] == null) return;
+							st.moving.push(fromIndex);
+							st.swaps.push({fromIndex, toIndex, char: st.values[fromIndex], p, lift, alpha});
+						});
+					}
+				} else if (a.obj === obj.id && a.act === 'consume') {
+					// 只取仍有值的格子，空洞和剩餘值都不向左搬。
+					const indices = st.values.map((v, i) => v == null ? -1 : i).filter(i => i >= 0).slice(0, a.args.count);
+					const per = (a.t1 - a.t0) / indices.length;
+					const end = api.sceneEnd(a.scene), alpha = 1 - Board.phase(t, end, end + .4);
+					indices.forEach((i, k) => {
+						const start = a.t0 + k * per, finish = k === indices.length - 1 ? a.t1 : start + per;
+						if (t >= finish) {
+							st.values[i] = null;
+							st.consumed[i] = {alpha};
+						} else if (a.args.to && t >= start) {
+							st.moving.push(i);
+							st.consumes.push({fromIndex: i, char: st.values[i], to: a.args.to, p: (t - start) / per, alpha});
+						}
+					});
 				}
 			}
 
@@ -161,6 +200,7 @@
 			
 			const pointerY = y;
 			y += PTR_H;
+			y += st.consumeH;
 			const cellY = y;
 			
 			if (st.pointer !== null && st.pointerAlpha > 0.004) {
@@ -181,11 +221,13 @@
 				if (val !== null && val !== undefined) {
 					api.rect(rect.x, cellY, CELL_W, CELL_H, 1, {fill: api.color('card.fill'), role: 'panel'});
 					const color = accentSet.has(val) ? accentColor : api.color('text.body');
-					api.text(val, cx, cellY + CELL_H / 2, {size: 64, weight: 600, mono: true, align: 'center', color});
+					if (!st.moving.includes(i)) api.text(val, cx, cellY + CELL_H / 2, {size: 64, weight: 600, mono: true, align: 'center', color});
 				} else {
 					api.hatch(rect.x, cellY, CELL_W, CELL_H, Board.seed(`${obj.id}_${i}`));
 					api.rect(rect.x, cellY, CELL_W, CELL_H, 1, {role: 'panel'});
 				}
+				const consumed = st.consumed[i];
+				if (consumed && consumed.alpha > .004) api.text('已讀走', cx, cellY - CONSUME_H / 2, {size: 24, color: api.color('text.muted'), align: 'center', alpha: consumed.alpha});
 				
 				for (const stop of st.stops) {
 					if (stop.index === i) {
@@ -210,6 +252,12 @@
 			}
 
 			y += CELL_H;
+			if (obj.addrs && obj.addrs.length) {
+				obj.addrs.slice(0, count).forEach((addr, i) => {
+					api.text(addr, cellRect(i).x + CELL_W / 2, y + ADDR_H / 2, {size: 24, mono: true, color: api.color('text.muted'), align: 'center'});
+				});
+				y += ADDR_H;
+			}
 			
 			if (st.hasStopNote) {
 				for (const stop of st.stops) {
@@ -238,7 +286,7 @@
 			if (obj.label) {
 				res.label = {x: 0, y: 0, w: api.measure(obj.label, {size: 36}).w, h: LABEL_H};
 			}
-			const y = LABEL_H + PTR_H;
+			const y = LABEL_H + PTR_H + st.consumeH;
 			const count = obj.count || 0;
 			for (let i = 0; i < count; i++) {
 				const rx = cellRect(i).x;
@@ -264,6 +312,18 @@
 				const myPl = world.placement(obj.id);
 				const from = {x: myPl.x + (cell.x + cell.w / 2) * myPl.s, y: myPl.y + (cell.y + cell.h / 2) * myPl.s};
 				api.fly(s.char, from, {x: to.x + to.w / 2, y: to.y + to.h / 2}, s.p, {size: Board.mix(64, 80, s.p) * myPl.s, weight: 600, lift: 60 * myPl.s, color: accentColor});
+			}
+			const pl = world.placement(obj.id);
+			if (!pl) return;
+			const cells = this.anchors(obj, st, api);
+			const center = r => ({x: pl.x + (r.x + r.w / 2) * pl.s, y: pl.y + (r.y + r.h / 2) * pl.s});
+			for (const f of [...st.swaps, ...st.consumes]) {
+				const target = f.to ? world.anchor(f.to) : cells[`i${f.toIndex}`];
+				if (!target || f.alpha <= .004) continue;
+				const to = f.to ? {x: target.x + target.w / 2, y: target.y + target.h / 2} : center(target);
+				api.ctx.save(); api.ctx.globalAlpha *= f.alpha;
+				api.fly(f.char, center(cells[`i${f.fromIndex}`]), to, f.p, {size: 64 * pl.s, weight: 600, lift: (f.lift ?? 60) * pl.s, color: f.to ? accentColor : api.color('text.body')});
+				api.ctx.restore();
 			}
 		}
 	});

@@ -265,6 +265,10 @@ class Compiler:
 					raise ValueError(f"{where} 填入超出格數：start={start}，{len(args['values'])} 個值，共 {count} 格")
 			elif act in ("point", "stop") and not index_ok(args["index"], 0, count):
 				raise ValueError(f"{where} index 超出格數：{args['index']}")
+			elif act == "swap" and not (index_ok(args["a"], 0, count) and index_ok(args["b"], 0, count) and args["a"] != args["b"]):
+				raise ValueError(f"{where} swap 的 a／b 要是兩個不同的格子：{args['a']}、{args['b']}")
+			elif act == "consume" and not index_ok(args["count"], 1, count + 1):
+				raise ValueError(f"{where} consume 的 count 要在 1–{count}：{args['count']}")
 			elif act in ("scan", "brace"):
 				r = args["range"]
 				if not (isinstance(r, list) and len(r) == 2 and index_ok(r[0], 0, count) and index_ok(r[1], r[0], count)):
@@ -370,6 +374,16 @@ class Compiler:
 				for k, v in enumerate(a["args"]["values"]):
 					if start + k < len(values[a["obj"]]):
 						values[a["obj"]][start + k] = v
+			elif a["act"] == "swap":
+				v, i, j = values[a["obj"]], a["args"]["a"], a["args"]["b"]
+				if 0 <= i < len(v) and 0 <= j < len(v):
+					v[i], v[j] = v[j], v[i]
+			elif a["act"] == "consume":
+				# 緩衝區：從左邊取走 count 個還在的值，取走的格子變空
+				v, left = values[a["obj"]], a["args"]["count"]
+				for i in range(len(v)):
+					if left and v[i] is not None:
+						v[i], left = None, left - 1
 			elif a["act"] == "scan":
 				lo, hi = a["args"]["range"]
 				chars = [values[a["obj"]][i] or "" for i in range(lo, hi + 1)]
@@ -382,6 +396,10 @@ class Compiler:
 			elif a["act"] == "set" and a["obj"] in out_max:
 				out_text[a["obj"]] = a["args"]["text"]
 				out_max[a["obj"]] = max(out_max[a["obj"]], a["args"]["text"], key=len)
+			elif a["act"] == "append" and a["obj"] in out_max:
+				# 接著印：整片最長＝累積後的文字（可含換行，元件依行量測）
+				out_text[a["obj"]] = out_text.get(a["obj"], self.objects[a["obj"]].get("text", "")) + a["args"]["text"]
+				out_max[a["obj"]] = max(out_max[a["obj"]], out_text[a["obj"]], key=len)
 		for oid, text in out_max.items():
 			obj = self.objects[oid]
 			obj["_max_text"] = max(obj.get("max_text", ""), text, key=len)
