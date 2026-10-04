@@ -109,3 +109,7 @@ SVG 只畫影片流程；節點用主題色（notebook：背景 #ECE6DA、卡片
 ## 不做（這一版）
 
 接入 BridgeAI、帳號權限、多人同時生成、SVG 給 PPT 用的輸出、快速解釋入口。
+
+## 狀態註記
+
+- 2026-10-05 後續修正：本獨立頁併入新工作台，設計改見 `2026-10-05-learning-workbench-design.md`（commit 待補 hash）

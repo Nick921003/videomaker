@@ -10,3 +10,5 @@ __pycache__/
 # 工具本機狀態
 .claude/
 .serena/
+graphify-out/
+.superpowers/brainstorm/
