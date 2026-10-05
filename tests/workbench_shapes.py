@@ -58,6 +58,7 @@ SHAPES: dict[str, object] = {
 	"manifest": {"unit_id": str, "title": str, "source_ref": _SOURCE_REF, "products": [_PRODUCT]},
 	"ask": {"kind": _ASK_KIND, "story": (str, None), "score": _NUMBER, "reason": str, "video": (str, None)},
 	"api_error": {"error": {"code": str, "reason": str, "advice": str}},
+	"upload": {"upload_id": str, "kind": str, "excerpt": str, "pages": (int, None), "chars": int, "estimate_usd": _NUMBER},
 }
 SHAPES["unit"] = {
 	"unit_id": str, "title": str, "source_ref": _SOURCE_REF, "spent_usd": _NUMBER,

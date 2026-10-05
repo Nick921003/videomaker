@@ -84,12 +84,102 @@ test('外框實際載入總覽與路線圖，形式卡片能帶上焦點', async
 	});
 });
 
-test('其餘預留頁與製作每一步都顯示下一步實作', async () => {
+test('素材庫、用量及製作③④仍為預留頁', async () => {
 	await withApp(async (app, ids) => {
-		for (const route of ['make/1', 'make/2', 'make/3', 'make/4', 'library', 'usage']) {
+		for (const route of ['make/3?unit=ff9e559208c9', 'make/4?unit=ff9e559208c9', 'library', 'usage']) {
 			globalThis.location.hash = `#/${route}`;
 			await app.loadRoute();
 			assert.match(ids['page-host'].textContent, /下一步實作/);
+		}
+	});
+});
+
+test('製作接上教材輸入與分析詳情，未選教材時不能跳過第一步', async () => {
+	await withApp(async (app, ids) => {
+		globalThis.location.hash = '#/make/1';
+		await app.loadRoute();
+		assert.match(ids['page-host'].textContent, /從素材庫挑/);
+		assert.match(ids['page-host'].textContent, /開始分析（約 US\$0\.015）/);
+		globalThis.location.hash = '#/make/2?unit=ff9e559208c9';
+		await app.loadRoute();
+		const host = ids['page-host'];
+		assert.match(host.textContent, /for 迴圈每一圈做了什麼？/);
+		assert.match(host.textContent, /必演畫面/);
+		assert.match(host.textContent, /建議重點片/);
+		const point = descendants(host).find(node => node.getAttribute('data-point-id') === 'q2');
+		point.dispatchEvent(new Event('click'));
+		assert.match(host.textContent, /並排演出 i < 3 與 i <= 3/);
+		const next = descendants(host).find(node => node.textContent === '下一步：選要生成的 →');
+		assert.equal(next.href, '#/make/3?unit=ff9e559208c9');
+		globalThis.location.hash = '#/make/2';
+		await app.loadRoute();
+		assert.match(ids['page-host'].textContent, /先選一份教材/);
+		assert.doesNotMatch(ids['page-host'].textContent, /必演畫面/);
+	});
+});
+
+test('整理需確認；工作中鎖住輸入，連續整理仍顯示 live 圖，離頁釋放輪詢', async () => {
+	await withApp(async (app, ids) => {
+		const { api } = await import('../js/api.mjs');
+		const original = { get: api.get, post: api.post, setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout };
+		const registry = JSON.parse(await readFile(new URL('../mock/formats.json', import.meta.url), 'utf8'));
+		const unit = JSON.parse(await readFile(new URL('../mock/unit-new.json', import.meta.url), 'utf8'));
+		const calls = [];
+		const timers = new Map();
+		let jobNumber = 0;
+		let done = false;
+		const settle = () => new Promise(resolve => setImmediate(resolve));
+		api.get = async path => path === '/formats' ? registry : path === '/units' ? [] : path.startsWith('/units/') ? unit : {
+			job_id: `job-${jobNumber}`, unit_id: done ? unit.unit_id : null, format: 'ingest', state: done ? 'done' : 'running',
+			steps: [{ id: 'normalize', state: done ? 'done' : 'running' }], current: done ? null : 'normalize',
+		};
+		api.post = async path => {
+			calls.push(path);
+			if (path === '/uploads') return { upload_id: 'upload', excerpt: '教材摘要', pages: 2, chars: 100, estimate_usd: 0.01 };
+			return { job_id: `job-${++jobNumber}` };
+		};
+		globalThis.setTimeout = callback => { const id = timers.size + 1; timers.set(id, callback); return id; };
+		globalThis.clearTimeout = id => timers.delete(id);
+		try {
+			globalThis.location.hash = '#/make/1';
+			await app.loadRoute();
+			const find = predicate => descendants(ids['page-host']).find(predicate);
+			const file = find(node => node.tagName === 'input' && node.type === 'file');
+			file.files = [new File(['mock'], '教材.pdf', { type: 'application/pdf' })];
+			file.dispatchEvent(new Event('change'));
+			await settle();
+			assert.deepEqual(calls, ['/uploads']);
+			assert.match(ids['page-host'].textContent, /教材摘要/);
+			const confirm = () => find(node => node.tagName === 'button' && node.textContent.startsWith('確認整理'));
+			confirm().dispatchEvent(new Event('click'));
+			await settle();
+			assert.deepEqual(calls, ['/uploads', '/uploads/upload/normalize']);
+			assert.equal(file.disabled, true);
+			assert.equal(find(node => node.className === 'source-progress').hidden, false);
+			assert.equal(find(node => node.getAttribute('aria-current') === 'step').tagName, 'span');
+			done = true;
+			const tick = [...timers.values()][0];
+			timers.clear();
+			await tick();
+			await settle();
+			assert.equal(file.disabled, false);
+			assert.match(ids['page-host'].textContent, /整理完成/);
+			done = false;
+			file.dispatchEvent(new Event('change'));
+			await settle();
+			confirm().dispatchEvent(new Event('click'));
+			await settle();
+			assert.equal(find(node => node.className === 'source-progress').hidden, false);
+			assert.equal(timers.size, 1);
+			globalThis.location.hash = '#/usage';
+			await app.loadRoute();
+			assert.equal(timers.size, 0);
+			assert.match(ids['page-host'].textContent, /用量/);
+		} finally {
+			api.get = original.get;
+			api.post = original.post;
+			globalThis.setTimeout = original.setTimeout;
+			globalThis.clearTimeout = original.clearTimeout;
 		}
 	});
 });

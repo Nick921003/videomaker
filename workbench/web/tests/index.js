@@ -6,3 +6,4 @@ import './roadmap.test.mjs';
 import './app.test.mjs';
 import './diagram.test.mjs';
 import './panzoom.test.mjs';
+import './make.test.mjs';

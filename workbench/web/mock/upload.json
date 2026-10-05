@@ -1,0 +1,8 @@
+{
+	"upload_id": "mock-upload",
+	"kind": "pdf",
+	"excerpt": "迴圈教材：for 依序執行初始設定、條件判斷、本體與更新。while 適合依條件持續執行。注意邊界條件與巢狀迴圈的次數。",
+	"pages": 3,
+	"chars": 1200,
+	"estimate_usd": 0.01
+}

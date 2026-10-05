@@ -1,0 +1,409 @@
+{
+	"unit_id": "ff9e559208c9",
+	"title": "迴圈",
+	"source_ref": {
+		"platform": "bridgeai",
+		"course": "c-intro",
+		"unit": "loops",
+		"topic": "loop-basics",
+		"revision": "1"
+	},
+	"spent_usd": 0.015,
+	"analysis": {
+		"unit_title": "迴圈",
+		"scope": {
+			"covers": [
+				"for 迴圈的順序",
+				"邊界條件",
+				"while 與 for",
+				"無限迴圈",
+				"巢狀迴圈"
+			],
+			"not_covers": [
+				"指標與動態記憶體配置",
+				"遞迴",
+				"Python 語法"
+			]
+		},
+		"points": [
+			{
+				"id": "q1",
+				"question": "for 迴圈每一圈做了什麼？",
+				"also_asks": [
+					"for 的執行順序是什麼？",
+					"更新變數是在什麼時候？"
+				],
+				"title": "每一圈的過程",
+				"sec": 60,
+				"objectives": [
+					1
+				],
+				"screens": [],
+				"show": "逐圈標出條件、本體、更新變數的順序，並顯示目前變數值。"
+			},
+			{
+				"id": "q2",
+				"question": "為什麼我的迴圈多跑一次？",
+				"also_asks": [
+					"小於跟小於等於差在哪？",
+					"為什麼次數比我想的多一圈？"
+				],
+				"title": "多跑一次的原因",
+				"sec": 75,
+				"objectives": [
+					2
+				],
+				"screens": [],
+				"show": "並排演出 i < 3 與 i <= 3，逐次計數並指出多出的最後一圈。"
+			},
+			{
+				"id": "q3",
+				"question": "while 和 for 怎麼選？",
+				"also_asks": [
+					"什麼時候用 while？",
+					"知道次數就要用 for 嗎？"
+				],
+				"title": "while 和 for 的選擇",
+				"sec": 65,
+				"objectives": [
+					3
+				],
+				"screens": [],
+				"show": "對照次數明確與依條件持續執行兩種情境。"
+			},
+			{
+				"id": "q4",
+				"question": "迴圈為什麼停不下來？",
+				"also_asks": [
+					"為什麼程式一直重複？",
+					"忘記更新變數會怎樣？"
+				],
+				"title": "無限迴圈",
+				"sec": 70,
+				"objectives": [
+					4
+				],
+				"screens": [],
+				"show": "對照有更新與沒有更新變數的執行過程，指出停止條件。"
+			},
+			{
+				"id": "q5",
+				"question": "巢狀迴圈怎麼數次數？",
+				"also_asks": [
+					"兩層迴圈總共執行幾次？",
+					"內圈和外圈的次數怎麼算？"
+				],
+				"title": "巢狀迴圈的次數",
+				"sec": 80,
+				"objectives": [
+					5
+				],
+				"screens": [],
+				"show": "外圈每走一步，內圈完整走一輪；用計數格累積總次數。"
+			},
+			{
+				"id": "q6",
+				"question": "延伸問題 6：for 迴圈每一圈做了什麼？",
+				"also_asks": [
+					"for 的執行順序是什麼？",
+					"更新變數是在什麼時候？"
+				],
+				"title": "每一圈的過程",
+				"sec": 60,
+				"objectives": [
+					1
+				],
+				"screens": [],
+				"show": "逐圈標出條件、本體、更新變數的順序，並顯示目前變數值。"
+			},
+			{
+				"id": "q7",
+				"question": "延伸問題 7：為什麼我的迴圈多跑一次？",
+				"also_asks": [
+					"小於跟小於等於差在哪？",
+					"為什麼次數比我想的多一圈？"
+				],
+				"title": "多跑一次的原因",
+				"sec": 75,
+				"objectives": [
+					2
+				],
+				"screens": [],
+				"show": "並排演出 i < 3 與 i <= 3，逐次計數並指出多出的最後一圈。"
+			},
+			{
+				"id": "q8",
+				"question": "延伸問題 8：while 和 for 怎麼選？",
+				"also_asks": [
+					"什麼時候用 while？",
+					"知道次數就要用 for 嗎？"
+				],
+				"title": "while 和 for 的選擇",
+				"sec": 65,
+				"objectives": [
+					3
+				],
+				"screens": [],
+				"show": "對照次數明確與依條件持續執行兩種情境。"
+			},
+			{
+				"id": "q9",
+				"question": "延伸問題 9：迴圈為什麼停不下來？",
+				"also_asks": [
+					"為什麼程式一直重複？",
+					"忘記更新變數會怎樣？"
+				],
+				"title": "無限迴圈",
+				"sec": 70,
+				"objectives": [
+					4
+				],
+				"screens": [],
+				"show": "對照有更新與沒有更新變數的執行過程，指出停止條件。"
+			},
+			{
+				"id": "q10",
+				"question": "延伸問題 10：巢狀迴圈怎麼數次數？",
+				"also_asks": [
+					"兩層迴圈總共執行幾次？",
+					"內圈和外圈的次數怎麼算？"
+				],
+				"title": "巢狀迴圈的次數",
+				"sec": 80,
+				"objectives": [
+					5
+				],
+				"screens": [],
+				"show": "外圈每走一步，內圈完整走一輪；用計數格累積總次數。"
+			},
+			{
+				"id": "q11",
+				"question": "延伸問題 11：for 迴圈每一圈做了什麼？",
+				"also_asks": [
+					"for 的執行順序是什麼？",
+					"更新變數是在什麼時候？"
+				],
+				"title": "每一圈的過程",
+				"sec": 60,
+				"objectives": [
+					1
+				],
+				"screens": [],
+				"show": "逐圈標出條件、本體、更新變數的順序，並顯示目前變數值。"
+			},
+			{
+				"id": "q12",
+				"question": "延伸問題 12：為什麼我的迴圈多跑一次？",
+				"also_asks": [
+					"小於跟小於等於差在哪？",
+					"為什麼次數比我想的多一圈？"
+				],
+				"title": "多跑一次的原因",
+				"sec": 75,
+				"objectives": [
+					2
+				],
+				"screens": [],
+				"show": "並排演出 i < 3 與 i <= 3，逐次計數並指出多出的最後一圈。"
+			}
+		],
+		"glossary": [
+			{
+				"term": "for",
+				"say_as": "for"
+			},
+			{
+				"term": "while",
+				"say_as": "while"
+			},
+			{
+				"term": "<",
+				"say_as": "小於"
+			},
+			{
+				"term": "<=",
+				"say_as": "小於等於"
+			},
+			{
+				"term": "i",
+				"say_as": "i"
+			}
+		],
+		"highlight": {
+			"points": [
+				"q1",
+				"q2",
+				"q3"
+			],
+			"total_sec": 200,
+			"why": "先看每圈順序，再找邊界差異，最後選擇適合的迴圈形式。"
+		}
+	},
+	"items": [
+		{
+			"item": "q1",
+			"format": "video",
+			"label": "第 1 點影片：每一圈的過程",
+			"status": "none",
+			"estimate_usd": 0.053,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q2",
+			"format": "video",
+			"label": "第 2 點影片：多跑一次的原因",
+			"status": "none",
+			"estimate_usd": 0.0575,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q3",
+			"format": "video",
+			"label": "第 3 點影片：while 和 for 的選擇",
+			"status": "none",
+			"estimate_usd": 0.0545,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q4",
+			"format": "video",
+			"label": "第 4 點影片：無限迴圈",
+			"status": "none",
+			"estimate_usd": 0.056,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q5",
+			"format": "video",
+			"label": "第 5 點影片：巢狀迴圈的次數",
+			"status": "none",
+			"estimate_usd": 0.059,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q6",
+			"format": "video",
+			"label": "第 6 點影片",
+			"status": "none",
+			"estimate_usd": 0.053,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q7",
+			"format": "video",
+			"label": "第 7 點影片",
+			"status": "none",
+			"estimate_usd": 0.053,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q8",
+			"format": "video",
+			"label": "第 8 點影片",
+			"status": "none",
+			"estimate_usd": 0.053,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q9",
+			"format": "video",
+			"label": "第 9 點影片",
+			"status": "none",
+			"estimate_usd": 0.053,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q10",
+			"format": "video",
+			"label": "第 10 點影片",
+			"status": "none",
+			"estimate_usd": 0.053,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q11",
+			"format": "video",
+			"label": "第 11 點影片",
+			"status": "none",
+			"estimate_usd": 0.053,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "q12",
+			"format": "video",
+			"label": "第 12 點影片",
+			"status": "none",
+			"estimate_usd": 0.053,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "highlight",
+			"format": "highlight",
+			"label": "重點片",
+			"status": "none",
+			"estimate_usd": 0.15,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "mindmap",
+			"format": "mindmap",
+			"label": "心智圖",
+			"status": "none",
+			"estimate_usd": 0.01,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		},
+		{
+			"item": "slides",
+			"format": "slides",
+			"label": "簡報",
+			"status": "none",
+			"estimate_usd": 0.01,
+			"cost_usd": null,
+			"duration": null,
+			"files": {},
+			"job_id": null
+		}
+	]
+}

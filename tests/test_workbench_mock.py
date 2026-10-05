@@ -16,6 +16,7 @@ JSON_SHAPES = {
 	"units.json": [SHAPES["unit_summary"]],
 	"unit-new.json": SHAPES["unit"],
 	"unit-analyzed.json": SHAPES["unit"],
+	"unit-analyzed-12.json": SHAPES["unit"],
 	"unit-done.json": SHAPES["unit"],
 	"job-running.json": SHAPES["job"],
 	"job-failed.json": SHAPES["job"],
@@ -25,6 +26,7 @@ JSON_SHAPES = {
 	"manifest.json": SHAPES["manifest"],
 	"ask-story.json": SHAPES["ask"],
 	"ask-out-of-scope.json": SHAPES["ask"],
+	"upload.json": SHAPES["upload"],
 }
 QUESTIONS = (
 	"for 迴圈每一圈做了什麼？",
@@ -69,7 +71,7 @@ class TestShapeChecker(unittest.TestCase):
 	def test_exports_required_contracts(self):
 		self.assertEqual(set(SHAPES), {
 			"formats", "unit_summary", "unit", "analysis", "item", "job",
-			"job_error", "queue", "usage", "manifest", "ask", "api_error",
+			"job_error", "queue", "usage", "manifest", "ask", "api_error", "upload",
 		})
 
 	def test_accepts_nested_lists_nullable_and_numeric_types(self):

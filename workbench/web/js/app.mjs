@@ -4,14 +4,13 @@ import { el, icon, intro } from './ui.mjs';
 import { renderOverview } from './pages/overview.mjs';
 import { renderRoadmap } from './pages/roadmap.mjs';
 import { renderPipelines } from './pages/pipelines.mjs';
+import { renderMake } from './pages/make.mjs';
 
 const PAGE_NAMES = {
 	overview: '總覽', make: '製作', pipelines: '流程架構',
 	library: '素材庫', usage: '用量', roadmap: '路線圖',
 };
-const STEP_NAMES = ['教材', '分析結果', '生成', '成品'];
 const PLACEHOLDERS = {
-	make: '從教材開始，分析學生的問題，再選要做的素材。',
 	library: '把完成的素材收在一起，讓學生用問題找到答案。',
 	usage: '看看每份教材、每件成品，實際花了多少。',
 };
@@ -21,7 +20,7 @@ let activePage = null;
 
 function placeholder(route) {
 	const page = el('section', 'page placeholder-page');
-	const title = route.page === 'make' ? `製作 · ${STEP_NAMES[route.step - 1]}` : PAGE_NAMES[route.page];
+	const title = PAGE_NAMES[route.page];
 	page.append(intro('一份教材，慢慢做清楚', title, PLACEHOLDERS[route.page]));
 	const region = el('div', 'placeholder-region scroll-box');
 	const card = el('div', 'placeholder-card');
@@ -69,7 +68,8 @@ export async function loadRoute() {
 	try {
 		const page = route.page === 'overview' ? await renderOverview()
 			: route.page === 'roadmap' ? await renderRoadmap()
-				: route.page === 'pipelines' ? await renderPipelines(route.query) : placeholder(route);
+				: route.page === 'pipelines' ? await renderPipelines(route.query)
+					: route.page === 'make' ? await renderMake(route) : placeholder(route);
 		// 舊頁請求晚回來時，保留使用者剛切換的頁面。
 		if (version === renderVersion) {
 			host.replaceChildren(page);

@@ -22,6 +22,68 @@ async function withAPI(search, run) {
 	}
 }
 
+test('建立教材後先維持未分析，分析工作完成才取得分析結果', async () => {
+	await withAPI('?mock=1', async api => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			await assert.rejects(api.post('/units', { markdown: '   ' }));
+			const created = await api.post('/units', { title: '我的教材', markdown: '# for 迴圈' });
+			assert.equal(created.created, true);
+			assert.equal((await api.post('/units', { markdown: '# for 迴圈' })).unit_id, created.unit_id);
+			assert.equal((await api.get(`/units/${created.unit_id}`)).analysis, null);
+			assert.ok((await api.get('/units')).some(unit => unit.unit_id === created.unit_id && !unit.analyzed));
+			const { job_id } = await api.post(`/units/${created.unit_id}/analyze`);
+			assert.deepEqual(await api.post(`/units/${created.unit_id}/analyze`), { job_id });
+			assert.equal((await api.get(`/jobs/${job_id}`)).format, 'analysis');
+			now += 4000;
+			assert.equal((await api.get(`/jobs/${job_id}`)).state, 'done');
+			assert.equal((await api.get(`/units/${created.unit_id}`)).analysis.points.length, 5);
+			assert.deepEqual(await api.post(`/units/${created.unit_id}/analyze`), { job_id: null, analyzed: true });
+		} finally { Date.now = previousNow; }
+	});
+});
+
+test('上傳 PDF 僅提供摘要，確認整理後的工作才建立教材', async () => {
+	await withAPI('?mock=1', async api => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			const body = new FormData();
+			body.append('file', new Blob(['PDF mock'], { type: 'application/pdf' }), 'lesson.pdf');
+			const upload = await api.post('/uploads', body);
+			assert.equal(upload.kind, 'pdf');
+			assert.ok(upload.excerpt && upload.pages > 0 && upload.estimate_usd > 0);
+			assert.deepEqual(await api.get('/queue'), { running: null, queued: [] });
+			const { job_id } = await api.post(`/uploads/${upload.upload_id}/normalize`);
+			assert.equal((await api.get(`/jobs/${job_id}`)).unit_id, null);
+			now += 4000;
+			const done = await api.get(`/jobs/${job_id}`);
+			assert.equal(done.state, 'done');
+			assert.ok(done.unit_id);
+			assert.equal((await api.get(`/units/${done.unit_id}`)).analysis, null);
+		} finally { Date.now = previousNow; }
+	});
+});
+
+test('正式 multipart 上傳保留 FormData，交由瀏覽器產生 boundary', async () => {
+	await withAPI('', async api => {
+		const body = new FormData();
+		body.append('file', new Blob(['source']), 'lesson.pptx');
+		let request;
+		globalThis.fetch = async (path, options) => {
+			request = { path, options };
+			return { ok: true, json: async () => ({ upload_id: 'real-upload' }) };
+		};
+		await api.post('/uploads', body);
+		assert.equal(request.path, '/api/v1/uploads');
+		assert.equal(request.options.body, body);
+		assert.equal(request.options.headers, undefined);
+	});
+});
+
 test('mock 固定映射讀取相對路徑，待機與忙碌佇列分開', async () => {
 	await withAPI('?mock=1', async (api, requests) => {
 		assert.equal(api.MOCK, true);

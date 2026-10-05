@@ -4,6 +4,8 @@ const BUSY = params.get('busy') === '1';
 const UNIT = 'ff9e559208c9';
 const files = new Map();
 const jobs = new Map();
+const units = new Map();
+const uploads = new Map();
 let serial = 0;
 
 // 所有 mock 檔案都從頁面根目錄讀取，兩種伺服器路徑共用。
@@ -13,6 +15,8 @@ const mockFiles = Object.freeze({
 	'/units/:id': 'unit-done.json',
 	'/units/:id?state=new': 'unit-new.json',
 	'/units/:id?state=analyzed': 'unit-analyzed.json',
+	'/units/:id?state=analyzed12': 'unit-analyzed-12.json',
+	'/uploads': 'upload.json',
 	'/units/:id/manifest': 'manifest.json',
 	'/jobs/:id': 'job-running.json',
 	'/jobs/:id?failed': 'job-failed.json',
@@ -85,7 +89,7 @@ function progress(job) {
 	const state = elapsed < 0 ? 'queued' : failed ? 'failed' : done ? 'done' : 'running';
 	return {
 		job_id: job.id,
-		unit_id: job.unitId,
+		unit_id: done && job.resultUnit ? job.resultUnit.unit_id : job.unitId,
 		item: job.item,
 		format: job.format.id,
 		state,
@@ -104,8 +108,35 @@ function progress(job) {
 	};
 }
 
+async function settleStages() {
+	for (const job of jobs.values()) {
+		if (job.applied || progress(job).state !== 'done') continue;
+		if (job.format.id === 'ingest') units.set(job.resultUnit.unit_id, job.resultUnit);
+		if (job.format.id === 'analysis') {
+			const analyzed = await fixture('/units/:id?state=analyzed');
+			const original = units.get(job.unitId);
+			units.set(job.unitId, { ...analyzed, unit_id: job.unitId, title: original.title, source_ref: original.source_ref,
+				analysis: { ...analyzed.analysis, unit_title: original.title } });
+		}
+		job.applied = true;
+	}
+}
+
 async function mockGet(url) {
+	await settleStages();
 	const path = url.pathname;
+	if (path === '/units') {
+		const summaries = await fixture('/units');
+		for (const unit of units.values()) {
+			const index = summaries.findIndex(entry => entry.unit_id === unit.unit_id);
+			const summary = { unit_id: unit.unit_id, title: unit.title, created_at: new Date().toISOString(),
+				analyzed: Boolean(unit.analysis), points: unit.analysis?.points.length ?? 0,
+				products: { video: 0, highlight: false, mindmap: false, slides: false }, spent_usd: unit.spent_usd, source_ref: unit.source_ref };
+			if (index < 0) summaries.unshift(summary);
+			else summaries[index] = summary;
+		}
+		return summaries;
+	}
 	if (path === '/queue') {
 		const current = [...jobs.values()].map(progress);
 		const running = current.find(job => job.state === 'running') ?? null;
@@ -116,7 +147,9 @@ async function mockGet(url) {
 	if (/^\/units\/[^/]+\/manifest$/.test(path)) return fixture('/units/:id/manifest');
 	if (/^\/units\/[^/]+$/.test(path)) {
 		const state = url.searchParams.get('state');
-		return fixture(['new', 'analyzed'].includes(state) ? `/units/:id?state=${state}` : '/units/:id');
+		if (['new', 'analyzed', 'analyzed12'].includes(state)) return fixture(`/units/:id?state=${state}`);
+		const id = decodeURIComponent(path.split('/')[2]);
+		return units.has(id) ? structuredClone(units.get(id)) : fixture('/units/:id');
 	}
 	const match = path.match(/^\/jobs\/([^/]+)$/);
 	if (match) {
@@ -140,6 +173,46 @@ async function mockGet(url) {
 }
 
 async function mockPost(url, body) {
+	if (url.pathname === '/units') {
+		if (typeof body.markdown !== 'string' || !body.markdown.trim()) throw failure('bad_request', '先放入教材文字。');
+		const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body.markdown));
+		const unitId = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('').slice(0, 12);
+		if (units.has(unitId)) return { unit_id: unitId, created: false };
+		units.set(unitId, { ...await fixture('/units/:id?state=new'), unit_id: unitId,
+			title: body.title?.trim() || '未命名教材', source_ref: body.source_ref ?? null });
+		return { unit_id: unitId, created: true };
+	}
+	if (url.pathname === '/uploads') {
+		const file = body.get?.('file');
+		const kind = file?.name?.split('.').pop().toLowerCase();
+		if (!['pdf', 'pptx'].includes(kind)) throw failure('bad_request', '請上傳 PDF 或 PPTX。');
+		if (file.size > 5 * 1024 * 1024) throw failure('too_large', '檔案超過 5 MB。', '拆小再上傳。');
+		const upload = { ...await fixture('/uploads'), upload_id: `mock-upload-${++serial}`, kind };
+		uploads.set(upload.upload_id, { upload, title: file.name.replace(/\.[^.]+$/, '') });
+		return upload;
+	}
+	const normalize = url.pathname.match(/^\/uploads\/([^/]+)\/normalize$/);
+	if (normalize) {
+		const draft = uploads.get(normalize[1]);
+		if (!draft) throw failure('not_found', '找不到這份上傳教材。', '請重新上傳。');
+		if (draft.jobId) return { job_id: draft.jobId };
+		const jobId = await createJob(null, 'ingest', 'ingest');
+		jobs.get(jobId).resultUnit = { ...await fixture('/units/:id?state=new'),
+			unit_id: `mock-unit-${++serial}`, title: draft.title, source_ref: null };
+		draft.jobId = jobId;
+		return { job_id: jobId };
+	}
+	const analyze = url.pathname.match(/^\/units\/([^/]+)\/analyze$/);
+	if (analyze) {
+		const unitId = decodeURIComponent(analyze[1]);
+		const unit = await mockGet(endpoint(`/units/${analyze[1]}${url.search}`));
+		if (unit.analysis) return { job_id: null, analyzed: true };
+		const existing = [...jobs.values()].find(job => job.unitId === unitId && job.format.id === 'analysis'
+			&& ['queued', 'running'].includes(progress(job).state));
+		if (existing) return { job_id: existing.id };
+		units.set(unitId, { ...unit, unit_id: unitId });
+		return { job_id: await createJob(unitId, 'analysis', 'analysis') };
+	}
 	const generate = url.pathname.match(/^\/units\/([^/]+)\/generate$/);
 	if (generate || url.pathname === '/generate') {
 		const unitId = generate?.[1] ?? body.unit_id ?? UNIT;
