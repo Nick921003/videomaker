@@ -18,6 +18,7 @@ const mockFiles = Object.freeze({
 	'/units/:id?state=analyzed12': 'unit-analyzed-12.json',
 	'/uploads': 'upload.json',
 	'/units/:id/manifest': 'manifest.json',
+	'/units/:id/items/:item/renarrate': 'job-running.json',
 	'/jobs/:id': 'job-running.json',
 	'/jobs/:id?failed': 'job-failed.json',
 	'/jobs/:id?queued': 'queue-busy.json',
@@ -64,25 +65,26 @@ function endpoint(path) {
 	return new URL(relative, 'http://workbench.local');
 }
 
-async function createJob(unitId, item, formatId) {
+async function createJob(unitId, item, formatId, beats = null) {
 	const registry = await fixture('/formats');
 	const format = [...registry.formats, ...registry.stages].find(entry => entry.id === formatId);
 	if (!format?.steps.length) throw failure('unavailable_format', '這個形式還在規劃中');
 	const id = `mock-${item}-${++serial}`;
 	const now = Date.now();
 	const start = Math.max(now, ...[...jobs.values()].map(job => job.end));
-	const failAt = item === 'q4' ? format.steps.findIndex(step => step.id === 'repair') : -1;
+	const firstStep = beats ? format.steps.findIndex(step => step.id === 'narrate') : 0;
+	const failAt = item === 'q4' && !beats ? format.steps.findIndex(step => step.id === 'repair') : -1;
 	const template = await fixture(item === 'q4' ? '/jobs/:id?failed' : '/jobs/:id');
 	jobs.set(id, {
-		id, unitId, item, format, template, start, failAt,
-		end: start + (failAt < 0 ? format.steps.length : failAt) * 2000,
+		id, unitId, item, format, template, start, failAt, firstStep, beats,
+		end: start + (failAt < 0 ? format.steps.length - firstStep : failAt) * 2000,
 	});
 	return id;
 }
 
 function progress(job) {
 	const elapsed = Date.now() - job.start;
-	const index = Math.floor(Math.max(0, elapsed) / 2000);
+	const index = job.firstStep + Math.floor(Math.max(0, elapsed) / 2000);
 	const failed = job.failAt >= 0 && index >= job.failAt && elapsed >= 0;
 	const done = !failed && index >= job.format.steps.length;
 	const currentIndex = failed ? job.failAt : index;
@@ -95,7 +97,7 @@ function progress(job) {
 		state,
 		steps: job.format.steps.map((step, i) => ({
 			id: step.id,
-			state: state === 'queued' ? 'pending' : i < currentIndex ? 'done'
+			state: state === 'queued' ? 'pending' : i < job.firstStep ? 'skipped' : i < currentIndex ? 'done'
 				: i === currentIndex ? (failed ? 'failed' : 'running') : 'pending',
 		})),
 		current: state === 'queued' || done ? null : job.format.steps[currentIndex].id,
@@ -105,7 +107,32 @@ function progress(job) {
 		].slice(-40),
 		spent_usd: failed ? job.template.spent_usd : 0,
 		error: failed ? structuredClone(job.template.error) : null,
+		warnings: [],
 	};
+}
+
+async function productProgress(unit) {
+	const doneUnit = await fixture('/units/:id');
+	for (const job of jobs.values()) {
+		if (job.unitId !== unit.unit_id) continue;
+		const item = unit.items.find(item => item.item === job.item);
+		if (!item) continue;
+		const state = progress(job).state;
+		item.status = state;
+		item.job_id = job.id;
+		item.warnings ??= [];
+		if (state === 'done') {
+			const completed = doneUnit.items.find(entry => entry.item === job.item);
+			const defaults = { video: { video: `${job.item}/video.mp4` }, highlight: { video: 'highlight/video.mp4' },
+				mindmap: { svg: 'mindmap/mindmap.svg' }, slides: { deck: 'slides/deck.json', pptx: 'slides/deck.pptx' } };
+			item.files = completed?.status === 'done' ? completed.files : defaults[item.format];
+			item.cost_usd ??= completed?.cost_usd ?? item.estimate_usd;
+			item.duration ??= unit.analysis?.points.find(point => point.id === item.item)?.sec ?? null;
+			item.estimate_usd = 0;
+			item.warnings = (item.warnings ?? []).filter(warning => !job.beats?.includes(Number(warning.detail.match(/第\s*(\d+)\s*句/)?.[1])));
+		}
+	}
+	return unit;
 }
 
 async function settleStages() {
@@ -147,9 +174,11 @@ async function mockGet(url) {
 	if (/^\/units\/[^/]+\/manifest$/.test(path)) return fixture('/units/:id/manifest');
 	if (/^\/units\/[^/]+$/.test(path)) {
 		const state = url.searchParams.get('state');
-		if (['new', 'analyzed', 'analyzed12'].includes(state)) return fixture(`/units/:id?state=${state}`);
 		const id = decodeURIComponent(path.split('/')[2]);
-		return units.has(id) ? structuredClone(units.get(id)) : fixture('/units/:id');
+		const unit = ['new', 'analyzed', 'analyzed12'].includes(state) ? await fixture(`/units/:id?state=${state}`)
+			: units.has(id) ? structuredClone(units.get(id)) : await fixture('/units/:id');
+		unit.unit_id = id;
+		return productProgress(unit);
 	}
 	const match = path.match(/^\/jobs\/([^/]+)$/);
 	if (match) {
@@ -235,7 +264,22 @@ async function mockPost(url, body) {
 	if (retry) {
 		const job = await mockGet(endpoint(`/jobs/${retry[1]}`));
 		if (job.state !== 'failed' || !job.error?.retry) throw failure('bad_request', '這個工作目前不能重試');
-		return { job_id: await createJob(job.unit_id, job.item, job.format) };
+		return { job_id: await createJob(job.unit_id, job.item, job.format, jobs.get(retry[1])?.beats) };
+	}
+	const renarrate = url.pathname.match(/^\/units\/([^/]+)\/items\/([^/]+)\/renarrate$/);
+	if (renarrate) {
+		if (!Array.isArray(body.beats) || !body.beats.length || body.beats.some(beat => !Number.isSafeInteger(beat) || beat < 1)) {
+			throw failure('bad_request', '請選要重配的句號。');
+		}
+		const unitId = decodeURIComponent(renarrate[1]);
+		const itemId = decodeURIComponent(renarrate[2]);
+		const unit = await mockGet(endpoint(`/units/${renarrate[1]}`));
+		const item = unit.items.find(item => item.item === itemId);
+		if (!item || !['video', 'highlight'].includes(item.format) || !item.files.video) throw failure('bad_request', '這個項目還沒有可以重配的影片。');
+		if ([...jobs.values()].some(job => job.unitId === unitId && job.item === itemId && ['queued', 'running'].includes(progress(job).state))) {
+			throw failure('conflict', '這個項目正在製作，等完成後再重配。');
+		}
+		return { job_id: await createJob(unitId, itemId, item.format, [...new Set(body.beats)]) };
 	}
 	if (url.pathname === '/ask') {
 		return fixture(body.out_of_scope ? '/ask?out_of_scope' : '/ask');

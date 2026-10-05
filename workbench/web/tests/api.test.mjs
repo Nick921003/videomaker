@@ -45,6 +45,33 @@ test('建立教材後先維持未分析，分析工作完成才取得分析結�
 	});
 });
 
+test('重配完成品只跑 narrate/render、每兩秒前進並清掉指定句號 warning', async () => {
+	await withAPI('?mock=1', async api => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			const path = '/units/ff9e559208c9/items/q2/renarrate';
+			for (const beats of [[], [0], [1.5], ['3']]) await assert.rejects(api.post(path, { beats }));
+			const { job_id } = await api.post(path, { beats: [3] });
+			let job = await api.get(`/jobs/${job_id}`);
+			assert.equal(job.current, 'narrate');
+			assert.ok(job.steps.filter(step => !['narrate', 'render'].includes(step.id)).every(step => step.state === 'skipped'));
+			assert.deepEqual(job.warnings, []);
+			now += 2000;
+			assert.equal((await api.get(`/jobs/${job_id}`)).current, 'render');
+			now += 2000;
+			job = await api.get(`/jobs/${job_id}`);
+			assert.equal(job.state, 'done');
+			const item = (await api.get('/units/ff9e559208c9')).items.find(item => item.item === 'q2');
+			assert.equal(item.job_id, job_id);
+			assert.equal(item.status, 'done');
+			assert.deepEqual(item.warnings, []);
+			assert.ok(item.files.video);
+		} finally { Date.now = previousNow; }
+	});
+});
+
 test('上傳 PDF 僅提供摘要，確認整理後的工作才建立教材', async () => {
 	await withAPI('?mock=1', async api => {
 		const previousNow = Date.now;

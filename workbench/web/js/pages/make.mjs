@@ -2,6 +2,8 @@ import { api } from '../api.mjs';
 import { el, intro } from '../ui.mjs';
 import { renderMakeSource } from './make-source.mjs';
 import { renderMakeAnalysis } from './make-analysis.mjs';
+import { renderMakeGenerate } from './make-generate.mjs';
+import { renderMakeProducts } from './make-products.mjs';
 
 const STEPS = ['① 教材', '② 分析結果', '③ 生成', '④ 成品'];
 
@@ -51,16 +53,8 @@ export async function renderMake(route) {
 				return query;
 			} });
 	} else if (step === 2) content = renderMakeAnalysis(unit, { next: makeHash(3, { unit: query.unit, state: query.state }) });
-	else {
-		content = el('div', 'placeholder-region scroll-box');
-		const card = el('div', 'placeholder-card');
-		card.append(el('p', 'eyebrow', STEPS[step - 1]), el('h2', '', '下一步實作'),
-			el('p', 'placeholder-description', '這一步還在準備，教材與分析結果已經留好了。'));
-		const back = el('a', 'button', '回到分析結果');
-		back.href = makeHash(2, { unit: query.unit, state: query.state });
-		card.append(back);
-		content.append(card);
-	}
+	else if (step === 3) content = await renderMakeGenerate(unit, { query, onUnit: updateSteps });
+	else content = renderMakeProducts(unit, { query });
 	page.append(content);
 	page.mount = () => content.mount?.();
 	page.dispose = () => content.dispose?.();

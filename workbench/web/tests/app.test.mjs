@@ -84,13 +84,30 @@ test('外框實際載入總覽與路線圖，形式卡片能帶上焦點', async
 	});
 });
 
-test('素材庫、用量及製作③④仍為預留頁', async () => {
+test('素材庫、用量仍為預留頁', async () => {
 	await withApp(async (app, ids) => {
-		for (const route of ['make/3?unit=ff9e559208c9', 'make/4?unit=ff9e559208c9', 'library', 'usage']) {
+		for (const route of ['library', 'usage']) {
 			globalThis.location.hash = `#/${route}`;
 			await app.loadRoute();
 			assert.match(ids['page-host'].textContent, /下一步實作/);
 		}
+	});
+});
+
+test('外框已接上製作③生成與④成品並取代預留頁', async () => {
+	await withApp(async (app, ids) => {
+		globalThis.location.hash = '#/make/3?unit=ff9e559208c9';
+		await app.loadRoute();
+		assert.match(ids['page-host'].textContent, /這次要生成哪些？/);
+		assert.match(ids['page-host'].textContent, /製作佇列/);
+		assert.doesNotMatch(ids['page-host'].textContent, /下一步實作/);
+		globalThis.location.hash = '#/make/4?unit=ff9e559208c9';
+		await app.loadRoute();
+		assert.match(ids['page-host'].textContent, /每點影片.*重點片.*心智圖.*簡報/);
+		assert.equal(descendants(ids['page-host']).filter(node => node.tagName === 'video').length, 1);
+		assert.doesNotMatch(ids['page-host'].textContent, /下一步實作/);
+		globalThis.location.hash = '#/usage';
+		await app.loadRoute();
 	});
 });
 

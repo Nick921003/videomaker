@@ -7,3 +7,4 @@ import './app.test.mjs';
 import './diagram.test.mjs';
 import './panzoom.test.mjs';
 import './make.test.mjs';
+import './f4.test.mjs';
