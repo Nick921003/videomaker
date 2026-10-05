@@ -42,7 +42,7 @@ def estimate_usd(unit: UnitView, item: str) -> float:
 
 
 def commands(unit: UnitView, item: str) -> list[Command]:
-	return [Command("generate", [str(ROOT / "workbench/run_slides.py"), str(unit.dir)])]
+	return [Command("generate", [str(ROOT / "workbench/run_slides.py"), str(unit.dir), "--budget-usd", "0.50"])]
 
 
 def outputs(unit: UnitView, item: str) -> dict[str, str]:

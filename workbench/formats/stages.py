@@ -69,4 +69,5 @@ def analysis_commands(unit: UnitView) -> list[Command]:
 
 
 def ingest_commands(upload_dir, units_root) -> list[Command]:
-	return [Command("normalize", [str(ROOT / "workbench/run_normalize.py"), str(upload_dir), str(units_root)])]
+	return [Command("normalize", [str(ROOT / "workbench/run_normalize.py"), str(upload_dir), str(units_root),
+		"--budget-usd", "0.50"])]

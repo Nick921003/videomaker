@@ -250,14 +250,15 @@ class TestFormatCommands(unittest.TestCase):
 		])
 		self.assertEqual(stages.ingest_commands(self.unit.dir, self.unit.dir.parent), [
 			formats.Command("normalize", [str(ROOT / "workbench/run_normalize.py"),
-				str(self.unit.dir), str(self.unit.dir.parent)]),
+				str(self.unit.dir), str(self.unit.dir.parent), "--budget-usd", "0.50"]),
 		])
 
-	def test_mindmap_and_slides_use_future_runner_scripts(self):
+	def test_mindmap_and_slides_use_runner_scripts_with_unit_budget(self):
 		for fid in ("mindmap", "slides"):
 			with self.subTest(format=fid):
 				self.assertEqual(formats.get_format(fid).commands(self.unit, fid), [
-					formats.Command("generate", [str(ROOT / f"workbench/run_{fid}.py"), str(self.unit.dir)]),
+					formats.Command("generate", [str(ROOT / f"workbench/run_{fid}.py"), str(self.unit.dir),
+						"--budget-usd", "0.50"]),
 				])
 
 	def test_estimates(self):
