@@ -146,7 +146,8 @@
 			"files": {
 				"video": "q1/video.mp4"
 			},
-			"job_id": "mock-q1-done"
+			"job_id": "mock-q1-done",
+			"warnings": []
 		},
 		{
 			"item": "q2",
@@ -159,7 +160,13 @@
 			"files": {
 				"video": "q2/video.mp4"
 			},
-			"job_id": "mock-q2-done"
+			"job_id": "mock-q2-done",
+			"warnings": [
+				{
+					"code": "tts_missing",
+					"detail": "第 3 句"
+				}
+			]
 		},
 		{
 			"item": "q3",
@@ -172,7 +179,8 @@
 			"files": {
 				"video": "q3/video.mp4"
 			},
-			"job_id": "mock-q3-done"
+			"job_id": "mock-q3-done",
+			"warnings": []
 		},
 		{
 			"item": "q4",
@@ -183,7 +191,8 @@
 			"cost_usd": 0.035,
 			"duration": null,
 			"files": {},
-			"job_id": "mock-q4-failed"
+			"job_id": "mock-q4-failed",
+			"warnings": []
 		},
 		{
 			"item": "q5",
@@ -194,7 +203,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		},
 		{
 			"item": "highlight",
@@ -207,7 +217,8 @@
 			"files": {
 				"video": "highlight/video.mp4"
 			},
-			"job_id": "mock-highlight-done"
+			"job_id": "mock-highlight-done",
+			"warnings": []
 		},
 		{
 			"item": "mindmap",
@@ -220,7 +231,8 @@
 			"files": {
 				"svg": "mindmap/mindmap.svg"
 			},
-			"job_id": "mock-mindmap-done"
+			"job_id": "mock-mindmap-done",
+			"warnings": []
 		},
 		{
 			"item": "slides",
@@ -234,7 +246,8 @@
 				"deck": "slides/deck.json",
 				"pptx": "slides/deck.pptx"
 			},
-			"job_id": "mock-slides-done"
+			"job_id": "mock-slides-done",
+			"warnings": []
 		}
 	]
 }

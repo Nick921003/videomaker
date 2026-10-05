@@ -144,7 +144,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		},
 		{
 			"item": "q2",
@@ -155,7 +156,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		},
 		{
 			"item": "q3",
@@ -166,7 +168,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		},
 		{
 			"item": "q4",
@@ -177,7 +180,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		},
 		{
 			"item": "q5",
@@ -188,7 +192,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		},
 		{
 			"item": "highlight",
@@ -199,7 +204,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		},
 		{
 			"item": "mindmap",
@@ -210,7 +216,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		},
 		{
 			"item": "slides",
@@ -221,7 +228,8 @@
 			"cost_usd": null,
 			"duration": null,
 			"files": {},
-			"job_id": null
+			"job_id": null,
+			"warnings": []
 		}
 	]
 }

@@ -21,7 +21,7 @@ PLAYWRIGHT_PY = Path("~/.local/share/pipx/venvs/webwright/bin/python").expanduse
 MODEL = "google:gemini-3.8-flash"
 _JOB_ID = re.compile(r"[a-f0-9]{32}")
 _BUSY = re.compile(r"429|503|UNAVAILABLE|RESOURCE_EXHAUSTED|[Tt]ime ?out|timed out")
-_FIELDS = ("job_id", "unit_id", "item", "format", "state", "steps", "current", "log", "spent_usd", "error")
+_FIELDS = ("job_id", "unit_id", "item", "format", "state", "steps", "current", "log", "spent_usd", "error", "warnings")
 
 ERRORS = {
 	"gemini_busy": {"reason": "Gemini 暫時忙碌或連線中斷", "advice": "等 1–2 分鐘再按「重試」", "retry": True},
@@ -182,7 +182,7 @@ class JobQueue:
 			jid = uuid.uuid4().hex
 			job = {"job_id": jid, "unit_id": uid, "item": item, "format": fid, "state": "queued",
 				"steps": StepTracker(step["id"] for step in steps).states(), "current": None,
-				"log": [], "spent_usd": 0.0, "error": None, "created_at": datetime.now(timezone.utc).isoformat(),
+				"log": [], "spent_usd": 0.0, "error": None, "warnings": [], "created_at": datetime.now(timezone.utc).isoformat(),
 				"_global": uid is None, "_commands": commands}
 			self._save(job)
 			self.jobs[jid] = job
@@ -271,6 +271,7 @@ class JobQueue:
 						job["error"] = classify(None, "", [job["error"]])
 				job.setdefault("spent_usd", 0.0)
 				job.setdefault("error", None)
+				job.setdefault("warnings", [])
 				job.setdefault("log", [])
 				if not _valid_job(job):
 					continue

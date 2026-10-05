@@ -40,7 +40,8 @@
 			"@step repair"
 		],
 		"spent_usd": 0.035,
-		"error": null
+		"error": null,
+		"warnings": []
 	},
 	"queued": [
 		{
@@ -78,7 +79,8 @@
 			"current": null,
 			"log": [],
 			"spent_usd": 0,
-			"error": null
+			"error": null,
+			"warnings": []
 		}
 	]
 }

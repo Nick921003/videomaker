@@ -43,5 +43,6 @@
 		"reason": "Gemini 暫時忙碌或連線中斷",
 		"advice": "等 1–2 分鐘再按「重試」",
 		"retry": true
-	}
+	},
+	"warnings": []
 }

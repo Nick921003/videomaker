@@ -39,5 +39,6 @@
 		"@step repair"
 	],
 	"spent_usd": 0.035,
-	"error": null
+	"error": null,
+	"warnings": []
 }

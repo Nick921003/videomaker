@@ -46,6 +46,7 @@ SHAPES: dict[str, object] = {
 		"item": str, "format": str, "label": str, "status": _ITEM_STATUS,
 		"estimate_usd": _NUMBER, "cost_usd": (int, float, None),
 		"duration": (int, float, None), "files": _FILES, "job_id": (str, None),
+		"warnings": [{"code": str, "detail": str}],
 	},
 	"job_error": {"code": str, "reason": str, "advice": str, "retry": bool},
 	"usage": {
@@ -68,6 +69,7 @@ SHAPES["job"] = {
 	"job_id": str, "unit_id": (str, None), "item": str, "format": str, "state": _JOB_STATE,
 	"steps": [{"id": str, "state": _STEP_STATE}], "current": (str, None),
 	"log": [str], "spent_usd": _NUMBER, "error": (SHAPES["job_error"], None),
+	"warnings": [{"code": str, "detail": str}],
 }
 SHAPES["queue"] = {"running": (SHAPES["job"], None), "queued": [SHAPES["job"]]}
 
