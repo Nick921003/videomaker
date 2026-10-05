@@ -23,6 +23,8 @@ class TestMarkers(unittest.TestCase):
 			("@unit abc123", ("unit", "abc123")),
 			("@error budget 已花 US$0.50", ("error", "budget", "已花 US$0.50")),
 			("@error selftest", ("error", "selftest", "")),
+			("@warn tts_missing 第 3 句", ("warn", "tts_missing", "第 3 句")),
+			("@warn note", ("warn", "note", "")),
 			("ordinary output", None), ("prefix @step plan", None),
 			("@step", None), ("@step plan extra", None), ("@unit", None),
 			("@error", None), ("@other x", None)):
@@ -31,14 +33,14 @@ class TestMarkers(unittest.TestCase):
 
 	def test_classify_explicit_codes_and_retry_policy(self):
 		self.assertEqual(set(jobs.ERRORS), {"gemini_busy", "repair_exhausted", "quote_mismatch",
-			"tts_missing", "budget", "selftest", "too_large", "interrupted", "unknown"})
+			"budget", "selftest", "too_large", "interrupted", "unknown"})
 		for code in jobs.ERRORS:
 			with self.subTest(code=code):
 				error = jobs.classify(code, "第 2 句", ["one", "two", "three", "four"])
 				assert_shape(error, SHAPES["job_error"])
 				self.assertEqual(error["code"], code)
 				self.assertEqual(error["retry"], code not in {"budget", "selftest", "too_large"})
-		self.assertIn("第 2 句", jobs.classify("tts_missing", "第 2 句", [])["reason"])
+		self.assertEqual(jobs.classify("tts_missing", "第 2 句", [])["code"], "unknown")
 		self.assertIn("第一個；第二個", jobs.classify("repair_exhausted", "第一個；第二個", [])["reason"])
 
 	def test_classify_fallback_and_unknown_tail(self):
@@ -248,14 +250,31 @@ class TestJobQueue(unittest.TestCase):
 	def test_error_marker_stops_pipeline_even_with_legacy_zero_exit(self):
 		def runner(argv, on_line):
 			self.commands.append(argv)
-			on_line("@error tts_missing 第 1 句")
+			on_line("@error selftest 元件不正確")
 			return 0
 		queue = self.queue(runner)
 		jid = queue.enqueue_stage(self.uid, "analysis", [formats.Command("selftest", ["test.py"]), formats.Command("plan", ["test.py"])])
 		job = self.wait(queue, jid)
 		self.assertEqual(job["state"], "failed")
-		self.assertEqual(job["error"]["code"], "tts_missing")
+		self.assertEqual(job["error"]["code"], "selftest")
 		self.assertEqual(len(self.commands), 1)
+
+	def test_warnings_are_persisted_without_failing_and_legacy_marker_is_a_warning(self):
+		def runner(argv, on_line):
+			on_line("@warn tts_missing 第 3 句")
+			on_line("@warn note 可繼續")
+			on_line("@error tts_missing 第 5 句")
+			return 0
+		queue = self.queue(runner)
+		jid = queue.enqueue_stage(self.uid, "analysis", [formats.Command("plan", ["test.py"])])
+		job = self.wait(queue, jid)
+		self.assertEqual(job["state"], "done")
+		self.assertIsNone(job["error"])
+		self.assertEqual(job["warnings"], [{"code": "tts_missing", "detail": "第 3 句"},
+			{"code": "note", "detail": "可繼續"}, {"code": "tts_missing", "detail": "第 5 句"}])
+		queue.close()
+		restored = self.queue(self.fake)
+		self.assertEqual(restored.get(jid)["warnings"], job["warnings"])
 
 	def test_analysis_and_ingest_unit_marker_persistence(self):
 		queue = self.queue(self.fake)
@@ -315,7 +334,7 @@ class TestJobQueue(unittest.TestCase):
 			"steps": [{"id": "storyboard", "state": "failed"}], "current": "storyboard",
 			"log": [], "spent_usd": 0, "error": jobs.classify("budget", "", [])}
 		changes = ({"steps": [{"id": "storyboard", "state": "weird"}]}, {"log": [3]},
-			{"spent_usd": True}, {"error": {"code": "unknown"}}, {"item": None})
+			{"spent_usd": True}, {"error": {"code": "unknown"}}, {"item": None}, {"warnings": None}, {"warnings": [{"code": 1, "detail": "bad"}]})
 		for index, changed in enumerate(changes):
 			jid = f"{index:032x}"
 			write_json(self.directory / "jobs" / (jid + ".json"), {**base, **changed, "job_id": jid})
@@ -391,8 +410,9 @@ class TestCLIMarkers(unittest.TestCase):
 				patch.object(module, "print", wraps=print, create=True) as printed:
 				self.assertIsNone(module.main())
 			self.assertEqual(called.call_count, module.MAX_ROUNDS)
-			self.assertIn("@error tts_missing 第 1 句", output.getvalue())
-			marker = next(call for call in printed.call_args_list if str(call.args[0]).startswith("@error"))
+			self.assertIn("@warn tts_missing 第 1 句", output.getvalue())
+			self.assertNotIn("@error", output.getvalue())
+			marker = next(call for call in printed.call_args_list if str(call.args[0]).startswith("@warn"))
 			self.assertTrue(marker.kwargs["flush"])
 			self.assertTrue((voice / "master.wav").is_file())
 			self.assertTrue((voice / "timing.json").is_file())

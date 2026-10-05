@@ -20,10 +20,16 @@ DROP_RATIO = 0.25
 DIGITS = dict(zip("0123456789", "零一二三四五六七八九"))
 
 
+def comparison_text(text):
+	# 英文與識別字的數字不保證唸成中文；保留講稿已替換的符號唸法與中文。
+	text = re.sub(r"[A-Za-z_][A-Za-z0-9_]*(?:[.+:/-][A-Za-z0-9_]+)*", "", text)
+	return "".join(re.findall(r"[\u4e00-\u9fff]", "".join(DIGITS.get(c, c) for c in text)))
+
+
 def syllables(text):
-	"""每個中文字拆成（聲母, 韻母）。英文單字在旁白規則裡已禁止，只比中文。"""
+	"""每個中文音節拆成（聲母, 韻母）；英文與程式識別字不參與判定。"""
 	from pypinyin import Style, pinyin
-	han = "".join(re.findall(r"[\u4e00-\u9fff]", "".join(DIGITS.get(c, c) for c in text)))
+	han = comparison_text(text)
 	ini = [p[0] for p in pinyin(han, style=Style.INITIALS, strict=True)]
 	fin = [p[0] for p in pinyin(han, style=Style.FINALS, strict=True)]
 	return list(zip(ini, fin))
@@ -79,7 +85,7 @@ def judge(text, heard):
 		elif run:
 			runs.append((k - run, run))
 			run = 0
-	chars = re.findall(r"[\u4e00-\u9fff]", text)
+	chars = comparison_text(text)
 	missing = ["".join(chars[s:s + n]) for s, n in runs]
 	problems = []
 	if any(n >= DROP_RUN for _, n in runs):

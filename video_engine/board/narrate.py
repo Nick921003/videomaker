@@ -85,6 +85,7 @@ def main():
 	ap.add_argument("--tts", choices=["sovits", "gemini"], default="gemini", help="gemini＝Gemini TTS（預設，付費，記花費）；sovits＝本機王老師（免費，需要 :9880）")
 	ap.add_argument("--tts-model", default="gemini-3.8-flash-tts")
 	ap.add_argument("--voice", default="Charon", help="Gemini 內建聲音名稱")
+	ap.add_argument("--redo", default="", metavar="3,5", help="只重配指定句號（從 1 起），略過這幾句的快取")
 	ap.add_argument("--english", default="auto", metavar="PLAN_JSON|auto|off",
 		help="Gemini 專用：英文單字照原文唸（唸 say），只把程式符號（<=、-o、Ctrl+S）依 plan 詞彙表換成中文；auto＝找分鏡旁的 plan.json")
 	args = ap.parse_args()
@@ -104,6 +105,11 @@ def main():
 			cache = {r["digest"]: r for r in json.load(f)["beats"]}
 
 	beats = [(si, b) for si, s in enumerate(doc["scenes"]) for b in s["beats"]]
+	if args.redo and not re.fullmatch(r"[1-9]\d*(?:,[1-9]\d*)*", args.redo):
+		ap.error("--redo 必須是從 1 起的句號，例如 3,5")
+	redo = {int(value) for value in args.redo.split(",")} if args.redo else set()
+	if any(value > len(beats) for value in redo):
+		ap.error("--redo 的句號超過講稿句數")
 	plan_path = None
 	if gemini and args.english != "off":
 		plan_path = args.english
@@ -136,7 +142,7 @@ def main():
 		wav = os.path.join(audio_dir, f"{k:02d}_{digest}.wav")
 		meta[k] = (si, text, digest, wav)
 		hit = cache.get(digest)
-		if hit and os.path.exists(wav):
+		if hit and os.path.exists(wav) and k + 1 not in redo:
 			records[k] = {**hit, "scene": si, "wav": os.path.basename(wav)}
 			print(f"[{k + 1}/{len(beats)}] 快取 {text}")
 			if not hit.get("asr"):
@@ -175,7 +181,7 @@ def main():
 	records = [{**r, "ok": r["ok"] and r.get("asr", {}).get("ok", False)} for r in records]
 	for k, rec in enumerate(records):
 		if rec.get("asr", {}).get("missing"):
-			print(f"@error tts_missing 第 {k + 1} 句", flush=True)
+			print(f"@warn tts_missing 第 {k + 1} 句", flush=True)
 
 	# 接成一條：開頭留白、句間停頓、換場多停一點，跟 compile.py 估時的節奏一致
 	pieces, timing, t, sr, prev_scene = [], [], 0.0, None, 0

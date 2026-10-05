@@ -96,3 +96,19 @@ class Library:
 
 	def path(self, uid, relative) -> Path:
 		return safe_path(self.unit_dir(uid), relative)
+
+	def write_manifest(self, uid, items) -> dict:
+		meta = self.meta(uid)
+		products = []
+		for item in items:
+			if item["status"] != "done":
+				continue
+			files = item["files"]
+			created = max((self.path(uid, relative).stat().st_mtime for relative in files.values()), default=None)
+			products.append({key: item[key] for key in ("item", "format", "label", "files", "duration", "cost_usd")})
+			products[-1].update(embed_url=f"/embed/{uid}/{item['item']}",
+				created_at=datetime.fromtimestamp(created, timezone.utc).isoformat() if created is not None else meta["created_at"])
+		manifest = {"unit_id": uid, "title": meta["title"],
+			"source_ref": meta.get("source_ref") if isinstance(meta.get("source_ref"), dict) else None, "products": products}
+		write_json(self.path(uid, "manifest.json"), manifest)
+		return manifest

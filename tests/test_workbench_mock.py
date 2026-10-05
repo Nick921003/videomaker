@@ -157,7 +157,7 @@ class TestShapeChecker(unittest.TestCase):
 
 class TestWorkbenchMocks(unittest.TestCase):
 	def test_mock_inventory(self):
-		self.assertEqual({path.name for path in MOCK_DIR.iterdir()},
+		self.assertEqual({path.name for path in MOCK_DIR.iterdir()} - {"preview.mp4", "preview.pptx"},
 			set(JSON_SHAPES) | {"deck.json", "mindmap.svg"})
 
 	def test_api_json_shapes(self):

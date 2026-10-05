@@ -167,18 +167,18 @@ class TestServerLibraryPaths(unittest.TestCase):
 				finally:
 					studio.close()
 
-	def test_pipeline_path_escape_keeps_404_error(self):
+	def test_static_path_escape_keeps_404_error(self):
 		with tempfile.TemporaryDirectory() as temporary:
 			root = Path(temporary)
-			static = root / "studio"
+			static = root / "web"
 			static.mkdir()
-			outside = root / "pipelines.json"
+			outside = root / "outside.mjs"
 			write_json(outside, {"formats": []})
-			(static / "pipelines.json").symlink_to(outside)
+			(static / "app.mjs").symlink_to(outside)
 			handler = object.__new__(server.StudioHandler)
-			handler.server = SimpleNamespace(studio=None, studio_dir=static)
+			handler.server = SimpleNamespace(studio=None, web_dir=static)
 			handler.command = "GET"
-			handler.path = "/api/pipelines"
+			handler.path = "/web/app.mjs"
 			with self.assertRaises(server.APIError) as error:
 				handler._dispatch()
 			self.assertEqual(error.exception.status, 404)
@@ -193,7 +193,7 @@ class TestServerLibraryPaths(unittest.TestCase):
 				outside = root / "plan.json"
 				write_json(outside, {"stories": [{"id": "q1"}]})
 				path.symlink_to(outside)
-				for read in (lambda: studio.get_unit(uid), lambda: studio.enqueue_videos(uid, {"stories": ["q1"]})):
+				for read in (lambda: studio.get_unit(uid), lambda: studio.enqueue_generate(uid, {"items": ["q1"]})):
 					with self.assertRaises(server.APIError) as error:
 						read()
 					self.assertEqual(error.exception.status, 404)

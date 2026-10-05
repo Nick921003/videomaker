@@ -27,12 +27,14 @@ ERRORS = {
 	"gemini_busy": {"reason": "Gemini 暫時忙碌或連線中斷", "advice": "等 1–2 分鐘再按「重試」", "retry": True},
 	"repair_exhausted": {"reason": "分鏡還有問題（{detail}）", "advice": "重試會從失敗草稿接著修，約 US$0.01", "retry": True},
 	"quote_mismatch": {"reason": "AI 引用的句子在教材裡找不到", "advice": "重試，約 US$0.005", "retry": True},
-	"tts_missing": {"reason": "{detail}配音一直漏字", "advice": "重試；仍失敗就改寫那一句", "retry": True},
 	"budget": {"reason": "這份教材已花到上限 US$0.50", "advice": "少選幾點或提高上限", "retry": False},
 	"selftest": {"reason": "元件檢查沒過，為了不浪費錢沒有呼叫 AI", "advice": "回報開發者", "retry": False},
 	"too_large": {"reason": "超過 5 MB／30 頁／6 萬字", "advice": "拆小再上傳", "retry": False},
 	"interrupted": {"reason": "伺服器重啟，工作中斷", "advice": "重試", "retry": True},
 	"unknown": {"reason": "{detail}", "advice": "重試或回報", "retry": True},
+}
+WARNINGS = {
+	"tts_missing": {"reason": "{detail}可能漏唸（檢查也可能誤判）", "advice": "點進去聽；需要就按「重配這句」"},
 }
 
 
@@ -40,8 +42,8 @@ def parse_marker(line):
 	parts = line.rstrip("\r\n").split(maxsplit=2)
 	if len(parts) == 2 and parts[0] in ("@step", "@unit"):
 		return parts[0][1:], parts[1]
-	if len(parts) >= 2 and parts[0] == "@error":
-		return "error", parts[1], parts[2] if len(parts) == 3 else ""
+	if len(parts) >= 2 and parts[0] in ("@error", "@warn"):
+		return parts[0][1:], parts[1], parts[2] if len(parts) == 3 else ""
 	return None
 
 
@@ -53,8 +55,6 @@ def classify(code, detail, log_tail):
 		code = "unknown"
 	if code == "unknown":
 		detail = "\n".join(lines[-3:]) or detail or "（無工作紀錄）"
-	elif code == "tts_missing" and not detail:
-		detail = "第 X 句"
 	return {"code": code, **ERRORS[code], "reason": ERRORS[code]["reason"].format(detail=detail)}
 
 
@@ -137,17 +137,21 @@ def _valid_job(job):
 		or type(step.get("id")) is not str or step.get("state") not in ("pending", "running", "done", "failed", "skipped")
 		for step in job["steps"]):
 		return False
+	if not isinstance(job["warnings"], list) or any(not isinstance(warning, dict)
+		or any(type(warning.get(key)) is not str for key in ("code", "detail")) for warning in job["warnings"]):
+		return False
 	error = job["error"]
 	return error is None or (isinstance(error, dict) and type(error.get("retry")) is bool
 		and all(type(error.get(key)) is str for key in ("code", "reason", "advice")))
 
 
 class JobQueue:
-	def __init__(self, library, runner=None, formats_mod=None, tts_mode="gemini"):
+	def __init__(self, library, runner=None, formats_mod=None, tts_mode="gemini", on_success=None):
 		self.library = library
 		self.runner = runner or run_command
 		self.formats = formats_mod or formats
 		self.tts_mode = tts_mode
+		self.on_success = on_success
 		self.lock = threading.RLock()
 		self.jobs = {}
 		self.pending = queue.Queue()
@@ -174,6 +178,12 @@ class JobQueue:
 			self.library.unit_dir(uid_or_None)
 		stored = [{"step": cmd.step, "argv": list(map(str, cmd.argv)), "python": cmd.python} for cmd in commands]
 		return self._enqueue(uid_or_None, stage_id, stage_id, stage["steps"], stored)
+
+	def enqueue_commands(self, uid, item, commands):
+		fid = self.formats.item_format(self.library.plan(uid), item)
+		module = self.formats.get_format(fid)
+		stored = [{"step": cmd.step, "argv": list(map(str, cmd.argv)), "python": cmd.python} for cmd in commands]
+		return self._enqueue(uid, item, fid, module.FORMAT["steps"], stored)
 
 	def _enqueue(self, uid, item, fid, steps, commands=None):
 		with self.lock:
@@ -238,6 +248,8 @@ class JobQueue:
 					raise ValueError("工作缺少原始執行指令")
 				return self.enqueue_stage(None if job.get("_global") else job["unit_id"], job["format"],
 					[formats.Command(**cmd) for cmd in commands])
+			if job.get("_commands") is not None:
+				return self.enqueue_commands(job["unit_id"], job["item"], [formats.Command(**cmd) for cmd in job["_commands"]])
 			return self.enqueue(job["unit_id"], job["item"])
 
 	def _restore(self):
@@ -305,6 +317,8 @@ class JobQueue:
 				if marker:
 					if marker[0] == "step":
 						tracker.enter(marker[1])
+					elif marker[0] == "warn" or (marker[0] == "error" and marker[1] == "tts_missing"):
+						job["warnings"].append({"code": marker[1], "detail": marker[2]})
 					elif marker[0] == "error":
 						job["_error"] = marker[1:]
 						job["error"] = classify(*marker[1:], job["log"])
@@ -375,8 +389,13 @@ class JobQueue:
 						job.update(state="done" if ok else "failed", steps=tracker.states(), current=tracker.current)
 						try:
 							job["spent_usd"] = self._spent(job)
-							self._save(job)
+							if ok and self.on_success is not None:
+								self.on_success(deepcopy(job))
+						except Exception as error:
+							job["log"] = [*job["log"], str(error)][-40:]
+							job.update(state="failed", error=classify(None, "", job["log"]))
 						finally:
+							self._save(job)
 							self._running = None
 			finally:
 				self.pending.task_done()
