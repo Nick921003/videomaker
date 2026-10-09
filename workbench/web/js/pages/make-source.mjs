@@ -10,9 +10,16 @@ export function paginateUnits(units, page = 0) {
 	return { items: units.slice(page * 6, page * 6 + 6), page, pages };
 }
 
+export const ACCEPTED_KINDS = ['md', 'txt', 'pdf', 'pptx', 'docx', 'xlsx', 'csv', 'png', 'jpg', 'jpeg'];
+
 export function sourceKind(name) {
 	const extension = String(name).match(/\.([^.]+)$/)?.[1].toLowerCase();
-	return ['md', 'txt', 'pdf', 'pptx'].includes(extension) ? extension : null;
+	return ACCEPTED_KINDS.includes(extension) ? extension : null;
+}
+
+export function decodeUtf8(buffer) {
+	try { return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(buffer); }
+	catch { throw new Error('文字編碼讀不到，請另存 UTF-8 後重新加入。'); }
 }
 
 function button(label, className = '') {
@@ -46,9 +53,9 @@ export async function renderMakeSource({ unit, query = {}, notice = '', onUnit }
 	const fileLabel = el('label', 'source-file-label', '選一份教材');
 	const fileInput = el('input', 'source-file');
 	fileInput.type = 'file';
-	fileInput.accept = '.md,.txt,.pdf,.pptx';
+	fileInput.accept = '.md,.txt,.pdf,.pptx,.docx,.xlsx,.csv,.png,.jpg,.jpeg';
 	fileLabel.append(fileInput);
-	const uploadNote = el('p', 'section-note', 'MD、TXT 直接讀取；PDF、PPTX 先看摘要，再確認整理。');
+	const uploadNote = el('p', 'section-note', 'MD、TXT 直接讀取；PDF、PPTX、DOCX、XLSX、CSV 與圖片先看摘要，再確認整理。');
 	const preview = el('div', 'upload-preview scroll-box');
 	preview.hidden = true;
 	panels[0].append(fileLabel, uploadNote, preview);
@@ -74,6 +81,10 @@ export async function renderMakeSource({ unit, query = {}, notice = '', onUnit }
 	const selectedCard = el('section', 'make-card source-selected');
 	const summary = el('div', 'source-summary');
 	const analyze = button('開始分析（約 US$0.015）', 'button-primary');
+	const review = button('核對教材', 'button-primary');
+	review.hidden = true;
+	const reviewPanel = el('section', 'source-review make-card');
+	reviewPanel.hidden = true;
 	const status = el('div', 'source-status scroll-box');
 	status.setAttribute('role', 'status');
 	status.setAttribute('aria-live', 'polite');
@@ -89,7 +100,7 @@ export async function renderMakeSource({ unit, query = {}, notice = '', onUnit }
 	toolbar.append(minus, plus, fit, fullscreen);
 	const viewport = el('div', 'pipeline-viewport source-diagram');
 	progress.append(toolbar, viewport);
-	selectedCard.append(summary, analyze, status, progress);
+	selectedCard.append(summary, analyze, review, reviewPanel, status, progress);
 	content.append(inputCard, selectedCard);
 	let selected = unit;
 	let selectedQuery = { ...query };
@@ -102,11 +113,14 @@ export async function renderMakeSource({ unit, query = {}, notice = '', onUnit }
 	let svg;
 	let pageIndex = 0;
 	let drawnStage;
-	const inputs = [fileInput, titleInput, textarea, save, analyze, previous, next, ...tabButtons];
+	let correctionSource = null;
+	const inputs = [fileInput, titleInput, textarea, save, analyze, review, previous, next, ...tabButtons];
 	function refresh() {
 		summary.replaceChildren(el('p', 'eyebrow', '這次要做的教材'), el('h2', '', selected?.title ?? '先選一份教材'),
-			el('p', 'section-note', selected ? selected.analysis ? `已分析 · ${selected.analysis.points.length} 個問題，可以直接看分析結果。` : '教材準備好了，接著分析學生的問題。' : '上傳、貼上，或挑一份素材庫裡的教材。'));
-		analyze.disabled = busy || !selected;
+			el('p', 'section-note', selected ? selected.normalization_attention ? '先對照原檔核對內容，再開始分析。' : selected.analysis ? `已分析 · ${selected.analysis.points.length} 個問題，可以直接看分析結果。` : '教材準備好了，接著分析學生的問題。' : '上傳、貼上，或挑一份素材庫裡的教材。'));
+		analyze.disabled = busy || !selected || Boolean(selected.normalization_attention);
+		review.hidden = !selected?.normalization_attention;
+		review.disabled = busy || !selected;
 		analyze.textContent = selected?.analysis ? '查看分析結果 →' : '開始分析（約 US$0.015）';
 	}
 	function setBusy(value) {
@@ -154,16 +168,17 @@ export async function renderMakeSource({ unit, query = {}, notice = '', onUnit }
 		const nextUnit = await api.get(`/units/${encodeURIComponent(id)}${suffix}`);
 		if (disposed) return;
 		selected = nextUnit;
+		reviewPanel.hidden = true;
 		selectedQuery = onUnit(nextUnit, { preserveState });
 		progress.hidden = true;
 		refresh();
 		announce('教材準備好了。');
 	}
-	async function saveMarkdown(markdown, title) {
+	async function saveMarkdown(markdown, title, kind = null) {
 		if (!markdown.trim()) throw new Error('先放入教材文字。');
 		announce('正在讀取教材⋯');
-		const result = await api.post('/units', { markdown, ...(title.trim() ? { title: title.trim() } : {}) });
-		if (!disposed) await choose(result.unit_id);
+		const result = await api.post('/units', { markdown, ...(!kind && correctionSource ? { source_ref: correctionSource } : {}), ...(kind ? { source_kind: kind } : {}), ...(title.trim() ? { title: title.trim() } : {}) });
+		if (!disposed) { await choose(result.unit_id); correctionSource = null; }
 	}
 	function mountDiagram() {
 		if (!mounted || !svg || controls) return;
@@ -243,17 +258,19 @@ export async function renderMakeSource({ unit, query = {}, notice = '', onUnit }
 		if (!file) return;
 		preview.hidden = true;
 		const kind = sourceKind(file.name);
-		if (!kind) throw new Error('請選 MD、TXT、PDF 或 PPTX 教材。');
+		if (!kind) throw new Error('請選 PDF、PPTX、DOCX、XLSX、CSV、MD、TXT、PNG 或 JPEG 教材。');
 		if (file.size > 5 * 1024 * 1024) throw Object.assign(new Error('檔案超過 5 MB。'), { advice: '拆小再上傳。' });
 		if (kind === 'md' || kind === 'txt') {
-			const markdown = await new Promise((resolve, reject) => {
+			const markdown = typeof file.arrayBuffer === 'function'
+				? decodeUtf8(await file.arrayBuffer())
+				: await new Promise((resolve, reject) => {
 				reader = new FileReader();
 				reader.onload = () => resolve(String(reader.result));
 				reader.onerror = () => reject(new Error('檔案讀不到，請重新選取。'));
 				reader.onabort = () => reject(new Error('檔案讀取已取消。'));
 				reader.readAsText(file);
 			});
-			if (!disposed) await saveMarkdown(markdown, file.name.replace(/\.[^.]+$/, ''));
+			if (!disposed) await saveMarkdown(markdown, file.name.replace(/\.[^.]+$/, ''), kind);
 		} else {
 			announce('正在抽取文字，先看看教材摘要⋯');
 			const body = new FormData();
@@ -273,6 +290,51 @@ export async function renderMakeSource({ unit, query = {}, notice = '', onUnit }
 			}));
 			announce('摘要準備好了，確認整理後才會建立教材。');
 		}
+	}));
+	review.addEventListener('click', () => run(async () => {
+		const uid = selected.unit_id;
+		const material = await api.get(`/units/${encodeURIComponent(uid)}/material`);
+		if (disposed || selected?.unit_id !== uid) return;
+		reviewPanel.hidden = false;
+		const draft = el('textarea', 'source-textarea');
+		draft.value = material.markdown;
+		draft.readOnly = true;
+		draft.setAttribute('aria-label', '待核對教材內容');
+		const sources = el('div', 'source-review-files');
+		for (const source of material.sources) {
+			const link = el('a', 'button', `原檔 · ${source.name ?? source.kind.toUpperCase()}`);
+			link.href = `/media/${encodeURIComponent(uid)}/${source.path.split('/').map(encodeURIComponent).join('/')}`;
+			link.target = '_blank';
+			link.rel = 'noopener';
+			sources.append(link);
+		}
+		const label = el('label', 'source-review-confirm');
+		const checked = el('input');
+		checked.type = 'checkbox';
+		label.append(checked, el('span', '', '已對照原檔確認內容'));
+		const confirm = button('確認並繼續', 'button-primary');
+		confirm.disabled = true;
+		checked.addEventListener('change', () => { confirm.disabled = !checked.checked; });
+		confirm.addEventListener('click', () => run(async () => {
+			if (!checked.checked || selected?.unit_id !== uid) return;
+			confirm.disabled = true;
+			try {
+				await api.post(`/units/${encodeURIComponent(uid)}/review`, { confirmed: true, content_version: material.content_version });
+				if (disposed) return;
+				reviewPanel.hidden = true;
+				await choose(uid);
+				announce('核對已保存，可以開始分析。');
+			} finally { confirm.disabled = !checked.checked; }
+		}));
+		const correct = button('修改內容');
+		correct.addEventListener('click', () => {
+			textarea.value = material.markdown;
+			correctionSource = { unit_id: uid, content_version: material.content_version };
+			titleInput.value = selected.title;
+			tabButtons[1].dispatchEvent(new Event('click'));
+			textarea.focus();
+		});
+		reviewPanel.replaceChildren(el('h3', '', '核對教材'), sources, draft, label, confirm, correct);
 	}));
 	analyze.addEventListener('click', () => run(async () => {
 		if (selected.analysis) { go('make', 2, selectedQuery); return; }

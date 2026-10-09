@@ -161,6 +161,8 @@ def _validate(data, raw_text, expected_pages, has_visual):
             quotes = matched_quotes
         if not clean.strip() and not visuals:
             raise NormalizationError("AI 整理結果缺少可用內容")
+        if has_visual and visuals and not quotes:
+            doubts.append("圖片頁內容無法逐字對回抽取稿，請核對原圖。")
         result.append((expected, clean.strip(), quotes, visuals, doubts))
     return data["title"].strip()[:200], result, needs_review
 
@@ -172,7 +174,7 @@ def check_normalization_limits(extracted, ext):
     return pages
 
 
-def normalize_material(record, runner=None):
+def normalize_material(record, runner=None, *, on_pages=None):
     """回傳 (markdown, usage)。runner 可注入 mock，正式執行才連模型。"""
     extracted = Path(record.material_path).read_text(encoding="utf-8")
     ext = Path(record.original_name).suffix.lower()
@@ -180,6 +182,9 @@ def normalize_material(record, runner=None):
     pdf_bytes = None
     if ext == ".pdf":
         pdf_bytes = Path(record.raw_path).read_bytes()
+    elif ext in (".png", ".jpg", ".jpeg"):
+        from workbench.source_document import image_pdf
+        pdf_bytes = image_pdf(record.raw_path)
     elif ext == ".pptx" and _pptx_has_visuals(record.raw_path):
         pdf_bytes = _pptx_as_pdf(record.raw_path)
     if pdf_bytes is not None and len(pdf_bytes) > MAX_VISUAL_BYTES:
@@ -192,6 +197,11 @@ def normalize_material(record, runner=None):
     else:
         data, usage = complete_ingest_text_json(SYSTEM, request)
     title, content, needs_review = _validate(data, extracted, pages, pdf_bytes is not None)
+    if ext not in (".pdf", ".pptx") and "待核對：" in extracted:
+        content[0][4].append("原文件含未抽取的視覺或附加內容，請對照原檔。")
+    if on_pages is not None:
+        on_pages([dict(zip(("page", "clean_text", "verified_quotes", "visual_notes", "uncertainties"), item))
+                  for item in content])
     lines = [f"# {title or Path(record.original_name).stem}", ""]
     for number, clean, quotes, visuals, doubts in content:
         lines.extend([f"## 第 {number} 頁", clean, ""])

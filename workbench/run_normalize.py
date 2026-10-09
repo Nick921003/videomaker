@@ -10,10 +10,11 @@ if __package__ in (None, ""):
 os.environ.setdefault("VIDEO_ENGINE_LLM", "google:gemini-3.8-flash")
 
 from studio.material_normalizer import NormalizationError, check_normalization_limits, normalize_material
-from video_engine.ingest import extract_text
+from workbench.source_document import KINDS, extract_document as extract_text
 from video_engine.usage import UsageLedger
 from workbench._runner import append_usage, arguments, captured, failure, guard_budget, marker
-from workbench.library import Library, read_json, safe_path
+from workbench.library import Library, read_json, safe_path, write_json
+from workbench.material import attach_source
 
 
 def main(argv, runner=None) -> int:
@@ -28,7 +29,7 @@ def main(argv, runner=None) -> int:
 			raise ValueError("上傳資料格式不正確")
 		filename, kind, title = (metadata.get(key) for key in ("filename", "kind", "title"))
 		if (not isinstance(filename, str) or not filename or Path(filename).name != filename or "\\" in filename or
-			kind not in ("pdf", "pptx") or Path(filename).suffix.lower() != "." + kind or
+			kind not in KINDS or Path(filename).suffix.lower() != "." + kind or
 			(title is not None and not isinstance(title, str))):
 			raise ValueError("上傳資料格式不正確")
 		raw_path = safe_path(directory, filename)
@@ -50,10 +51,20 @@ def main(argv, runner=None) -> int:
 				provider="google", model=os.environ.get("STUDIO_INGEST_MODEL", "gemini-3.8-flash"))
 			return captured(ledger, directory, "ingest", "normalize", runner, system, user, pdf_bytes)
 		marker("step", "normalize")
-		markdown, _ = normalize_material(record, complete)
+		pages = []
+		markdown, normalization_usage = normalize_material(record, complete, on_pages=pages.extend)
 		library = Library(Path(args.units_root))
-		uid, _ = library.create_unit(markdown, title, source_kind=kind)
+		uid, _ = library.create_unit(markdown, title, source_kind=kind, persist_plaintext=False)
+		attach_source(library, uid, raw_path, kind, extracted, pages)
+		attention = normalization_usage.get("normalization_attention")
+		if not attention and "\n待核對：\n" in markdown:
+			attention = "整理內容有待核對項目，請先對照原稿。"
+		if attention:
+			# 核對狀態需隨教材保存，不能在轉成 Markdown 後被丟棄。
+			write_json(library.path(uid, "normalization.json"), {"requires_review": True, "attention": attention})
 		append_usage(library.unit_dir(uid), ledger.summary()["calls"], "ingest", "normalize")
+		if attention:
+			marker("warn", "normalization_review", attention)
 		marker("unit", uid)
 		return 0
 	except Exception as exc:

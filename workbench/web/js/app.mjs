@@ -1,44 +1,21 @@
 import { parseRoute } from './router.mjs';
 import { api } from './api.mjs';
-import { el, icon, intro } from './ui.mjs';
+import { el } from './ui.mjs';
+import { initRail } from './navigation.mjs';
 import { renderOverview } from './pages/overview.mjs';
 import { renderRoadmap } from './pages/roadmap.mjs';
 import { renderPipelines } from './pages/pipelines.mjs';
 import { renderMake } from './pages/make.mjs';
+import { renderLibrary } from './pages/library.mjs';
+import { renderUsage } from './pages/usage.mjs';
 
 const PAGE_NAMES = {
 	overview: '總覽', make: '製作', pipelines: '流程架構',
 	library: '素材庫', usage: '用量', roadmap: '路線圖',
 };
-const PLACEHOLDERS = {
-	library: '把完成的素材收在一起，讓學生用問題找到答案。',
-	usage: '看看每份教材、每件成品，實際花了多少。',
-};
 let renderVersion = 0;
 let pollingQueue = false;
 let activePage = null;
-
-function placeholder(route) {
-	const page = el('section', 'page placeholder-page');
-	const title = PAGE_NAMES[route.page];
-	page.append(intro('一份教材，慢慢做清楚', title, PLACEHOLDERS[route.page]));
-	const region = el('div', 'placeholder-region scroll-box');
-	const card = el('div', 'placeholder-card');
-	const mark = el('div', 'placeholder-mark');
-	mark.append(icon('planned'));
-	card.append(mark, el('p', 'eyebrow', '準備中'), el('h2', '', '下一步實作'),
-		el('p', 'placeholder-description', '這一頁還在準備。先看看可用的形式，或接下來想做的事。'));
-	const actions = el('div', 'placeholder-actions');
-	const overview = el('a', 'button button-primary', '回到總覽');
-	overview.href = '#/overview';
-	const roadmap = el('a', 'button', '看看路線圖');
-	roadmap.href = '#/roadmap';
-	actions.append(overview, roadmap);
-	card.append(actions);
-	region.append(card);
-	page.append(region);
-	return page;
-}
 
 function message(title, text, advice = '') {
 	const panel = el('section', 'message-panel scroll-box');
@@ -69,7 +46,8 @@ export async function loadRoute() {
 		const page = route.page === 'overview' ? await renderOverview()
 			: route.page === 'roadmap' ? await renderRoadmap()
 				: route.page === 'pipelines' ? await renderPipelines(route.query)
-					: route.page === 'make' ? await renderMake(route) : placeholder(route);
+					: route.page === 'make' ? await renderMake(route)
+						: route.page === 'library' ? await renderLibrary() : await renderUsage();
 		// 舊頁請求晚回來時，保留使用者剛切換的頁面。
 		if (version === renderVersion) {
 			host.replaceChildren(page);
@@ -100,6 +78,7 @@ export async function pollQueueDot() {
 		dot.hidden = !busy;
 		const status = document.getElementById('queue-status');
 		if (status) status.textContent = busy ? '有工作正在製作或排隊' : '';
+		document.dispatchEvent(new CustomEvent('workbench:queue', { detail: queue }));
 	} catch {
 		// 短暫斷線時沿用上次狀態，下次輪詢再更新。
 	} finally {
@@ -108,6 +87,7 @@ export async function pollQueueDot() {
 }
 
 function start() {
+	initRail();
 	document.getElementById('brand-mock-badge').hidden = !api.MOCK;
 	document.getElementById('skip-link').addEventListener('click', event => {
 		event.preventDefault();

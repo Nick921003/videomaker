@@ -15,6 +15,7 @@ from studio.pptx_export import export_pptx
 from video_engine.usage import UsageLedger
 from workbench._runner import arguments, captured, failure, guard_budget, marker
 from workbench.library import safe_path, write_json
+from workbench.material import generation_material, source_context, provenance
 
 
 def main(argv, complete_json=None) -> int:
@@ -23,7 +24,10 @@ def main(argv, complete_json=None) -> int:
 	directory = Path(args.unit_dir).resolve()
 	ledger = UsageLedger()
 	try:
-		material = safe_path(directory, "material.md").read_text(encoding="utf-8")
+		try:
+			material, source_data = generation_material(directory)
+		except (ValueError, OSError) as exc:
+			raise DeckError(str(exc)) from exc
 		if complete_json is None:
 			from video_engine.llm import complete_json as complete
 			complete_json = partial(complete, stage="deck")
@@ -33,11 +37,12 @@ def main(argv, complete_json=None) -> int:
 			marker("step", "validate")
 			return result
 		marker("step", "generate")
-		deck = build_deck(material, "把這份教材做成線上簡報", cj)
+		deck = build_deck(material, "把這份教材做成線上簡報", cj, source_context=source_context(source_data))
 		marker("step", "export")
 		pptx = export_pptx(deck)
 		write_json(safe_path(directory, "slides/deck.json"), deck)
 		safe_path(directory, "slides/deck.pptx").write_bytes(pptx)
+		write_json(safe_path(directory, "slides/source.json"), provenance(source_data))
 		return 0
 	except Exception as exc:
 		return failure(exc, DeckError)

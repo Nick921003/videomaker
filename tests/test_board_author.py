@@ -372,3 +372,48 @@ class TestAiTone(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+class TestBoardCommonMaterial(unittest.TestCase):
+	def test_workbench_plan_receives_context_and_records_source_version(self):
+		from pathlib import Path
+		from workbench.library import Library, read_json
+		with tempfile.TemporaryDirectory() as root:
+			library = Library(Path(root) / "units")
+			uid, _ = library.create_unit(MD)
+			directory = library.unit_dir(uid)
+			plan = {"stories": [], "highlight": {}}
+			def complete(budget, stage, system, user, validate, **kwargs):
+				self.assertIn("來源定位", user)
+				self.assertIn(library.material(uid)["content_version"], user)
+				return plan, 0
+			with redirect_stdout(io.StringIO()), patch.object(BA, "converse", side_effect=complete):
+				BA.do_plan(str(directory / "material.md"), str(directory), None)
+			self.assertEqual(read_json(directory / "plan.source.json")["content_version"], library.material(uid)["content_version"])
+
+	def test_unreviewed_workbench_material_refused_before_plan_model(self):
+		from pathlib import Path
+		from workbench.library import Library
+		with tempfile.TemporaryDirectory() as root:
+			library = Library(Path(root) / "units")
+			uid, _ = library.create_unit("# 教材\n待核對：\n- 未確認\n")
+			directory = library.unit_dir(uid)
+			with patch.object(BA, "converse") as model:
+				with self.assertRaises(ValueError):
+					BA.do_plan(str(directory / "material.md"), str(directory), None)
+				model.assert_not_called()
+
+
+	def test_direct_scene_refuses_stale_plan_before_model(self):
+		from pathlib import Path
+		from workbench.library import Library, write_json
+		with tempfile.TemporaryDirectory() as root:
+			library = Library(Path(root) / "units")
+			uid, _ = library.create_unit(MD)
+			directory = library.unit_dir(uid)
+			write_json(directory / "plan.json", {"stories": [{"id": "q1"}]})
+			write_json(directory / "plan.source.json", {"schema_version": 1, "content_version": "outdated", "source_ids": []})
+			with patch.object(BA, "converse") as model:
+				with self.assertRaises(ValueError):
+					BA.do_scene(str(directory / "material.md"), str(directory), "q1", None)
+				model.assert_not_called()

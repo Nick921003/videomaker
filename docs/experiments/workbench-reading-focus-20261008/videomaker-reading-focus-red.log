@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: 重點搜尋涵蓋標題與其他問法，空結果不顯示舊詳情，清除後可重新選取
+not ok 1 - 重點搜尋涵蓋標題與其他問法，空結果不顯示舊詳情，清除後可重新選取
+  ---
+  duration_ms: 7.519945
+  type: 'test'
+  location: '/home/pjw92/projects/videomaker/workbench/web/tests/reading-focus.test.mjs:9:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input was expected to not match the regular expression /不涵蓋|指標與動態記憶體配置/. Input:
+
+    '涵蓋for 迴圈的順序邊界條件while 與 for無限迴圈巢狀迴圈不涵蓋指標與動態記憶體配置遞迴Python 語法學生會問的 5 個問題01for 迴圈每一圈做了什麼？60 秒尚未生成02為什麼我的迴圈多跑一次？75 秒尚未生成03while 和 for 怎麼選？65 秒尚未生成04迴圈為什麼停不下來？70 秒尚未生成05巢狀迴圈怎麼數次數？80 秒尚未生成第 1 點 · 每一圈的過程建議 60 秒for 迴圈每一圈做了什麼？也會這樣問for 的執行順序是什麼？更新變數是在什麼時候？必演畫面逐圈標出條件、本體、更新變數的順序，並顯示目前變數值。學習目標目標 1詞彙表 · 5 個詞forforwhilewhile<小於<=小於等於ii建議重點片 · 200 秒第 1 點 · 每一圈的過程第 2 點 · 多跑一次的原因第 3 點 · while 和 for 的選擇先看每圈順序，再找邊界差異，最後選擇適合的迴圈形式。下一步：選要生成的 →'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: '涵蓋for 迴圈的順序邊界條件while 與 for無限迴圈巢狀迴圈不涵蓋指標與動態記憶體配置遞迴Python 語法學生會問的 5 個問題01for 迴圈每一圈做了什麼？60 秒尚未生成02為什麼我的迴圈多跑一次？75 秒尚未生成03while 和 for 怎麼選？65 秒尚未生成04迴圈為什麼停不下來？70 秒尚未生成05巢狀迴圈怎麼數次數？80 秒尚未生成第 1 點 · 每一圈的過程建議 60 秒for 迴圈每一圈做了什麼？也會這樣問for 的執行順序是什麼？更新變數是在什麼時候？必演畫面逐圈標出條件、本體、更新變數的順序，並顯示目前變數值。學習目標目標 1詞彙表 · 5 個詞forforwhilewhile<小於<=小於等於ii建議重點片 · 200 秒第 1 點 · 每一圈的過程第 2 點 · 多跑一次的原因第 3 點 · while 和 for 的選擇先看每圈順序，再找邊界差異，最後選擇適合的迴圈形式。下一步：選要生成的 →'
+  operator: 'doesNotMatch'
+  stack: |-
+    file:///home/pjw92/projects/videomaker/workbench/web/tests/reading-focus.test.mjs:13:10
+    async withDOM (file:///home/pjw92/projects/videomaker/workbench/web/tests/dom-helper.mjs:41:8)
+    async TestContext.<anonymous> (file:///home/pjw92/projects/videomaker/workbench/web/tests/reading-focus.test.mjs:10:2)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: 導覽收合偏好跨初始化保存，儲存不可用仍可切換，入口有可辨識名稱
+not ok 2 - 導覽收合偏好跨初始化保存，儲存不可用仍可切換，入口有可辨識名稱
+  ---
+  duration_ms: 1.558024
+  type: 'test'
+  location: '/home/pjw92/projects/videomaker/workbench/web/tests/reading-focus.test.mjs:33:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot find module '/home/pjw92/projects/videomaker/workbench/web/js/navigation.mjs' imported from /home/pjw92/projects/videomaker/workbench/web/tests/reading-focus.test.mjs"
+  code: 'ERR_MODULE_NOT_FOUND'
+  stack: |-
+    finalizeResolution (node:internal/modules/esm/resolve:274:11)
+    moduleResolve (node:internal/modules/esm/resolve:859:10)
+    defaultResolve (node:internal/modules/esm/resolve:983:11)
+    #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
+    ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
+    ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
+    onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:664:36)
+    TracingChannel.tracePromise (node:diagnostics_channel:344:14)
+    ModuleLoader.import (node:internal/modules/esm/loader:663:21)
+    defaultImportModuleDynamicallyForModule (node:internal/modules/esm/utils:222:31)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61.225574

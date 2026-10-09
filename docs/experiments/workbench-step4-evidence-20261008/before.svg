@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="610" height="360" viewBox="0 0 610 360" role="img" aria-labelledby="mindmap-title" aria-describedby="source-evidence"><title id="mindmap-title">理解迴圈</title><desc id="source-evidence">教材原文引用：
+概念 迴圈：迴圈會重複執行
+概念 條件：條件控制是否繼續
+概念 更新變數：更新變數可以避免無限迴圈
+關係 loop → condition（由此控制）：條件控制是否繼續
+關係 loop → update（需要搭配）：更新變數可以避免無限迴圈
+完整教材：
+迴圈會重複執行。條件控制是否繼續。更新變數可以避免無限迴圈。</desc><rect width="100%" height="100%" fill="#fffaf2"/><path d="M260,120.0 C310,120.0 300,60 350,60" fill="none" stroke="#b97755" stroke-width="2"/><path d="M260,120.0 C310,120.0 300,180 350,180" fill="none" stroke="#b97755" stroke-width="2"/><g data-node-id="loop"><rect x="30" y="78.0" width="230" height="84" rx="12" fill="#f5e2cf" stroke="#c69373"/><text x="145" y="125.0" text-anchor="middle" fill="#302a25" font-family="sans-serif" font-size="16" font-weight="700">迴圈</text></g><g data-node-id="condition"><rect x="350" y="18" width="230" height="84" rx="12" fill="#f5e2cf" stroke="#c69373"/><text x="465" y="43" text-anchor="middle" fill="#73422c" font-family="sans-serif" font-size="12">由此控制</text><text x="465" y="76.0" text-anchor="middle" fill="#302a25" font-family="sans-serif" font-size="16" font-weight="700">條件</text></g><g data-node-id="update"><rect x="350" y="138" width="230" height="84" rx="12" fill="#f5e2cf" stroke="#c69373"/><text x="465" y="163" text-anchor="middle" fill="#73422c" font-family="sans-serif" font-size="12">需要搭配</text><text x="465" y="196.0" text-anchor="middle" fill="#302a25" font-family="sans-serif" font-size="16" font-weight="700">更新變數</text></g></svg>

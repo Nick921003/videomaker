@@ -10,6 +10,23 @@ from tests.test_studio_deck_contracts import sample_deck, self_study_deck
 
 
 class TestPptxExport(unittest.TestCase):
+	def test_self_study_main_content_never_shrinks_below_sixteen_points(self):
+		deck = self_study_deck()
+		block = deck["slides"][0]["blocks"][0]
+		block["center"] = "字" * 40
+		block["items"] = [{"title": "題" * 32, "text": "說" * 80} for _ in range(4)]
+		deck["slides"][1]["blocks"][0]["lines"] = ["print('iteration')"] * 9
+		for slide in deck["slides"]:
+			slide["takeaway"] = "解" * 120
+		prs = Presentation(BytesIO(export_pptx(deck)))
+		for slide in prs.slides:
+			for shape in slide.shapes:
+				if not shape.has_text_frame or not shape.text.strip():
+					continue
+				if shape.top < Inches(1.7) or shape.top >= Inches(7.1) or "流程方向" in shape.text:
+					continue
+				self.assertTrue(all(run.font.size >= Pt(16) for para in shape.text_frame.paragraphs for run in para.runs), shape.text)
+
 	def test_legacy_long_points_keep_original_readable_text_area(self):
 		for length in (49, 60, 70, 120):
 			with self.subTest(length=length):

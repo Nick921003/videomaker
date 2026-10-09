@@ -72,16 +72,29 @@ class TestWorkbenchRunners(unittest.TestCase):
 			self.assertNotIn("PRIVATE", json.dumps(row))
 		self.assertEqual(len(usage.read_unit(directory)), count)
 
+	def test_direct_generation_refuses_unreviewed_source_before_model(self):
+		for name in ("mindmap", "slides"):
+			with self.subTest(name=name):
+				directory = self.unit("# 教材\n待核對：\n- 數字未確認\n")
+				complete = Mock(side_effect=AssertionError("paid call"))
+				status, _, _ = self.run_main(name, [directory], complete)
+				self.assertEqual(status, 1)
+				complete.assert_not_called()
+
 	def test_mindmap_writes_valid_outputs_and_registry_markers(self):
 		directory = self.unit(MAP_MATERIAL)
 		def complete(_system, user, _schema):
-			self.assertEqual(json.loads(user), {"instruction": "整理這份教材的概念與關係", "material": MAP_MATERIAL})
+			request = json.loads(user)
+			self.assertEqual(request["material"], MAP_MATERIAL)
+			self.assertEqual(request["instruction"], "整理這份教材的概念與關係")
+			self.assertEqual(request["source_context"]["content_version"], self.library.material(directory.name)["content_version"])
 			self.assertNotIn("@step validate", sys.stdout.getvalue())
 			return sample_map(), call_usage()
 		status, markers, _ = self.run_main("mindmap", [directory], complete)
 		self.assertEqual(status, 0)
 		self.assertEqual(markers, [("step", step["id"]) for step in formats.get_format("mindmap").FORMAT["steps"]])
 		self.assertEqual(read_json(directory / "mindmap/mindmap.json"), sample_map())
+		self.assertEqual(read_json(directory / "mindmap/source.json")["content_version"], self.library.material(directory.name)["content_version"])
 		svg = (directory / "mindmap/mindmap.svg").read_bytes()
 		self.assertTrue(svg.startswith(b"<svg"))
 		self.assertIn(MAP_MATERIAL.encode(), svg)
@@ -91,11 +104,13 @@ class TestWorkbenchRunners(unittest.TestCase):
 		directory = self.unit(DECK_MATERIAL)
 		def complete(_system, user, _schema):
 			self.assertEqual(json.loads(user)["instruction"], "把這份教材做成線上簡報")
+			self.assertEqual(json.loads(user)["source_context"]["content_version"], self.library.material(directory.name)["content_version"])
 			return sample_deck_v11(), call_usage()
 		status, markers, _ = self.run_main("slides", [directory], complete)
 		self.assertEqual(status, 0)
 		self.assertEqual(markers, [("step", "generate"), ("step", "validate"), ("step", "export")])
 		self.assertEqual(read_json(directory / "slides/deck.json"), sample_deck_v11())
+		self.assertEqual(read_json(directory / "slides/source.json")["content_version"], self.library.material(directory.name)["content_version"])
 		with zipfile.ZipFile(directory / "slides/deck.pptx") as archive:
 			self.assertIn("ppt/slides/slide1.xml", archive.namelist())
 			self.assertIn("迴圈".encode(), archive.read("ppt/slides/slide1.xml"))
@@ -165,7 +180,9 @@ class TestWorkbenchRunners(unittest.TestCase):
 		row = self.rows(directory)[0]
 		self.assertEqual((row["item"], row["step"]), ("mindmap", "generate"))
 		self.assertFalse(row["reported"])
+		self.assertIsNone(row["usd"])
 		self.assertEqual(len(usage.read_unit(directory)), 1)
+		self.assertTrue(usage.read_unit(directory)[0]["cost_unknown"])
 
 	def test_busy_provider_failure_is_safe_and_retains_usage(self):
 		from video_engine.usage import report_usage
@@ -234,6 +251,29 @@ class TestWorkbenchRunners(unittest.TestCase):
 		self.assertEqual(status, 0)
 		complete.assert_called_once()
 		self.assert_usage(self.library.unit_dir(markers[-1][1]), "ingest", "normalize")
+
+	def test_normalize_persists_review_and_warns_for_uncertainty_or_bad_quote(self):
+		for problem in ("uncertainty", "quote"):
+			with self.subTest(problem=problem):
+				upload = self.root / problem
+				upload.mkdir()
+				make(upload / "lesson.pptx", [("光合作用", ["Photosynthesis converts light into energy."])])
+				write_json(upload / "upload.json", {"filename": "lesson.pptx", "kind": "pptx", "title": None})
+				def complete(system, request, pdf_bytes):
+					data, reported = self.normalize_response(system, request, pdf_bytes)
+					if problem == "uncertainty":
+						data["pages"][0]["uncertainties"] = ["表格數值看不清楚"]
+					else:
+						data["pages"][0]["verified_quotes"] = ["Unrelated invented quote."]
+					return data, reported
+				status, markers, _ = self.run_main("normalize", [upload, self.library.root], complete)
+				self.assertEqual(status, 0)
+				uid = markers[-1][1]
+				review = read_json(self.library.path(uid, "normalization.json"))
+				self.assertTrue(review["requires_review"])
+				self.assertTrue(review["attention"])
+				self.assertIn(("warn", "normalization_review", review["attention"]), markers)
+				self.assertIn("待核對：", self.library.path(uid, "material.md").read_text(encoding="utf-8"))
 
 	def test_normalize_pdf_passes_original_visual_bytes(self):
 		upload = self.root / "pdf-upload"

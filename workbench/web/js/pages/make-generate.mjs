@@ -11,7 +11,9 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	const registry = await api.get('/formats');
 	let unit = initialUnit;
 	const content = el('section', 'make-generate');
+	content.setAttribute('data-selection', 'expanded');
 	const left = el('div', 'generate-left');
+	left.id = 'generation-selection';
 	const selection = el('section', 'make-card generate-selection');
 	selection.append(el('h2', 'make-card-heading', '這次要生成哪些？'));
 	const checklist = el('div', 'generate-checklist scroll-box');
@@ -25,23 +27,40 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	const queueList = el('div', 'generate-queue-list scroll-box');
 	queueList.setAttribute('aria-label', '執行與排隊的工作');
 	queueCard.append(queueList);
-	left.append(selection, queueCard);
+	left.append(selection);
 	const right = el('section', 'make-card generate-live');
 	const heading = el('div', 'generate-live-heading');
-	const jobTitle = el('h2', '', '選好項目，就可以開始。');
+	const jobTitle = el('h2', '', '製作過程');
+	const selectionToggle = button('收合選擇');
+	selectionToggle.setAttribute('aria-controls', left.id);
+	function collapseSelection(collapsed) {
+		content.setAttribute('data-selection', collapsed ? 'collapsed' : 'expanded');
+		left.hidden = collapsed;
+		selectionToggle.textContent = collapsed ? '展開選擇' : '收合選擇';
+		selectionToggle.setAttribute('aria-expanded', String(!collapsed));
+		if (collapsed) actions.append(start);
+		else footer.append(start);
+		start.hidden = collapsed && start.disabled;
+	}
+	selectionToggle.addEventListener('click', () => collapseSelection(!left.hidden));
+	collapseSelection(false);
 	const products = button('查看成品 →');
 	products.addEventListener('click', () => go('make', 4, { unit: unit.unit_id, ...(query.state ? { state: query.state } : {}) }));
-	heading.append(jobTitle, products);
+	const actions = el('div', 'generate-actions');
+	actions.append(selectionToggle, products);
+	heading.append(jobTitle, actions);
+	const idle = el('p', 'generation-idle', '開始生成後，這裡會顯示目前步驟與製作進度。');
 	const diagram = el('section', 'generate-diagram');
+	diagram.hidden = true;
 	const toolbar = viewerTools(diagram);
 	const viewport = el('div', 'pipeline-viewport');
 	diagram.append(viewport);
 	const feedback = el('div', 'generate-feedback scroll-box');
-	const status = el('p', 'section-note');
+	const status = el('p', 'generation-message', '勾選左側項目，再按開始生成。');
 	status.setAttribute('role', 'status');
 	const failures = el('div', 'generate-failures');
 	feedback.append(status, failures);
-	right.append(heading, diagram, feedback);
+	right.append(heading, idle, diagram, feedback, queueCard);
 	content.append(left, right);
 	const chosen = new Set(unit.items.filter(selectable).map(item => item.item));
 	const watched = new Map();
@@ -54,6 +73,7 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	let timer;
 	let controls;
 	let drawnJob;
+	let queueSignature = '';
 	let pinned;
 	const suffix = api.MOCK && query.state ? `?${new URLSearchParams({ state: query.state })}` : '';
 	const unitPath = `/units/${encodeURIComponent(unit.unit_id)}`;
@@ -61,6 +81,7 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 		const selected = unit.items.filter(item => selectable(item) && chosen.has(item.item));
 		total.textContent = `預估總計 · ${money(selected.reduce((sum, item) => sum + item.estimate_usd, 0))}`;
 		start.disabled = submitting || !selected.length;
+		start.hidden = left.hidden && !selected.length;
 		products.disabled = !unit.items.some(item => item.status === 'done' && Object.keys(item.files ?? {}).length);
 	}
 	function renderChecklist() {
@@ -80,7 +101,7 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 					refreshTotal();
 				});
 				const copy = el('span', 'generate-choice-copy');
-				copy.append(el('span', '', item.label), el('span', 'section-note', STATUS[item.status]));
+				copy.append(el('span', '', item.label), el('span', 'generate-item-status', STATUS[item.status]));
 				row.append(input, copy, el('span', 'generate-estimate', money(item.estimate_usd)));
 				checklist.append(row);
 			}
@@ -103,8 +124,11 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	}
 	function draw(job) {
 		if (!job) return;
+		if (disposed) return;
 		const format = [...registry.formats, ...registry.stages].find(entry => entry.id === job.format);
 		if (!format) return;
+		idle.hidden = true;
+		diagram.hidden = false;
 		jobTitle.textContent = `${unit.items.find(item => item.item === job.item)?.label ?? job.item} · ${STATUS[job.state]}`;
 		if (drawnJob !== job.job_id) {
 			controls?.destroy();
@@ -117,36 +141,51 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	}
 	function renderQueue(queue) {
 		const rows = new Map([...[queue.running, ...queue.queued].filter(Boolean), ...[...watched.values()].filter(Boolean)].map(job => [job.job_id, job]));
-		queueList.replaceChildren();
-		for (const job of rows.values()) {
-			const row = el('div', `generate-queue-row status-${job.state}`);
-			row.append(el('span', '', unit.items.find(item => item.item === job.item && job.unit_id === unit.unit_id)?.label ?? job.item),
-				el('span', 'section-note', STATUS[job.state]));
-			queueList.append(row);
-		}
-		if (!rows.size) queueList.append(el('p', 'section-note', '目前沒有排隊的工作。'));
-		failures.replaceChildren();
-		for (const job of [...watched.values()].filter(job => job?.state === 'failed')) {
-			const panel = el('section', 'generate-failure');
-			panel.setAttribute('role', 'alert');
-			panel.append(el('h3', '', unit.items.find(item => item.item === job.item)?.label ?? job.item),
-				el('p', '', job.error?.reason ?? '這次工作沒有完成。'), el('p', 'section-note', job.error?.advice ?? ''));
-			const inspect = button('查看失敗步驟');
-			inspect.addEventListener('click', () => { pinned = job.job_id; draw(job); });
-			panel.append(inspect);
-			if (job.error?.retry) {
-				const retry = button('重試');
-				retry.disabled = submitting;
-				retry.addEventListener('click', () => run(async () => {
-					const result = await api.post(`/jobs/${encodeURIComponent(job.job_id)}/retry`);
-					if (disposed) return;
-					watched.delete(job.job_id);
-					watched.set(result.job_id, null);
-					pinned = null;
-				}));
-				panel.append(retry);
+		const signature = JSON.stringify([submitting, [...rows.values()].map(job => [job.job_id, job.state, job.error, unit.items.find(item => item.item === job.item)?.label])]);
+		if (signature !== queueSignature) {
+			queueSignature = signature;
+			const focusedKey = document.activeElement?.getAttribute('data-focus-key');
+			const focusTargets = [];
+			queueList.replaceChildren();
+			for (const job of rows.values()) {
+				const row = button('', `generate-queue-row status-${job.state}`);
+				row.setAttribute('data-job-id', job.job_id);
+				row.setAttribute('data-focus-key', `${job.job_id}:select`);
+				focusTargets.push(row);
+				row.addEventListener('click', () => { pinned = job.job_id; draw(job); });
+				row.append(el('span', '', unit.items.find(item => item.item === job.item && job.unit_id === unit.unit_id)?.label ?? job.item),
+					el('span', 'generate-item-status', STATUS[job.state]));
+				queueList.append(row);
 			}
-			failures.append(panel);
+			if (!rows.size) queueList.append(el('p', 'generation-message', '目前沒有排隊的工作。'));
+			failures.replaceChildren();
+			for (const job of [...watched.values()].filter(job => job?.state === 'failed')) {
+				const panel = el('section', 'generate-failure');
+				panel.setAttribute('role', 'alert');
+				panel.append(el('h3', '', unit.items.find(item => item.item === job.item)?.label ?? job.item),
+					el('p', '', job.error?.reason ?? '這次工作沒有完成。'), el('p', 'section-note', job.error?.advice ?? ''));
+				const inspect = button('查看失敗步驟');
+				inspect.setAttribute('data-focus-key', `${job.job_id}:inspect`);
+				focusTargets.push(inspect);
+				inspect.addEventListener('click', () => { pinned = job.job_id; draw(job); });
+				panel.append(inspect);
+				if (job.error?.retry) {
+					const retry = button('重試');
+					retry.setAttribute('data-focus-key', `${job.job_id}:retry`);
+					focusTargets.push(retry);
+					retry.disabled = submitting;
+					retry.addEventListener('click', () => run(async () => {
+						const result = await api.post(`/jobs/${encodeURIComponent(job.job_id)}/retry`);
+						if (disposed) return;
+						watched.delete(job.job_id);
+						watched.set(result.job_id, null);
+						pinned = null;
+					}));
+					panel.append(retry);
+				}
+				failures.append(panel);
+			}
+			if (focusedKey) (focusTargets.find(node => node.getAttribute('data-focus-key') === focusedKey) ?? selectionToggle).focus();
 		}
 		const focus = pinned ? watched.get(pinned) : queue.running ?? watched.get(query.job)
 			?? [...watched.values()].find(job => job?.state === 'failed') ?? [...watched.values()].filter(Boolean).at(-1);
@@ -168,12 +207,26 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 				if (job.unit_id === unit.unit_id || job === queue.running) watched.set(job.job_id, job);
 			}
 			const ids = [...watched].filter(([, job]) => !job || ['queued', 'running'].includes(job.state)).map(([id]) => id);
-			const results = await Promise.all(ids.map(async id => [id, await api.get(`/jobs/${encodeURIComponent(id)}`)]));
+			const results = await Promise.all(ids.map(async id => {
+				try { return { id, job: await api.get(`/jobs/${encodeURIComponent(id)}`) }; }
+				catch (error) { return { id, error }; }
+			}));
 			if (disposed || document.hidden) return;
-			for (const [id, job] of results) watched.set(id, job);
+			const errors = [];
+			for (const { id, job, error } of results) {
+				if (job) watched.set(id, job);
+				else if (error.status === 404 || error.code === 'job_not_found') {
+					watched.delete(id);
+					if (pinned === id) pinned = null;
+				} else errors.push(error.reason ?? error.message);
+			}
 			if (queue.running) queue.running = watched.get(queue.running.job_id) ?? queue.running;
+			renderQueue(queue);
 			await refreshUnit();
-			if (!disposed && !document.hidden) renderQueue(queue);
+			if (!disposed && !document.hidden) {
+				renderQueue(queue);
+				if (errors.length) status.textContent = `部分工作進度暫時讀不到，稍後會再讀取。${errors.join('；')}`;
+			}
 		} catch (error) {
 			if (!disposed) status.textContent = `${error.reason ?? error.message} ${error.advice ?? '稍後會再讀取。'}`;
 		} finally { polling = false; schedule(); }
@@ -181,12 +234,14 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	async function run(action) {
 		if (submitting || disposed) return;
 		submitting = true;
+		let accepted = false;
 		renderChecklist();
 		try {
 			await action();
+			accepted = true;
 			if (!disposed) { await refreshUnit(); await poll(); }
 		} catch (error) {
-			if (!disposed) status.textContent = `${error.reason ?? error.message} ${error.advice ?? ''}`;
+			if (!disposed) status.textContent = accepted ? `工作已送出，暫時無法讀取最新進度。${error.reason ?? error.message}` : `${error.reason ?? error.message} ${error.advice ?? ''}`;
 		} finally { submitting = false; if (!disposed) renderChecklist(); }
 	}
 	start.addEventListener('click', () => run(async () => {
@@ -194,6 +249,11 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 		const result = await api.post(`${unitPath}/generate${suffix}`, { items });
 		if (disposed) return;
 		for (const id of result.job_ids) watched.set(id, null);
+		if (result.job_ids.length) {
+			unit = { ...unit, items: unit.items.map(item => items.includes(item.item) ? { ...item, status: 'queued' } : item) };
+			collapseSelection(true);
+			selectionToggle.focus();
+		}
 		pinned = null;
 		status.textContent = result.job_ids.length ? '已加入佇列。' : '選取項目已完成或正在製作。';
 	}));

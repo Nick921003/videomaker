@@ -8,3 +8,9 @@ import './diagram.test.mjs';
 import './panzoom.test.mjs';
 import './make.test.mjs';
 import './f4.test.mjs';
+import './library.test.mjs';
+import './usage.test.mjs';
+import './reading-focus.test.mjs';
+import './viewers.test.mjs';
+
+import "./concept-tree.test.mjs";

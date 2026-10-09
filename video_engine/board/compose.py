@@ -104,9 +104,22 @@ def main():
 	for q in ids:
 		with open(os.path.join(args.scene_dir, f"{q}.scene.json"), encoding="utf-8") as f:
 			scenes.append(json.load(f))
+	source_data = None
+	if os.path.isfile(os.path.join(args.scene_dir, "meta.json")):
+		sys.path.insert(0, os.path.dirname(os.path.dirname(HERE)))
+		from workbench.material import composite_provenance
+		try:
+			source_data = composite_provenance(args.scene_dir, ids)
+		except (ValueError, OSError) as exc:
+			print(f"@error material_version {exc}", flush=True)
+			raise SystemExit(1) from exc
 	doc = compose(plan, scenes, ids)
 	with open(args.out, "w", encoding="utf-8") as f:
 		json.dump(doc, f, ensure_ascii=False, indent="\t")
+	if source_data is not None:
+		from pathlib import Path
+		from workbench.library import write_json
+		write_json(Path(args.out).with_suffix(".source.json"), source_data)
 	n = sum(len(s["beats"]) for s in doc["scenes"])
 	print(f"{args.out}：{len(ids)} 支、{len(doc['scenes'])} 場、{n} 句")
 

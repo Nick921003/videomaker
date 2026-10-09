@@ -82,7 +82,7 @@ class FakeRunner:
 				write_json(directory / "slides/deck.json", {"slides": []})
 				(directory / "slides/deck.pptx").write_bytes(b"fake pptx")
 		elif cli == "run_normalize.py":
-			uid, _ = Library(Path(command[3])).create_unit("# 整理後教材\n內容", source_kind="pptx")
+			uid, _ = Library(Path(command[3])).create_unit("# 整理後教材\n內容", source_kind=read_json(Path(command[2]) / "upload.json")["kind"])
 			log("@unit " + uid)
 		return 0
 
@@ -133,6 +133,8 @@ class TestStudio(unittest.TestCase):
 		elif method == "POST":
 			if path == "/api/v1/units":
 				assert_shape(value, {"unit_id": str, "created": bool})
+			elif path.endswith("/review"):
+				assert_shape(value, {"unit_id": str, "content_version": str, "reviewed": bool})
 			elif path.endswith("/generate"):
 				assert_shape(value, {"job_ids": [str]})
 			else:
@@ -176,6 +178,46 @@ class TestStudio(unittest.TestCase):
 		self.assertEqual(units[0]["points"], 3)
 		self.assertTrue(units[0]["analyzed"])
 		self.api("GET", "/api/v1/formats", shape="formats")
+
+	def test_normalization_review_blocks_paid_work_and_survives_restart(self):
+		uid, directory = self.unit()
+		attention = "AI 引文需要核對原稿"
+		write_json(directory / "normalization.json", {"requires_review": True, "attention": attention})
+		self.assertEqual(self.api("GET", f"/api/v1/units/{uid}", shape="unit")["normalization_attention"], attention)
+		for path, payload in (("analyze", {}), ("generate", {"items": ["q1", "slides"]}),
+			("items/q1/renarrate", {"beats": [1]})):
+			with self.subTest(path=path):
+				error = self.api("POST", f"/api/v1/units/{uid}/{path}", payload, expected=409)
+				self.assertEqual(error["error"]["code"], "normalization_review")
+		self.assertEqual(self.runner.commands, [])
+		restored = BS.Studio(self.out, command_runner=self.runner, tts_mode="gemini")
+		self.addCleanup(restored.close)
+		self.assertEqual(restored.get_unit(uid)["normalization_attention"], attention)
+		with self.assertRaises(BS.APIError) as caught:
+			restored.enqueue_generate(uid, {"items": ["slides"]})
+		self.assertEqual(caught.exception.code, "normalization_review")
+		self.assertEqual(self.runner.commands, [])
+
+	def test_normalization_review_cannot_be_bypassed_by_retry(self):
+		uid, directory = self.unit(analyzed=False)
+		self.runner.fail = "author.py"
+		jid = self.api("POST", f"/api/v1/units/{uid}/analyze", {})["job_id"]
+		self.assertEqual(self.wait_job(jid)["state"], "failed")
+		write_json(directory / "normalization.json", {"requires_review": True, "attention": "請核對教材"})
+		count = len(self.runner.commands)
+		error = self.api("POST", f"/api/v1/jobs/{jid}/retry", {}, expected=409)
+		self.assertEqual(error["error"]["code"], "normalization_review")
+		self.assertEqual(len(self.runner.commands), count)
+
+	def test_legacy_uncertainty_blocks_analysis_and_corrected_unit_can_proceed(self):
+		uid, directory = self.unit(analyzed=False)
+		(directory / "material.md").write_text("# 教材\n\n待核對：\n- 數值看不清楚\n", encoding="utf-8")
+		error = self.api("POST", f"/api/v1/units/{uid}/analyze", {}, expected=409)
+		self.assertEqual(error["error"]["code"], "normalization_review")
+		corrected = self.api("POST", "/api/v1/units", {"markdown": "# 核對後教材\n正確內容。"})["unit_id"]
+		jid = self.api("POST", f"/api/v1/units/{corrected}/analyze", {})["job_id"]
+		self.assertEqual(self.wait_job(jid)["state"], "done")
+		self.assertIsNotNone(self.studio.get_unit(uid)["normalization_attention"])
 
 	def test_analysis_conflict_and_already_analyzed(self):
 		uid, _ = self.unit(analyzed=False)
@@ -307,6 +349,38 @@ class TestStudio(unittest.TestCase):
 		self.api("GET", f'/api/v1/units/{job["unit_id"]}', shape="unit")
 		self.assertTrue((self.out / job["unit_id"] / "manifest.json").is_file())
 
+	def test_upload_real_pdf_and_normalize_without_paid_runner(self):
+		from tests.test_ingest import make_pdf
+		path = Path(self.temp.name) / "lesson.pdf"
+		make_pdf(path, ["Loop conditions", "Check the boundary"])
+		upload = self.upload(filename="lesson.pdf", data=path.read_bytes())
+		self.assertEqual((upload["kind"], upload["pages"]), ("pdf", 2))
+		self.assertIn("Loop conditions", upload["excerpt"])
+		self.assertEqual(self.runner.commands, [])
+		job_id = self.api("POST", f'/api/v1/uploads/{upload["upload_id"]}/normalize')["job_id"]
+		job = self.wait_job(job_id)
+		self.assertEqual(job["state"], "done")
+		self.assertEqual(self.studio.library.meta(job["unit_id"])["source_kind"], "pdf")
+		self.api("GET", f'/api/v1/units/{job["unit_id"]}', shape="unit")
+
+	def test_http_media_types_and_planned_formats_are_not_executable(self):
+		uid, _ = self.unit()
+		registry = self.api("GET", "/api/v1/formats")
+		self.assertEqual([item["id"] for item in registry["formats"] if item["status"] == "available"], ["video", "highlight", "mindmap", "slides"])
+		for item in registry["formats"]:
+			if item["status"] != "available":
+				self.api("POST", f"/api/v1/units/{uid}/generate", {"items": [item["id"]]}, expected=400)
+		self.assertEqual(self.runner.commands, [])
+		jobs = self.api("POST", f"/api/v1/units/{uid}/generate", {"items": ["mindmap", "slides"]})["job_ids"]
+		for jid in jobs:
+			self.assertEqual(self.wait_job(jid)["state"], "done")
+		for file, mime in (("mindmap/mindmap.svg", "image/svg+xml"), ("slides/deck.json", "application/json"),
+			("slides/deck.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation")):
+			status, headers, body = self.request("GET", f"/media/{uid}/{file}")
+			self.assertEqual(status, 200)
+			self.assertIn(mime, headers["Content-Type"])
+			self.assertTrue(body)
+
 	def test_failed_normalize_retry_conflicts_for_the_same_draft(self):
 		upload = self.upload()
 		path = f'/api/v1/uploads/{upload["upload_id"]}/normalize'
@@ -325,9 +399,74 @@ class TestStudio(unittest.TestCase):
 		self.runner.release.set()
 		self.assertEqual(self.wait_job(retry)["state"], "done")
 
+	def test_retry_refuses_stale_analysis_before_model(self):
+		uid, directory = self.unit()
+		self.runner.fail = "author.py"
+		job = self.api("POST", f"/api/v1/units/{uid}/generate", {"items": ["q1"]})["job_ids"][0]
+		self.assertEqual(self.wait_job(job)["state"], "failed")
+		before = len(self.runner.commands)
+		write_json(directory / "plan.source.json", {"schema_version": 1, "content_version": "outdated", "source_ids": []})
+		self.api("POST", f"/api/v1/jobs/{job}/retry", expected=409)
+		self.assertEqual(len(self.runner.commands), before)
+
+	def test_analysis_provenance_mismatch_blocks_generation(self):
+		uid, directory = self.unit()
+		write_json(directory / "plan.source.json", {"schema_version": 1, "content_version": "outdated", "source_ids": []})
+		self.api("POST", f"/api/v1/units/{uid}/generate", {"items": ["q1"]}, expected=409)
+		self.assertEqual(self.runner.commands, [])
+
+	def test_image_visual_pdf_limit_is_rejected_before_normalize(self):
+		from PIL import Image
+		data = io.BytesIO()
+		Image.new("RGB", (16, 8), "white").save(data, format="PNG")
+		with patch("workbench.uploads.image_pdf", return_value=b"x" * (5 * 1024 * 1024 + 1)):
+			self.upload(filename="poster.png", data=data.getvalue(), expected=413)
+		self.assertEqual(self.runner.commands, [])
+
+	def test_review_confirmation_is_explicit_and_bound_to_source_version(self):
+		uid, _ = self.studio.library.create_unit("教材\n待核對：\n- 數字需確認\n")
+		path = f"/api/v1/units/{uid}"
+		data = self.api("GET", path + "/material")
+		self.api("POST", path + "/analyze", expected=409)
+		self.api("POST", path + "/review", {"confirmed": False, "content_version": data["content_version"]}, expected=400)
+		self.api("POST", path + "/review", {"confirmed": True, "content_version": "outdated"}, expected=409)
+		self.assertEqual(self.runner.commands, [])
+		self.api("POST", path + "/review", {"confirmed": True, "content_version": data["content_version"]})
+		reviewed = self.api("GET", path + "/material")
+		self.assertEqual(reviewed["review"]["reviewed_content_version"], data["content_version"])
+		self.assertIsNone(self.api("GET", path)["normalization_attention"])
+		job = self.api("POST", path + "/analyze")["job_id"]
+		self.assertEqual(self.wait_job(job)["state"], "done")
+
+	def test_text_source_kind_is_preserved_and_other_kinds_cannot_be_forged(self):
+		result = self.api("POST", "/api/v1/units", {"markdown": "文字原稿", "source_kind": "txt"})
+		data = self.api("GET", f"/api/v1/units/{result['unit_id']}/material")
+		self.assertEqual(data["sources"][0]["kind"], "txt")
+		self.api("POST", "/api/v1/units", {"markdown": "文字", "source_kind": "pdf"}, expected=400)
+
+	def test_source_version_drift_blocks_before_paid_analysis(self):
+		uid, directory = self.unit(analyzed=False)
+		(directory / "material.md").write_text("版本被修改", encoding="utf-8")
+		error = self.api("POST", f"/api/v1/units/{uid}/analyze", expected=409)
+		self.assertEqual(error["error"]["code"], "material_version")
+		self.assertEqual(self.runner.commands, [])
+
+	def test_upload_csv_and_plaintext_and_material_endpoint(self):
+		for filename, payload in (("lesson.csv", "名稱,次數\n甲,001\n".encode()), ("lesson.txt", "原文\n".encode())):
+			with self.subTest(filename=filename):
+				upload = self.upload(filename=filename, data=payload)
+				self.assertEqual(upload["kind"], Path(filename).suffix[1:])
+				self.assertTrue(upload["excerpt"])
+		uid, _ = self.studio.library.create_unit("# 來源\n文字\n")
+		data = self.api("GET", f"/api/v1/units/{uid}/material")
+		self.assertEqual(data["schema_version"], 1)
+		self.assertEqual(data["sections"][0]["locator"], {"line_start": 1, "line_end": 2})
+		self.api("GET", "/api/v1/units/000000000000/material", expected=404)
+		self.assertEqual(self.runner.commands, [])
+
 	def test_upload_limits_invalid_multipart_and_unknown_draft(self):
 		self.upload(data=b"x" * (5 * 1024 * 1024 + 1), expected=413)
-		self.upload(filename="lesson.txt", data=b"text", expected=400)
+		self.upload(filename="lesson.exe", data=b"text", expected=400)
 		self.upload(filename="../lesson.pdf", data=b"%PDF-", expected=400)
 		self.api("POST", "/api/v1/uploads", raw=b"bad", expected=400)
 		for text in ("\n".join(f"## 第 {i} 頁\n內容" for i in range(1, 32)), "## 第 1 頁\n" + "字" * 60001):

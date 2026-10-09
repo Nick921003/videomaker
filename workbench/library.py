@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import re
 
+from workbench.material import plaintext_material
+
 
 _UNIT_ID = re.compile(r"[a-f0-9]{12}")
 
@@ -43,7 +45,7 @@ class Library:
 		self.root = Path(root).resolve()
 		self.root.mkdir(parents=True, exist_ok=True)
 
-	def create_unit(self, markdown, title=None, source_ref=None, source_kind="md") -> tuple[str, bool]:
+	def create_unit(self, markdown, title=None, source_ref=None, source_kind="md", *, persist_plaintext=True) -> tuple[str, bool]:
 		identifier = unit_id(markdown)
 		directory = safe_path(self.root, identifier)
 		meta = safe_path(directory, "meta.json")
@@ -52,7 +54,9 @@ class Library:
 		if not title or not title.strip():
 			title = next((line.lstrip("# ").strip() for line in markdown.splitlines() if line.strip()), "未命名教材")
 		directory.mkdir(parents=True, exist_ok=True)
-		safe_path(directory, "material.md").write_text(markdown, encoding="utf-8")
+		safe_path(directory, "material.md").write_bytes(markdown.encode("utf-8"))
+		if persist_plaintext and source_kind in ("md", "txt"):
+			write_json(safe_path(directory, "material.json"), plaintext_material(markdown, source_kind))
 		write_json(meta, {"title": title.strip()[:200],
 			"created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
 			"source_ref": source_ref, "source_kind": source_kind})
@@ -91,6 +95,10 @@ class Library:
 	def meta(self, uid) -> dict:
 		return read_json(self.path(uid, "meta.json"))
 
+	def material(self, uid) -> dict:
+		from workbench.material import read_material
+		return read_material(self.unit_dir(uid))[1]
+
 	def plan(self, uid) -> dict | None:
 		return read_json(self.path(uid, "plan.json"))
 
@@ -106,6 +114,7 @@ class Library:
 			files = item["files"]
 			created = max((self.path(uid, relative).stat().st_mtime for relative in files.values()), default=None)
 			products.append({key: item[key] for key in ("item", "format", "label", "files", "duration", "cost_usd")})
+			products[-1].update(source_version=item.get("source_version"), source_ids=item.get("source_ids", []))
 			products[-1].update(embed_url=f"/embed/{uid}/{item['item']}",
 				created_at=datetime.fromtimestamp(created, timezone.utc).isoformat() if created is not None else meta["created_at"])
 		manifest = {"unit_id": uid, "title": meta["title"],

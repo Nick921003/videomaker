@@ -1,0 +1,39 @@
+{
+	"contract_version": "1.0",
+	"title": "理解迴圈",
+	"root_id": "loop",
+	"nodes": [
+		{
+			"id": "loop",
+			"label": "迴圈",
+			"explanation": "重複執行指令。",
+			"source_quote": "迴圈會重複執行"
+		},
+		{
+			"id": "condition",
+			"label": "條件",
+			"explanation": "決定是否繼續。",
+			"source_quote": "條件控制是否繼續"
+		},
+		{
+			"id": "update",
+			"label": "更新變數",
+			"explanation": "避免無限迴圈。",
+			"source_quote": "更新變數可以避免無限迴圈"
+		}
+	],
+	"edges": [
+		{
+			"from": "loop",
+			"to": "condition",
+			"label": "由此控制",
+			"source_quote": "條件控制是否繼續"
+		},
+		{
+			"from": "loop",
+			"to": "update",
+			"label": "需要搭配",
+			"source_quote": "更新變數可以避免無限迴圈"
+		}
+	]
+}

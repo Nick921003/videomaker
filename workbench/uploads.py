@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 import zipfile
 
 from studio.material_normalizer import MAX_AI_PAGES, NormalizationError, check_normalization_limits
-from video_engine.ingest import extract_text
+from workbench.source_document import KINDS, extract_document as extract_text, image_pdf
 from .library import safe_path, write_json
 
 
@@ -55,8 +55,8 @@ class Uploads:
 			or not filename or Path(filename).name != filename or "\\" in filename or "\0" in filename):
 			raise ValueError("上傳檔案名稱或欄位不正確")
 		kind = Path(filename).suffix.lower().lstrip(".")
-		if kind not in ("pdf", "pptx"):
-			raise ValueError("請上傳 PDF 或 PPTX")
+		if kind not in KINDS:
+			raise ValueError("請上傳 PDF、PPTX、DOCX、XLSX、CSV、MD、TXT、PNG 或 JPEG")
 		data = part.get_payload(decode=True)
 		if not data:
 			raise ValueError("教材檔案是空的")
@@ -69,6 +69,8 @@ class Uploads:
 		path.write_bytes(data)
 		try:
 			text = extract_text(str(path))
+			if kind in ("png", "jpg", "jpeg") and len(image_pdf(path)) > MAX_FILE:
+				raise TooLarge("圖片轉換後超過 5 MB，請縮小圖片再加入")
 			pages = check_normalization_limits(text, "." + kind)
 			page_count = len(pages)
 			if kind == "pptx":

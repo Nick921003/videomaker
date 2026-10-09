@@ -45,7 +45,7 @@ async function withApp(run) {
 	globalThis.location = { hash: '#/overview', search: '' };
 	globalThis.fetch = async path => {
 		const file = path === '/api/v1/formats' ? 'formats' : path === '/api/v1/units' ? 'units'
-			: path === '/api/v1/queue' ? 'queue-idle' : 'unit-done';
+			: path === '/api/v1/queue' ? 'queue-idle' : path === '/api/v1/usage' ? 'usage' : 'unit-done';
 		return { ok: true, json: async () => JSON.parse(await readFile(new URL(`../mock/${file}.json`, import.meta.url), 'utf8')) };
 	};
 	try {
@@ -84,12 +84,13 @@ test('外框實際載入總覽與路線圖，形式卡片能帶上焦點', async
 	});
 });
 
-test('素材庫、用量仍為預留頁', async () => {
+test('素材庫、用量接上實際頁面並取代預留頁', async () => {
 	await withApp(async (app, ids) => {
-		for (const route of ['library', 'usage']) {
+		for (const [route, content] of [['library', /學生提問/], ['usage', /今天.*全部.*依模型/]]) {
 			globalThis.location.hash = `#/${route}`;
 			await app.loadRoute();
-			assert.match(ids['page-host'].textContent, /下一步實作/);
+			assert.match(ids['page-host'].textContent, content);
+			assert.doesNotMatch(ids['page-host'].textContent, /下一步實作/);
 		}
 	});
 });
@@ -121,7 +122,7 @@ test('製作接上教材輸入與分析詳情，未選教材時不能跳過第�
 		await app.loadRoute();
 		const host = ids['page-host'];
 		assert.match(host.textContent, /for 迴圈每一圈做了什麼？/);
-		assert.match(host.textContent, /必演畫面/);
+		assert.match(host.textContent, /教學呈現/);
 		assert.match(host.textContent, /建議重點片/);
 		const point = descendants(host).find(node => node.getAttribute('data-point-id') === 'q2');
 		point.dispatchEvent(new Event('click'));
@@ -131,7 +132,7 @@ test('製作接上教材輸入與分析詳情，未選教材時不能跳過第�
 		globalThis.location.hash = '#/make/2';
 		await app.loadRoute();
 		assert.match(ids['page-host'].textContent, /先選一份教材/);
-		assert.doesNotMatch(ids['page-host'].textContent, /必演畫面/);
+		assert.doesNotMatch(ids['page-host'].textContent, /教學呈現/);
 	});
 });
 
@@ -146,7 +147,9 @@ test('整理需確認；工作中鎖住輸入，連續整理仍顯示 live 圖�
 		let jobNumber = 0;
 		let done = false;
 		const settle = () => new Promise(resolve => setImmediate(resolve));
-		api.get = async path => path === '/formats' ? registry : path === '/units' ? [] : path.startsWith('/units/') ? unit : {
+		api.get = async path => path === '/formats' ? registry : path === '/units' ? []
+			: path === '/usage' ? { totals: { today: 0, all: 0, by_model: {} }, units: [] }
+				: path === '/queue' ? { running: null, queued: [] } : path.startsWith('/units/') ? unit : {
 			job_id: `job-${jobNumber}`, unit_id: done ? unit.unit_id : null, format: 'ingest', state: done ? 'done' : 'running',
 			steps: [{ id: 'normalize', state: done ? 'done' : 'running' }], current: done ? null : 'normalize',
 		};
@@ -197,6 +200,118 @@ test('整理需確認；工作中鎖住輸入，連續整理仍顯示 live 圖�
 			api.post = original.post;
 			globalThis.setTimeout = original.setTimeout;
 			globalThis.clearTimeout = original.clearTimeout;
+		}
+	});
+});
+
+test('教材上傳接受十種格式，MD/TXT 直接存文字，其他格式需確認後整理', async () => {
+	await withApp(async (app, ids) => {
+		const { api } = await import('../js/api.mjs');
+		const original = {
+			get: api.get,
+			post: api.post,
+			FileReader: globalThis.FileReader,
+			setTimeout: globalThis.setTimeout,
+			clearTimeout: globalThis.clearTimeout,
+		};
+		const registry = JSON.parse(await readFile(new URL('../mock/formats.json', import.meta.url), 'utf8'));
+		const unit = JSON.parse(await readFile(new URL('../mock/unit-new.json', import.meta.url), 'utf8'));
+		const calls = [];
+		const postedBodies = [];
+		const timers = new Map();
+		let jobNumber = 0;
+		let done = false;
+		const settle = () => new Promise(resolve => setImmediate(resolve));
+
+		api.get = async path => path === '/formats' ? registry : path === '/units' ? []
+			: path === '/usage' ? { totals: { today: 0, all: 0, by_model: {} }, units: [] }
+			: path === '/queue' ? { running: null, queued: [] } : path.startsWith('/units/') ? unit : {
+			job_id: `job-${jobNumber}`, unit_id: done ? unit.unit_id : null, format: 'ingest', state: done ? 'done' : 'running',
+			steps: [{ id: 'normalize', state: done ? 'done' : 'running' }], current: done ? null : 'normalize',
+		};
+
+		api.post = async (path, body) => {
+			calls.push(path);
+			postedBodies.push(body);
+			if (path === '/uploads') return { upload_id: 'up-docx', excerpt: 'DOCX 內容摘要', pages: 4, chars: 800, estimate_usd: 0.01 };
+			if (path === '/units') return { unit_id: 'u-direct-md' };
+			return { job_id: `job-${++jobNumber}` };
+		};
+
+		globalThis.setTimeout = callback => { const id = timers.size + 1; timers.set(id, callback); return id; };
+		globalThis.clearTimeout = id => timers.delete(id);
+
+		class MockFileReader {
+			readAsText(file) {
+				this.readyState = 1;
+				setImmediate(() => {
+					this.result = file.mockContent ?? '# 標題\n內文';
+					this.readyState = 2;
+					this.onload?.();
+				});
+			}
+			abort() {
+				this.readyState = 2;
+				this.onabort?.();
+			}
+		}
+		globalThis.FileReader = MockFileReader;
+
+		try {
+			globalThis.location.hash = '#/make/1';
+			await app.loadRoute();
+			const find = predicate => descendants(ids['page-host']).find(predicate);
+			const file = find(node => node.tagName === 'input' && node.type === 'file');
+
+			// 1. 驗證 accept 包含十種副檔名，且提示維持簡短不雜亂
+			assert.equal(file.accept, '.md,.txt,.pdf,.pptx,.docx,.xlsx,.csv,.png,.jpg,.jpeg');
+			assert.match(ids['page-host'].textContent, /MD、TXT 直接讀取；PDF、PPTX、DOCX、XLSX、CSV 與圖片先看摘要，再確認整理。/);
+
+			// 2. 上傳 DOCX（非 MD/TXT 格式）：經 /uploads 顯示摘要與字數，確認後才調用 /normalize
+			file.files = [new File(['mock-docx'], '講義.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })];
+			file.dispatchEvent(new Event('change'));
+			await settle();
+			assert.deepEqual(calls, ['/uploads']);
+			assert.match(ids['page-host'].textContent, /DOCX 內容摘要/);
+			assert.match(ids['page-host'].textContent, /4 頁 · 800 字/);
+			const confirm = () => find(node => node.tagName === 'button' && node.textContent.startsWith('確認整理'));
+			confirm().dispatchEvent(new Event('click'));
+			await settle();
+			assert.deepEqual(calls, ['/uploads', '/uploads/up-docx/normalize']);
+			done = true;
+			const tick = [...timers.values()][0];
+			timers.clear();
+			await tick();
+			await settle();
+			assert.equal(file.disabled, false);
+
+			// 3. 上傳 MD（文字格式）：直接讀取文字存入 /units，不經過 /uploads
+			calls.length = 0;
+			postedBodies.length = 0;
+			file.files = [Object.assign(new File(['# 演算法教學\n步驟一二三'], '演算法.md', { type: 'text/markdown' }), {
+				mockContent: '# 演算法教學\n步驟一二三',
+			})];
+			file.dispatchEvent(new Event('change'));
+			await settle();
+			await settle();
+			assert.deepEqual(calls, ['/units']);
+			assert.deepEqual(postedBodies[0], { markdown: '# 演算法教學\n步驟一二三', title: '演算法', source_kind: 'md' });
+			assert.match(ids['page-host'].textContent, /教材準備好了。/);
+
+			// 4. 上傳不支援格式：直接提示錯誤，不發送任何 API 請求
+			calls.length = 0;
+			file.files = [new File(['bin'], '程式.exe', { type: 'application/octet-stream' })];
+			file.dispatchEvent(new Event('change'));
+			await settle();
+			assert.deepEqual(calls, []);
+			assert.match(ids['page-host'].textContent, /請選 PDF、PPTX、DOCX、XLSX、CSV、MD、TXT、PNG 或 JPEG 教材。/);
+		} finally {
+			api.get = original.get;
+			api.post = original.post;
+			globalThis.setTimeout = original.setTimeout;
+			globalThis.clearTimeout = original.clearTimeout;
+			if (original.FileReader === undefined) delete globalThis.FileReader;
+			else globalThis.FileReader = original.FileReader;
 		}
 	});
 });

@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "real UI text import and unit selection",
+    "real UI question match without generation",
+    "real usage detail expansion",
+    "review blocker visible in real UI; no paid job queued"
+  ],
+  "created_fixture_units": [
+    "74adbe725be9",
+    "29f2bf83af2b"
+  ],
+  "paid_calls": 0
+}

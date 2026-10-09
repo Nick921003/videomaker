@@ -1,0 +1,525 @@
+TAP version 13
+# Subtest: 空路由與未知頁面回到總覽
+ok 1 - 空路由與未知頁面回到總覽
+  ---
+  duration_ms: 2.370994
+  type: 'test'
+  ...
+# Subtest: 六個頁面與製作四步都能解析
+ok 2 - 六個頁面與製作四步都能解析
+  ---
+  duration_ms: 0.496928
+  type: 'test'
+  ...
+# Subtest: 製作步驟不接受範圍外或部分數字
+ok 3 - 製作步驟不接受範圍外或部分數字
+  ---
+  duration_ms: 0.191195
+  type: 'test'
+  ...
+# Subtest: 保留流程焦點、教材與編碼過的查詢值
+ok 4 - 保留流程焦點、教材與編碼過的查詢值
+  ---
+  duration_ms: 0.268028
+  type: 'test'
+  ...
+# Subtest: 解析是純函式，不修改輸入或讀取瀏覽器
+ok 5 - 解析是純函式，不修改輸入或讀取瀏覽器
+  ---
+  duration_ms: 0.140567
+  type: 'test'
+  ...
+# Subtest: 查詢值包含問號時仍完整保留
+ok 6 - 查詢值包含問號時仍完整保留
+  ---
+  duration_ms: 0.203328
+  type: 'test'
+  ...
+# Subtest: 導覽會更新 hash 並編碼查詢參數
+ok 7 - 導覽會更新 hash 並編碼查詢參數
+  ---
+  duration_ms: 0.321799
+  type: 'test'
+  ...
+# Subtest: 學生提問 mock 依問題選擇影片、超出範圍、未生成與沒有對應段落
+ok 8 - 學生提問 mock 依問題選擇影片、超出範圍、未生成與沒有對應段落
+  ---
+  duration_ms: 13.893694
+  type: 'test'
+  ...
+# Subtest: 建立教材後先維持未分析，分析工作完成才取得分析結果
+ok 9 - 建立教材後先維持未分析，分析工作完成才取得分析結果
+  ---
+  duration_ms: 11.915878
+  type: 'test'
+  ...
+# Subtest: 重配完成品只跑 narrate/render、每兩秒前進並清掉指定句號 warning
+ok 10 - 重配完成品只跑 narrate/render、每兩秒前進並清掉指定句號 warning
+  ---
+  duration_ms: 4.660506
+  type: 'test'
+  ...
+# Subtest: 上傳 PDF 僅提供摘要，確認整理後的工作才建立教材
+ok 11 - 上傳 PDF 僅提供摘要，確認整理後的工作才建立教材
+  ---
+  duration_ms: 23.4749
+  type: 'test'
+  ...
+# Subtest: 正式 multipart 上傳保留 FormData，交由瀏覽器產生 boundary
+ok 12 - 正式 multipart 上傳保留 FormData，交由瀏覽器產生 boundary
+  ---
+  duration_ms: 1.366734
+  type: 'test'
+  ...
+# Subtest: mock 固定映射讀取相對路徑，待機與忙碌佇列分開
+ok 13 - mock 固定映射讀取相對路徑，待機與忙碌佇列分開
+  ---
+  duration_ms: 6.050169
+  type: 'test'
+  ...
+# Subtest: 不同教材狀態與成品清單使用契約 mock
+ok 14 - 不同教材狀態與成品清單使用契約 mock
+  ---
+  duration_ms: 4.577296
+  type: 'test'
+  ...
+# Subtest: busy=1 的佇列固定使用忙碌範例，未生成工作時不會自行變成閒置
+ok 15 - busy=1 的佇列固定使用忙碌範例，未生成工作時不會自行變成閒置
+  ---
+  duration_ms: 2.591399
+  type: 'test'
+  ...
+# Subtest: 生成略過已完成項目；工作每兩秒前進並依形式結束
+ok 16 - 生成略過已完成項目；工作每兩秒前進並依形式結束
+  ---
+  duration_ms: 4.131368
+  type: 'test'
+  ...
+# Subtest: q4 在修正步驟失敗，保留 gemini_busy 的原因與重試建議
+ok 17 - q4 在修正步驟失敗，保留 gemini_busy 的原因與重試建議
+  ---
+  duration_ms: 3.798228
+  type: 'test'
+  ...
+# Subtest: 正式模式只呼叫 /api/v1 並保留結構化錯誤
+ok 18 - 正式模式只呼叫 /api/v1 並保留結構化錯誤
+  ---
+  duration_ms: 1.334308
+  type: 'test'
+  ...
+# Subtest: 生成的工作出現在佇列，完成或失敗後接著跑下一個
+ok 19 - 生成的工作出現在佇列，完成或失敗後接著跑下一個
+  ---
+  duration_ms: 4.880022
+  type: 'test'
+  ...
+# Subtest: 依心智圖與簡報自己的步驟前進，不套用影片步驟
+ok 20 - 依心智圖與簡報自己的步驟前進，不套用影片步驟
+  ---
+  duration_ms: 4.802181
+  type: 'test'
+  ...
+# Subtest: 重複送出略過已排隊工作；不能重試正在跑的工作
+ok 21 - 重複送出略過已排隊工作；不能重試正在跑的工作
+  ---
+  duration_ms: 3.981554
+  type: 'test'
+  ...
+# Subtest: 總覽提供外框使用的渲染入口
+ok 22 - 總覽提供外框使用的渲染入口
+  ---
+  duration_ms: 0.100737
+  type: 'test'
+  ...
+# Subtest: 總覽只計算可用形式、完成影片成本與素材庫成品
+ok 23 - 總覽只計算可用形式、完成影片成本與素材庫成品
+  ---
+  duration_ms: 2.180895
+  type: 'test'
+  ...
+# Subtest: 沒有成品時保留零筆，平均費用不假裝為免費
+ok 24 - 沒有成品時保留零筆，平均費用不假裝為免費
+  ---
+  duration_ms: 0.138514
+  type: 'test'
+  ...
+# Subtest: 路線圖提供外框使用的渲染入口
+ok 25 - 路線圖提供外框使用的渲染入口
+  ---
+  duration_ms: 0.067347
+  type: 'test'
+  ...
+# Subtest: 路線圖正確篩選 planned 形式並按順位排序
+ok 26 - 路線圖正確篩選 planned 形式並按順位排序
+  ---
+  duration_ms: 2.684869
+  type: 'test'
+  ...
+# Subtest: 沒有規劃中形式時回傳空陣列
+ok 27 - 沒有規劃中形式時回傳空陣列
+  ---
+  duration_ms: 0.176624
+  type: 'test'
+  ...
+# Subtest: 外框實際載入總覽與路線圖，形式卡片能帶上焦點
+ok 28 - 外框實際載入總覽與路線圖，形式卡片能帶上焦點
+  ---
+  duration_ms: 6.618362
+  type: 'test'
+  ...
+# Subtest: 素材庫、用量接上實際頁面並取代預留頁
+ok 29 - 素材庫、用量接上實際頁面並取代預留頁
+  ---
+  duration_ms: 16.95891
+  type: 'test'
+  ...
+# Subtest: 外框已接上製作③生成與④成品並取代預留頁
+ok 30 - 外框已接上製作③生成與④成品並取代預留頁
+  ---
+  duration_ms: 6.22606
+  type: 'test'
+  ...
+# Subtest: 製作接上教材輸入與分析詳情，未選教材時不能跳過第一步
+ok 31 - 製作接上教材輸入與分析詳情，未選教材時不能跳過第一步
+  ---
+  duration_ms: 5.674886
+  type: 'test'
+  ...
+# Subtest: 整理需確認；工作中鎖住輸入，連續整理仍顯示 live 圖，離頁釋放輪詢
+ok 32 - 整理需確認；工作中鎖住輸入，連續整理仍顯示 live 圖，離頁釋放輪詢
+  ---
+  duration_ms: 7.94566
+  type: 'test'
+  ...
+# Subtest: 流程頁接上總圖與 focus 路由，節點側欄讀取登記表，返回後收合步驟
+ok 33 - 流程頁接上總圖與 focus 路由，節點側欄讀取登記表，返回後收合步驟
+  ---
+  duration_ms: 9.973876
+  type: 'test'
+  ...
+# Subtest: 未知的 focus 安全回到總圖
+ok 34 - 未知的 focus 安全回到總圖
+  ---
+  duration_ms: 1.64018
+  type: 'test'
+  ...
+# Subtest: 切頁後較慢的舊請求不會蓋掉目前頁面
+ok 35 - 切頁後較慢的舊請求不會蓋掉目前頁面
+  ---
+  duration_ms: 3.406427
+  type: 'test'
+  ...
+# Subtest: 載入失敗能看到原因與建議，提供重試
+ok 36 - 載入失敗能看到原因與建議，提供重試
+  ---
+  duration_ms: 0.446944
+  type: 'test'
+  ...
+# Subtest: 導覽列忙碌圓點同時涵蓋執行與排隊，閒置時隱藏
+ok 37 - 導覽列忙碌圓點同時涵蓋執行與排隊，閒置時隱藏
+  ---
+  duration_ms: 0.354798
+  type: 'test'
+  ...
+# Subtest: zoomAt 讓游標下的圖面座標保持固定，包括倍率上限
+ok 38 - zoomAt 讓游標下的圖面座標保持固定，包括倍率上限
+  ---
+  duration_ms: 0.205918
+  type: 'test'
+  ...
+# Subtest: fit 置中帶位移的範圍，留白且倍率受限
+ok 39 - fit 置中帶位移的範圍，留白且倍率受限
+  ---
+  duration_ms: 0.131041
+  type: 'test'
+  ...
+# Subtest: attach 綁定滾輪、拖曳、快捷鍵與按鈕；卸載後不再更新
+ok 40 - attach 綁定滾輪、拖曳、快捷鍵與按鈕；卸載後不再更新
+  ---
+  duration_ms: 0.634284
+  type: 'test'
+  ...
+# Subtest: focus 使用指定範圍，fullscreen 可進出
+ok 41 - focus 使用指定範圍，fullscreen 可進出
+  ---
+  duration_ms: 0.223864
+  type: 'test'
+  ...
+# Subtest: focus 平滑插值，ResizeObserver 不打斷動畫，拖曳後不誤觸節點
+ok 42 - focus 平滑插值，ResizeObserver 不打斷動畫，拖曳後不誤觸節點
+  ---
+  duration_ms: 0.508276
+  type: 'test'
+  ...
+# Subtest: 在圖面邊緣按下、移到外面放開後，不留下拖曳狀態
+ok 43 - 在圖面邊緣按下、移到外面放開後，不留下拖曳狀態
+  ---
+  duration_ms: 0.198945
+  type: 'test'
+  ...
+# Subtest: 步驟以教材、分析點和實際成品解鎖；排隊或失敗不算成品
+ok 44 - 步驟以教材、分析點和實際成品解鎖；排隊或失敗不算成品
+  ---
+  duration_ms: 7.124428
+  type: 'test'
+  ...
+# Subtest: 製作連結保留教材與 mock 情境，用 URLSearchParams 編碼
+ok 45 - 製作連結保留教材與 mock 情境，用 URLSearchParams 編碼
+  ---
+  duration_ms: 0.205737
+  type: 'test'
+  ...
+# Subtest: 素材庫每頁六份，空清單和越界頁數保持可用且不修改輸入
+ok 46 - 素材庫每頁六份，空清單和越界頁數保持可用且不修改輸入
+  ---
+  duration_ms: 0.147818
+  type: 'test'
+  ...
+# Subtest: 教材格式只接受四種副檔名，不因大小寫或多個點拒收
+ok 47 - 教材格式只接受四種副檔名，不因大小寫或多個點拒收
+  ---
+  duration_ms: 0.186014
+  type: 'test'
+  ...
+# Subtest: 點的狀態只讀對應影片；重點片按建議順序取出問題
+ok 48 - 點的狀態只讀對應影片；重點片按建議順序取出問題
+  ---
+  duration_ms: 1.079853
+  type: 'test'
+  ...
+# Subtest: 生成頁只勾未完成項目，總額隨勾選改變並送出選取的 items
+ok 49 - 生成頁只勾未完成項目，總額隨勾選改變並送出選取的 items
+  ---
+  duration_ms: 2.916323
+  type: 'test'
+  ...
+# Subtest: live 圖跟隨工作、失敗才提供允許的重試；每 2 秒輪詢且隱藏或離頁即停止
+ok 50 - live 圖跟隨工作、失敗才提供允許的重試；每 2 秒輪詢且隱藏或離頁即停止
+  ---
+  duration_ms: 5.423566
+  type: 'test'
+  ...
+# Subtest: 成品只保留一個播放器，直接點選顯示 warning 並送句號重配後回③
+ok 51 - 成品只保留一個播放器，直接點選顯示 warning 並送句號重配後回③
+  ---
+  duration_ms: 2.093328
+  type: 'test'
+  ...
+# Subtest: 簡報依 block 呈現版型，方向鍵只在 viewer 活著時翻頁且提供 PPTX
+ok 52 - 簡報依 block 呈現版型，方向鍵只在 viewer 活著時翻頁且提供 PPTX
+  ---
+  duration_ms: 2.175394
+  type: 'test'
+  ...
+# Subtest: 點選簡報頁籤後焦點進入 viewer，方向鍵可以直接翻頁
+ok 53 - 點選簡報頁籤後焦點進入 viewer，方向鍵可以直接翻頁
+  ---
+  duration_ms: 1.776318
+  type: 'test'
+  ...
+# Subtest: embed 資源是絕對 /web 路徑，路由從 pathname 解析並依 manifest 選 viewer
+ok 54 - embed 資源是絕對 /web 路徑，路由從 pathname 解析並依 manifest 選 viewer
+  ---
+  duration_ms: 2.642562
+  type: 'test'
+  ...
+# Subtest: 離頁後的舊佇列請求不再讀取工作或建立計時器
+ok 55 - 離頁後的舊佇列請求不再讀取工作或建立計時器
+  ---
+  duration_ms: 1.514136
+  type: 'test'
+  ...
+# Subtest: 重新生成同一項目後清掉歷史失敗與重試，不把舊紅色步驟當成目前結果
+ok 56 - 重新生成同一項目後清掉歷史失敗與重試，不把舊紅色步驟當成目前結果
+  ---
+  duration_ms: 3.481585
+  type: 'test'
+  ...
+# Subtest: 相同的輪詢結果保留勾選框與鍵盤焦點
+ok 57 - 相同的輪詢結果保留勾選框與鍵盤焦點
+  ---
+  duration_ms: 2.011425
+  type: 'test'
+  ...
+# Subtest: 生成成功加入工作才收合選擇，可展開且保留勾選；失敗仍留在選擇區
+ok 58 - 生成成功加入工作才收合選擇，可展開且保留勾選；失敗仍留在選擇區
+  ---
+  duration_ms: 2.0094
+  type: 'test'
+  ...
+# Subtest: 成品可直接跳到第三點，停止舊影片；未製作項目只有製作入口
+not ok 59 - 成品可直接跳到第三點，停止舊影片；未製作項目只有製作入口
+  ---
+  duration_ms: 2.270564
+  type: 'test'
+  location: '/home/pjw92/projects/videomaker/workbench/web/tests/f4.test.mjs:283:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    undefined !== 'q3'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'q3'
+  operator: 'strictEqual'
+  stack: |-
+    file:///home/pjw92/projects/videomaker/workbench/web/tests/f4.test.mjs:296:11
+    async withDOM (file:///home/pjw92/projects/videomaker/workbench/web/tests/dom-helper.mjs:41:8)
+    async TestContext.<anonymous> (file:///home/pjw92/projects/videomaker/workbench/web/tests/f4.test.mjs:284:2)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 簡報能直接選第七頁，更新頁碼及講者筆記
+ok 60 - 簡報能直接選第七頁，更新頁碼及講者筆記
+  ---
+  duration_ms: 1.90777
+  type: 'test'
+  ...
+# Subtest: 素材庫每頁六張，顯示點數、成品與花費，卡片連到指定單元成品
+ok 61 - 素材庫每頁六張，顯示點數、成品與花費，卡片連到指定單元成品
+  ---
+  duration_ms: 2.531112
+  type: 'test'
+  ...
+# Subtest: 學生提問用選定單元送出，影片使用共用播放器且換教材或離頁會停止
+ok 62 - 學生提問用選定單元送出，影片使用共用播放器且換教材或離頁會停止
+  ---
+  duration_ms: 4.302192
+  type: 'test'
+  ...
+# Subtest: 超出範圍顯示鎖與固定文案，no_match 顯示找不到段落
+ok 63 - 超出範圍顯示鎖與固定文案，no_match 顯示找不到段落
+  ---
+  duration_ms: 1.469762
+  type: 'test'
+  ...
+# Subtest: 尚未生成的段落只送選定 story，失敗可重試，成功才跳③
+ok 64 - 尚未生成的段落只送選定 story，失敗可重試，成功才跳③
+  ---
+  duration_ms: 2.244536
+  type: 'test'
+  ...
+# Subtest: 空素材庫不能提問；舊提問回覆在換教材或離頁後不再出現
+ok 65 - 空素材庫不能提問；舊提問回覆在換教材或離頁後不再出現
+  ---
+  duration_ms: 2.308336
+  type: 'test'
+  ...
+# Subtest: 匹配結果提供教材名稱、對應重點與狀態，教材詳情失敗仍保留可觀看結果
+ok 66 - 匹配結果提供教材名稱、對應重點與狀態，教材詳情失敗仍保留可觀看結果
+  ---
+  duration_ms: 4.375123
+  type: 'test'
+  ...
+# Subtest: 問答的教材詳情晚回來時，不覆蓋使用者正在輸入的新問題
+ok 67 - 問答的教材詳情晚回來時，不覆蓋使用者正在輸入的新問題
+  ---
+  duration_ms: 3.614823
+  type: 'test'
+  ...
+# Subtest: 未回報金額顯示未知與已知小計，不顯示為免費
+ok 68 - 未回報金額顯示未知與已知小計，不顯示為免費
+  ---
+  duration_ms: 3.067047
+  type: 'test'
+  ...
+# Subtest: 用量顯示真實總計、模型比例、每項花費與呼叫六欄
+ok 69 - 用量顯示真實總計、模型比例、每項花費與呼叫六欄
+  ---
+  duration_ms: 2.97679
+  type: 'test'
+  ...
+# Subtest: 用量每頁十個單元，第二頁不重複且展開狀態切頁後保留
+ok 70 - 用量每頁十個單元，第二頁不重複且展開狀態切頁後保留
+  ---
+  duration_ms: 36.283421
+  type: 'test'
+  ...
+# Subtest: 只有可見且 queue 忙碌每兩秒更新，背景與離頁停止，完成後只補最後一次
+ok 71 - 只有可見且 queue 忙碌每兩秒更新，背景與離頁停止，完成後只補最後一次
+  ---
+  duration_ms: 3.903819
+  type: 'test'
+  ...
+# Subtest: 閒置不設用量計時器；製作導覽列的 queue 更新會啟動排隊工作的刷新
+ok 72 - 閒置不設用量計時器；製作導覽列的 queue 更新會啟動排隊工作的刷新
+  ---
+  duration_ms: 2.204352
+  type: 'test'
+  ...
+# Subtest: 背景開啟不發輪詢請求；延遲回覆在離頁後不改畫面或重設計時器
+ok 73 - 背景開啟不發輪詢請求；延遲回覆在離頁後不改畫面或重設計時器
+  ---
+  duration_ms: 1.873162
+  type: 'test'
+  ...
+# Subtest: 零用量不造出模型比例或呼叫；刷新失敗保留上次數字並可再讀取
+ok 74 - 零用量不造出模型比例或呼叫；刷新失敗保留上次數字並可再讀取
+  ---
+  duration_ms: 2.79411
+  type: 'test'
+  ...
+# Subtest: 忙碌刷新保留 summary 焦點，相同資料不重建，呼叫更新後仍可用鍵盤展開
+ok 75 - 忙碌刷新保留 summary 焦點，相同資料不重建，呼叫更新後仍可用鍵盤展開
+  ---
+  duration_ms: 3.937863
+  type: 'test'
+  ...
+# Subtest: 工作結束後最後一筆讀取失敗仍可手動重讀，閒置不重啟自動計時器
+ok 76 - 工作結束後最後一筆讀取失敗仍可手動重讀，閒置不重啟自動計時器
+  ---
+  duration_ms: 5.480026
+  type: 'test'
+  ...
+# Subtest: 重點搜尋涵蓋標題與其他問法，空結果不顯示舊詳情，清除後可重新選取
+ok 77 - 重點搜尋涵蓋標題與其他問法，空結果不顯示舊詳情，清除後可重新選取
+  ---
+  duration_ms: 2.302994
+  type: 'test'
+  ...
+# Subtest: 導覽收合偏好跨初始化保存，儲存不可用仍可切換，入口有可辨識名稱
+ok 78 - 導覽收合偏好跨初始化保存，儲存不可用仍可切換，入口有可辨識名稱
+  ---
+  duration_ms: 0.790861
+  type: 'test'
+  ...
+# Subtest: 總圖從教材經整理與分析，分流各形式，再收進素材庫
+ok 79 - 總圖從教材經整理與分析，分流各形式，再收進素材庫
+  ---
+  duration_ms: 0.598983
+  type: 'test'
+  ...
+# Subtest: mock 總圖節點不重疊，節點足夠大且空登記表仍保留前置流程
+ok 80 - mock 總圖節點不重疊，節點足夠大且空登記表仍保留前置流程
+  ---
+  duration_ms: 0.29652
+  type: 'test'
+  ...
+# Subtest: 總圖由左到右：每一欄都在前一欄右邊，展開時也一樣
+ok 81 - 總圖由左到右：每一欄都在前一欄右邊，展開時也一樣
+  ---
+  duration_ms: 1.213589
+  type: 'test'
+  ...
+# Subtest: 步驟保留順序與模型資料，每四個換一列且不重疊
+ok 82 - 步驟保留順序與模型資料，每四個換一列且不重疊
+  ---
+  duration_ms: 0.19536
+  type: 'test'
+  ...
+# Subtest: SVG 可點選與鍵盤操作；live 狀態按 id 更新，保留不同狀態的文字
+ok 83 - SVG 可點選與鍵盤操作；live 狀態按 id 更新，保留不同狀態的文字
+  ---
+  duration_ms: 0.63099
+  type: 'test'
+  ...
+1..83
+# tests 83
+# suites 0
+# pass 82
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 363.174948

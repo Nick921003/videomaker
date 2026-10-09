@@ -42,6 +42,22 @@ class TestReadUnit(unittest.TestCase):
 		self.assertEqual(usage.read_unit(self.directory), [])
 		self.assertEqual(usage.unit_spent(self.directory), 0.0)
 
+	def test_unknown_cost_survives_read_and_summary_as_known_subtotal(self):
+		from workbench import usage
+		self.write_rows("usage.jsonl", [row(usd=0.02), row(usd=None),
+			{**row(usd=0.0), "estimated_cost_usd": None, "reported": False}])
+		rows = usage.read_unit(self.directory)
+		self.assertEqual(len(rows), 3)
+		self.assertEqual(sum(bool(value.get("cost_unknown")) for value in rows), 2)
+		result = usage.summarize([("u1", "教材", PLAN, rows)], date(2026, 10, 5))
+		self.assertEqual(result["totals"]["unknown_calls"], 2)
+		self.assertEqual(result["totals"]["unknown_today"], 2)
+		self.assertAlmostEqual(result["totals"]["all"], 0.02)
+		self.assertEqual(result["units"][0]["unknown_calls"], 2)
+		self.assertEqual(result["units"][0]["items"][0]["unknown_calls"], 2)
+		self.assertEqual(sum(bool(call.get("cost_unknown")) for call in result["units"][0]["items"][0]["calls"]), 2)
+		assert_shape(result, SHAPES["usage"])
+
 	def test_legacy_plan_and_scene_mapping(self):
 		from workbench import usage
 		self.write_rows("usage.jsonl", [

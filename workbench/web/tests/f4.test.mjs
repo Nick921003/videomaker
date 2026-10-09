@@ -83,7 +83,7 @@ test('live 圖跟隨工作、失敗才提供允許的重試；每 2 秒輪詢且
 	});
 });
 
-test('成品只保留一個播放器，下一點顯示 warning 並送句號重配後回③', async () => {
+test('成品只保留一個播放器，直接點選顯示 warning 並送句號重配後回③', async () => {
 	await withDOM(async () => {
 		const { renderMakeProducts } = await import('../js/pages/make-products.mjs');
 		const unit = await fixture('unit-done');
@@ -97,7 +97,7 @@ test('成品只保留一個播放器，下一點顯示 warning 並送句號重�
 			assert.equal(descendants(page).filter(node => node.tagName === 'video').length, 1);
 			assert.match(page.textContent, /US\$0\.053/);
 			const oldVideo = descendants(page).find(node => node.tagName === 'video');
-			click(find(page, '下一點'));
+			click(descendants(page).find(node => node.getAttribute('data-product-id') === 'q2'));
 			await settle();
 			assert.equal(oldVideo.paused, true);
 			assert.equal(descendants(page).filter(node => node.tagName === 'video').length, 1);
@@ -255,4 +255,136 @@ test('相同的輪詢結果保留勾選框與鍵盤焦點', async () => {
 			assert.equal(descendants(page).includes(input), true);
 		} finally { page.dispose(); api.get = original.get; globalThis.setTimeout = original.setTimeout; globalThis.clearTimeout = original.clearTimeout; }
 	});
+});
+
+test('生成成功加入工作才收合選擇，可展開且保留勾選；失敗仍留在選擇區', async () => {
+ await withDOM(async () => {
+  const { renderMakeGenerate } = await import('../js/pages/make-generate.mjs');
+  const unit = await fixture('unit-analyzed');
+  const original = { get: api.get, post: api.post };
+  api.get = async path => path === '/formats' ? fixture('formats') : structuredClone(unit);
+  let fail = true;
+  api.post = async () => { if (fail) throw new Error('無法加入工作'); return { job_ids: ['new-job'] }; };
+  const page = await renderMakeGenerate(unit);
+  try {
+   const input = descendants(page).find(node => node.tagName === 'input');
+   input.checked=false; input.dispatchEvent(new Event('change'));
+   click(find(page,'開始生成')); await settle();
+   assert.equal(page.getAttribute('data-selection'),'expanded');
+   fail=false; click(find(page,'開始生成')); await settle();
+   assert.equal(page.getAttribute('data-selection'),'collapsed');
+   click(find(page,'展開選擇'));
+   assert.equal(page.getAttribute('data-selection'),'expanded');
+   assert.equal(descendants(page).find(node=>node.tagName==='input').checked,false);
+  } finally { page.dispose(); Object.assign(api,original); }
+ });
+});
+
+test('成品可直接跳到第三點，停止舊影片；未製作項目只有製作入口', async () => {
+ await withDOM(async doc => {
+  const { renderMakeProducts } = await import('../js/pages/make-products.mjs');
+  const page=renderMakeProducts(await fixture('unit-done'));
+  try {
+   page.mount(); await settle();
+   const old=descendants(page).find(node=>node.tagName==='video');
+   const choice=id=>descendants(page).find(node=>node.getAttribute('data-product-id')===id);
+   assert.ok(choice('q3'));
+   click(choice('q3')); await settle();
+   assert.equal(old.paused,true);
+   assert.match(descendants(page).find(node=>node.tagName==='video').src,/q3\/video.mp4$/);
+   assert.equal(choice('q3').getAttribute('aria-pressed'),'true');
+   assert.equal(doc.activeElement?.getAttribute('data-product-id'),'q3');
+   click(choice('q5')); await settle();
+   assert.equal(descendants(page).filter(node=>node.tagName==='video').length,0);
+   assert.ok(find(page,'去選要生成的 →'));
+   assert.equal(find(page,'下一點'),undefined);
+  } finally { page.dispose(); }
+ });
+});
+
+test('簡報能直接選第七頁，更新頁碼及講者筆記', async () => {
+ await withDOM(async doc => {
+  const { mount } = await import('../js/viewers/deck.mjs');
+  const data=await fixture('deck');
+  globalThis.fetch=async()=>({ok:true,json:async()=>data});
+  const host=doc.createElement('div');
+  const viewer=await mount(host,{unit:'u',files:{deck:'slides/deck.json'}});
+  try {
+   const select=descendants(host).find(node=>node.getAttribute('aria-label')==='選擇投影片');
+   assert.ok(select); select.value='6'; select.dispatchEvent(new Event('change'));
+   assert.match(host.textContent,/7 \/ 7/);
+   assert.ok(host.textContent.includes(data.slides[6].speaker_notes));
+  } finally { viewer.dispose(); }
+ });
+});
+
+test('再點目前成品不重載影片，播放進度保持', async () => {
+ await withDOM(async () => {
+  const { renderMakeProducts } = await import('../js/pages/make-products.mjs');
+  const page=renderMakeProducts(await fixture('unit-done'));
+  try {
+   page.mount();await settle();
+   const current=descendants(page).find(node=>node.tagName==='video');current.currentTime=12;
+   click(descendants(page).find(node=>node.getAttribute('data-product-id')==='q1'));await settle();
+   assert.equal(descendants(page).find(node=>node.tagName==='video'),current);
+   assert.equal(current.currentTime,12);
+  } finally {page.dispose();}
+ });
+});
+
+test('送出成功但進度讀取失敗，明示已送出並鎖住同批項目', async () => {
+ await withDOM(async () => {
+  const { renderMakeGenerate }=await import('../js/pages/make-generate.mjs');
+  const unit=await fixture('unit-analyzed');const original={get:api.get,post:api.post};
+  api.get=async path=>{if(path==='/formats')return fixture('formats');throw new Error('斷線');};
+  api.post=async()=>({job_ids:['accepted']});
+  const page=await renderMakeGenerate(unit);
+  try {
+   click(find(page,'開始生成'));await settle();
+   assert.match(page.textContent,/工作已送出/);
+   assert.equal(find(page,'開始生成').disabled,true);
+   assert.equal(page.getAttribute('data-selection'),'collapsed');
+  } finally {page.dispose();Object.assign(api,original);}
+ });
+});
+
+test('過期工作不阻礙目前進度；相同佇列輪詢保留按鈕與焦點', async () => {
+ await withDOM(async doc => {
+  const { renderMakeGenerate }=await import('../js/pages/make-generate.mjs');
+  const unit=await fixture('unit-analyzed');const job=await fixture('job-running');
+  const original={get:api.get,setTimeout:globalThis.setTimeout,clearTimeout:globalThis.clearTimeout};let tick;
+  api.get=async path=>{
+   if(path==='/formats')return fixture('formats');
+   if(path==='/queue')return {running:job,queued:[]};
+   if(path==='/jobs/expired')throw Object.assign(new Error('expired'),{status:404});
+   if(path.startsWith('/jobs/'))return job;
+   return structuredClone(unit);
+  };
+  globalThis.setTimeout=fn=>{tick=fn;return 1;};globalThis.clearTimeout=()=>{};
+  const page=await renderMakeGenerate(unit,{query:{job:'expired'}});
+  try {
+   page.mount();await settle();
+   const row=descendants(page).find(node=>node.getAttribute('data-job-id')===job.job_id);
+   assert.ok(row);row.focus();await tick();await settle();
+   assert.ok(descendants(page).includes(row));assert.equal(doc.activeElement,row);
+   assert.ok(descendants(page).find(node=>node.getAttribute('data-node-id')==='repair'));
+  } finally {page.dispose();api.get=original.get;globalThis.setTimeout=original.setTimeout;globalThis.clearTimeout=original.clearTimeout;}
+ });
+});
+
+test('手動先收合選擇後，右側仍能開始生成', async () => {
+ await withDOM(async () => {
+  const { renderMakeGenerate }=await import('../js/pages/make-generate.mjs');
+  const unit=await fixture('unit-analyzed');const original={get:api.get,post:api.post};let sent=false;
+  api.get=async path=>path==='/formats'?fixture('formats'):structuredClone(unit);
+  api.post=async()=>{sent=true;return {job_ids:['accepted']};};
+  const page=await renderMakeGenerate(unit);
+  try {
+   click(find(page,'收合選擇'));
+   const start=find(page,'開始生成');
+   assert.equal(start.hidden,false);
+   assert.equal(start.parentElement.className,'generate-actions');
+   click(start);await settle();assert.equal(sent,true);
+  } finally {page.dispose();Object.assign(api,original);}
+ });
 });

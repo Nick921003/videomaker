@@ -1,0 +1,39 @@
+審查完了，沒有改檔，也沒有執行生成。我找到 3 個風險，「收合導覽」和「手機捲動」都卡在同一組外殼 CSS，所以合併成第 1 點。
+
+### 1. 收合導覽與手機捲動：手機上可能找不到展開按鈕，畫面也還是一堆小捲動框
+- **問題來源**
+  - 導覽連結的圖示都設了 `aria-hidden`，連結名稱只來自 `<span>` 文字（[index.html](file:///home/pjw92/projects/videomaker/workbench/web/index.html#L27-L52)）。如果收合時用 `display:none` 藏文字，連結會變成沒有名稱。
+  - 在 ≤760px，導覽列是頂部那一列（[styles.css](file:///home/pjw92/projects/videomaker/workbench/web/styles.css#L706-L754)），矮手機另有一條 `:has()` 規則（L2291）。如果收合按鈕放在 `.rail-nav` 裡，或桌面存下的「收合」偏好直接套到手機，導覽可能整個不見。
+  - `html, body` 和 `.main-viewport` 都設了 `overflow:hidden`，`.page` 是 `height:100%`（L22-27、L222-234）。
+  - 手機上教材分析和問答仍是兩欄並排（L1719、L2632），內部框又有 `max-height` 限制（L1458、L1750）。只改成單欄的話，捲動仍會卡在幾個很短的框裡。
+- **最小修正**
+  - 收合按鈕放在 `.rail-brand` 旁邊，不放進 `.rail-nav`，並加 `aria-expanded`。
+  - 收合狀態用 `.app-layout[data-rail="collapsed"]` 表示；文字改用 `.sr-only` 那種裁切方式藏起來，或每個連結補 `aria-label`。
+  - 收合偏好只在 >760px 套用。
+  - 在 ≤760px，只針對 `.make-analysis` 和 `.library-page`：讓 `.main-viewport` 改成 `overflow-y:auto`，`.page` 改成 `height:auto`，欄位改成 `1fr` 單欄，內部 `.scroll-box` 改成 `max-height:none; overflow:visible`。
+  - 不要全域改 `.page`，以免影響產生、成品、圖檢視等依賴 `height:100%` 的頁面。
+
+### 2. 教材分析搜尋：篩選後，右側可能還顯示已被濾掉的問題
+- **問題來源**
+  - [`renderMakeAnalysis`](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/make-analysis.mjs#L25-L99) 裡的 `select()` 靠 `buttons` 這個 Map 更新選取狀態。如果搜尋時用 `replaceChildren` 重建清單，Map 裡留著的是舊按鈕，`aria-pressed` 會設在已經不在畫面上的元素。
+  - 選中的問題被濾掉、或搜尋沒有結果時，右側詳情還停在原本的問題，跟計畫說的「空結果與選取狀態一致」不符。
+  - 矮視窗會把 `.section-note` 全部藏起來（L893）。如果空結果提示用這個 class，矮螢幕上會看不到。
+- **最小修正**
+  - 篩選只切換現有按鈕的 `button.hidden`，不重建，Map 保持不變。
+  - 篩選後如果目前選取的問題被藏起來，就自動選第一個可見的；全部都不符合時，清掉所有 `aria-pressed`，右側改顯示「沒有符合的問題」。
+  - 搜尋範圍包含 `question`、`title`、`also_asks`，比對時不分大小寫。
+  - 空結果提示用新的 class，不用 `section-note`。
+  - 移除「不涵蓋」時，只刪 L31 那一組資料；`.scope-excluded` CSS 可以順手刪掉。
+
+### 3. 問答結果的版本競態：加入教材來源後，舊結果可能蓋掉新結果
+- **問題來源**
+  - 目前在 `await` 之後都有檢查 `version === revision`（[library.mjs](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/library.mjs#L144-L162)），所以現在是安全的。
+  - 但 [`showAnswer`](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/library.mjs#L105-L143) 是同步執行的。如果為了顯示「教材來源」再加一次請求，把它改成 async，在 `await` 期間發生的 `resetAnswer()`（每次打字都會觸發）會先清掉播放器；等舊請求回來，又會把舊播放器掛上去，並蓋掉 `viewer` 變數。結果是舊影片沒被釋放，還會出現舊的結果卡。
+- **最小修正**
+  - `showAnswer` 維持同步。送出時先記下 `const unit = units.find(u => u.unit_id === unitId)`，教材名稱和下一步連結都用這份資料加上 `answer` 組出來，不讀當下的 `select` 或 `textarea`。
+  - 如果真的要再請求一次，每個 `await` 之後都要先檢查 `!disposed && version === revision`，通過才能動畫面或 `viewer`。
+  - 補一個測試：第一個問題的回應延遲，期間送出第二個問題，確認畫面只顯示第二個結果，且播放器只掛了一次。
+
+---
+
+這 3 點要不要寫進計畫檔，例如在「驗證」項目補上對應的測試？確認後我再動手。[agy] print timeout after 1m30s with turn in progress; returning partial output

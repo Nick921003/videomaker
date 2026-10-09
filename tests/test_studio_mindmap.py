@@ -20,6 +20,20 @@ def sample_map():
 
 
 class TestMindmap(unittest.TestCase):
+	def test_svg_exposes_safe_node_explanation_and_quote_for_direct_selection(self):
+		from xml.etree import ElementTree
+		mindmap = sample_map()
+		mindmap["nodes"][0]["explanation"] = '<script>只當文字</script>'
+		root = ElementTree.fromstring(render_mindmap_svg(mindmap))
+		ns = "{http://www.w3.org/2000/svg}"
+		for node in mindmap["nodes"]:
+			card = root.find(f"{ns}g[@data-node-id='{node['id']}']")
+			self.assertEqual(card.find(f"{ns}desc[@data-node-explanation]").text, node["explanation"])
+			self.assertEqual(card.find(f"{ns}desc[@data-node-quote]").text, node["source_quote"])
+			labels = [t for t in card.findall(f"{ns}text") if t.get("font-weight") == "700"]
+			self.assertTrue(all(int(t.get("font-size")) >= 20 for t in labels))
+		self.assertEqual(root.findall(f".//{ns}script"), [])
+
 	def test_builds_bounded_cited_tree(self):
 		calls = []
 		candidate = sample_map()

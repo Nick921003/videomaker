@@ -26,6 +26,8 @@ const mockFiles = Object.freeze({
 	'/usage': 'usage.json',
 	'/ask': 'ask-story.json',
 	'/ask?out_of_scope': 'ask-out-of-scope.json',
+	'/ask?unmade': 'ask-story-unmade.json',
+	'/ask?no_match': 'ask-no-match.json',
 });
 
 function failure(code, reason, advice = '') {
@@ -282,7 +284,14 @@ async function mockPost(url, body) {
 		return { job_id: await createJob(unitId, itemId, item.format, [...new Set(body.beats)]) };
 	}
 	if (url.pathname === '/ask') {
-		return fixture(body.out_of_scope ? '/ask?out_of_scope' : '/ask');
+		if (typeof body.question !== 'string' || !body.question.trim()) throw failure('bad_request', '請輸入學生問題');
+		const question = body.question.trim();
+		const key = body.out_of_scope || question.includes('遞迴') ? '/ask?out_of_scope'
+			: /未生成|還沒生成/.test(question) ? '/ask?unmade'
+				: /找不到|未知問題/.test(question) ? '/ask?no_match' : '/ask';
+		const result = await fixture(key);
+		if (result.video) result.video = `/media/${encodeURIComponent(body.unit_id ?? UNIT)}/${result.story}/video.mp4`;
+		return result;
 	}
 	throw failure('mock_not_found', '這個示範操作還沒準備好');
 }

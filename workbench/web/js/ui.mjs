@@ -25,6 +25,7 @@ export function icon(name, className = '') {
 		pipelines: 'M4 4h6v5H4z M14 15h6v5h-6z M7 9v9h7',
 		overview: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
 		planned: 'M5 4h14v16H5z M9 9h6 M9 13h6 M9 17h3',
+		lock: 'M5 10h14v11H5z M8 10V6a4 4 0 0 1 8 0v4 M12 14v3',
 	};
 	const path = document.createElementNS(svg.namespaceURI, 'path');
 	path.setAttribute('d', paths[name] ?? paths.planned);

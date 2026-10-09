@@ -87,7 +87,7 @@ def _draw_vertical_list(slide, block, self_study):
 			0.45, 0.40 if self_study else 0.45, size=18 if self_study else 21, color=_ACCENT, bold=True)
 		_text(slide, item, 1.55, y + 0.05, 10.6, 0.50 if self_study else 0.60,
 			size=19 if self_study else 13 if len(item) > 90 else 15 if len(item) > 60 else 19,
-			min_size=14 if self_study else None)
+			min_size=16 if self_study else None)
 
 
 def _draw_card_grid(slide, block, role, self_study):
@@ -110,33 +110,33 @@ def _draw_card_grid(slide, block, role, self_study):
 			0.65, 0.38, size=18, color=RGBColor(41, 91, 71) if role == "summary" else _ACCENT, bold=True)
 		_text(slide, item, x + 0.25, y + (0.60 if self_study else 0.65), width - 0.5,
 			1.05 if self_study else 1.20,
-			size=17 if len(item) > 32 else 20, bold=role in ("hook", "summary"))
+			size=17 if len(item) > 32 else 20, min_size=16 if self_study else None, bold=role in ("hook", "summary"))
 
 
 def _draw_concept(slide, block):
 	items = block["items"]
-	center_y = 2.05 if len(items) == 2 else 3.70
-	center = (3.9, center_y, 5.53, 0.60)
+	center_y = 2.05 if len(items) == 2 else 3.65
+	center = (3.9, center_y, 5.53, 0.64)
 	positions = [(0.8 + (index % 2) * 6.0,
-		3.35 if len(items) == 2 else 1.90 if index < 2 else 4.45) for index in range(len(items))]
+		3.35 if len(items) == 2 else 1.80 if index < 2 else 4.35) for index in range(len(items))]
 	# 連線先畫，保留原生可編輯圖形，且不穿過分支文字。
 	for index, (x, y) in enumerate(positions):
 		above = y < center_y
 		connector = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT,
 			Inches(center[0] + center[2] * (0.3 if index % 2 == 0 else 0.7)),
 			Inches(center_y if above else center_y + center[3]),
-			Inches(x + 2.85), Inches(y + 1.65 if above else y))
+			Inches(x + 2.85), Inches(y + 1.80 if above else y))
 		connector.line.color.rgb = _ACCENT
 		connector.line.width = Pt(2)
 	_panel(slide, *center, fill=_ACCENT)
 	_text(slide, block["center"], center[0] + 0.12, center_y + 0.02,
-		center[2] - 0.24, center[3] - 0.04, size=22, min_size=14, color=_WHITE, bold=True)
+		center[2] - 0.24, center[3] - 0.04, size=22, min_size=16, color=_WHITE, bold=True)
 	for item, (x, y) in zip(items, positions):
-		_panel(slide, x, y, 5.7, 1.65)
+		_panel(slide, x, y, 5.7, 1.80)
 		_text(slide, item["title"], x + 0.22, y + 0.04, 5.26, 0.59,
 			size=20, min_size=16, color=_ACCENT, bold=True)
-		_text(slide, item["text"], x + 0.22, y + 0.64, 5.26, 1.00,
-			size=18, min_size=14)
+		_text(slide, item["text"], x + 0.22, y + 0.64, 5.26, 1.14,
+			size=18, min_size=16)
 
 
 def _draw_block(slide, block, role, self_study):
@@ -148,10 +148,11 @@ def _draw_block(slide, block, role, self_study):
 			_draw_vertical_list(slide, block, self_study)
 	elif kind == "code":
 		_panel(slide, 0.8, 1.95, 11.7, 4.15 if self_study else 4.5, fill=RGBColor(46, 52, 47))
-		_text(slide, block["language"].upper(), 1.1, 2.15, 3.0, 0.36, size=12, color=RGBColor(212, 173, 126), bold=True)
+		_text(slide, block["language"].upper(), 1.1, 2.15, 3.0, 0.36, size=16 if self_study else 12, min_size=16 if self_study else None, color=RGBColor(212, 173, 126), bold=True)
 		lines = "\n".join(block["lines"])
 		_text(slide, lines, 1.1, 2.65, 11.0, 3.35 if self_study else 3.70,
-			size=12 if len(block["lines"]) > 12 else 14 if len(block["lines"]) > 9 else 17,
+			size=18 if self_study else 12 if len(block["lines"]) > 12 else 14 if len(block["lines"]) > 9 else 17,
+			min_size=16 if self_study else None,
 			color=_WHITE, font="Consolas")
 	elif kind == "compare":
 		for x, side in ((0.8, block["left"]), (6.8, block["right"])):
@@ -159,7 +160,8 @@ def _draw_block(slide, block, role, self_study):
 			_text(slide, side["title"], x + 0.25, 2.2, 5.1, 0.5, size=22, color=_ACCENT, bold=True)
 			for index, item in enumerate(side["items"]):
 				_text(slide, "• " + item, x + 0.3, 2.88 + index * 0.79, 5.0, 0.70 if self_study else 0.72,
-					size=12 if len(item) > 90 else 14 if len(item) > 60 else 18)
+					size=18 if self_study else 12 if len(item) > 90 else 14 if len(item) > 60 else 18,
+					min_size=16 if self_study else None)
 	elif kind == "concept":
 		_draw_concept(slide, block)
 
@@ -184,9 +186,9 @@ def export_pptx(value):
 			_text(slide, "流程方向：依序 01 → 02 → …", 0.8, 1.70, 11.7, 0.23,
 				size=11, min_size=11, color=_ACCENT)
 		if "takeaway" in item:
-			_panel(slide, 0.8, 6.20, 11.7, 0.81, fill=_WHITE)
-			_text(slide, item["takeaway"], 1.00, 6.22, 11.3, 0.77,
-				size=18, min_size=14, bold=True)
+			_panel(slide, 0.8, 6.20, 11.7, 0.90, fill=_WHITE)
+			_text(slide, item["takeaway"], 1.00, 6.22, 11.3, 0.86,
+				size=18, min_size=16, bold=True)
 		_text(slide, f"{index} / {len(deck['slides'])}", 11.8, 7.15 if self_study else 7.02,
 			0.8, 0.25, size=11, color=_ACCENT)
 		slide.notes_slide.notes_text_frame.text = (

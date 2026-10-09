@@ -24,6 +24,26 @@ class TestCompose(unittest.TestCase):
 	def setUp(self):
 		self.doc = CO.compose(PLAN, [load("env_path"), load("env_path_howto")], ["a", "b"])
 
+	def test_cli_reports_source_version_error_without_writing_output(self):
+		import tempfile
+		from pathlib import Path
+		from unittest.mock import patch
+		import contextlib
+		import io
+		with tempfile.TemporaryDirectory() as directory:
+			root = Path(directory)
+			(root / "meta.json").write_text("{}")
+			(root / "plan.json").write_text(json.dumps({**PLAN, "highlight": {"stories": ["a"]}}))
+			(root / "a.scene.json").write_text(json.dumps(load("env_path")))
+			out = root / "combined.scene.json"
+			stream = io.StringIO()
+			with patch.object(sys, "argv", ["compose.py", str(root / "plan.json"), str(root), str(out)]), patch("workbench.material.composite_provenance", side_effect=ValueError("教材版本不一致")), contextlib.redirect_stdout(stream):
+				with self.assertRaises(SystemExit) as caught:
+					CO.main()
+			self.assertEqual(caught.exception.code, 1)
+			self.assertIn("@error material_version", stream.getvalue())
+			self.assertFalse(out.exists())
+
 	def test_兩支都有term也不撞名且能編譯(self):
 		ids = [o["id"] for o in self.doc["objects"]]
 		self.assertEqual(len(ids), len(set(ids)))

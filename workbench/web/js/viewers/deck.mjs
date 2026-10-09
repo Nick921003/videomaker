@@ -41,16 +41,35 @@ export function renderSlide(slide) {
 	return card;
 }
 
-function fitSlide(card) {
+export function fitSlide(card, version = '1.1') {
 	const content = card.querySelector('.deck-slide-content');
 	if (!card.clientHeight || !content?.clientHeight) return;
-	// 量測原尺寸卡片，讓長程式碼也能靠 viewer 縮放讀完整頁。
+	// 區分版本：舊 1.0 保留最多 40 次縮字；新 1.1 禁止無限縮字，限制最多 2 次且下限 0.82
+	const isV11 = version !== '1.0';
+	const maxPasses = isV11 ? 2 : 40;
+	const minScale = isV11 ? 0.82 : 0.01;
 	let scale = 1;
-	for (let pass = 0; pass < 40; pass++) {
+	for (let pass = 0; pass < maxPasses; pass++) {
 		if (card.scrollHeight <= card.clientHeight + 1 && card.scrollWidth <= card.clientWidth + 1
 			&& content.scrollHeight <= content.clientHeight + 1 && content.scrollWidth <= content.clientWidth + 1) break;
+		if (scale * 0.9 < minScale) break;
 		scale *= 0.9;
 		card.style.setProperty('--deck-scale', String(scale));
+	}
+	if (isV11) {
+		// 檢查在足夠字級下是否仍超量：若超量則明示可讀捲動處理，不隱藏內容
+		const isOverflowing = card.scrollHeight > card.clientHeight + 1 || content.scrollHeight > content.clientHeight + 1;
+		if (isOverflowing) {
+			card.setAttribute('data-overflow', 'true');
+			if (!card.querySelector('.deck-overflow-notice')) {
+				const notice = el('p', 'deck-overflow-notice', '內容較多 · 可向下捲動閱讀完整內容');
+				notice.setAttribute('role', 'note');
+				card.append(notice);
+			}
+		} else {
+			card.removeAttribute('data-overflow');
+			card.querySelector('.deck-overflow-notice')?.remove();
+		}
 	}
 }
 
@@ -61,7 +80,9 @@ export async function mount(host, { unit, files, signal }) {
 	const next = button('下一頁');
 	const counter = el('span', 'deck-counter');
 	counter.setAttribute('role', 'status');
-	toolbar.append(previous, counter, next);
+	const jump = el('select', 'deck-jump');
+	jump.setAttribute('aria-label', '選擇投影片');
+	toolbar.append(jump, previous, counter, next);
 	if (files.pptx) {
 		const download = el('a', 'button deck-download', '下載 PPTX');
 		download.href = fileURL(unit, files.pptx, 'pptx');
@@ -83,13 +104,21 @@ export async function mount(host, { unit, files, signal }) {
 	host.replaceChildren(root);
 	const deck = await readFile(unit, files, 'deck', signal);
 	signal?.throwIfAborted();
+	root.setAttribute('data-contract-version', deck.contract_version ?? '1.0');
 	if (!deck.slides?.length) throw new Error('這份簡報還沒有投影片。');
+	for (const [i, slide] of deck.slides.entries()) {
+		const option = el('option', '', `${i + 1}. ${slide.title}`);
+		option.value = String(i);
+		jump.append(option);
+	}
+	jump.addEventListener('change', () => show(Number(jump.value)));
 	let page = 0;
 	function show(index) {
 		page = Math.max(0, Math.min(deck.slides.length - 1, index));
+		jump.value = String(page);
 		const card = renderSlide(deck.slides[page]);
 		canvas.replaceChildren(card);
-		fitSlide(card);
+		fitSlide(card, deck.contract_version ?? '1.0');
 		counter.textContent = `${page + 1} / ${deck.slides.length}`;
 		previous.disabled = page === 0;
 		next.disabled = page === deck.slides.length - 1;
@@ -101,9 +130,10 @@ export async function mount(host, { unit, files, signal }) {
 	const doc = host.ownerDocument ?? document;
 	const keydown = event => {
 		if (event.ctrlKey || event.metaKey || event.altKey || event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
-		if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+		if (!['ArrowLeft', 'ArrowRight', ' '].includes(event.key) || event.repeat) return;
+		if (event.key === ' ' && event.target?.closest?.('button, a, summary')) return;
 		event.preventDefault();
-		show(page + (event.key === 'ArrowRight' ? 1 : -1));
+		show(page + (event.key === 'ArrowRight' || event.key === ' ' && !event.shiftKey ? 1 : -1));
 	};
 	doc.addEventListener('keydown', keydown);
 	const controls = panViewer(viewport, root, toolbar, { onChange(view) {

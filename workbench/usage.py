@@ -32,6 +32,9 @@ def _read_rows(path, item=None, step=None):
 				if not isinstance(value, dict):
 					continue
 				usd = value.get("usd", 0.0)
+				unknown = usd is None or ("estimated_cost_usd" in value and value["estimated_cost_usd"] is None)
+				if unknown:
+					usd = 0.0
 				if type(usd) not in (int, float) or not math.isfinite(usd):
 					continue
 				stage = _text(value.get("stage"))
@@ -45,6 +48,8 @@ def _read_rows(path, item=None, step=None):
 					count = value.get(key)
 					entry[key] = count if type(count) is int and count >= 0 else 0
 				entry.update({key: count for key, count in value.items() if key.startswith("cache_")})
+				if unknown:
+					entry["cost_unknown"] = True
 				rows.append(entry)
 	except FileNotFoundError:
 		pass
@@ -84,7 +89,14 @@ def summarize(units: list[tuple[str, str, dict | None, list[dict]]], today: date
 		for row in rows:
 			item = row["item"]
 			group = items.setdefault(item, {"item": item, "label": item_label(item, plan), "usd": 0.0, "calls": []})
-			group["calls"].append({key: row[key] for key in _CALL_FIELDS})
+			call = {key: row[key] for key in _CALL_FIELDS}
+			if row.get("cost_unknown"):
+				call["cost_unknown"] = True
+				group["unknown_calls"] = group.get("unknown_calls", 0) + 1
+				totals["unknown_calls"] = totals.get("unknown_calls", 0) + 1
+				if _timestamp(row["at"]).date() == today:
+					totals["unknown_today"] = totals.get("unknown_today", 0) + 1
+			group["calls"].append(call)
 			group["usd"] += row["usd"]
 			totals["all"] += row["usd"]
 			if _timestamp(row["at"]).date() == today:
@@ -96,6 +108,9 @@ def summarize(units: list[tuple[str, str, dict | None, list[dict]]], today: date
 			group["calls"].sort(key=lambda call: _timestamp(call["at"]), reverse=True)
 		result["units"].append({"unit_id": uid, "title": title, "usd": round(sum(row["usd"] for row in rows), 8),
 			"items": list(items.values())})
+		unknown = sum(bool(row.get("cost_unknown")) for row in rows)
+		if unknown:
+			result["units"][-1]["unknown_calls"] = unknown
 	totals["today"], totals["all"] = round(totals["today"], 8), round(totals["all"], 8)
 	totals["by_model"] = {model: round(usd, 8) for model, usd in totals["by_model"].items()}
 	return result

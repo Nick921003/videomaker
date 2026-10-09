@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { stepAvailability, makeHash } from '../js/pages/make.mjs';
-import { paginateUnits, sourceKind } from '../js/pages/make-source.mjs';
+import { paginateUnits, sourceKind, ACCEPTED_KINDS, decodeUtf8 } from '../js/pages/make-source.mjs';
 import { pointStatus, highlightPoints } from '../js/pages/make-analysis.mjs';
 
 const fixture = async name => JSON.parse(await readFile(new URL(`../mock/${name}.json`, import.meta.url), 'utf8'));
@@ -34,10 +34,23 @@ test('素材庫每頁六份，空清單和越界頁數保持可用且不修改�
 	assert.equal(units.length, 14);
 });
 
-test('教材格式只接受四種副檔名，不因大小寫或多個點拒收', () => {
-	for (const kind of ['md', 'txt', 'pdf', 'pptx']) assert.equal(sourceKind(`lesson.v2.${kind.toUpperCase()}`), kind);
-	assert.equal(sourceKind('lesson.docx'), null);
+test('教材格式接受十種副檔名，不因大小寫或多個點拒收；不支援格式回傳 null', () => {
+	assert.deepEqual(ACCEPTED_KINDS, ['md', 'txt', 'pdf', 'pptx', 'docx', 'xlsx', 'csv', 'png', 'jpg', 'jpeg']);
+	for (const kind of ACCEPTED_KINDS) {
+		assert.equal(sourceKind(`lesson.v2.${kind.toUpperCase()}`), kind);
+		assert.equal(sourceKind(`notes.${kind}`), kind);
+	}
+	assert.equal(sourceKind('lesson.docx'), 'docx');
+	assert.equal(sourceKind('lesson.xlsx'), 'xlsx');
+	assert.equal(sourceKind('lesson.csv'), 'csv');
+	assert.equal(sourceKind('lesson.png'), 'png');
+	assert.equal(sourceKind('lesson.jpg'), 'jpg');
+	assert.equal(sourceKind('lesson.jpeg'), 'jpeg');
+	assert.equal(sourceKind('lesson.exe'), null);
+	assert.equal(sourceKind('lesson.zip'), null);
+	assert.equal(sourceKind('lesson.mp4'), null);
 	assert.equal(sourceKind('pdf'), null);
+	assert.equal(sourceKind(''), null);
 });
 
 test('點的狀態只讀對應影片；重點片按建議順序取出問題', async () => {
@@ -46,4 +59,11 @@ test('點的狀態只讀對應影片；重點片按建議順序取出問題', as
 	assert.equal(pointStatus(unit, 'missing'), 'none');
 	assert.deepEqual(highlightPoints(unit.analysis).map(point => point.id), ['q1', 'q2', 'q3']);
 	assert.deepEqual(highlightPoints({ points: [], highlight: { points: ['missing'] } }), []);
+});
+
+
+test('文字檔保留原始 BOM 和換行，錯誤編碼不轉成替代字後入庫', () => {
+	const text = '\ufeff# 原稿\r\n001\r\n';
+	assert.equal(decodeUtf8(new TextEncoder().encode(text)), text);
+	assert.throws(() => decodeUtf8(new Uint8Array([0xff, 0xfe])), /UTF-8/);
 });

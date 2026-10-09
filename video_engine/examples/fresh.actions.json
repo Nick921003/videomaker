@@ -1,0 +1,174 @@
+{
+	"lesson_id": "fresh",
+	"slides": [
+		{
+			"slide_id": "p1",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p1_title"
+				},
+				{
+					"type": "speech",
+					"text": "同學好，寫習慣高階語言的人，常會想直接用等號把字串塞進變數。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p1_fig:l1"
+				},
+				{
+					"type": "speech",
+					"text": "但在 C 語言裡面，根本沒有原生字串型態，陣列名稱只是記憶體起點。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_b"
+				},
+				{
+					"type": "laser",
+					"target": "p1_fig:r1"
+				},
+				{
+					"type": "speech",
+					"text": "直接用等號指定只會傳遞位址，沒辦法把內容整個複製過來。"
+				},
+				{
+					"type": "reveal",
+					"target": "p1_c"
+				},
+				{
+					"type": "laser",
+					"target": "p1_fig:r2"
+				},
+				{
+					"type": "speech",
+					"text": "如果五個字元只開五格，少了收尾的結束字元，印出來就會是整串亂碼。"
+				}
+			]
+		},
+		{
+			"slide_id": "p2",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p2_a"
+				},
+				{
+					"type": "speech",
+					"text": "延續剛剛的概念，C 語言的字串其實就是字元陣列，結尾必須多放一個空字元當哨兵。"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_fig:i5"
+				},
+				{
+					"type": "speech",
+					"text": "像圖中的 Alice 有五個字母，陣列就得開六格，最後一格專門留給結束字元。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_b"
+				},
+				{
+					"type": "laser",
+					"target": "p2_b"
+				},
+				{
+					"type": "speech",
+					"text": "如果少了這個哨兵，函式不知道哪裡結束，就會一路往後讀出亂碼。"
+				},
+				{
+					"type": "reveal",
+					"target": "p2_c"
+				},
+				{
+					"type": "spotlight",
+					"target": "p2_c"
+				},
+				{
+					"type": "speech",
+					"text": "所以記住，宣告容量一定要比實際長度多一格，多出來的正是哨兵的位置。"
+				}
+			]
+		},
+		{
+			"slide_id": "p3",
+			"actions": [
+				{
+					"type": "laser",
+					"target": "p3_code:L2"
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L5"
+				},
+				{
+					"type": "speech",
+					"text": "記得引入字串函式庫。第五行先宣告三十二格陣列作為容量。"
+				},
+				{
+					"type": "camera",
+					"target": "p3_code:L6-L7",
+					"scale": 1.3
+				},
+				{
+					"type": "spotlight",
+					"target": "p3_code:L6"
+				},
+				{
+					"type": "speech",
+					"text": "第六行不能用等號，要用 string copy 把名字複製進陣列。"
+				},
+				{
+					"type": "laser",
+					"target": "p3_code:L7"
+				},
+				{
+					"type": "camera",
+					"reset": true
+				},
+				{
+					"type": "speech",
+					"text": "最後第七行量出長度是五個字，並且順利印出結果。"
+				}
+			]
+		},
+		{
+			"slide_id": "p4",
+			"actions": [
+				{
+					"type": "spotlight",
+					"target": "p4_a"
+				},
+				{
+					"type": "speech",
+					"text": "最後總結三個常見地雷。首先，指定內容不能用等號，要用函式逐字複製。"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_b"
+				},
+				{
+					"type": "laser",
+					"target": "p4_b"
+				},
+				{
+					"type": "speech",
+					"text": "第二個坑是字串比較，直接用雙等號比的是記憶體位址，不是比文字內容。"
+				},
+				{
+					"type": "reveal",
+					"target": "p4_c"
+				},
+				{
+					"type": "laser",
+					"target": "p4_fig:i1"
+				},
+				{
+					"type": "speech",
+					"text": "宣告陣列時也要記得多留一格給結尾哨兵，掌握這幾點就不會再踩雷囉。"
+				}
+			]
+		}
+	]
+}

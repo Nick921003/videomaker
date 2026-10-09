@@ -1,0 +1,48 @@
+{
+  "checks": [
+    {
+      "width": 1440,
+      "height": 900,
+      "navigation_persisted": true,
+      "search_and_selection": true,
+      "library_context": true
+    },
+    {
+      "width": 1250,
+      "height": 700,
+      "navigation_persisted": true,
+      "search_and_selection": true,
+      "library_context": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "navigation_persisted": true,
+      "search_and_selection": true,
+      "library_context": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "navigation_persisted": true,
+      "search_and_selection": true,
+      "library_context": true
+    },
+    {
+      "width": 375,
+      "height": 900,
+      "navigation_persisted": true,
+      "search_and_selection": true,
+      "library_context": true
+    },
+    {
+      "width": 375,
+      "height": 560,
+      "navigation_persisted": true,
+      "search_and_selection": true,
+      "library_context": true
+    }
+  ],
+  "errors": [],
+  "paid_calls": 0
+}

@@ -1,0 +1,23 @@
+只讀了這兩個檔案，沒有改檔，也沒有跑 git。我挑出 3 個確定的風險。
+
+### 1. 高風險：每 2 秒輪詢都會重建按鈕，鍵盤焦點會一直不見
+- [make-generate.mjs:139-171](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/make-generate.mjs#L139-L171)：每次輪詢成功都會跑 `renderQueue`（[L197](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/make-generate.mjs#L197)），把右側佇列和失敗面板整個清掉重畫（`queueList` 和 `failures` 的 `replaceChildren()`）。
+- 影響：
+  - 用 Tab 停在右側佇列、「查看失敗步驟」或「重試」按鈕上，最多 2 秒焦點就掉回 `body`，鍵盤使用者幾乎按不到。
+  - 失敗面板有 `role="alert"`，每次重插都可能讓螢幕閱讀器重念一次。
+- 佇列移到右側並收合左邊之後，使用者會更常操作這一區，問題會更明顯。
+
+### 2. 中風險：只要一個工作查不到，輪詢就整個停擺，看起來像提交失敗
+- [make-generate.mjs:191-199](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/make-generate.mjs#L191-L199)：`Promise.all` 只要有一個 `/jobs/:id` 回錯，整輪都進 `catch`。
+- 這個 id 不會從 `watched` 移除：網址帶的 `query.job`（[L65](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/make-generate.mjs#L65)）只要過期或無效，它的值一直是 `null`，每輪都會再查一次。所以之後每一輪都失敗，佇列、流程圖和收合後右側的狀態都不會更新。
+- 另一條路徑在 `run`（[L208-210](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/make-generate.mjs#L208-L210)）：工作已經送出成功，但接著的 `refreshUnit` 失敗時，錯誤訊息會蓋掉「已加入佇列。」。這時 `unit` 還是舊資料，項目仍可勾選，「開始生成」也能按，使用者可能以為失敗而重複送出。
+- 會不會真的重複建立工作，要看後端有沒有去重；這兩個檔案看不出來。
+
+### 3. 中風險：第四頁點重點後焦點掉失，再點同一個重點會重載播放器
+- [make-products.mjs:90-99](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/make-products.mjs#L90-L99)：點選項會呼叫 `show()`，但 `show()` 第一步就用 `picker.replaceChildren` 把剛按下的按鈕刪掉，而且這條路徑沒傳 `focus`。
+- 影響：
+  - 鍵盤按 Enter 選重點後，焦點回到 `body`，要從頭 Tab 回來。
+  - 再點目前已選的重點，也會把播放器 dispose 後重新 mount（[L79-80](file:///home/pjw92/projects/videomaker/workbench/web/js/pages/make-products.mjs#L79-L80)），影片進度歸零。
+- 切換時的非同步競態，已經由 `revision` 和 `AbortController` 處理好，我沒看到問題。
+
+要修的話請告訴我先處理哪一項，我會先給修正方式再動手。

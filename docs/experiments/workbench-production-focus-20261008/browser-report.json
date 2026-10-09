@@ -1,0 +1,48 @@
+{
+  "checks": [
+    {
+      "width": 1440,
+      "height": 900,
+      "generate_collapse": true,
+      "direct_product_and_slide": true,
+      "paid_calls": 0
+    },
+    {
+      "width": 1350,
+      "height": 700,
+      "generate_collapse": true,
+      "direct_product_and_slide": true,
+      "paid_calls": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "generate_collapse": true,
+      "direct_product_and_slide": true,
+      "paid_calls": 0
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "generate_collapse": true,
+      "direct_product_and_slide": true,
+      "paid_calls": 0
+    },
+    {
+      "width": 375,
+      "height": 900,
+      "generate_collapse": true,
+      "direct_product_and_slide": true,
+      "paid_calls": 0
+    },
+    {
+      "width": 375,
+      "height": 560,
+      "generate_collapse": true,
+      "direct_product_and_slide": true,
+      "paid_calls": 0
+    }
+  ],
+  "errors": [],
+  "mode": "mock fixture generation and media; no paid API"
+}

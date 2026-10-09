@@ -40,7 +40,7 @@ def append_usage(directory, calls, item, step):
 		for call in calls:
 			row = {**call, "at": datetime.now(timezone.utc).isoformat(), "item": item, "step": step,
 				"in": call["input_tokens"] or 0, "out": call["output_tokens"] or 0,
-				"usd": call["estimated_cost_usd"] or 0.0}
+				"usd": call["estimated_cost_usd"]}
 			handle.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
 
 

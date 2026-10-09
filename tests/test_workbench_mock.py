@@ -25,6 +25,8 @@ JSON_SHAPES = {
 	"usage.json": SHAPES["usage"],
 	"manifest.json": SHAPES["manifest"],
 	"ask-story.json": SHAPES["ask"],
+	"ask-story-unmade.json": SHAPES["ask"],
+	"ask-no-match.json": SHAPES["ask"],
 	"ask-out-of-scope.json": SHAPES["ask"],
 	"upload.json": SHAPES["upload"],
 }

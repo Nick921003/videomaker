@@ -22,6 +22,23 @@ async function withAPI(search, run) {
 	}
 }
 
+test('學生提問 mock 依問題選擇影片、超出範圍、未生成與沒有對應段落', async () => {
+	await withAPI('?mock=1', async (api, requests) => {
+		const ask = question => api.post('/ask', { unit_id: 'another-unit', question });
+		const story = await ask('迴圈為什麼多跑一次？');
+		assert.equal(story.kind, 'story');
+		assert.equal(story.video, '/media/another-unit/q2/video.mp4');
+		assert.equal((await ask('遞迴怎麼寫？')).kind, 'out_of_scope');
+		assert.equal((await ask('找不到的未知問題')).kind, 'no_match');
+		const unmade = await ask('尚未生成的段落');
+		assert.equal(unmade.kind, 'story');
+		assert.equal(unmade.video, null);
+		assert.equal(unmade.story, 'q5');
+		await assert.rejects(ask('  '));
+		assert.ok(requests.every(({ path }) => path.startsWith('mock/')));
+	});
+});
+
 test('建立教材後先維持未分析，分析工作完成才取得分析結果', async () => {
 	await withAPI('?mock=1', async api => {
 		const previousNow = Date.now;
