@@ -1,0 +1,9 @@
+{
+  "source": "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+  "font": "Noto Sans CJK TC",
+  "font_index": 3,
+  "source_sha256": "b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a",
+  "subset_sha256": "cc1cebaa23583ebd27e238d954cf4c0faffaf6502a3c200038b51693075e90b9",
+  "bytes": 363736,
+  "substitution": "Original font family aliases resolve to this saved TC subset; handwriting shape differs, source motion remains unchanged."
+}

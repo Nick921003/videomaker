@@ -1,0 +1,14 @@
+{
+	"units": [
+		"problem",
+		"trace",
+		"termination"
+	],
+	"final_output": "15",
+	"last_focus_line": 5,
+	"source_quotes_preserved": true,
+	"invalid_line_rejected": true,
+	"unsupported_component_rejected": true,
+	"audio": "none; silent fixed fixture, timing estimated by compiler",
+	"duration_estimated": 39.77
+}

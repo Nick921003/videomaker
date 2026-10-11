@@ -1,0 +1,25 @@
+{
+	"A-original.mp4": {
+		"bytes": 3532126,
+		"sha256": "03a16119ea2a8a4ab66f49ee7d7094c082e7f8ad8f072b54aaca04776d4d47b7"
+	},
+	"B-board.mp4": {
+		"bytes": 4861352,
+		"sha256": "1e4b2e3e76ca2ecfa358f9bd7a3e0057e134a38611356d5f7f01f0188db9d107"
+	},
+	"B-delivery-normalized.mp4": {
+		"bytes": 5259612,
+		"sha256": "7d61220fd6743b50fd330a325f74e86837d9e2308ab3e1af8cae59aaf20700f1"
+	},
+	"C-y3_whiteboard.mp4": {
+		"bytes": 512871,
+		"sha256": "13900703362d07cb5361136320289c227bea829765a19de162cf5583d8efbaf0"
+	},
+	"C-y5_kinetic_type.mp4": {
+		"bytes": 1936125,
+		"sha256": "55caafee4015d7571497410f426df5a5a03658b1fc95ed134ac15f1b04aad33e"
+	},
+	"baseline_source": "saved 2026-10-04 q2; this run is a renderer fixture, zero generation",
+	"audio_identity": "identity.json",
+	"external_versions": "../vendor/sources.json"
+}

@@ -15,7 +15,8 @@
 		{kind:'title',at:.55,text:'＜ 或 ≤？',sub:'常常多一或少一？'},
 		{kind:'point',at:7.58,text:'起點 × 最後值',sub:'起點是幾？最後一個值要算嗎？'},
 	];
-	const ctx = {W:1920,H:1080,FPS,u:1,dur:duration,portrait:false,alpha:false,data:{palette:[['#F4EFE6','#111111'],['#14213D','#FFD23F']]},theme:{},safe:{top:80,bottom:210,left:90,right:90},IMG:{},cues,of:(...k)=>cues.filter(q=>k.includes(q.kind)),lt:(t,at)=>CLIP.lt(t,at,FPS)};
+	// 統一採用溫潤淺色系，消除第二段大面積跳深黑的刺痛感（第一段米白，第二段淡暖沙色）
+	const ctx = {W:1920,H:1080,FPS,u:1,dur:duration,portrait:false,alpha:false,data:{palette:[['#F4EFE6','#111111'],['#EAE4D9','#1A1A1A']]},theme:{},safe:{top:80,bottom:210,left:90,right:90},IMG:{},cues,of:(...k)=>cues.filter(q=>k.includes(q.kind)),lt:(t,at)=>CLIP.lt(t,at,FPS)};
 	CLIPS[grammar].init(ctx);
 	const texts = [];
 	const original = c.fillText.bind(c);

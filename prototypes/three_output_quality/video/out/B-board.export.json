@@ -1,0 +1,14 @@
+{
+ "video": "/home/pjw92/projects/videomaker/prototypes/three_output_quality/video/out/B-board.mp4",
+ "duration": 69.66,
+ "fps": 24,
+ "frames_expected": 1672,
+ "frames_encoded": 1672,
+ "size": [
+  1920,
+  1080
+ ],
+ "workers": 2,
+ "render_seconds": 95.7,
+ "audio": "/home/pjw92/projects/videomaker/prototypes/three_output_quality/video/out/B-player/audio.wav"
+}

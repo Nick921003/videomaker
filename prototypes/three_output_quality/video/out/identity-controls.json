@@ -1,0 +1,5 @@
+{
+	"same_count_different_script_rejected": true,
+	"different_audio_rejected": true,
+	"audio_negative_method": "same duration PCM with first sentence muted"
+}

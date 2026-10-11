@@ -1,4 +1,4 @@
-const pages = new Set(['overview', 'make', 'pipelines', 'library', 'usage', 'roadmap']);
+const pages = new Set(['overview', 'chat', 'make', 'pipelines', 'library', 'usage', 'roadmap']);
 
 export function parseRoute(hash = '') {
 	const value = String(hash).replace(/^#/, '');

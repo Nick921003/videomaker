@@ -3,6 +3,7 @@ import { api } from './api.mjs';
 import { el } from './ui.mjs';
 import { initRail } from './navigation.mjs';
 import { renderOverview } from './pages/overview.mjs';
+import { renderChat } from './pages/chat.mjs';
 import { renderRoadmap } from './pages/roadmap.mjs';
 import { renderPipelines } from './pages/pipelines.mjs';
 import { renderMake } from './pages/make.mjs';
@@ -10,7 +11,7 @@ import { renderLibrary } from './pages/library.mjs';
 import { renderUsage } from './pages/usage.mjs';
 
 const PAGE_NAMES = {
-	overview: '總覽', make: '製作', pipelines: '流程架構',
+	overview: '總覽', chat: 'AI 對話製作', make: '製作', pipelines: '流程架構',
 	library: '素材庫', usage: '用量', roadmap: '路線圖',
 };
 let renderVersion = 0;
@@ -38,12 +39,14 @@ export async function loadRoute() {
 		else link.removeAttribute('aria-current');
 	}
 	document.title = `${PAGE_NAMES[route.page]} · 多元教材工作台`;
+	document.body?.classList?.toggle('page-chat-active', route.page === 'chat');
 	host.setAttribute('aria-busy', 'true');
 	const loading = message('讀取中', '等一下，教材馬上就來。');
 	loading.setAttribute('role', 'status');
 	host.replaceChildren(loading);
 	try {
 		const page = route.page === 'overview' ? await renderOverview()
+			: route.page === 'chat' ? await renderChat()
 			: route.page === 'roadmap' ? await renderRoadmap()
 				: route.page === 'pipelines' ? await renderPipelines(route.query)
 					: route.page === 'make' ? await renderMake(route)

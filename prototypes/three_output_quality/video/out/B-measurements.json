@@ -1,0 +1,2972 @@
+{
+	"samples": 81,
+	"A_min_still_core_font_px": 23.29,
+	"min_still_core_font_px": 28.17,
+	"under_28px": [],
+	"subtitle_font_px": 40,
+	"local_font": {
+		"path": "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+		"sha256": "b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a",
+		"missing_glyphs": []
+	},
+	"scene_endpoints": [
+		0.0,
+		13.87,
+		29.48,
+		40.04,
+		47.53,
+		52.92
+	],
+	"last_narration_end": 68.46,
+	"visual_duration": 69.66,
+	"sentence_boundary_actions": true,
+	"word_level_alignment": "not measured, no word precision claim",
+	"key_frames": {
+		"opening": 2,
+		"transition-1-before": 13.6,
+		"transition-1-after": 15.5,
+		"code-focus": 24.5,
+		"output": 26.5,
+		"transition-2-before": 29.1,
+		"transition-2-after": 31.2,
+		"boundary-error": 43,
+		"summary": 61,
+		"ending": 67.3,
+		"tail": 69.6
+	},
+	"font_records": [
+		{
+			"time": 1.3,
+			"owner": "q_note",
+			"text": "算出來常常多一或少一？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 1.55,
+			"owner": "q_note",
+			"text": "算出來常常多一或少一？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 1.55,
+			"owner": "q_note",
+			"text": "到底該寫 < 還是 <=？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 2.6,
+			"owner": "q_note",
+			"text": "算出來常常多一或少一？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 2.6,
+			"owner": "q_note",
+			"text": "到底該寫 < 還是 <=？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 3.69,
+			"owner": "q_note",
+			"text": "算出來常常多一或少一？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 3.69,
+			"owner": "q_note",
+			"text": "到底該寫 < 還是 <=？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 8.33,
+			"owner": "q_note",
+			"text": "算出來常常多一或少一？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 8.33,
+			"owner": "q_note",
+			"text": "到底該寫 < 還是 <=？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 8.33,
+			"owner": "hint_note",
+			"text": "關鍵看兩件事：",
+			"role": "text",
+			"font_px": 67.5
+		},
+		{
+			"time": 8.58,
+			"owner": "q_note",
+			"text": "算出來常常多一或少一？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 8.58,
+			"owner": "q_note",
+			"text": "到底該寫 < 還是 <=？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 8.58,
+			"owner": "hint_note",
+			"text": "關鍵看兩件事：",
+			"role": "text",
+			"font_px": 67.5
+		},
+		{
+			"time": 9.63,
+			"owner": "q_note",
+			"text": "算出來常常多一或少一？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 9.63,
+			"owner": "q_note",
+			"text": "到底該寫 < 還是 <=？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 9.63,
+			"owner": "hint_note",
+			"text": "關鍵看兩件事：",
+			"role": "text",
+			"font_px": 67.5
+		},
+		{
+			"time": 9.63,
+			"owner": "hint_note",
+			"text": "起點從幾開始？最後一格算不算？",
+			"role": "text",
+			"font_px": 67.5
+		},
+		{
+			"time": 10.3,
+			"owner": "q_note",
+			"text": "算出來常常多一或少一？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 10.3,
+			"owner": "q_note",
+			"text": "到底該寫 < 還是 <=？",
+			"role": "text",
+			"font_px": 100.0
+		},
+		{
+			"time": 10.3,
+			"owner": "hint_note",
+			"text": "關鍵看兩件事：",
+			"role": "text",
+			"font_px": 67.5
+		},
+		{
+			"time": 10.3,
+			"owner": "hint_note",
+			"text": "起點從幾開始？最後一格算不算？",
+			"role": "text",
+			"font_px": 67.5
+		},
+		{
+			"time": 15.12,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 55.0
+		},
+		{
+			"time": 15.12,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 52.5
+		},
+		{
+			"time": 15.12,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 52.5
+		},
+		{
+			"time": 15.12,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 52.5
+		},
+		{
+			"time": 15.12,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 52.5
+		},
+		{
+			"time": 15.12,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 55.0
+		},
+		{
+			"time": 16.95,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 55.0
+		},
+		{
+			"time": 16.95,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 52.5
+		},
+		{
+			"time": 16.95,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 52.5
+		},
+		{
+			"time": 16.95,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 52.5
+		},
+		{
+			"time": 16.95,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 52.5
+		},
+		{
+			"time": 16.95,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 55.0
+		},
+		{
+			"time": 21.03,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 21.03,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.03,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.03,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.03,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.03,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 21.03,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.03,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.03,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.03,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 21.03,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.03,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.03,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 21.03,
+			"owner": "vars_sum",
+			"text": "10 + 5",
+			"role": "text",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.03,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.03,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 21.08,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 21.08,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.08,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.08,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.08,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.08,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 21.08,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.08,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.08,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.08,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 21.08,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.08,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.08,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 21.08,
+			"owner": "vars_sum",
+			"text": "10 + 5",
+			"role": "text",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.08,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.08,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 21.56,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 21.56,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.56,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.56,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.56,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.56,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 21.56,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.56,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.56,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.56,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 21.56,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.56,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.56,
+			"owner": "vars_sum",
+			"text": "15",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 21.56,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.56,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 21.93,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 21.93,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.93,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.93,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.93,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 21.93,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "1",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "15",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 21.93,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.93,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 21.93,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 23.59,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 23.59,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 23.59,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 23.59,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 23.59,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 23.59,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "1",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "15",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 23.59,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.59,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.59,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 23.94,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 23.94,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 23.94,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 23.94,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 23.94,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 23.94,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "1",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "15",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.94,
+			"owner": "vars_sum",
+			"text": "5 <= 5 → 成立 ✓",
+			"role": "text",
+			"font_px": 32.4
+		},
+		{
+			"time": 23.94,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 23.94,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 24.09,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 24.09,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.09,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.09,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.09,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.09,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "1",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "15",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.09,
+			"owner": "vars_sum",
+			"text": "5 <= 5 → 成立 ✓",
+			"role": "text",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.09,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.09,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 24.34,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 24.34,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.34,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.34,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.34,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.34,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "1",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "15",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.34,
+			"owner": "vars_sum",
+			"text": "5 <= 5 → 成立 ✓",
+			"role": "text",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.34,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.34,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 24.64,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 24.64,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.64,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.64,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.64,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 24.64,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "1",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "15",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.64,
+			"owner": "vars_sum",
+			"text": "5 <= 5 → 成立 ✓",
+			"role": "text",
+			"font_px": 32.4
+		},
+		{
+			"time": 24.64,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 24.64,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 26.11,
+			"owner": "code_sum",
+			"text": "情境一：數數累加（1 到 5）",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 26.11,
+			"owner": "code_sum",
+			"text": "int sum = 0;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 26.11,
+			"owner": "code_sum",
+			"text": "for (int i = 1; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 26.11,
+			"owner": "code_sum",
+			"text": "    sum += i;",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 26.11,
+			"owner": "code_sum",
+			"text": "}",
+			"role": "text",
+			"font_px": 37.8
+		},
+		{
+			"time": 26.11,
+			"owner": "code_sum",
+			"text": "起點是 1，最後一個數字是 5",
+			"role": "text",
+			"font_px": 39.6
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "變數追蹤",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "i",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "5",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "1",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "int",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "sum",
+			"role": "label",
+			"font_px": 32.4
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "15",
+			"role": "text",
+			"font_px": 57.6
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "0",
+			"role": "text",
+			"font_px": 28.8
+		},
+		{
+			"time": 26.11,
+			"owner": "vars_sum",
+			"text": "5 <= 5 → 成立 ✓",
+			"role": "text",
+			"font_px": 32.4
+		},
+		{
+			"time": 26.11,
+			"owner": "sum_output",
+			"text": "計算結果",
+			"role": "label",
+			"font_px": 28.8
+		},
+		{
+			"time": 26.11,
+			"owner": "sum_output",
+			"text": "1 + 2 + 3 + 4 + 5 = 15",
+			"role": "text",
+			"font_px": 72.0
+		},
+		{
+			"time": 30.73,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 30.73,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 30.73,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 30.73,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 30.73,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 30.73,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 30.73,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 30.73,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.73,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.73,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.73,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.73,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.73,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 30.93,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 30.93,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 30.93,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 30.93,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 30.93,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 30.93,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 30.93,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 30.93,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.93,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.93,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.93,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.93,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 30.93,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 32.35,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 32.35,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 32.35,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 32.35,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 32.35,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 32.35,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 32.35,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 32.35,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 32.35,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 32.35,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 32.35,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 32.35,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 32.35,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.47,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.47,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.47,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.47,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.47,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.47,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.47,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.47,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.47,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.47,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.47,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.47,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.47,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.7,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.7,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.7,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.7,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.7,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.7,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.7,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.7,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.7,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.7,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.7,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.7,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.7,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.97,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.97,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.97,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.97,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.97,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 35.97,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.97,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 35.97,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.97,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.97,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.97,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.97,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 35.97,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 37.63,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 37.63,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 37.63,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 37.63,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 37.63,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 37.63,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 37.63,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 37.63,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 37.63,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 37.63,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 37.63,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 37.63,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 37.63,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.29,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.29,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.29,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.29,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.29,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.29,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.29,
+			"owner": "arr_cells",
+			"text": "索引 5 不存在！",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.29,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.29,
+			"owner": "wrong_code_arr",
+			"text": "錯誤示範：把 < 改成 <=",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.29,
+			"owner": "wrong_code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 41.29,
+			"owner": "wrong_code_arr",
+			"text": "for (int i = 0; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 41.29,
+			"owner": "wrong_code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 41.29,
+			"owner": "wrong_code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 41.29,
+			"owner": "wrong_code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.39,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.39,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.39,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.39,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.39,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.39,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 41.39,
+			"owner": "arr_cells",
+			"text": "索引 5 不存在！",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.39,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.39,
+			"owner": "wrong_code_arr",
+			"text": "錯誤示範：把 < 改成 <=",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 41.39,
+			"owner": "wrong_code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 41.39,
+			"owner": "wrong_code_arr",
+			"text": "for (int i = 0; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 41.39,
+			"owner": "wrong_code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 41.39,
+			"owner": "wrong_code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 41.39,
+			"owner": "wrong_code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 43.91,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 43.91,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 43.91,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 43.91,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 43.91,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 43.91,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 43.91,
+			"owner": "arr_cells",
+			"text": "索引 5 不存在！",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 43.91,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 43.91,
+			"owner": "wrong_code_arr",
+			"text": "錯誤示範：把 < 改成 <=",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 43.91,
+			"owner": "wrong_code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 43.91,
+			"owner": "wrong_code_arr",
+			"text": "for (int i = 0; i <= 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 43.91,
+			"owner": "wrong_code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 43.91,
+			"owner": "wrong_code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 43.91,
+			"owner": "wrong_code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 48.78,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 48.78,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 48.78,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 48.78,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 48.78,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 48.78,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 48.78,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 48.78,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 48.78,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 48.78,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 48.78,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 48.78,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 48.78,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 50.05,
+			"owner": "code_arr",
+			"text": "情境二：走訪長度為 5 的陣列",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 50.05,
+			"owner": "code_arr",
+			"text": "int arr[5] = {10, 20, 30, 40, 50};",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 50.05,
+			"owner": "code_arr",
+			"text": "for (int i = 0; i < 5; i++) {",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 50.05,
+			"owner": "code_arr",
+			"text": "    printf(\"%d \", arr[i]);",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 50.05,
+			"owner": "code_arr",
+			"text": "}",
+			"role": "text",
+			"font_px": 28.17
+		},
+		{
+			"time": 50.05,
+			"owner": "code_arr",
+			"text": "起點是 0，編號只有 0 到 4",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 50.05,
+			"owner": "arr_cells",
+			"text": "arr：長度 5（索引 0 到 4）",
+			"role": "label",
+			"font_px": 29.52
+		},
+		{
+			"time": 50.05,
+			"owner": "arr_cells",
+			"text": "10",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 50.05,
+			"owner": "arr_cells",
+			"text": "20",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 50.05,
+			"owner": "arr_cells",
+			"text": "30",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 50.05,
+			"owner": "arr_cells",
+			"text": "40",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 50.05,
+			"owner": "arr_cells",
+			"text": "50",
+			"role": "text",
+			"font_px": 42.93
+		},
+		{
+			"time": 50.05,
+			"owner": "arr_cells",
+			"text": "長度 5",
+			"role": "text",
+			"font_px": 29.52
+		},
+		{
+			"time": 54.17,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 54.27,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 45.0
+		},
+		{
+			"time": 54.27,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 54.27,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 37.5
+		},
+		{
+			"time": 56.31,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 45.0
+		},
+		{
+			"time": 56.31,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 56.31,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 37.5
+		},
+		{
+			"time": 59.95,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 45.0
+		},
+		{
+			"time": 59.95,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 59.95,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 37.5
+		},
+		{
+			"time": 60.35,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 45.0
+		},
+		{
+			"time": 60.35,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 60.35,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 37.5
+		},
+		{
+			"time": 60.35,
+			"owner": "compare_metrics",
+			"text": "< N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 60.8,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 45.0
+		},
+		{
+			"time": 60.8,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 60.8,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 37.5
+		},
+		{
+			"time": 60.8,
+			"owner": "compare_metrics",
+			"text": "陣列（長度 N）",
+			"role": "text",
+			"font_px": 45.0
+		},
+		{
+			"time": 60.8,
+			"owner": "compare_metrics",
+			"text": "< N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 60.8,
+			"owner": "compare_metrics",
+			"text": "起點 0，只到 N-1",
+			"role": "text",
+			"font_px": 37.5
+		},
+		{
+			"time": 61.97,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 45.0
+		},
+		{
+			"time": 61.97,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 61.97,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 37.5
+		},
+		{
+			"time": 61.97,
+			"owner": "compare_metrics",
+			"text": "陣列（長度 N）",
+			"role": "text",
+			"font_px": 45.0
+		},
+		{
+			"time": 61.97,
+			"owner": "compare_metrics",
+			"text": "< N",
+			"role": "text",
+			"font_px": 147.5
+		},
+		{
+			"time": 61.97,
+			"owner": "compare_metrics",
+			"text": "起點 0，只到 N-1",
+			"role": "text",
+			"font_px": 37.5
+		},
+		{
+			"time": 65.49,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 36.44
+		},
+		{
+			"time": 65.49,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 119.45
+		},
+		{
+			"time": 65.49,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 30.37
+		},
+		{
+			"time": 65.49,
+			"owner": "compare_metrics",
+			"text": "陣列（長度 N）",
+			"role": "text",
+			"font_px": 36.44
+		},
+		{
+			"time": 65.49,
+			"owner": "compare_metrics",
+			"text": "< N",
+			"role": "text",
+			"font_px": 119.45
+		},
+		{
+			"time": 65.49,
+			"owner": "compare_metrics",
+			"text": "起點 0，只到 N-1",
+			"role": "text",
+			"font_px": 30.37
+		},
+		{
+			"time": 65.49,
+			"owner": "rule_note",
+			"text": "判斷邊界的順序",
+			"role": "label",
+			"font_px": 30.37
+		},
+		{
+			"time": 65.49,
+			"owner": "rule_note",
+			"text": "先看起點",
+			"role": "text",
+			"font_px": 34.42
+		},
+		{
+			"time": 65.49,
+			"owner": "rule_note",
+			"text": "確認最後值",
+			"role": "text",
+			"font_px": 34.42
+		},
+		{
+			"time": 65.49,
+			"owner": "rule_note",
+			"text": "選擇條件",
+			"role": "text",
+			"font_px": 34.42
+		},
+		{
+			"time": 66.6,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 36.44
+		},
+		{
+			"time": 66.6,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 119.45
+		},
+		{
+			"time": 66.6,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 30.37
+		},
+		{
+			"time": 66.6,
+			"owner": "compare_metrics",
+			"text": "陣列（長度 N）",
+			"role": "text",
+			"font_px": 36.44
+		},
+		{
+			"time": 66.6,
+			"owner": "compare_metrics",
+			"text": "< N",
+			"role": "text",
+			"font_px": 119.45
+		},
+		{
+			"time": 66.6,
+			"owner": "compare_metrics",
+			"text": "起點 0，只到 N-1",
+			"role": "text",
+			"font_px": 30.37
+		},
+		{
+			"time": 66.6,
+			"owner": "rule_note",
+			"text": "判斷邊界的順序",
+			"role": "label",
+			"font_px": 30.37
+		},
+		{
+			"time": 66.6,
+			"owner": "rule_note",
+			"text": "先看起點",
+			"role": "text",
+			"font_px": 34.42
+		},
+		{
+			"time": 66.6,
+			"owner": "rule_note",
+			"text": "確認最後值",
+			"role": "text",
+			"font_px": 34.42
+		},
+		{
+			"time": 66.6,
+			"owner": "rule_note",
+			"text": "選擇條件",
+			"role": "text",
+			"font_px": 34.42
+		},
+		{
+			"time": 69.66,
+			"owner": "compare_metrics",
+			"text": "數數（1 到 N）",
+			"role": "text",
+			"font_px": 36.44
+		},
+		{
+			"time": 69.66,
+			"owner": "compare_metrics",
+			"text": "<= N",
+			"role": "text",
+			"font_px": 119.45
+		},
+		{
+			"time": 69.66,
+			"owner": "compare_metrics",
+			"text": "起點 1，包含 N",
+			"role": "text",
+			"font_px": 30.37
+		},
+		{
+			"time": 69.66,
+			"owner": "compare_metrics",
+			"text": "陣列（長度 N）",
+			"role": "text",
+			"font_px": 36.44
+		},
+		{
+			"time": 69.66,
+			"owner": "compare_metrics",
+			"text": "< N",
+			"role": "text",
+			"font_px": 119.45
+		},
+		{
+			"time": 69.66,
+			"owner": "compare_metrics",
+			"text": "起點 0，只到 N-1",
+			"role": "text",
+			"font_px": 30.37
+		},
+		{
+			"time": 69.66,
+			"owner": "rule_note",
+			"text": "判斷邊界的順序",
+			"role": "label",
+			"font_px": 30.37
+		},
+		{
+			"time": 69.66,
+			"owner": "rule_note",
+			"text": "先看起點",
+			"role": "text",
+			"font_px": 34.42
+		},
+		{
+			"time": 69.66,
+			"owner": "rule_note",
+			"text": "確認最後值",
+			"role": "text",
+			"font_px": 34.42
+		},
+		{
+			"time": 69.66,
+			"owner": "rule_note",
+			"text": "選擇條件",
+			"role": "text",
+			"font_px": 34.42
+		}
+	]
+}

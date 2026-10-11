@@ -1,0 +1,26 @@
+{
+  "responsive": [
+    {
+      "width": 375,
+      "overflow": false,
+      "play_pause_seek": true,
+      "choice_refresh_export": true
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "play_pause_seek": true,
+      "choice_refresh_export": true
+    },
+    {
+      "width": 1440,
+      "overflow": false,
+      "play_pause_seek": true,
+      "choice_refresh_export": true
+    }
+  ],
+  "six_animation_playbacks": true,
+  "six_mp4_playbacks": true,
+  "last_frame_and_replay": true,
+  "errors": []
+}

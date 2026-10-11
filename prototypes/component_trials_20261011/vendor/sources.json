@@ -1,0 +1,254 @@
+[
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/LICENSE",
+    "local": "vendor/huashu/LICENSE",
+    "sha256": "6d6a2a9caf2e6d2b76974050427053b2892d8aa4c33fd168ce63a537fcee9d96",
+    "bytes": 1086
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/clips/t1_3b1b.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/clips/t1_3b1b.js",
+    "local": "vendor/huashu/scripts/engine/clips/t1_3b1b.js",
+    "sha256": "6e819bb9be76db0d8a7220e8aa5fedd83879b24ce6084579d7ac2641d85deaa2",
+    "bytes": 18053
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/clips/t2_keynote_ui.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/clips/t2_keynote_ui.js",
+    "local": "vendor/huashu/scripts/engine/clips/t2_keynote_ui.js",
+    "sha256": "bd96d0b6d4c55e86bf7b16852f90373b443f3eff8f6fd86ebdeec02f9d5f658a",
+    "bytes": 24591
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/clips/t3_finance_chart.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/clips/t3_finance_chart.js",
+    "local": "vendor/huashu/scripts/engine/clips/t3_finance_chart.js",
+    "sha256": "db7e1b44993964add4125917e7a651adc4a143259570aa4e65d85a72aae0d44b",
+    "bytes": 17901
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/lib/chart.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/lib/chart.js",
+    "local": "vendor/huashu/scripts/engine/lib/chart.js",
+    "sha256": "93d3605cba7d7cf0bdda2c2dd8f9797734dd06c1f64fa18ef7a492f8755a8d27",
+    "bytes": 10870
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/lib/diagram.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/lib/diagram.js",
+    "local": "vendor/huashu/scripts/engine/lib/diagram.js",
+    "sha256": "98b15ba5f883dd95eca2ff52ba1d768c10a5bea7862bd13aee6d84b875e2b8c5",
+    "bytes": 20080
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/lib/motion.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/lib/motion.js",
+    "local": "vendor/huashu/scripts/engine/lib/motion.js",
+    "sha256": "7e70b8ef328c7497fe1403d37700fcdfbb2cc9d2175f16ea46ae3e69b49dbe15",
+    "bytes": 7891
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/lib/typo.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/lib/typo.js",
+    "local": "vendor/huashu/scripts/engine/lib/typo.js",
+    "sha256": "30db0cc68145dca22532e487da01aeb3ec97155e8b2c3a0747a009ce6638be8f",
+    "bytes": 9998
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/lib/ui.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/lib/ui.js",
+    "local": "vendor/huashu/scripts/engine/lib/ui.js",
+    "sha256": "2608da0a38bfd429a9fe41c1a93a5d080d54c5fcccea80e7fea764e6ca3a97bf",
+    "bytes": 10548
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/lib/util.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/lib/util.js",
+    "local": "vendor/huashu/scripts/engine/lib/util.js",
+    "sha256": "86045b05656183cd7017e43fb891aa65d1a1e76477885c4dbee81635ee8b7a1d",
+    "bytes": 6416
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/LICENSE",
+    "local": "vendor/lanshu/LICENSE",
+    "sha256": "5ee4e300085ba144aae1ec5b72774ef5408bd933c1f02f429359313a4251bfad",
+    "bytes": 1063
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/core/core.js",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/core/core.js",
+    "local": "vendor/lanshu/explainer/core/core.js",
+    "sha256": "0926bf921b44433f4bc703d87fdd087c75b4df69243c101d15be99cc17b49598",
+    "bytes": 11347
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v4-paper/KIT.md",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v4-paper/KIT.md",
+    "local": "vendor/lanshu/explainer/kits/v4-paper/KIT.md",
+    "sha256": "c1596cfedf414d5458fa4c425c28cae8f7bdf74f9a9f617432ac0b0a6113d321",
+    "bytes": 11701
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v4-paper/kit.css",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v4-paper/kit.css",
+    "local": "vendor/lanshu/explainer/kits/v4-paper/kit.css",
+    "sha256": "f35545508ad90f745d4e6939647b0af9c83321514981f7672e2ae9ec780733a5",
+    "bytes": 17590
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v4-paper/kit.js",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v4-paper/kit.js",
+    "local": "vendor/lanshu/explainer/kits/v4-paper/kit.js",
+    "sha256": "22656d0a91d83a855d96d882c9043678aa7c280a30db4465a46f79dbbcffc8e2",
+    "bytes": 34546
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v4-paper/paper-grain.svg",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v4-paper/paper-grain.svg",
+    "local": "vendor/lanshu/explainer/kits/v4-paper/paper-grain.svg",
+    "sha256": "58dd3460355677354c6505608c93c6f76b53819202debd1b1b714462bbc25533",
+    "bytes": 437
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v4-paper/paper_sfx.py",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v4-paper/paper_sfx.py",
+    "local": "vendor/lanshu/explainer/kits/v4-paper/paper_sfx.py",
+    "sha256": "7dc426aab8e171fcff45abca8ec8a510b6662bbedeb4f5b4841ac0d9df3af42d",
+    "bytes": 5150
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v7-drafting/KIT.md",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v7-drafting/KIT.md",
+    "local": "vendor/lanshu/explainer/kits/v7-drafting/KIT.md",
+    "sha256": "97dfd86ccc13730c33b1996d3f417309c79648623458b46d9bba10e46fa2f855",
+    "bytes": 9070
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v7-drafting/grain.svg",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v7-drafting/grain.svg",
+    "local": "vendor/lanshu/explainer/kits/v7-drafting/grain.svg",
+    "sha256": "58dd3460355677354c6505608c93c6f76b53819202debd1b1b714462bbc25533",
+    "bytes": 437
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v7-drafting/kit.css",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v7-drafting/kit.css",
+    "local": "vendor/lanshu/explainer/kits/v7-drafting/kit.css",
+    "sha256": "bbe35bd5bda392b4adad918f0e07b09efcd062255555d0216ed366b6b8bbc5e1",
+    "bytes": 17014
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v7-drafting/kit.js",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v7-drafting/kit.js",
+    "local": "vendor/lanshu/explainer/kits/v7-drafting/kit.js",
+    "sha256": "151d2a04cad8cbd4a6b17f626b9893ce7b6ab15323fe9b402170cc19963c0d45",
+    "bytes": 32823
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v8-chalkboard/KIT.md",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v8-chalkboard/KIT.md",
+    "local": "vendor/lanshu/explainer/kits/v8-chalkboard/KIT.md",
+    "sha256": "12cec9a6ef43ffef59e34bedab74b6e7529aad38a74cd6ab6a80b9d5fa221828",
+    "bytes": 9678
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v8-chalkboard/chalk-mask.png",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v8-chalkboard/chalk-mask.png",
+    "local": "vendor/lanshu/explainer/kits/v8-chalkboard/chalk-mask.png",
+    "sha256": "ae5a88d0a44e48f0e45f8eed67ded38a5b9fb0e8bf2f5720a705e7594ebe1b69",
+    "bytes": 317154
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v8-chalkboard/chalklog.mjs",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v8-chalkboard/chalklog.mjs",
+    "local": "vendor/lanshu/explainer/kits/v8-chalkboard/chalklog.mjs",
+    "sha256": "2ce22780967d87643a3d769ffb3a80f71273a43dce415b1b6d13891d3c7f4a60",
+    "bytes": 3604
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v8-chalkboard/grain.svg",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v8-chalkboard/grain.svg",
+    "local": "vendor/lanshu/explainer/kits/v8-chalkboard/grain.svg",
+    "sha256": "58dd3460355677354c6505608c93c6f76b53819202debd1b1b714462bbc25533",
+    "bytes": 437
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v8-chalkboard/kit.css",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v8-chalkboard/kit.css",
+    "local": "vendor/lanshu/explainer/kits/v8-chalkboard/kit.css",
+    "sha256": "1b0089c461003b81eb5263067ca3d80921c7af70c8e11dd5f2f3494b709addf7",
+    "bytes": 6489
+  },
+  {
+    "repo": "cclank/lanshu-create-ai-presenter-video",
+    "commit": "c24720a85d63b1bd494f6447e48a59384733647b",
+    "path": "explainer/kits/v8-chalkboard/kit.js",
+    "url": "https://raw.githubusercontent.com/cclank/lanshu-create-ai-presenter-video/c24720a85d63b1bd494f6447e48a59384733647b/explainer/kits/v8-chalkboard/kit.js",
+    "local": "vendor/lanshu/explainer/kits/v8-chalkboard/kit.js",
+    "sha256": "f697a1e2621ea79e02ad7acee534c319578a2ba034c7410d4dad4a3894ef939f",
+    "bytes": 62099
+  },
+  {
+    "repo": "alchaincyf/huashu-art-motion",
+    "commit": "57d67608ab458f57d9b153b1a2831b921e22498b",
+    "path": "scripts/engine/lib/paint.js",
+    "url": "https://raw.githubusercontent.com/alchaincyf/huashu-art-motion/57d67608ab458f57d9b153b1a2831b921e22498b/scripts/engine/lib/paint.js",
+    "local": "vendor/huashu/scripts/engine/lib/paint.js",
+    "sha256": "aa61a2cb14b0bbd96e072865fb8b24bdd118b4f62aca3ff2c320ca17593aca25",
+    "bytes": 15339
+  }
+]

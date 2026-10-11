@@ -3299,3 +3299,899 @@ a.make-step:hover, .make-step.active {
 }
 /* clip 避免原生 focus 另建捲動位移；圖的相機只由 viewer 控制。 */
 .concept-viewport { overflow: clip; }
+
+/* ----------------------------------------------------
+   對話式教材製作工作台 (Chat-driven Material Studio)
+---------------------------------------------------- */
+body.page-chat-active .main-viewport,
+.main-viewport:has(.chat-studio-layout) {
+	padding: 0 !important;
+	overflow: hidden;
+}
+
+.chat-studio-layout {
+	display: grid;
+	grid-template-columns: 460px minmax(0, 1fr);
+	height: 100%;
+	max-height: 100%;
+	width: 100%;
+	background: #fdfaf2;
+	overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+	.chat-studio-layout {
+		grid-template-columns: 1fr;
+		grid-template-rows: 1fr 1fr;
+		height: 100%;
+	}
+}
+
+/* 左側對話面板 */
+.chat-panel {
+	display: flex;
+	flex-direction: column;
+	border-right: 1px solid #e5dbc9;
+	background: #fffdf7;
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.chat-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid #e5dbc9;
+	background: #faf4e6;
+	flex-shrink: 0;
+}
+
+.chat-header-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.chat-ai-avatar {
+	font-size: 26px;
+	line-height: 1;
+}
+
+.chat-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: #4a2c11;
+	margin: 0;
+}
+
+.chat-subtitle {
+	font-size: 12px;
+	color: #7d6b5c;
+	margin: 2px 0 0;
+}
+
+.chat-messages-container {
+	flex: 1;
+	min-height: 0;
+	padding: 20px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.chat-message-bubble {
+	display: flex;
+	gap: 12px;
+	max-width: 90%;
+}
+
+.chat-message-bubble.user {
+	align-self: flex-end;
+	flex-direction: row-reverse;
+}
+
+.chat-message-bubble.ai {
+	align-self: flex-start;
+}
+
+.chat-avatar {
+	font-size: 20px;
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.chat-body {
+	background: #f4ede0;
+	color: #2e1d0f;
+	padding: 12px 16px;
+	border-radius: 12px;
+	font-size: 14px;
+	line-height: 1.6;
+	box-shadow: 0 1px 3px rgba(74, 44, 17, 0.05);
+}
+
+.chat-message-bubble.user .chat-body {
+	background: #8b5a2b;
+	color: #fffdf7;
+	border-bottom-right-radius: 2px;
+}
+
+.chat-message-bubble.ai .chat-body {
+	border-bottom-left-radius: 2px;
+}
+
+.chat-prompt-chips {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.chip-btn {
+	background: #ffffff;
+	border: 1px solid #dcd1be;
+	color: #4a2c11;
+	padding: 8px 12px;
+	border-radius: 8px;
+	font-size: 13px;
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.chip-btn:hover {
+	background: #fbf6eb;
+	border-color: #8b5a2b;
+	color: #8b5a2b;
+	transform: translateX(2px);
+}
+
+/* 對話卡片 */
+.chat-card {
+	background: #ffffff;
+	border: 1px solid #dcd1be;
+	border-radius: 10px;
+	padding: 14px;
+	margin-top: 10px;
+}
+
+.hit-card {
+	border-left: 4px solid #2e7d32;
+	display: flex;
+	gap: 12px;
+}
+
+.hit-icon {
+	font-size: 24px;
+}
+
+.hit-content h4 {
+	margin: 0 0 6px;
+	color: #1b5e20;
+	font-size: 15px;
+}
+
+.hit-actions, .checklist-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.checklist-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.topic-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	cursor: pointer;
+	font-size: 13px;
+	padding: 4px 0;
+}
+
+.tag-badge {
+	display: inline-block;
+	background: #ede6d8;
+	color: #6a5342;
+	font-size: 11px;
+	padding: 1px 6px;
+	border-radius: 4px;
+	margin-left: 6px;
+}
+
+.progress-card {
+	border-left: 4px solid #8b5a2b;
+}
+
+.progress-step-text {
+	font-size: 13px;
+	color: #7d6b5c;
+	margin: 6px 0;
+}
+
+.progress-bar-bg {
+	background: #ede6d8;
+	border-radius: 6px;
+	height: 8px;
+	overflow: hidden;
+}
+
+.progress-bar-inner {
+	background: #8b5a2b;
+	height: 100%;
+	transition: width 0.4s ease;
+}
+
+.chat-input-bar {
+	padding: 12px 18px 20px;
+	background: #fbf7ef;
+	border-top: 1px solid rgba(229, 219, 201, 0.6);
+	flex-shrink: 0;
+}
+
+.chat-input-card {
+	background: #ffffff;
+	border: 1.5px solid #dfd5c2;
+	border-radius: 16px;
+	padding: 10px 14px 8px 14px;
+	box-shadow: 0 4px 18px rgba(74, 44, 17, 0.05);
+	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.chat-input-card:focus-within {
+	border-color: #8b5a2b;
+	box-shadow: 0 6px 24px rgba(139, 90, 43, 0.12), 0 0 0 1px #8b5a2b;
+	background: #fffdfc;
+}
+
+#chat-text-input {
+	border: none;
+	outline: none;
+	padding: 2px 0;
+	font: inherit;
+	font-size: 14px;
+	line-height: 1.5;
+	resize: none;
+	background: transparent;
+	width: 100%;
+	color: #2e1d0f;
+	min-height: 24px;
+	max-height: 100px;
+	box-sizing: border-box;
+}
+
+#chat-text-input::placeholder {
+	color: #a49788;
+}
+
+.chat-input-bottom-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.chat-input-hint {
+	font-size: 11px;
+	color: #9e8e7e;
+	user-select: none;
+}
+
+.chat-send-icon-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	border: none;
+	background: #8b5a2b;
+	color: #ffffff;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+	padding: 0;
+	flex-shrink: 0;
+}
+
+.chat-send-icon-btn:hover {
+	background: #6e431c;
+	transform: scale(1.06);
+	box-shadow: 0 2px 8px rgba(110, 67, 28, 0.3);
+}
+
+.chat-send-icon-btn:active {
+	transform: scale(0.96);
+}
+
+.chat-send-icon-btn svg {
+	width: 16px;
+	height: 16px;
+	fill: currentColor;
+	transform: translateX(1px);
+}
+
+/* 右側即時畫布與預覽工作區 */
+.preview-workspace-panel {
+	display: flex;
+	flex-direction: column;
+	background: #fbf8f0;
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.preview-workspace-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-bottom: 1px solid #e5dbc9;
+	background: #faf4e6;
+	flex-shrink: 0;
+}
+
+.preview-tabs {
+	display: flex;
+	gap: 6px;
+}
+
+.preview-tab {
+	background: transparent;
+	border: 1px solid transparent;
+	color: #7d6b5c;
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.preview-tab.active {
+	background: #ffffff;
+	color: #4a2c11;
+	border-color: #dcd1be;
+	box-shadow: 0 1px 3px rgba(74, 44, 17, 0.08);
+}
+
+.preview-workspace-content {
+	flex: 1;
+	min-height: 0;
+	padding: 24px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+}
+
+/* 影片播放器佈局 */
+.preview-video-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-width: 960px;
+	margin: 0 auto;
+	width: 100%;
+}
+
+.preview-video-meta {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+}
+
+.preview-title {
+	font-size: 20px;
+	color: #4a2c11;
+	margin: 0;
+}
+
+.preview-tag {
+	font-size: 13px;
+	color: #7d6b5c;
+}
+
+.video-frame-box {
+	background: #000000;
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 8px 24px rgba(74, 44, 17, 0.15);
+	aspect-ratio: 16 / 9;
+}
+
+.video-frame-box video {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+.preview-info-card {
+	background: #fffdf7;
+	border: 1px solid #e5dbc9;
+	border-radius: 10px;
+	padding: 14px 18px;
+	margin: 12px 0;
+}
+
+.preview-info-card h4 {
+	margin: 0 0 6px;
+	color: #4a2c11;
+}
+
+.preview-info-card p {
+	margin: 0;
+	font-size: 14px;
+	color: #5c4a3b;
+}
+
+.preview-btn-group {
+	display: flex;
+	gap: 10px;
+}
+
+/* 多風格工具箱 Showcase */
+.showcase-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.showcase-banner h3 {
+	margin: 0 0 4px;
+	color: #4a2c11;
+}
+
+.showcase-grid {
+	display: flex;
+	gap: 10px;
+	overflow-x: auto;
+	padding-bottom: 6px;
+	scrollbar-width: thin;
+}
+
+.showcase-card {
+	background: #ffffff;
+	border: 1.5px solid #e5dbc9;
+	border-radius: 10px;
+	padding: 10px 14px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	position: relative;
+	flex: 0 0 auto;
+	min-width: 160px;
+}
+
+.showcase-card:hover {
+	border-color: #8b5a2b;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(74, 44, 17, 0.08);
+}
+
+.showcase-card.selected {
+	border-color: #8b5a2b;
+	background: #fffbf3;
+	box-shadow: 0 0 0 1px #8b5a2b;
+}
+
+.showcase-badge {
+	display: none;
+}
+
+.showcase-card h4 {
+	margin: 0 0 6px;
+	font-size: 14px;
+	color: #4a2c11;
+}
+
+.showcase-card p {
+	font-size: 12px;
+	color: #7d6b5c;
+	margin: 0 0 8px;
+	line-height: 1.4;
+}
+
+.showcase-tag {
+	font-size: 11px;
+	color: #2e7d32;
+	font-weight: 600;
+}
+
+.showcase-detail-box {
+	background: #ffffff;
+	border: 1px solid #e5dbc9;
+	border-radius: 12px;
+	padding: 20px;
+	margin-top: 12px;
+}
+
+/* ----------------------------------------------------
+   元件模板動態畫布 (Live Stage) 與 客製化檢查器 (Inspector)
+---------------------------------------------------- */
+.live-stage-card {
+	background: #11141a;
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+	margin-top: 14px;
+	display: flex;
+	flex-direction: column;
+}
+
+.stage-viewport {
+	height: 320px;
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.stage-controls-bar {
+	background: #1e232d;
+	padding: 10px 18px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stage-btn {
+	background: #8b5a2b;
+	color: #fff;
+	border: none;
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.stage-btn:hover {
+	background: #a46d37;
+	transform: translateY(-1px);
+}
+
+.stage-btn.secondary {
+	background: rgba(255, 255, 255, 0.12);
+	color: #e2e8f0;
+}
+
+.stage-btn.secondary:hover {
+	background: rgba(255, 255, 255, 0.2);
+}
+
+.stage-progress-wrapper {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.stage-progress-bar {
+	flex: 1;
+	height: 6px;
+	background: rgba(255, 255, 255, 0.15);
+	border-radius: 3px;
+	overflow: hidden;
+	position: relative;
+}
+
+.stage-progress-inner {
+	height: 100%;
+	width: 0%;
+	background: #8b5a2b;
+	transition: width 0.05s linear;
+}
+
+/* 客製化屬性編輯器 (Inspector Panel) */
+.customizer-panel {
+	background: #ffffff;
+	border: 1px solid #e5dbc9;
+	border-radius: 12px;
+	padding: 18px 20px;
+	margin-top: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.customizer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1px solid #f0e6d6;
+	padding-bottom: 10px;
+}
+
+.customizer-header h4 {
+	margin: 0;
+	color: #4a2c11;
+	font-size: 15px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.customizer-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 12px 18px;
+}
+
+.customizer-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.customizer-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #6d5b4c;
+}
+
+.customizer-input {
+	border: 1px solid #dcd1be;
+	border-radius: 6px;
+	padding: 8px 10px;
+	font-size: 13px;
+	background: #fffdfa;
+	color: #2e1d0f;
+	transition: border-color 0.15s;
+}
+
+.customizer-input:focus {
+	outline: none;
+	border-color: #8b5a2b;
+	background: #ffffff;
+}
+
+.customizer-actions {
+	display: flex;
+	gap: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #f0e6d6;
+}
+
+/* ---------------- 動態元件細節特效 ---------------- */
+/* 1. Keynote UI 動畫 */
+.keynote-stage {
+	width: 100%;
+	height: 100%;
+	background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	box-sizing: border-box;
+	position: relative;
+}
+
+.keynote-container {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	width: 100%;
+	max-width: 800px;
+	justify-content: center;
+}
+
+.keynote-card {
+	background: rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(16px);
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	border-radius: 12px;
+	padding: 16px 20px;
+	color: #ffffff;
+	text-align: center;
+	flex: 1;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+	transform: translateY(20px) scale(0.95);
+	opacity: 0;
+	transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.keynote-card.active {
+	transform: translateY(0) scale(1);
+	opacity: 1;
+}
+
+.keynote-card.highlight {
+	border-color: #3b82f6;
+	background: rgba(59, 130, 246, 0.18);
+	box-shadow: 0 0 25px rgba(59, 130, 246, 0.35);
+}
+
+.keynote-arrow {
+	color: #60a5fa;
+	font-size: 22px;
+	opacity: 0;
+	transition: opacity 0.4s ease;
+}
+
+.keynote-arrow.active {
+	opacity: 1;
+}
+
+/* 2. 圖表動畫 */
+.chart-stage {
+	width: 100%;
+	height: 100%;
+	background: #181d24;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: 30px 40px;
+	box-sizing: border-box;
+}
+
+.chart-title-tag {
+	color: #94a3b8;
+	font-size: 14px;
+	margin-bottom: 20px;
+}
+
+.chart-bar-row {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.chart-bar-track {
+	height: 38px;
+	background: rgba(255, 255, 255, 0.06);
+	border-radius: 6px;
+	overflow: hidden;
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.chart-bar-grow {
+	height: 100%;
+	width: 0%;
+	display: flex;
+	align-items: center;
+	padding-left: 14px;
+	font-weight: 700;
+	font-size: 14px;
+	color: #ffffff;
+	transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+	white-space: nowrap;
+}
+
+.chart-bar-grow.red { background: linear-gradient(90deg, #ef4444, #f87171); }
+.chart-bar-grow.green { background: linear-gradient(90deg, #10b981, #34d399); }
+
+/* 3. 黑板粉筆動畫 */
+.chalk-stage {
+	width: 100%;
+	height: 100%;
+	background: #1e3325;
+	border: 10px solid #5a3825;
+	box-sizing: border-box;
+	padding: 30px;
+	font-family: "Courier New", monospace;
+	font-size: 18px;
+	line-height: 2;
+	color: #f1faee;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	position: relative;
+	box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.chalk-line {
+	opacity: 0;
+	transform: translateX(-10px);
+	transition: all 0.5s ease;
+}
+
+.chalk-line.active {
+	opacity: 1;
+	transform: translateX(0);
+}
+
+.chalk-circle {
+	position: absolute;
+	border: 3px dashed #ffd166;
+	border-radius: 40px;
+	padding: 4px 12px;
+	opacity: 0;
+	transform: scale(0.8);
+	transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chalk-circle.active {
+	opacity: 1;
+	transform: scale(1);
+}
+
+/* 4. 工程藍圖動畫 */
+.blueprint-stage {
+	width: 100%;
+	height: 100%;
+	background: #092c4c;
+	background-image:
+		linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+	background-size: 24px 24px;
+	padding: 24px 34px;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	font-family: monospace;
+	color: #bae6fd;
+}
+
+.blueprint-box {
+	border: 1.5px dashed #38bdf8;
+	padding: 12px 18px;
+	margin: 8px 0;
+	background: rgba(56, 189, 248, 0.06);
+	border-radius: 4px;
+	opacity: 0;
+	transform: scale(0.96);
+	transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.blueprint-box.active {
+	opacity: 1;
+	transform: scale(1);
+}
+
+/* 5. 柔和動態文字動畫 */
+.kinetic-stage {
+	width: 100%;
+	height: 100%;
+	background: #eae4d9;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 30px;
+	box-sizing: border-box;
+	color: #2e1d0f;
+	text-align: center;
+}
+
+.kinetic-hero-text {
+	font-size: 32px;
+	font-weight: 800;
+	color: #4a2c11;
+	opacity: 0;
+	transform: scale(0.8) translateY(-20px);
+	transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.kinetic-hero-text.active {
+	opacity: 1;
+	transform: scale(1) translateY(0);
+}
+
+.kinetic-sub-text {
+	margin-top: 14px;
+	font-size: 20px;
+	background: #8b5a2b;
+	color: #fffdf7;
+	padding: 4px 16px;
+	border-radius: 6px;
+	opacity: 0;
+	transform: scale(0.9);
+	transition: all 0.4s ease 0.3s;
+}
+
+.kinetic-sub-text.active {
+	opacity: 1;
+	transform: scale(1);
+}

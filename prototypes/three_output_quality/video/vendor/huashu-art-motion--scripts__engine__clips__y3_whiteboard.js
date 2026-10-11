@@ -78,16 +78,17 @@ function layout(ctx, f) {
   const capSz = (ctx.portrait ? 52 : 50) * u * Math.max(0.85, Math.min(1.1, f)), capRight = !ctx.portrait;   // 横屏说明写在图标右边，竖屏写在下面
   for (const q of cues) {
     if (q.kind === 'title' || q.kind === 'point') {
-      const title = q.kind === 'title', indent = title ? 0 : 80 * u, colW = title ? W - 2 * pad : colT.w;
-      const ft = title ? TY.fit(g, q.text || '', colW - indent, 112 * u * f, FONT, { maxLines: 1, min: 0.72, soft: true }) : { size: pSize, lines: TY.wrap(g, q.text || '', colW - indent, `${pSize}px "${FONT}"`) };   // 标题先缩字号放一行，放不下再折行
-      const size = ft.size, lines = ft.lines.length > 1 ? balance(g, q.text || '', colW - indent, `${size}px "${FONT}"`) : ft.lines;
-      const n = [...(q.text || '')].length, room = Math.max(0.35, next(q) - q.at - 0.15 - (title ? 0 : 0.15)), rate = Math.max(title ? 7.5 : 16, n / room);
-      if (title) yT = Math.max(yT, yP);
-      else { if (col0 == null) col0 = yT; if (split && kPt === split) { colT.x = W / 2 + 40 * u; yT = col0; } kPt++; }
-      let y = yT + size * (title ? 1.1 : 1.0);
-      start(q);
-      if (!title) B.line(DG.ellipsePts(colT.x + 26 * u, y - size * 0.32, 15 * u, 15 * u, -1.6, 1.05, 18), { w: lw * 0.9, col: ORANGE, speed: 9000 * u, min: 0.08, gap: 0.02 });
-      const x = (title ? pad : colT.x) + indent, it = { q, kind: q.kind, x, y0: y - size, lines, size };
+			const title = q.kind === 'title', indent = title ? 0 : 110 * u, colW = title ? W - 2 * pad : colT.w;
+			const ft = title ? TY.fit(g, q.text || '', colW - indent, 112 * u * f, FONT, { maxLines: 1, min: 0.72, soft: true }) : { size: pSize, lines: TY.wrap(g, q.text || '', colW - indent, `${pSize}px "${FONT}"`) };   // 标题先缩字号放一行，放不下再折行
+			const size = ft.size, lines = ft.lines.length > 1 ? balance(g, q.text || '', colW - indent, `${size}px "${FONT}"`) : ft.lines;
+			const n = [...(q.text || '')].length, room = Math.max(0.35, next(q) - q.at - 0.15 - (title ? 0 : 0.15)), rate = Math.max(title ? 7.5 : 16, n / room);
+			if (title) yT = Math.max(yT, yP);
+			else { if (col0 == null) col0 = yT; if (split && kPt === split) { colT.x = W / 2 + 40 * u; yT = col0; } kPt++; }
+			let y = yT + size * (title ? 1.1 : 1.0);
+			start(q);
+			// 項目圓點：圓心置於 colT.x + 24*u，半徑 14*u，外緣約 41*u；文字起於 110*u，保留 >60*u 空隙徹底避免重疊
+			if (!title) B.line(DG.ellipsePts(colT.x + 24 * u, y - size * 0.32, 14 * u, 14 * u, -1.6, 1.05, 18), { w: lw * 0.9, col: ORANGE, speed: 9000 * u, min: 0.08, gap: 0.02 });
+			const x = (title ? pad : colT.x) + indent, it = { q, kind: q.kind, x, y0: y - size, lines, size };
       lines.forEach((ln, k) => B.text(ln, x, y + k * size * 1.3, size, { col: INK, rate }));
       g.font = `${size}px "${FONT}"`; it.w = Math.max(...lines.map(l => g.measureText(l).width)); it.y1 = y + (lines.length - 1) * size * 1.3 + size * 0.25;
       yT = it.y1 + (title ? 60 : 44) * u * f; items.push(it);

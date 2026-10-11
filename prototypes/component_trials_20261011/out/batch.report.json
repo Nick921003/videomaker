@@ -1,0 +1,101 @@
+{
+  "clips": [
+    {
+      "id": "keynote",
+      "style": "Keynote 卡片",
+      "duration": 15,
+      "fps": 24,
+      "frames": 360,
+      "mp4_sha256": "2db15b4ed2c1340eb536bf3ac45aa234cde8427b21d2af283d9be45fcb7714ff",
+      "max_seek_changed_pixels": 0,
+      "max_seek_channel_delta": 0
+    },
+    {
+      "id": "chart",
+      "style": "數據圖表",
+      "duration": 15,
+      "fps": 24,
+      "frames": 360,
+      "mp4_sha256": "417c2dbc4a7fd8e7746512986e74c5c595c7440c37aa5082eb7a38896798ebaf",
+      "max_seek_changed_pixels": 0,
+      "max_seek_channel_delta": 0
+    },
+    {
+      "id": "chalk",
+      "style": "黑板粉筆",
+      "duration": 15,
+      "fps": 24,
+      "frames": 360,
+      "mp4_sha256": "0cdb3350b0d531d2c10d544b7862737bf100ea6dffbcbc5caccf76fd70a1febb",
+      "max_seek_changed_pixels": 140,
+      "max_seek_channel_delta": 9
+    },
+    {
+      "id": "drafting",
+      "style": "工程藍圖",
+      "duration": 15,
+      "fps": 24,
+      "frames": 360,
+      "mp4_sha256": "5b79effe8825ee07a6ffca373cf1d0c850e4aae78da4c01e30f2b8a46e7b3b23",
+      "max_seek_changed_pixels": 90,
+      "max_seek_channel_delta": 1
+    },
+    {
+      "id": "formula",
+      "style": "公式形變",
+      "duration": 15,
+      "fps": 24,
+      "frames": 360,
+      "mp4_sha256": "cd6c247aed51a4d039e2697b8c8152a14c0b4710ad79f696d33a73a97d43636d",
+      "max_seek_changed_pixels": 0,
+      "max_seek_channel_delta": 0
+    },
+    {
+      "id": "paper",
+      "style": "紙藝折起",
+      "duration": 15,
+      "fps": 24,
+      "frames": 360,
+      "mp4_sha256": "8914abb31911e41d55ede7f1570011e822db3488b46519eba58ed5ed88647c4a",
+      "max_seek_changed_pixels": 0,
+      "max_seek_channel_delta": 0
+    }
+  ],
+  "ui": {
+    "responsive": [
+      {
+        "width": 375,
+        "overflow": false,
+        "play_pause_seek": true,
+        "choice_refresh_export": true
+      },
+      {
+        "width": 768,
+        "overflow": false,
+        "play_pause_seek": true,
+        "choice_refresh_export": true
+      },
+      {
+        "width": 1440,
+        "overflow": false,
+        "play_pause_seek": true,
+        "choice_refresh_export": true
+      }
+    ],
+    "six_animation_playbacks": true,
+    "six_mp4_playbacks": true,
+    "last_frame_and_replay": true,
+    "errors": []
+  },
+  "regression": {
+    "python_total": 780,
+    "python_skipped": 1,
+    "python_failed": 0,
+    "frontend_passed": 99,
+    "frontend_failed": 0
+  },
+  "original_source_hashes_verified": true,
+  "font_hash_verified": true,
+  "audio": false,
+  "catalog_admission": "pending_user_selection"
+}

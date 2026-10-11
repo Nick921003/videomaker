@@ -1,0 +1,346 @@
+{
+	"version": 1,
+	"title": "C 迴圈：看懂每一輪",
+	"tag": "共用教學規劃",
+	"corner_note": "未配音 fixture",
+	"objects": [
+		{
+			"id": "problem_pipeline",
+			"type": "pipeline",
+			"title": "一百次加法，怎樣少寫又算對？",
+			"stages": [
+				{
+					"id": "s0",
+					"label": "找出要重複的動作"
+				},
+				{
+					"id": "s1",
+					"label": "決定開始與繼續條件"
+				},
+				{
+					"id": "s2",
+					"label": "確認每輪更新與最後結果"
+				}
+			]
+		},
+		{
+			"id": "trace_code",
+			"type": "code",
+			"lines": [
+				"int n = 5, sum = 0;",
+				"for (int i = 1; i <= n; i++) {",
+				"    sum += i;",
+				"}",
+				"printf(\"%d\", sum);"
+			],
+			"caption": "跟著程式，看到累加值怎麼變"
+		},
+		{
+			"id": "trace_vars",
+			"type": "vars",
+			"title": "目前變數",
+			"vars": [
+				{
+					"id": "v0",
+					"name": "i",
+					"value": "1"
+				},
+				{
+					"id": "v1",
+					"name": "sum",
+					"value": "1"
+				}
+			]
+		},
+		{
+			"id": "trace_output",
+			"type": "output",
+			"label": "輸出"
+		},
+		{
+			"id": "termination_pipeline",
+			"type": "pipeline",
+			"title": "狀態不更新，迴圈就可能停不下來",
+			"stages": [
+				{
+					"id": "s0",
+					"label": "檢查條件使用的變數"
+				},
+				{
+					"id": "s1",
+					"label": "找到主體裡的更新"
+				},
+				{
+					"id": "s2",
+					"label": "確認更新後能讓條件不成立"
+				}
+			]
+		}
+	],
+	"scenes": [
+		{
+			"id": "problem",
+			"title": "一百次加法，怎樣少寫又算對？",
+			"label": "hook",
+			"layout": {
+				"stack": [
+					"problem_pipeline"
+				]
+			},
+			"beats": [
+				{
+					"say": "找出要重複的動作",
+					"do": [
+						{
+							"act": "step",
+							"target": "problem_pipeline:s0"
+						}
+					]
+				},
+				{
+					"say": "決定開始與繼續條件",
+					"do": [
+						{
+							"act": "step",
+							"target": "problem_pipeline:s1"
+						}
+					]
+				},
+				{
+					"say": "確認每輪更新與最後結果",
+					"do": [
+						{
+							"act": "step",
+							"target": "problem_pipeline:s2"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "trace",
+			"title": "跟著程式，看到累加值怎麼變",
+			"label": "example",
+			"layout": {
+				"stack": [
+					{
+						"row": [
+							"trace_code",
+							"trace_vars"
+						]
+					},
+					"trace_output"
+				]
+			},
+			"beats": [
+				{
+					"say": "0 + 1 = 1，接著更新 i。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "trace_code",
+							"line": 3
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v0",
+							"value": "1",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v1",
+							"value": "1",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_output",
+							"text": "尚未印出",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "1 + 2 = 3，接著更新 i。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "trace_code",
+							"line": 3
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v0",
+							"value": "2",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v1",
+							"value": "3",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_output",
+							"text": "尚未印出",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "3 + 3 = 6，接著更新 i。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "trace_code",
+							"line": 3
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v0",
+							"value": "3",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v1",
+							"value": "6",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_output",
+							"text": "尚未印出",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "6 + 4 = 10，接著更新 i。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "trace_code",
+							"line": 3
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v0",
+							"value": "4",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v1",
+							"value": "10",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_output",
+							"text": "尚未印出",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "10 + 5 = 15，接著更新 i。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "trace_code",
+							"line": 3
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v0",
+							"value": "5",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v1",
+							"value": "15",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_output",
+							"text": "尚未印出",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "五已經加進去；離開迴圈後才印出結果。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "trace_code",
+							"line": 5
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v0",
+							"value": "條件不成立",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_vars:v1",
+							"value": "15",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "trace_output",
+							"text": "15",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "termination",
+			"title": "狀態不更新，迴圈就可能停不下來",
+			"label": "pitfall",
+			"layout": {
+				"stack": [
+					"termination_pipeline"
+				]
+			},
+			"beats": [
+				{
+					"say": "檢查條件使用的變數",
+					"do": [
+						{
+							"act": "step",
+							"target": "termination_pipeline:s0"
+						}
+					]
+				},
+				{
+					"say": "找到主體裡的更新",
+					"do": [
+						{
+							"act": "step",
+							"target": "termination_pipeline:s1"
+						}
+					]
+				},
+				{
+					"say": "確認更新後能讓條件不成立",
+					"do": [
+						{
+							"act": "step",
+							"target": "termination_pipeline:s2"
+						}
+					]
+				}
+			]
+		}
+	]
+}

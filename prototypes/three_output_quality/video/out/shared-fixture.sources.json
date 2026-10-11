@@ -1,0 +1,25 @@
+[
+	{
+		"unit_id": "problem",
+		"source_quotes": [
+			"要把一到一百加起來，用手寫一百行加法沒有人受得了。",
+			"迴圈說穿了只有三件事：從哪裡開始、什麼時候繼續、每一輪怎麼變。"
+		],
+		"selection_reason": "先後順序是理解的關鍵。"
+	},
+	{
+		"unit_id": "trace",
+		"source_quotes": [
+			"int n = 5, sum = 0;\n    for (int i = 1; i <= n; i++) {\n        sum += i;\n    }",
+			"因為題目要從一加到五，五本身要算進去，所以條件寫成小於等於。"
+		],
+		"selection_reason": "同步顯示執行位置、變數和結果。"
+	},
+	{
+		"unit_id": "termination",
+		"source_quotes": [
+			"用 while 的時候忘記在主體裡更新條件變數，條件就永遠成立，程式停不下來。"
+		],
+		"selection_reason": "先後順序是理解的關鍵。"
+	}
+]

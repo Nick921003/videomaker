@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+	<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>迴圈：共同主視覺樣片</title>
+	<link rel="stylesheet" href="stage.css?v=2">
+</head>
+<body><div id="frame">
+	<header data-region="header"><div class="eyebrow">程式觀念實驗室 · C 語言</div><h1 id="title"></h1><div id="chapter"></div></header>
+	<section id="code" data-region="code"><div class="label">一加到五 · 相同程式，一路走讀</div><div id="lines"></div><div id="code-note">sum 先歸零，才能正確累加。</div></section>
+	<section id="numbers" data-region="numbers"><div><span>目前的 i</span><strong id="i-value"></strong></div><div><span>累加的 sum</span><strong id="sum-value"></strong></div><div id="step"></div></section>
+	<section id="visual" data-region="visual">
+		<div id="concept"></div><div id="engineering"><div class="panel-label">執行流程</div><svg id="flow" width="990" height="607" viewBox="0 0 990 607"></svg><div id="flow-note"></div></div>
+		<div id="quantity"><div class="panel-label">執行次數（次）</div><canvas id="chart" width="990" height="607"></canvas></div>
+		<div id="recap"><div class="panel-label">三個重點，收進同一頁筆記</div><div id="paper-notes"></div><canvas id="formula" width="990" height="607"></canvas></div>
+	</section>
+	<div id="takeaway" data-region="takeaway"></div>
+	<div id="captions" data-region="captions"></div>
+</div><script type="module" src="runtime.mjs?v=2"></script></body>
+</html>

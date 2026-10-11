@@ -584,6 +584,20 @@ class StudioHandler(BaseHTTPRequestHandler):
 				if len(parts) != 4:
 					raise APIError(404, "找不到檔案")
 				return self._file(studio._unit_path(parts[2], parts[3]))
+			if path.startswith("/out/"):
+				# 樣片與預覽輸出影片靜態映射（安全防穿越）
+				try:
+					out_file = safe_path(ROOT / "prototypes" / "three_output_quality" / "video" / "out", path[len("/out/"):])
+					return self._file(out_file)
+				except (ValueError, APIError):
+					raise APIError(404, "找不到展示影片")
+			if path.startswith("/candidate/"):
+				# 候選視覺元件靜態映射（安全防穿越）
+				try:
+					cand_file = safe_path(ROOT / "prototypes" / "three_output_quality" / "video", path[len("/candidate/"):])
+					return self._file(cand_file)
+				except (ValueError, APIError):
+					raise APIError(404, "找不到候選元件")
 			match = re.fullmatch(r"/embed/([^/]+)/([^/]+)", path)
 			if match:
 				uid, item = match.groups()

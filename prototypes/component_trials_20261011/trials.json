@@ -1,0 +1,47 @@
+[
+  {
+    "id": "keynote", "title": "一次 HTTP 請求，經過哪些角色？", "style": "Keynote 卡片", "duration": 15, "renderer": "canvas", "source_id": "t2_keynote_ui", "candidate": "原先候選",
+    "effect": "標題由模糊轉清晰；三張毛玻璃卡片依序彈入並讓位；最後切成狀態碼。",
+    "use": "系統角色、服務流程、功能介紹", "rhythm": [[0,2.4,"提出問題"],[2.4,5.2,"第一角色"],[5.2,8.2,"第二角色"],[8.2,11.8,"第三角色"],[11.8,15,"回應結果"]],
+    "payload": {"accent":"#55c6bd", "eyebrow":"HTTP REQUEST", "title":"一次請求的旅程", "subtitle":"從用戶端，到服務，再到資料庫"},
+    "cues": [{"kind":"title","at":0.1},{"kind":"card","at":2.4,"text":"用戶端","sub":"GET /students/7","data":{"icon":"code"}},{"kind":"card","at":5.2,"text":"API 服務","sub":"驗證、路由與查詢","data":{"icon":"lock"}},{"kind":"card","at":8.2,"text":"資料庫","sub":"查回學生資料","data":{"icon":"layers"}},{"kind":"number","at":12.7,"text":"查詢成功，回傳資料","data":{"value":200,"label":"HTTP 回應狀態","decimals":0}}],
+    "subtitles": [[0,2.4,"查詢學生資料時，一次請求會經過哪些角色？"],[2.4,5.2,"用戶端先把查詢需求送到 API。"],[5.2,8.2,"API 驗證請求，再決定如何查詢。"],[8.2,11.8,"資料庫查回資料，由 API 整理成回應。"],[11.8,15,"HTTP 200 表示這次請求成功。"]]
+  },
+  {
+    "id":"chart", "title":"多一層迴圈，操作次數差多少？", "style":"數據圖表", "duration":15, "renderer":"canvas", "source_id":"t3_finance_chart", "candidate":"原先候選",
+    "effect":"先畫座標軸，再依時序長出兩根柱；最後用引線強調差異。數值和比例由資料決定。",
+    "use":"操作次數、記憶體用量、具來源的量化比較", "rhythm":[[0,3,"建立比較條件"],[3,6,"單迴圈"],[6,9.5,"完整雙迴圈"],[9.5,15,"差異與結論"]],
+    "payload":{"n":10,"title":"多一層迴圈，操作次數差多少？","unit":"n = 10 · 主體完整執行次數（次）","source":"推導：單層 n；兩層各執行 n 次，合計 n²","chart":"bar","decimals":0,"series":[{"label":"單迴圈 n","value":10,"color":"#547d92"},{"label":"雙迴圈 n²","value":100,"color":"#d26839"}],"highlight":{"index":1,"text":"100 次","sub":"10 × 10；操作次數增加到 10 倍"}},
+    "cues":[{"kind":"title","at":0.1},{"kind":"bar","at":3,"dur":1.1,"data":{"index":0}},{"kind":"bar","at":6,"dur":1.2,"data":{"index":1}},{"kind":"highlight","at":9.5,"data":{"index":1}}],
+    "subtitles":[[0,3,"設 n 為十，比較主體執行次數。"],[3,6,"單迴圈執行十次，柱高對應十。"],[6,9.5,"兩層各跑十次，主體就執行一百次。"],[9.5,12.5,"這是操作次數推導，並非效能實測。"],[12.5,15,"圖表讓操作次數的差異一眼可見。"]]
+  },
+  {
+    "id":"chalk", "title":"Hello 為什麼需要六格？", "style":"黑板粉筆", "duration":15, "renderer":"kit", "source_id":"v8-chalkboard", "candidate":"原先候選",
+    "effect":"粉筆逐字寫入、畫出陣列格、圈選 NUL；板擦擦掉錯誤容量，再寫正確值。",
+    "use":"程式迷思、符號推導、逐步修正", "rhythm":[[0,3,"問題與字串"],[3,7.5,"寫入五個字元"],[7.5,10.4,"補上 NUL"],[10.4,12.4,"擦除錯誤"],[12.4,15,"保留正確結果"]],
+    "payload":{"chars":["H","e","l","l","o"],"capacity":6,"wrong":"容量 = 5？","right":"容量至少 6 格","code":"char s[] = \"Hello\";"},
+    "subtitles":[[0,3,"Hello 有五個 ASCII 字元。"],[3,7.5,"五個字元依序放進陣列的前五格。"],[7.5,10.4,"第六格還要放結束字元 NUL。"],[10.4,12.4,"因此，容量五格並不夠。"],[12.4,15,"五個字元，加一格 NUL，共六格。"]]
+  },
+  {
+    "id":"drafting", "title":"索引如何對應記憶體位址？", "style":"工程藍圖", "duration":15, "renderer":"kit", "source_id":"v7-drafting", "candidate":"原先候選",
+    "effect":"依序建立陣列格；引線描出索引路徑；尺寸線標註元素寬度；鏡头輕推向目標格。",
+    "use":"記憶體布局、資料結構、尺寸與依賴關係", "rhythm":[[0,3,"建立示意假設"],[3,6.5,"四格布局"],[6.5,10.5,"索引與尺寸引線"],[10.5,15,"目標位址"]],
+    "payload":{"base":1000,"bytes_per_item":4,"addresses":[1000,1004,1008,1012],"index":2,"assumption":"示意：起始位址 1000，每個 int 佔 4 bytes"},
+    "subtitles":[[0,3,"假設起始位址為一千，每個元素佔四 bytes。"],[3,6.5,"相鄰的陣列元素，在記憶體中連續排列。"],[6.5,10.5,"索引二，表示從起點向後移動兩個元素。"],[10.5,15,"一千加上二乘四，所以位址是 1008。"]]
+  },
+  {
+    "id":"formula", "title":"位址公式，如何一步步代入？", "style":"公式形變", "duration":15, "renderer":"canvas", "source_id":"t1_3b1b", "candidate":"補充候選",
+    "effect":"公式逐筆寫出；相同符號保留並移動；代入數值後化簡，最後圈出結果。",
+    "use":"索引計算、演算法公式、逐步代入", "rhythm":[[0,3,"建立通式"],[3,7,"帶入假設"],[7,10.5,"乘法化簡"],[10.5,15,"結果強調"]],
+    "payload":{},
+    "cues":[{"kind":"title","at":0.1,"text":"把索引，換成位址"},{"kind":"equation","at":1,"text":"addr = base + i × size"},{"kind":"equation","at":4,"text":"addr = 1000 + 2 × 4"},{"kind":"equation","at":8,"text":"addr = 1000 + 8"},{"kind":"equation","at":11,"text":"addr = 1008"},{"kind":"point","at":3,"text":"示意：每個元素佔 4 bytes"},{"kind":"point","at":7,"text":"索引 2 → 跳過前面兩個元素"},{"kind":"point","at":10.5,"text":"起始位址 + 位移量 = 目標位址"},{"kind":"highlight","at":12,"data":{"target":"equation"}}],
+    "subtitles":[[0,3,"位址等於起點，加上索引乘元素大小。"],[3,7,"假設起點一千、索引二，每個元素四 bytes。"],[7,10.5,"先算位移量：二乘四，等於八。"],[10.5,15,"再加到起點，目標位址就是 1008。"]]
+  },
+  {
+    "id":"paper", "title":"把同一位學生的資料放在一起", "style":"紙藝折起", "duration":15, "renderer":"kit", "source_id":"v4-paper", "candidate":"補充候選",
+    "effect":"欄位卡片從紙面折起；姓名與成績飛入同一資料容器；封裝標籤展開，留下完整結果。",
+    "use":"物件封裝、資料分組、結構組成", "rhythm":[[0,3,"原本分散"],[3,7,"欄位折起"],[7,11,"合成結構"],[11,15,"保留完整結果"]],
+    "payload":{"name":"Alice","score":95,"type":"Student","fields":["name","score"]},
+    "subtitles":[[0,3,"姓名與成績，描述的是同一位學生。"],[3,7,"把兩個欄位放入同一個 Student 結構。"],[7,11,"欄位跟著同一筆資料一起移動。"],[11,15,"用 s.name 和 s.score，存取同一位學生。"]]
+  }
+]

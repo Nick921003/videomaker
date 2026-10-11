@@ -5,12 +5,12 @@ body{margin:0;background:#f2efe9;color:#243139;font-family:'Noto Sans CJK TC',sa
 </style></head><body><main>
 <h1>迴圈邊界：四支試片，直接比較</h1>
 <p>同一份保存旁白。A 與 B 為完整 69.66 秒影片；白板與文字候選使用相同開場的前兩句。這是固定教材與編排的比較樣片，尚未代表 AI 自動選擇或使用者品質驗收。</p>
-<div class="tabs"><button data-src="out/A-original.mp4" aria-pressed="false">A · 保存基準</button><button data-src="out/B-board.mp4" aria-pressed="true">B · 狀態＋結果＋判斷流程</button><button data-src="out/C-y3_whiteboard.mp4" aria-pressed="false">候選 · 白板推導</button><button data-src="out/C-y5_kinetic_type.mp4" aria-pressed="false">候選 · 文字揭示</button></div>
+<div class="tabs"><button data-src="out/A-original.mp4" aria-pressed="false">A · 保存基準</button><button data-src="out/B-board.mp4" aria-pressed="true">B · 狀態＋結果＋判斷流程</button><button data-src="out/C-y3_whiteboard.mp4" aria-pressed="false">候選 · 白板推導（修復重疊）</button><button data-src="out/C-y5_kinetic_type.mp4" aria-pressed="false">候選 · 文字揭示（柔和色階）</button><button data-src="out/C-lanshu_notebook.mp4" aria-pressed="false">候選 · 嵐叔手帳筆記</button></div>
 <video id="player" src="out/B-board.mp4" controls preload="metadata"></video>
 <div class="tabs"><button data-time="2">片頭</button><button data-time="14.37">第一次換場</button><button data-time="26.5">程式／變數／結果</button><button data-time="29.98">第二次換場</button><button data-time="43">陣列邊界</button><button data-time="67.3">片尾</button></div>
 <aside id="note">B：同配音的 renderer 固定 fixture。句界來自保存音檔，動作採句界；沒有詞級對齊承諾。</aside>
 <p><a href="out/B-delivery-normalized.mp4">下載 B 交付音量版</a>（−16.29 LUFS、true peak −1.19 dBTP；畫面相同，另作音量處理）</p>
-<p><a href="out/B-player/player.html">B 可拖曳 Board 播放器</a> · <a href="candidates.html">可拖曳外部候選</a> · <a href="out/shared-fixture-player/player.html">共同教學規劃接點（無聲）</a> · <a href="../../../docs/experiments/2026-10-09-three-output-quality/video/REPORT.md">驗收與來源紀錄</a></p>
+<p><a href="out/B-player/player.html">B 可拖曳 Board 播放器</a> · <a href="candidates.html">花叔候選（Canvas）</a> · <a href="lanshu_notebook.html">嵐叔手帳（HTML/GSAP）</a> · <a href="out/shared-fixture-player/player.html">共同教學規劃接點（無聲）</a> · <a href="../../../docs/experiments/2026-10-09-three-output-quality/video/REPORT.md">驗收與來源紀錄</a></p>
 <div class="frames"><figure><img src="out/B-output.png"><figcaption>26.5s：同時對照程式行、i、sum 與總和。</figcaption></figure><figure><img src="out/B-boundary-error.png"><figcaption>43s：長度五的陣列與合法索引零到四。</figcaption></figure><figure><img src="out/B-ending.png"><figcaption>67.3s：先看起點、確認最後值，再選條件。</figcaption></figure></div>
 </main><script>
 const player=document.getElementById('player');

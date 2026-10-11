@@ -1,0 +1,8 @@
+{
+	"grammar": "y5_kinetic_type",
+	"samples": 323,
+	"visible_text_canvas_overflow": [],
+	"min_core_font_px": 79.99999999999999,
+	"subtitle_font_px": 42.0,
+	"instrumentation": "four-corner transformed text AABB; visible text only, illustrative paths are not instrumented"
+}
