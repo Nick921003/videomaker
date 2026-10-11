@@ -1,0 +1,15 @@
+{
+	"contract_version": "1.0",
+	"default_style": "professional",
+	"components": [
+		{"type":"concept", "purpose":"說明一個概念與組成或責任", "capacity":"2–4個分支", "board_types":["note","pipeline"], "outputs":["html","pptx","mindmap"], "pptx_editable":true},
+		{"type":"walkthrough", "purpose":"同步程式行、變數、輸出與推導", "capacity":"1–10行、2–8個狀態、1–4個變數", "board_types":["code","vars","output"], "outputs":["html","pptx","mindmap","video_fixture"], "pptx_editable":true},
+		{"type":"compare", "purpose":"並排顯示適用情境或前後差異", "capacity":"每側1–4項", "board_types":["code","scale","metrics"], "outputs":["html","pptx","mindmap"], "pptx_editable":true},
+		{"type":"steps", "purpose":"有先後順序的流程與操作", "capacity":"2–6項；Board適配至多4站", "board_types":["pipeline","terminal","window","cursor"], "outputs":["html","pptx","mindmap","video_fixture"], "pptx_editable":true},
+		{"type":"code", "purpose":"保留完整短程式與必要說明", "capacity":"最多12行，容量不足拆頁", "board_types":["code"], "outputs":["html","pptx","mindmap"], "pptx_editable":true},
+		{"type":"bullets", "purpose":"回顧已解釋的重點或自我檢查", "capacity":"1–5項", "board_types":["list","note"], "outputs":["html","pptx","mindmap"], "pptx_editable":true}
+	],
+	"board_catalog": "video_engine/board/catalog.json",
+	"board_types": ["note","cells","output","code","metrics","terminal","list","window","cursor","vars","stack","pipeline","scale"],
+	"note": "board_types是可選視覺語彙，非全部已完成跨輸出適配；video_fixture只表示隔離試片適配，不代表外部引擎已接正式生成。"
+}

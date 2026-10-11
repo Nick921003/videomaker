@@ -701,6 +701,14 @@ def do_scene(md_path, out_dir, seg_id, budget, target=None, repair_target=None, 
 		"", "# 教材段落", excerpt,
 	])
 	user += source_prompt(source_data)
+	teaching_context=''
+	if source_data is not None:
+		from workbench.teaching import video_context
+		try:
+			teaching_context=video_context(out_dir,md)
+			user += teaching_context
+		except (ValueError,OSError) as exc:
+			raise SourceMaterialError(str(exc),'material_version') from exc
 	print(f"分鏡：{seg_id} {seg['title']}（{seg['sec']}s）", flush=True)
 	print("@step selftest", flush=True)
 	preflight()
@@ -722,13 +730,28 @@ def do_scene(md_path, out_dir, seg_id, budget, target=None, repair_target=None, 
 		return problems
 	doc, repairs = converse(budget, "scene", system, user, validate,
 		failed_path=failed_path, target=target, repair_target=repair_target, scenes_of=problem_scenes, start=start)
+	if source_data is not None:
+		from workbench._runner import assert_current_source
+		try:
+			assert_current_source(out_dir,source_data)
+			if video_context(out_dir,md)!=teaching_context:
+				raise ValueError('影片生成期間教學規劃版本已改變')
+		except (ValueError,OSError) as exc:
+			raise SourceMaterialError(str(exc),'material_version') from exc
 	path = os.path.join(out_dir, f"{seg_id}.scene.json")
-	with open(path, "w", encoding="utf-8") as f:
-		json.dump(doc, f, ensure_ascii=False, indent="\t")
 	report = {"segment": seg, "repairs": repairs, "bytes_minified": len(json.dumps(doc, ensure_ascii=False, separators=(",", ":")).encode())}
-	with open(os.path.join(out_dir, f"{seg_id}.report.json"), "w", encoding="utf-8") as f:
-		json.dump(report, f, ensure_ascii=False, indent="\t")
-	save_source(out_dir, f"{seg_id}.scene.source.json", source_data)
+	from workbench.artifacts import publish
+	outputs={f'{seg_id}.scene.json':json.dumps(doc,ensure_ascii=False,allow_nan=False).encode(),
+		f'{seg_id}.report.json':json.dumps(report,ensure_ascii=False,allow_nan=False).encode()}
+	if source_data is not None:
+		from workbench.material import provenance
+		from workbench.teaching import plan_digest
+		from workbench.library import read_json,safe_path
+		record=provenance(source_data)
+		shared=read_json(safe_path(out_dir,'teaching_plan.json'))
+		if shared is not None:record['teaching_plan_digest']=plan_digest(shared)
+		outputs[f'{seg_id}.scene.source.json']=json.dumps(record,ensure_ascii=False).encode()
+	publish(out_dir,outputs)
 	print(f"  → {path}（修正 {repairs} 次，{report['bytes_minified']} bytes）")
 
 

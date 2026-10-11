@@ -4,7 +4,7 @@ from copy import deepcopy
 import json
 import re
 import unicodedata
-from xml.sax.saxutils import escape
+from xml.sax.saxutils import escape, quoteattr
 
 
 _ID = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
@@ -48,21 +48,29 @@ def _text(value, maximum):
 
 
 def canonical_mindmap(value):
-	_fields(value, ("contract_version", "title", "root_id", "nodes", "edges"))
-	if value["contract_version"] != "1.0":
+	if not isinstance(value,dict):
+		raise MindmapError('心智圖欄位不符合契約')
+	explorable = value.get('contract_version') == '1.1'
+	_fields(value, ("contract_version", "title", "root_id", "nodes", "edges") + (('layout',) if explorable else ()))
+	if value["contract_version"] not in ("1.0", '1.1'):
 		raise MindmapError("不支援的心智圖版本")
+	if explorable and value['layout'] not in ('radial','progressive'):
+		raise MindmapError('心智圖布局不支援')
 	_text(value["title"], 120)
 	nodes, edges = value["nodes"], value["edges"]
-	if not isinstance(nodes, list) or not 3 <= len(nodes) <= 12 or not isinstance(edges, list) or len(edges) != len(nodes) - 1:
+	if not isinstance(nodes, list) or not 3 <= len(nodes) <= (80 if explorable else 12) or not isinstance(edges, list) or len(edges) != len(nodes) - 1:
 		raise MindmapError("心智圖節點或關係數量不符")
 	ids = set()
 	for node in nodes:
-		_fields(node, ("id", "label", "explanation", "source_quote"))
+		_fields(node, ("id", "label", "explanation", "source_quote") + (('kind',) if explorable else ()))
 		if not isinstance(node["id"], str) or not _ID.fullmatch(node["id"]) or node["id"] in ids:
 			raise MindmapError("概念 ID 不符合契約")
 		ids.add(node["id"])
-		for key, maximum in (("label", 24), ("explanation", 240), ("source_quote", 300)):
-			_text(node[key], maximum)
+		if explorable and node['kind'] not in ('concept','meaning','usage','example','pitfall'):
+			raise MindmapError('心智圖解說類型不支援')
+		for key, maximum in (("label", 160 if explorable else 24), ("explanation", 240), ("source_quote", 1000 if explorable else 300)):
+			if not (explorable and key=='explanation' and node[key]==''):
+				_text(node[key], maximum)
 	root = value["root_id"]
 	if root not in ids:
 		raise MindmapError("根概念不存在")
@@ -76,7 +84,7 @@ def canonical_mindmap(value):
 		parents.add(child)
 		children[parent].append(child)
 		_text(edge["label"], 16)
-		_text(edge["source_quote"], 300)
+		_text(edge["source_quote"], 1000 if explorable else 300)
 	seen = set()
 	def visit(node_id):
 		if node_id in seen:
@@ -157,6 +165,8 @@ def build_mindmap(material, instruction, complete_json, *, source_context=None):
 def render_mindmap_svg(mindmap, material=None):
 	"""只輸出靜態 SVG 元素；圖文與關係先經封閉契約驗證。"""
 	mindmap = canonical_mindmap(mindmap)
+	if mindmap['contract_version']=='1.1':
+		return _render_explorable_svg(mindmap,material)
 	if material is not None and (not isinstance(material, str) or len(material) > 30_000):
 		raise MindmapError("心智圖來源超出上限")
 	citations = [f"概念 {node['label']}：{node['source_quote']}" for node in mindmap["nodes"]]
@@ -205,6 +215,59 @@ def render_mindmap_svg(mindmap, material=None):
 		baseline = y+8 if relation else y+7
 		for index, line in enumerate(lines):
 			parts.append(f'<text x="{x+140}" y="{baseline+(index-(len(lines)-1)/2)*24}" text-anchor="middle" fill="#302a25" font-family="sans-serif" font-size="20" font-weight="700">{_svg_text(line)}</text>')
+		parts.append('</g>')
+	parts.append('</svg>')
+	return ''.join(parts).encode('utf-8')
+
+
+def _render_explorable_svg(mindmap, material):
+	"""完整下載圖依實際行數排版；網頁仍可選擇局部展開。"""
+	if material is not None and (not isinstance(material,str) or len(material)>30000):
+		raise MindmapError('心智圖來源超出上限')
+	nodes={node['id']:node for node in mindmap['nodes']}
+	children={id:[] for id in nodes}
+	for edge in mindmap['edges']: children[edge['from']].append(edge['to'])
+	from PIL import ImageFont
+	font=ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',20,index=3)
+	sizes={}
+	def measure(id):
+		lines=[];current=''
+		for char in nodes[id]['label']:
+			if char=='\n' or current and font.getlength(current+char)>260:
+				lines.append(current);current='' if char=='\n' else char
+			else:current+=char
+		if current:lines.append(current)
+		height=max(80,len(lines)*26+40)
+		child_height=sum(measure(child) for child in children[id])+max(0,len(children[id])-1)*40
+		sizes[id]=(height,lines,max(height,child_height))
+		return sizes[id][2]
+	measure(mindmap['root_id'])
+	positions={}
+	def place(id,depth,top):
+		height,lines,span=sizes[id]
+		positions[id]=(30+depth*370,top+span/2,height,lines)
+		child_span=sum(sizes[child][2] for child in children[id])+max(0,len(children[id])-1)*40
+		child_top=top+(span-child_span)/2
+		for child in children[id]:
+			place(child,depth+1,child_top);child_top+=sizes[child][2]+40
+	place(mindmap['root_id'],0,30)
+	width=int(max(x+300 for x,_,_,_ in positions.values())+30)
+	height=int(max(y+h/2 for _,y,h,_ in positions.values())+30)
+	parts=[f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" data-root-id="{mindmap["root_id"]}" data-contract-version="1.1" data-layout="{mindmap["layout"]}" role="img" aria-labelledby="mindmap-title">',
+		f'<title id="mindmap-title">{_svg_text(mindmap["title"])}</title>',
+		'<rect width="100%" height="100%" fill="#fffaf2"/>']
+	for edge in mindmap['edges']:
+		x1,y1,_,_=positions[edge['from']];x2,y2,_,_=positions[edge['to']]
+		parts.append(f'<path data-from="{edge["from"]}" data-to="{edge["to"]}" data-relation={quoteattr(edge["label"])} d="M{x1+300},{y1} C{x1+335},{y1} {x2-35},{y2} {x2},{y2}" fill="none" stroke="#b97755" stroke-width="2"/>')
+	for node in mindmap['nodes']:
+		x,y,h,lines=positions[node['id']]
+		parts.extend([f'<g data-node-id="{node["id"]}" data-node-kind="{node["kind"]}">',
+			f'<title data-node-label="">{_svg_text(node["label"])}</title>',
+			f'<desc data-node-explanation="">{_svg_text(node["explanation"])}</desc>',
+			f'<desc data-node-quote="">{_svg_text(node["source_quote"])}</desc>',
+			f'<rect x="{x}" y="{y-h/2}" width="300" height="{h}" rx="10" fill="{"#f5e2cf" if node["kind"]=="concept" else "#fffdf7"}" stroke="#c69373"/>'])
+		for index,line in enumerate(lines):
+			parts.append(f'<text x="{x+20}" y="{y-h/2+30+index*26}" fill="#302a25" font-family="Noto Sans CJK TC,sans-serif" font-size="20">{_svg_text(line)}</text>')
 		parts.append('</g>')
 	parts.append('</svg>')
 	return ''.join(parts).encode('utf-8')

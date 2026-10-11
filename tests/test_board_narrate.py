@@ -85,13 +85,15 @@ class TestRedo(unittest.TestCase):
 				argv = ["narrate.py", str(scene), str(voice), "--english", "off"]
 				with patch.object(module.sys, "argv", argv):
 					module.main()
+				records = json.loads((voice / "narration.json").read_text())["beats"]
+				selected = {records[index]["wav"] for index in (2, 4)}
 				before = {path.name: path.stat().st_mtime_ns for path in (voice / "audio").glob("*.wav")}
 				synth.reset_mock()
 				with patch.object(module.sys, "argv", [*argv, "--redo", "3,5"]):
 					module.main()
 				self.assertEqual([call.args[0] for call in synth.call_args_list], ["第三句", "第五句"])
 				for path in (voice / "audio").glob("*.wav"):
-					if path.name[:2] not in ("02", "04"):
+					if path.name not in selected:
 						self.assertEqual(path.stat().st_mtime_ns, before[path.name])
 				self.assertEqual(len(json.loads((voice / "timing.json").read_text())), 5)
 

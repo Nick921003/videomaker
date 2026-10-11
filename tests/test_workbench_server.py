@@ -272,7 +272,7 @@ class TestStudio(unittest.TestCase):
 		self.runner.fail = "export.py"
 		jid = self.api("POST", f"/api/v1/units/{uid}/generate", {"items": ["q1"]})["job_ids"][0]
 		self.assertEqual(self.wait_job(jid)["state"], "failed")
-		self.assertIn("--resume", self.runner.commands[0])
+		self.assertIn("--resume", self.runner.commands[1])
 		item = self.api("GET", f"/api/v1/units/{uid}", shape="unit")["items"][0]
 		self.assertEqual(item["status"], "failed")
 		self.assertEqual(item["files"], {})

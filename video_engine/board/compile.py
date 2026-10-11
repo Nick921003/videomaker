@@ -8,6 +8,7 @@
 """
 import argparse
 import copy
+import hashlib
 import json
 import os
 import re
@@ -25,6 +26,100 @@ SEQ_MARGIN = 0.15
 # 換場鏡頭最早提前多久起跑：太早會在上一句還沒講完時就把畫面拉走
 SCENE_LEAD = 0.5
 CONTAINERS = ("stack", "row")
+
+
+def file_digest(path):
+	with open(path, "rb") as handle:
+		digest = hashlib.sha256()
+		for block in iter(lambda: handle.read(1024 * 1024), b""):
+			digest.update(block)
+		return digest.hexdigest()
+
+
+def speech_digest(text, voice_digest):
+	return hashlib.sha256(json.dumps([text, voice_digest], ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def speech_flags(record):
+	asr = record.get("asr")
+	asr_ok = asr.get("ok") if isinstance(asr, dict) else None
+	return {"speech_checked": isinstance(asr_ok, bool), "ok": record.get("ok") is True and asr_ok is True}
+
+
+def speech_status(identity, root):
+	"""ASR 是提醒；身份核對成功不能當成旁白內容已驗收。"""
+	path = os.path.join(root, "narration.json")
+	if not os.path.exists(path):
+		return "needs_review"
+	with open(path, encoding="utf-8") as handle:
+		records = json.load(handle)["beats"]
+	if len(records) != len(identity["beats"]):
+		raise ValueError("旁白驗收紀錄句數與 timing 身份不符")
+	passed = True
+	for beat, record in zip(identity["beats"], records):
+		if not all(isinstance(beat.get(key), bool) for key in ("speech_checked", "ok")):
+			passed = False
+			continue
+		bound = True
+		for key, expected in (("digest", beat["digest"]), ("text", beat["text"]),
+			("wav", os.path.basename(beat["wav"])), ("scene", beat["scene"]),
+			("voice_digest", identity["voice_digest"]), ("speech_digest", beat["speech_digest"]),
+			("audio_sha256", beat["audio_sha256"])):
+			if key not in record:
+				bound = False
+			elif record[key] != expected:
+				raise ValueError("旁白驗收紀錄與 timing 音檔身份不符")
+		flags = speech_flags(record)
+		if any(beat[key] != value for key, value in flags.items()):
+			raise ValueError("timing 旁白驗收狀態與 ASR 紀錄不符")
+		passed = passed and bound and flags["speech_checked"] and flags["ok"]
+	return "passed" if passed else "needs_review"
+
+
+def verify_timing_identity(scene, timing, timing_path):
+	"""旁檔把實測句界綁回原講稿與音檔；只保存聲音配置摘要，不洩漏服務設定。"""
+	identity_path = os.path.splitext(timing_path)[0] + ".identity.json"
+	if not os.path.exists(identity_path):
+		return {"status": "legacy", "speech_status": "needs_review"}
+	with open(identity_path, encoding="utf-8") as handle:
+		identity = json.load(handle)
+	if identity.get("version") != 1 or not re.fullmatch(r"[0-9a-f]{64}", identity.get("voice_digest", "")):
+		raise ValueError("timing 身份版本或聲音摘要無效")
+	sources = [(si, bi, b) for si, s in enumerate(scene["scenes"]) for bi, b in enumerate(s["beats"])]
+	if len(identity.get("beats", [])) != len(sources) or len(timing) != len(sources):
+		raise ValueError("timing 身份句數與講稿不符")
+	root = os.path.dirname(os.path.abspath(timing_path))
+
+	def check_audio(record):
+		name = record.get("wav")
+		if not isinstance(name, str) or os.path.isabs(name):
+			raise ValueError("timing 身份音檔位置無效")
+		path = os.path.realpath(os.path.join(root, name))
+		if os.path.commonpath([os.path.realpath(root), path]) != os.path.realpath(root) or not os.path.isfile(path):
+			raise ValueError("timing 身份音檔不存在或位置無效")
+		if file_digest(path) != record.get("audio_sha256"):
+			raise ValueError("timing 音檔 digest 不符，請重新配音")
+
+	for (si, bi, beat), span, record in zip(sources, timing, identity["beats"]):
+		if any(record.get(key) != value for key, value in (
+			("scene", si), ("i", bi), ("say", beat["say"]), ("spoken", beat.get("spoken")))):
+			raise ValueError(f"timing 第 {si}/{bi} 句身份與旁白不符，請重新配音")
+		if any(record.get(key) != span.get(key) for key in ("t0", "t1")):
+			raise ValueError("timing 起訖與身份旁檔不符")
+		text = beat.get("spoken") or beat["say"]
+		if identity.get("symbols") is not None:
+			text = beat["say"]
+			for symbol in identity["symbols"]:
+				for term in re.split(r"\s*/\s*", symbol["term"]):
+					text = text.replace(term, symbol["say_as"])
+		if text != record.get("text") or speech_digest(text, identity["voice_digest"]) != record.get("speech_digest"):
+			raise ValueError("timing 實際旁白與聲音身份不符")
+		if record.get("wav") != f"audio/{record.get('digest')}.wav":
+			raise ValueError("timing 身份音檔位置與 digest 不符")
+		check_audio(record)
+	check_audio(identity.get("master", {}))
+	return {"status": "verified", "voice_digest": identity["voice_digest"],
+		"master_sha256": identity["master"]["audio_sha256"], "speech_status": speech_status(identity, root)}
 
 
 def load_catalog(path=None):
@@ -548,10 +643,18 @@ def main():
 	with open(args.scene, encoding="utf-8") as f:
 		scene = json.load(f)
 	timing = None
+	identity = None
 	if args.timing:
 		with open(args.timing, encoding="utf-8") as f:
 			timing = json.load(f)
+		identity = verify_timing_identity(scene, timing, args.timing)
 	tl = compile_scene(scene, timing, load_catalog())
+	if identity:
+		tl["timing_identity"] = identity
+		if identity["status"] == "legacy":
+			tl["warnings"].append("legacy timing：缺少身份旁檔，尚未核對講稿與音檔版本")
+		if identity["speech_status"] == "needs_review":
+			tl["warnings"].append("needs_review：旁白驗收未通過或未核對，請聽取音訊並按需重配")
 	with open(args.out, "w", encoding="utf-8") as f:
 		json.dump(tl, f, ensure_ascii=False, indent=1)
 	if tl["gaps"]:

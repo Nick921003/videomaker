@@ -3134,3 +3134,168 @@ a.make-step:hover, .make-step.active {
 /* 各成品類型已由分頁標示，統一移除重複的標題摘要列。 */
 .product-workspace .product-summary { display: none; }
 .product-workspace .product-main { grid-template-rows: minmax(0, 1fr); }
+
+/* 自學頁保留閱讀字級，走讀以狀態切換同步程式、變數與輸出。 */
+.viewer-deck[data-contract-version="1.2"] .deck-viewport {
+	overflow: auto;
+	touch-action: pan-y;
+	cursor: auto;
+	user-select: text;
+}
+.viewer-deck[data-contract-version="1.2"] .deck-canvas {
+	position: relative;
+	width: 100%;
+	height: auto;
+	transform: none !important;
+}
+.viewer-deck[data-contract-version="1.2"] .deck-slide {
+	height: auto;
+	min-height: 100%;
+	padding: clamp(20px, 3vw, 40px);
+	gap: 22px;
+	--deck-scale: 1 !important;
+	animation: deck-reveal 220ms ease-out;
+}
+.viewer-deck[data-contract-version="1.2"] .deck-slide-content {
+	flex: none;
+	font-size: 20px;
+}
+.deck-question {
+	margin: 0;
+	color: var(--accent);
+	font-size: 22px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+.deck-explanation {
+	margin: 0;
+	font-size: 20px;
+	line-height: 1.65;
+	overflow-wrap: anywhere;
+}
+.deck-walkthrough {
+	display: grid;
+	grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+	gap: 24px;
+	min-width: 0;
+}
+.deck-walkthrough-code {
+	min-width: 0;
+	padding: 16px 0;
+	font-size: 18px;
+	line-height: 1.7;
+}
+.deck-code-line {
+	display: flex;
+	gap: 12px;
+	padding: 3px 16px 3px 12px;
+	border-left: 4px solid transparent;
+}
+.deck-code-line code {
+	min-width: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font: inherit;
+}
+.deck-line-number {
+	flex: 0 0 2ch;
+	opacity: .6;
+	text-align: right;
+	user-select: none;
+}
+.deck-code-line[data-active="true"] {
+	border-color: var(--accent);
+	background: var(--tint);
+	color: var(--ink);
+	font-weight: 700;
+}
+.deck-state {
+	min-width: 0;
+	padding: 22px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--tint);
+	font-size: 20px;
+	line-height: 1.6;
+	overflow-wrap: anywhere;
+}
+.deck-state h3 { margin: 0 0 18px; font-size: 24px; }
+.deck-state h4 { margin: 16px 0 8px; font-size: 18px; color: var(--soft); }
+.deck-vars { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; }
+.deck-vars > div {
+	display: flex;
+	gap: 18px;
+	padding: 8px 14px;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.deck-vars dt { font-family: ui-monospace, monospace; }
+.deck-vars dd { margin: 0; color: var(--accent); font-weight: 700; overflow-wrap: anywhere; }
+.deck-output {
+	margin: 0;
+	padding: 12px;
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	font: 20px/1.5 ui-monospace, monospace;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.deck-state-explanation { margin: 18px 0 0; }
+.deck-step-controls {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	grid-column: 1 / -1;
+	font-size: 16px;
+}
+.deck-step-controls button { min-height: 44px; }
+[data-reveal-hidden="true"] { visibility: hidden; }
+[data-reveal-hidden="false"] { animation: deck-reveal 200ms ease-out; }
+@keyframes deck-reveal { from { opacity: .35; } to { opacity: 1; } }
+.concept-card[data-node-kind="meaning"], .concept-card[data-node-kind="usage"],
+.concept-card[data-node-kind="example"], .concept-card[data-node-kind="pitfall"] {
+	background: #f3f6f1;
+	border-color: #c8d4c8;
+}
+.concept-card[data-node-kind="pitfall"] { background: #fff7ed; border-color: #e3cdb5; }
+.concept-card { box-sizing: border-box; }
+.concept-canvas { transition: transform 220ms ease; }
+.concept-connectors { overflow: visible; }
+@media (max-width: 700px) {
+	.viewer-deck[data-contract-version="1.2"] .deck-slide { gap: 18px; }
+	.viewer-deck[data-contract-version="1.2"] .deck-slide-title { font-size: 26px; }
+	.viewer-deck[data-contract-version="1.2"] .deck-compare,
+	.viewer-deck[data-contract-version="1.2"] .deck-concept-branches,
+	.viewer-deck[data-contract-version="1.2"] .deck-step-grid,
+	.viewer-deck[data-contract-version="1.2"] .deck-point-grid,
+	.deck-walkthrough { grid-template-columns: minmax(0, 1fr); }
+	.deck-question { font-size: 20px; }
+	.deck-walkthrough-code { font-size: 16px; }
+	.deck-state { padding: 18px; }
+	.deck-step-controls { justify-content: space-between; gap: 8px; }
+	.concept-tools { padding: 10px; gap: 6px; }
+	.concept-tools .button { padding: 8px 10px; min-height: 44px; }
+	.concept-toggle { font-size: 20px; line-height: 1.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.viewer-deck[data-contract-version="1.2"] .deck-slide,
+	[data-reveal-hidden="false"] { animation: none; }
+	.concept-canvas { transition: none !important; }
+}
+.viewer-deck[data-contract-version="1.2"] .deck-slide { --deck-scale: var(--deck-reading-scale, 1) !important; }
+.viewer-deck[data-contract-version="1.2"] .deck-slide-content,
+.viewer-deck[data-contract-version="1.2"] .deck-explanation,
+.viewer-deck[data-contract-version="1.2"] .deck-state,
+.viewer-deck[data-contract-version="1.2"] .deck-output { font-size: calc(20px * var(--deck-reading-scale, 1)); }
+.viewer-deck[data-contract-version="1.2"] .deck-question { font-size: calc(22px * var(--deck-reading-scale, 1)); }
+.viewer-deck[data-contract-version="1.2"] .deck-walkthrough-code { font-size: calc(18px * var(--deck-reading-scale, 1)); }
+@media (max-width: 700px) {
+	.viewer-deck[data-contract-version="1.2"] .deck-slide-title { font-size: calc(26px * var(--deck-reading-scale, 1)); }
+	.viewer-deck[data-contract-version="1.2"] .deck-question { font-size: calc(20px * var(--deck-reading-scale, 1)); }
+	.viewer-deck[data-contract-version="1.2"] .deck-walkthrough-code { font-size: calc(16px * var(--deck-reading-scale, 1)); }
+}
+/* clip 避免原生 focus 另建捲動位移；圖的相機只由 viewer 控制。 */
+.concept-viewport { overflow: clip; }

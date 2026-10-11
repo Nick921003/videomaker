@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime, timezone
 import json
 import math
+import os
 import re
 
 from video_engine.usage import capture_call, normalize_usage
@@ -14,15 +15,37 @@ class BudgetExceeded(RuntimeError):
 	pass
 
 
-def arguments(argv, description, *directories):
+def arguments(argv, description, *directories, quality=False):
 	parser = argparse.ArgumentParser(description=description)
 	for directory in directories:
 		parser.add_argument(directory)
 	parser.add_argument("--budget-usd", type=float, default=0.50)
+	if quality:
+		parser.add_argument('--quality',choices=('legacy','professional'),default='legacy')
 	args = parser.parse_args(argv)
 	if not math.isfinite(args.budget_usd) or args.budget_usd < 0:
 		parser.error("--budget-usd 必須是有限的非負數")
 	return args
+
+
+def teaching_plan(directory, ledger, cap, complete_json=None):
+	from functools import partial
+	from video_engine import llm
+	from workbench.teaching import get_plan
+	os.environ.setdefault('VIDEO_ENGINE_LLM','google:gemini-3.8-flash')
+	provider,model=llm.target('deck')
+	complete_json=complete_json or partial(llm.complete_json,stage='deck')
+	def complete(system,user,schema):
+		guard_budget(directory,cap,'deck',system,user,schema)
+		return captured(ledger,directory,'analysis','teaching_plan',complete_json,system,user,schema)
+	return get_plan(directory,complete,configuration=f'{provider}:{model}')
+
+
+def assert_current_source(directory, expected):
+	from workbench.material import generation_material
+	_,current=generation_material(directory)
+	if current['content_version']!=expected['content_version'] or sorted(s['id'] for s in current['sources'])!=sorted(s['id'] for s in expected['sources']):
+		raise ValueError('匯出期間教材來源版本已改變，保留上一份成品')
 
 
 def marker(kind, value, detail=None):

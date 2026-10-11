@@ -7,13 +7,78 @@ function list(items, ordered = false, className = '') {
 	return node;
 }
 
-export function renderSlide(slide) {
+function stepControls(card, total, update) {
+	const controls = el('div', 'deck-step-controls');
+	const previous = button('上一步', 'deck-step-previous');
+	const next = button('下一步', 'deck-step-next');
+	const status = el('span', 'deck-step-status');
+	status.setAttribute('role', 'status');
+	let step = 0;
+	function show(index) {
+		step = Math.max(0, Math.min(total - 1, index));
+		previous.disabled = step === 0;
+		next.disabled = step === total - 1;
+		status.textContent = `${step + 1} / ${total} 步`;
+		update(step);
+	}
+	card.deckStep = direction => {
+		if (step + direction < 0 || step + direction >= total) return false;
+		show(step + direction);return true;
+	};
+	previous.addEventListener('click', () => show(step - 1));
+	next.addEventListener('click', () => show(step + 1));
+	controls.append(previous, status, next);
+	show(0);
+	return controls;
+}
+
+function walkthrough(card, block) {
+	const scene = el('section', 'deck-walkthrough');
+	scene.setAttribute('aria-label', '程式走讀');
+	const code = el('pre', 'deck-code deck-walkthrough-code');
+	const lines = block.lines.map((text, index) => {
+		const line = el('span', 'deck-code-line');
+		line.setAttribute('data-line', String(index + 1));
+		const number = el('span', 'deck-line-number', String(index + 1));
+		number.setAttribute('aria-hidden', 'true');
+		line.append(number, el('code', '', text));code.append(line);return line;
+	});
+	code.setAttribute('aria-label', `${block.language ?? ''} 程式碼`);
+	const state = el('section', 'deck-state');
+	const label = el('h3', 'deck-state-label');
+	const vars = el('dl', 'deck-vars');
+	const output = el('pre', 'deck-output');
+	const explanation = el('p', 'deck-state-explanation');
+	state.append(label, el('h4', '', '變數'), vars, el('h4', '', '輸出'), output, explanation);
+	const controls = stepControls(card, block.states.length, index => {
+		const current = block.states[index];
+		lines.forEach((line, i) => {
+			line.setAttribute('data-active', String(i + 1 === current.line));
+			if (i + 1 === current.line) line.setAttribute('aria-current', 'step');
+			else line.removeAttribute('aria-current');
+		});
+		label.textContent = current.label;
+		vars.replaceChildren();
+		for (const variable of current.vars) {
+			const pair = el('div');pair.append(el('dt', '', variable.name), el('dd', '', String(variable.value)));vars.append(pair);
+		}
+		output.textContent = current.output || '（尚無輸出）';
+		explanation.textContent = current.explanation;
+		state.setAttribute('data-step', String(index));
+	});
+	scene.append(code, state, controls);
+	return scene;
+}
+
+export function renderSlide(slide, { progressive = false } = {}) {
 	const role = ['hook', 'concept', 'example', 'pitfall', 'summary'].includes(slide.role) ? slide.role : 'concept';
 	const card = el('article', `deck-slide deck-role-${role}`);
 	card.append(el('h2', 'deck-slide-title', slide.title));
+	if (slide.question) card.append(el('p', 'deck-question', slide.question));
 	const content = el('div', 'deck-slide-content');
 	const block = slide.blocks?.[0];
-	if (block?.type === 'code') content.append(el('pre', 'deck-code', block.lines.join('\n')));
+	if (block?.type === 'walkthrough') content.append(walkthrough(card, block));
+	else if (block?.type === 'code') content.append(el('pre', 'deck-code', block.lines.join('\n')));
 	else if (block?.type === 'compare') {
 		const columns = el('div', 'deck-compare');
 		for (const side of [block.left, block.right]) {
@@ -37,6 +102,20 @@ export function renderSlide(slide) {
 		if (block.type === 'steps') content.append(el('p', 'deck-flow-direction', '流程方向：依序 01 → 02 → …'));
 	}
 	card.append(content);
+	const explanation = slide.explanation && slide.explanation !== slide.takeaway ? el('p', 'deck-explanation', slide.explanation) : null;
+	if (explanation) card.append(explanation);
+	if (progressive && block?.type !== 'walkthrough') {
+		const items = block?.type === 'concept' ? [...content.querySelector('.deck-concept-branches').children]
+			: block?.type === 'compare' ? [...content.querySelector('.deck-compare').children]
+			: block?.type === 'code' ? [content] : [...(content.querySelector('ul, ol')?.children ?? [])];
+		if (explanation) items.push(explanation);
+		if (items.length > 1) card.append(stepControls(card, items.length, index => {
+			items.forEach((item, i) => {
+				item.setAttribute('data-reveal-hidden', String(i > index));
+				item.setAttribute('aria-hidden', String(i > index));
+			});
+		}));
+	}
 	if (slide.takeaway) card.append(el('p', 'deck-takeaway', slide.takeaway));
 	return card;
 }
@@ -98,8 +177,8 @@ export async function mount(host, { unit, files, signal }) {
 	const notes = el('details', 'deck-notes scroll-box');
 	notes.append(el('summary', '', '講者筆記與教材原文'));
 	const notesText = el('p');
-	const quote = el('blockquote');
-	notes.append(notesText, quote);
+	const quotes = el('div', 'deck-source-quotes');
+	notes.append(notesText, quotes);
 	root.append(viewport, notes);
 	host.replaceChildren(root);
 	const deck = await readFile(unit, files, 'deck', signal);
@@ -116,14 +195,15 @@ export async function mount(host, { unit, files, signal }) {
 	function show(index) {
 		page = Math.max(0, Math.min(deck.slides.length - 1, index));
 		jump.value = String(page);
-		const card = renderSlide(deck.slides[page]);
+		const card = renderSlide(deck.slides[page], { progressive: deck.contract_version === '1.2' });
 		canvas.replaceChildren(card);
 		fitSlide(card, deck.contract_version ?? '1.0');
 		counter.textContent = `${page + 1} / ${deck.slides.length}`;
 		previous.disabled = page === 0;
 		next.disabled = page === deck.slides.length - 1;
 		notesText.textContent = deck.slides[page].speaker_notes ?? '';
-		quote.textContent = deck.slides[page].source_quote ?? '';
+		const sources = deck.slides[page].source_quotes ?? [deck.slides[page].source_quote ?? ''];
+		quotes.replaceChildren(...sources.map(source => el('blockquote', '', source)));
 	}
 	previous.addEventListener('click', () => show(page - 1));
 	next.addEventListener('click', () => show(page + 1));
@@ -133,10 +213,33 @@ export async function mount(host, { unit, files, signal }) {
 		if (!['ArrowLeft', 'ArrowRight', ' '].includes(event.key) || event.repeat) return;
 		if (event.key === ' ' && event.target?.closest?.('button, a, summary')) return;
 		event.preventDefault();
-		show(page + (event.key === 'ArrowRight' || event.key === ' ' && !event.shiftKey ? 1 : -1));
+		const direction = event.key === 'ArrowRight' || event.key === ' ' && !event.shiftKey ? 1 : -1;
+		if (deck.contract_version === '1.2' && canvas.querySelector('.deck-slide')?.deckStep?.(direction)) return;
+		show(page + direction);
 	};
 	doc.addEventListener('keydown', keydown);
-	const controls = panViewer(viewport, root, toolbar, { onChange(view) {
+	let controls;
+	if (deck.contract_version === '1.2') {
+		viewport.setAttribute('aria-label', '自學簡報，左右鍵逐步閱讀與翻頁，上下捲動');
+		let scale = 1;
+		const listeners = [];
+		for (const control of toolbar.children) {
+			const action = control.getAttribute('data-viewer-action');if (!action) continue;
+			const handler = async () => {
+				if (action === 'fullscreen') {
+					try {
+						if (doc.fullscreenElement === root) await doc.exitFullscreen?.();
+						else await root.requestFullscreen?.();
+					} catch { root.setAttribute('aria-label', '瀏覽器目前無法開啟全螢幕。'); }
+					return;
+				}
+				scale = action === 'fit' ? 1 : Math.max(.9, Math.min(1.5, Math.round((scale + (action === 'zoomIn' ? .1 : -.1)) * 10) / 10));
+				root.style.setProperty('--deck-reading-scale', String(scale));
+			};
+			control.addEventListener('click', handler);listeners.push(() => control.removeEventListener('click', handler));
+		}
+		controls = { destroy() { listeners.forEach(remove => remove()); } };
+	} else controls = panViewer(viewport, root, toolbar, { onChange(view) {
 		canvas.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
 	} });
 	show(0);

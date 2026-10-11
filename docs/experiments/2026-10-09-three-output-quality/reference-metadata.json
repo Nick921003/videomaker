@@ -1,0 +1,48 @@
+{
+  "checked_at": "2026-10-09",
+  "ranking_note": "比較所選代表性專案的GitHub星數，非全網品質排名",
+  "projects": [
+    {
+      "repo": "slidevjs/slidev",
+      "stars": 48983,
+      "license": "MIT",
+      "default_branch": "main",
+      "url": "https://github.com/slidevjs/slidev"
+    },
+    {
+      "repo": "markmap/markmap",
+      "stars": 13151,
+      "license": "MIT",
+      "default_branch": "master",
+      "url": "https://github.com/markmap/markmap"
+    },
+    {
+      "repo": "motion-canvas/motion-canvas",
+      "stars": 19261,
+      "license": "MIT",
+      "default_branch": "main",
+      "url": "https://github.com/motion-canvas/motion-canvas"
+    },
+    {
+      "repo": "presenton/presenton",
+      "stars": 11004,
+      "license": "Apache-2.0",
+      "default_branch": "main",
+      "url": "https://github.com/presenton/presenton"
+    },
+    {
+      "repo": "alchaincyf/huashu-art-motion",
+      "stars": 2534,
+      "license": "MIT",
+      "default_branch": "main",
+      "url": "https://github.com/alchaincyf/huashu-art-motion"
+    },
+    {
+      "repo": "cclank/lanshu-create-ai-presenter-video",
+      "stars": 2550,
+      "license": "MIT",
+      "default_branch": "main",
+      "url": "https://github.com/cclank/lanshu-create-ai-presenter-video"
+    }
+  ]
+}

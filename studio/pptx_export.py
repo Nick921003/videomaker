@@ -169,6 +169,8 @@ def _draw_block(slide, block, role, self_study):
 def export_pptx(value):
 	"""從已驗證 Deck v1 產生 PPTX bytes，不寫入公開檔案。"""
 	deck = canonical_deck(value)
+	if deck['contract_version']=='1.2':
+		return _export_professional(deck)
 	self_study = deck["contract_version"] == "1.1"
 	prs = Presentation()
 	prs.slide_width = Inches(13.333)
@@ -197,3 +199,60 @@ def export_pptx(value):
 	buffer = BytesIO()
 	prs.save(buffer)
 	return buffer.getvalue()
+
+
+def _export_professional(deck):
+	"""走讀每一步各留一頁原生圖形，與線上狀態完全對應。"""
+	prs=Presentation();prs.slide_width=Inches(13.333);prs.slide_height=Inches(7.5)
+	pages=[]
+	for item in deck['slides']:
+		block=item['blocks'][0]
+		if block['type']=='walkthrough':pages.extend((item,state) for state in block['states'])
+		elif block['type']=='concept':
+			from copy import deepcopy
+			for start in range(0,len(block['items']),2):
+				page=deepcopy(item);page['blocks'][0]['items']=block['items'][start:start+2]
+				pages.append((page,None))
+		else:pages.append((item,None))
+	for index,(item,state) in enumerate(pages,1):
+		slide=prs.slides.add_slide(prs.slide_layouts[5])
+		slide.background.fill.solid();slide.background.fill.fore_color.rgb=_BG
+		_text(slide,deck['title'],.8,.25,11.7,.3,size=12,min_size=12,color=_ACCENT)
+		_text(slide,item['title'],.8,.8,11.7,.75,size=30,min_size=24,bold=True,shape=slide.shapes.title)
+		_text(slide,item['question'],.8,1.6,11.7,.38,size=20,min_size=18,color=_ACCENT)
+		if state is None:
+			block=item['blocks'][0]
+			if block['type']=='concept':
+				_panel(slide,3.9,2.2,5.53,.66,fill=_ACCENT)
+				_text(slide,block['center'],4.05,2.25,5.23,.54,size=22,min_size=18,color=_WHITE,bold=True)
+				for branch_index,branch in enumerate(block['items']):
+					x=.8+branch_index*6.0 if len(block['items'])>1 else 3.82
+					connector=slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT,Inches(6.665),Inches(2.86),Inches(x+2.85),Inches(3.4))
+					connector.line.color.rgb=_ACCENT
+					_panel(slide,x,3.4,5.7,2.5)
+					_text(slide,branch['title'],x+.22,3.55,5.26,.65,size=22,min_size=18,color=_ACCENT,bold=True)
+					_text(slide,branch['text'],x+.22,4.3,5.26,1.4,size=20,min_size=16)
+			else:_draw_block(slide,block,item['role'],True)
+		else:
+			block=item['blocks'][0]
+			_panel(slide,.8,2.2,7.1,3.85,fill=RGBColor(46,52,47))
+			line_height=min(.42,3.4/len(block['lines']))
+			for line_number,line in enumerate(block['lines'],1):
+				y=2.4+(line_number-1)*line_height
+				if line_number==state['line']:_panel(slide,1.0,y,6.7,line_height,fill=RGBColor(80,87,63))
+				_text(slide,f'{line_number:02d}  {line}',1.08,y+.01,6.4,line_height-.02,size=18,min_size=16,color=_WHITE,font='Consolas')
+			_text(slide,state['label'],8.25,2.25,4.15,.45,size=22,min_size=18,bold=True,color=_ACCENT)
+			for position,variable in enumerate(state['vars']):
+				y=2.9+position*.4
+				_panel(slide,8.2,y,4.3,.38)
+				_text(slide,variable['name'],8.4,y+.005,1.3,.36,size=18,min_size=16)
+				_text(slide,variable['value'],9.8,y+.005,2.4,.36,size=18,min_size=16,bold=True)
+			out_y=2.9+len(state['vars'])*.4+.1
+			_text(slide,'輸出',8.25,out_y,4.0,.35,size=18,min_size=16,color=_ACCENT)
+			_text(slide,state['output'],8.25,out_y+.42,4.0,.56,size=20,min_size=16,bold=True)
+		_panel(slide,.8,6.2,11.7,.9,fill=_WHITE)
+		_text(slide,state['explanation'] if state else item['explanation'],1.0,6.23,11.3,.84,size=20,min_size=16)
+		_text(slide,f'{index} / {len(pages)}',11.8,7.15,.8,.25,size=11,min_size=11,color=_ACCENT)
+		slide.notes_slide.notes_text_frame.text=(item['explanation']+'\n\n教材原文依據：\n'+
+			'\n\n'.join(item['source_quotes'])+'\n\n元件選擇：'+item['selection_reason'])
+	buffer=BytesIO();prs.save(buffer);return buffer.getvalue()

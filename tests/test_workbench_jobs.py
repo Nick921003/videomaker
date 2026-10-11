@@ -129,7 +129,7 @@ class TestJobQueue(unittest.TestCase):
 		self.assertTrue(all(step["state"] == "done" for step in job["steps"]))
 		self.assertEqual(len(job["log"]), 40)
 		self.assertEqual(job["log"][-1], "line 44")
-		self.assertEqual(len(self.commands), 6)
+		self.assertEqual(len(self.commands), 7)
 		self.assertEqual(self.commands[-1][0], str(jobs.PLAYWRIGHT_PY))
 		persisted = json.loads((self.directory / "jobs" / (jid + ".json")).read_text())
 		self.assertEqual(persisted["state"], "done")
@@ -178,7 +178,7 @@ class TestJobQueue(unittest.TestCase):
 		second = queue.retry(first)
 		self.assertNotEqual(first, second)
 		self.assertEqual(self.wait(queue, second)["state"], "done")
-		self.assertIn("--resume", self.commands[0])
+		self.assertIn("--resume", self.commands[1])
 		with self.assertRaises(ValueError):
 			queue.retry(second)
 
@@ -222,7 +222,7 @@ class TestJobQueue(unittest.TestCase):
 			return 0
 		queue = self.queue(runner)
 		job = self.wait(queue, queue.enqueue(self.uid, "q1"))
-		self.assertAlmostEqual(job["spent_usd"], 6 * 0.012)
+		self.assertAlmostEqual(job["spent_usd"], 7 * 0.012)
 
 	def test_restored_running_job_preserves_spending(self):
 		(self.directory / "usage.jsonl").write_text('{"usd":0.20}\n{"usd":0.05}\n', encoding="utf-8")

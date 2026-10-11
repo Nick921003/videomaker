@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""scene.json → 配音 master.wav＋timing.json（每句實測起訖）。
+"""scene.json → 配音 master.wav＋timing.json（每句實測起訖）＋timing.identity.json。
 
 用法：.venv/bin/python video_engine/board/narrate.py <scene.json> <輸出目錄> [--speed 0.95] [--tts sovits|gemini]
 
-每句唸 `spoken`（沒有就唸 `say`），以文字雜湊快取：改一句只重合成那一句。
+每句唸 `spoken`（沒有就唸 `say`），以文字＋聲音配置身份快取：插句或移序沿用音檔。
 需要 GPT-SoVITS 服務（.env 的 TTS_API_URL）。合成與驗收重試沿用 synth.py。
 """
 import argparse
@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -23,7 +24,7 @@ sys.path.insert(0, HERE)
 
 import gemini_tts
 import synth
-from compile import BEAT_GAP, LEAD_IN, SCENE_GAP
+from compile import BEAT_GAP, LEAD_IN, SCENE_GAP, file_digest, speech_digest, speech_flags
 
 # 「G C C」這種空白隔開的字母，或 GCC、PATH 這類全大寫縮寫
 SPELLED = re.compile(r"(?<![A-Za-z])(?:[A-Za-z] ){1,}[A-Za-z](?![A-Za-z])|(?<![A-Za-z])[A-Z]{2,6}(?![A-Za-z])")
@@ -46,6 +47,42 @@ def voice_key(speed):
 	with open(synth.REF_AUDIO, "rb") as f:
 		ref = hashlib.sha1(f.read()).hexdigest()[:12]
 	return f"{speed}|{ref}|{synth.REF_TEXT}|{synth.API_URL}|{os.environ.get('TTS_VOICE_ID', '')}"
+
+
+def audio_signature(wav):
+	try:
+		rate, data = wavfile.read(wav)
+	except (OSError, ValueError, EOFError) as error:
+		raise ValueError("快取音檔 WAV 格式無效") from error
+	if rate <= 0 or data.ndim != 1 or len(data) == 0:
+		raise ValueError("快取音檔必須是有效的單聲道 WAV")
+	return {"audio_sha256": file_digest(wav), "wav_format": {
+		"sample_rate": rate, "channels": 1, "dtype": str(data.dtype), "frames": len(data)}}
+
+
+def verified_cache(hit, proof, text, voice_digest, wav):
+	"""只有音檔仍是先前驗收的內容，舊 ASR 才能沿用；無摘要的舊檔須重新辨識。"""
+	if hit.get("text") != text:
+		raise ValueError("快取旁白文字身份不符")
+	expected_speech = speech_digest(text, voice_digest)
+	for record in (hit, proof or {}):
+		if "voice_digest" in record and record["voice_digest"] != voice_digest:
+			raise ValueError("快取聲音身份不符")
+		if "speech_digest" in record and record["speech_digest"] != expected_speech:
+			raise ValueError("快取實際發音身份不符")
+	if proof and proof.get("text") != text:
+		raise ValueError("快取與前次 timing 旁白身份不符")
+	actual = audio_signature(wav)
+	bound = False
+	for record in (hit, proof or {}):
+		if "audio_sha256" in record:
+			if record["audio_sha256"] != actual["audio_sha256"]:
+				raise ValueError("快取音檔 digest 不符；請用 --redo 明確重配此句")
+			bound = bound or (record.get("text") == text and record.get("voice_digest") == voice_digest
+				and record.get("speech_digest") == expected_speech)
+		if "wav_format" in record and record["wav_format"] != actual["wav_format"]:
+			raise ValueError("快取 WAV 格式與先前紀錄不符")
+	return {**hit, **actual, "voice_digest": voice_digest, "speech_digest": expected_speech}, bound
 
 
 def synth_keep_raw(text, speed, wav, raw_prefix):
@@ -102,9 +139,19 @@ def main():
 	cache = {}
 	if os.path.exists(report_path):
 		with open(report_path, encoding="utf-8") as f:
-			cache = {r["digest"]: r for r in json.load(f)["beats"]}
+			previous = json.load(f)
+			cache = {r["digest"]: r for r in [*previous.get("cache", []), *previous["beats"]]}
+	proofs = {}
+	identity_path = os.path.join(args.out_dir, "timing.identity.json")
+	if os.path.exists(identity_path):
+		with open(identity_path, encoding="utf-8") as f:
+			previous_identity = json.load(f)
+			proofs = {r["digest"]: {**r, "voice_digest": previous_identity["voice_digest"]}
+				for r in previous_identity["beats"]}
 
 	beats = [(si, b) for si, s in enumerate(doc["scenes"]) for b in s["beats"]]
+	sources = [{"scene": si, "i": bi, "say": b["say"], "spoken": b.get("spoken")}
+		for si, scene in enumerate(doc["scenes"]) for bi, b in enumerate(scene["beats"])]
 	if args.redo and not re.fullmatch(r"[1-9]\d*(?:,[1-9]\d*)*", args.redo):
 		ap.error("--redo 必須是從 1 起的句號，例如 3,5")
 	redo = {int(value) for value in args.redo.split(",")} if args.redo else set()
@@ -118,6 +165,7 @@ def main():
 			plan_path = next((p for p in (os.path.join(here, "plan.json"), os.path.join(os.path.dirname(here), "plan.json")) if os.path.exists(p)), None)
 			if plan_path is None:
 				print("找不到 plan.json，程式符號沒有唸法可換，改唸 spoken（中文說法）", flush=True)
+	symbols = None
 	if plan_path:
 		with open(plan_path, encoding="utf-8") as f:
 			symbols = [g for g in json.load(f).get("glossary", []) if re.search(r"[^A-Za-z0-9\s/]", g.get("term", ""))]
@@ -134,18 +182,35 @@ def main():
 		raise SystemExit("講稿請改中文說法（畫面可保留英文，旁白寫在 spoken）：\n  " + "\n  ".join(bad))
 
 	key = f"gemini|{gemini_tts.AUDIO_FORMAT}|{args.tts_model}|{args.voice}|{args.speed}|{hashlib.sha1(gemini_tts.prompt_for('', args.speed).encode()).hexdigest()[:8]}" if gemini else voice_key(args.speed)
+	voice_digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
 	usage_path, spent, calls = os.path.join(args.out_dir, "tts_usage.jsonl"), 0.0, 0
 	records, meta, todo, unchecked = [None] * len(beats), {}, [], []
+	identities, aliases = {}, {}
+	redo_digests = {hashlib.sha1(f"{b.get('spoken') or b['say']}|{key}".encode("utf-8")).hexdigest()[:12]
+		for k, (_, b) in enumerate(beats) if k + 1 in redo}
 	for k, (si, b) in enumerate(beats):
 		text = b.get("spoken") or b["say"]
 		digest = hashlib.sha1(f"{text}|{key}".encode("utf-8")).hexdigest()[:12]
-		wav = os.path.join(audio_dir, f"{k:02d}_{digest}.wav")
+		wav = os.path.join(audio_dir, f"{digest}.wav")
 		meta[k] = (si, text, digest, wav)
+		if digest in identities:
+			aliases[k] = identities[digest]
+			continue
+		identities[digest] = k
 		hit = cache.get(digest)
-		if hit and os.path.exists(wav) and k + 1 not in redo:
-			records[k] = {**hit, "scene": si, "wav": os.path.basename(wav)}
+		# 舊檔按句序命名，移序仍從報告所指的檔案遷移；保留原檔與 ASR 紀錄。
+		if hit and not os.path.exists(wav) and digest not in redo_digests:
+			legacy_name = hit.get("wav", "")
+			legacy = os.path.join(audio_dir, legacy_name)
+			if re.fullmatch(rf"\d+_{digest}\.wav", legacy_name) and os.path.isfile(legacy):
+				shutil.copyfile(legacy, wav)
+		if hit and os.path.exists(wav) and digest not in redo_digests:
+			record, bound = verified_cache(hit, proofs.get(digest), text, voice_digest, wav)
+			records[k] = {**record, "scene": si, "wav": os.path.basename(wav)}
 			print(f"[{k + 1}/{len(beats)}] 快取 {text}")
-			if not hit.get("asr"):
+			if not bound:
+				print(f"[{k + 1}/{len(beats)}] legacy 快取缺少音檔摘要，重新 ASR 驗收")
+			if not bound or not hit.get("asr") or not hit["asr"].get("ok"):
 				unchecked.append(k)
 		else:
 			todo.append(k)
@@ -176,8 +241,11 @@ def main():
 					f.write(json.dumps({"beat": k, "round": rnd, **usage}, ensure_ascii=False) + "\n")
 			else:
 				info, ok = synth_keep_raw(text, args.speed, wav, os.path.join(raw_dir, f"{k:02d}_{digest}.r{rnd}"))
-			records[k] = {"digest": digest, "text": text, "ok": ok, **info, "scene": si, "wav": os.path.basename(wav), "round": rnd}
+			records[k] = {"digest": digest, "text": text, "ok": ok, **info, "scene": si, "wav": os.path.basename(wav), "round": rnd,
+				**audio_signature(wav), "voice_digest": voice_digest, "speech_digest": speech_digest(text, voice_digest)}
 		unchecked, todo = todo, []
+	for k, primary in aliases.items():
+		records[k] = {**records[primary], "scene": meta[k][0]}
 	records = [{**r, "ok": r["ok"] and r.get("asr", {}).get("ok", False)} for r in records]
 	for k, rec in enumerate(records):
 		if rec.get("asr", {}).get("missing"):
@@ -186,6 +254,8 @@ def main():
 	# 接成一條：開頭留白、句間停頓、換場多停一點，跟 compile.py 估時的節奏一致
 	pieces, timing, t, sr, prev_scene = [], [], 0.0, None, 0
 	for k, rec in enumerate(records):
+		if file_digest(os.path.join(audio_dir, rec["wav"])) != rec["audio_sha256"]:
+			raise ValueError("音檔在 ASR 驗收後改變，拒絕建立 timing 身份")
 		rate, data = wavfile.read(os.path.join(audio_dir, rec["wav"]))
 		if sr is None:
 			sr = rate
@@ -207,8 +277,18 @@ def main():
 	wavfile.write(master, sr, np.concatenate(pieces))
 	with open(os.path.join(args.out_dir, "timing.json"), "w", encoding="utf-8") as f:
 		json.dump(timing, f, ensure_ascii=False)
+	identity = {"version": 1, "voice_digest": voice_digest, "symbols": symbols,
+		"master": {"wav": "master.wav", "audio_sha256": file_digest(master)},
+		"beats": [{**source, **span, **speech_flags(rec), "text": rec["text"], "digest": rec["digest"],
+			"speech_digest": speech_digest(rec["text"], voice_digest),
+			"wav": "audio/" + rec["wav"], "audio_sha256": rec["audio_sha256"], "wav_format": rec["wav_format"]}
+			for source, span, rec in zip(sources, timing, records)]}
+	with open(identity_path, "w", encoding="utf-8") as f:
+		json.dump(identity, f, ensure_ascii=False, indent="\t")
+	cache.update({r["digest"]: r for r in records})
 	with open(report_path, "w", encoding="utf-8") as f:
-		json.dump({"speed": args.speed, "tts": args.tts, "tts_usd_this_run": round(spent, 6), "total": round(t, 3), "beats": records}, f, ensure_ascii=False, indent="\t")
+		json.dump({"speed": args.speed, "tts": args.tts, "tts_usd_this_run": round(spent, 6), "total": round(t, 3),
+			"beats": records, "cache": [cache[digest] for digest in sorted(cache)]}, f, ensure_ascii=False, indent="\t")
 	bad = [r for r in records if not r["ok"]]
 	print(f"{master}：{t:.2f}s，{len(records)} 句，{len(bad)} 句未過驗收（音量或內容）")
 	for r in bad:

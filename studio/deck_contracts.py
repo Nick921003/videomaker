@@ -5,7 +5,7 @@ import json
 import re
 
 
-_VERSIONS = ("1.0", "1.1")
+_VERSIONS = ("1.0", "1.1", "1.2")
 _ROLES = frozenset(("hook", "concept", "example", "pitfall", "summary"))
 _LAYOUTS = frozenset(("bullets", "code", "compare", "steps"))
 _SLIDE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
@@ -64,6 +64,29 @@ def _block(value, layout):
 	elif layout == "steps":
 		_fields(value, ("type", "items"))
 		_items(value["items"], 2, 6)
+	elif layout == "walkthrough":
+		_fields(value, ("type", "language", "lines", "states"))
+		_text(value['language'], 32)
+		_items(value['lines'], 1, 10, 72)
+		states = value['states']
+		if not isinstance(states, list) or not 2 <= len(states) <= 8:
+			raise DeckError('走讀狀態數量不符合契約')
+		for state in states:
+			_fields(state, ('label', 'line', 'vars', 'output', 'explanation'))
+			if type(state['line']) is not int or not 1 <= state['line'] <= len(value['lines']):
+				raise DeckError('走讀程式行不存在')
+			for key, maximum in (('label', 24), ('output', 80), ('explanation', 80)):
+				_text(state[key], maximum)
+			variables = state['vars']
+			if not isinstance(variables, list) or not 1 <= len(variables) <= 4:
+				raise DeckError('走讀變數數量不符合契約')
+			names = set()
+			for variable in variables:
+				_fields(variable, ('name', 'value'))
+				_text(variable['name'], 20);_text(variable['value'], 24)
+				if variable['name'] in names:
+					raise DeckError('走讀變數名稱重複')
+				names.add(variable['name'])
 	else:
 		raise DeckError("不支援的簡報版型")
 
@@ -78,23 +101,32 @@ def canonical_deck(value):
 	if not isinstance(slides, list) or not 3 <= len(slides) <= 12:
 		raise DeckError("簡報頁數不符合契約")
 	seen = set()
-	self_study = value["contract_version"] == "1.1"
+	self_study = value["contract_version"] != "1.0"
+	professional = value['contract_version'] == '1.2'
 	for slide in slides:
 		fields = ("slide_id", "role", "title", "layout", "blocks", "speaker_notes", "source_quote")
-		_fields(slide, fields + (("takeaway",) if self_study else ()))
+		_fields(slide, fields + (("takeaway",) if self_study else ()) +
+			(('question', 'explanation', 'source_quotes', 'selection_reason') if professional else ()))
 		slide_id = slide["slide_id"]
 		if not isinstance(slide_id, str) or not _SLIDE_ID.fullmatch(slide_id) or slide_id in seen:
 			raise DeckError("簡報頁面 ID 不符合契約")
 		seen.add(slide_id)
 		if (not isinstance(slide["role"], str) or slide["role"] not in _ROLES or
 			not isinstance(slide["layout"], str) or
-			slide["layout"] not in (_LAYOUTS | {"concept"} if self_study else _LAYOUTS)):
+			slide["layout"] not in (_LAYOUTS | {"concept", "walkthrough"} if professional else _LAYOUTS | {"concept"} if self_study else _LAYOUTS)):
 			raise DeckError("簡報頁面種類或版型不符合契約")
 		_text(slide["title"], 120)
 		_text(slide["speaker_notes"], 2000)
-		_text(slide["source_quote"], 500)
+		_text(slide["source_quote"], 1000 if professional else 500)
 		if self_study:
 			_text(slide["takeaway"], 120)
+		if professional:
+			_text(slide['question'], 80)
+			_text(slide['explanation'], 200)
+			_text(slide['selection_reason'], 160)
+			_items(slide['source_quotes'], 1, 8, 1000)
+			if slide['source_quote'] != slide['source_quotes'][0]:
+				raise DeckError('簡報主要引用與逐項來源不一致')
 		blocks = slide["blocks"]
 		if not isinstance(blocks, list) or len(blocks) != 1:
 			raise DeckError("每頁必須有一個主區塊")

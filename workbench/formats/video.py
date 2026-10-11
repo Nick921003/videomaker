@@ -73,7 +73,8 @@ def scene_commands(unit: UnitView, item: str, step: str = "storyboard") -> list[
 	if (unit.dir / f"{item}.failed.json").is_file():
 		argv.append("--resume")
 	argv.extend(["--model", MODEL, "--budget-usd", "0.50"])
-	return [Command(step, argv)]
+	return [Command(step,[str(BOARD_DIR.parents[1]/'workbench/run_teaching_plan.py'),str(unit.dir),
+		'--budget-usd','0.50']),Command(step, argv)]
 
 
 def render_commands(unit: UnitView, item: str, scene) -> list[Command]:

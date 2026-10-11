@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><title>外部動畫候選 · 固定 fixture</title>
+<style>
+@font-face{font-family:PuHui-Black;src:local('Noto Sans CJK TC');font-weight:900}
+@font-face{font-family:PuHui-Heavy;src:local('Noto Sans CJK TC');font-weight:700}
+@font-face{font-family:PuHui-Bold;src:local('Noto Sans CJK TC');font-weight:700}
+@font-face{font-family:LXGWWenKai-500;src:local('Noto Sans CJK TC')}
+body{margin:0;background:#14213d;color:white;font:16px sans-serif}canvas{display:block;width:100%;max-width:1920px}nav{display:flex;gap:16px;align-items:center;padding:10px}input{flex:1}a{color:white}body.export nav{display:none}
+</style></head><body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<nav><button id="play">播放／暫停</button><input id="scrub" type="range" min="0" max="13.42" step="0.0416667" value="0"><span id="time">0.00</span><a href="?grammar=y3_whiteboard">白板</a><a href="?grammar=y5_kinetic_type">文字</a></nav>
+<audio id="audio" src="out/candidate-audio.wav"></audio>
+<script src="vendor/huashu-art-motion--scripts__engine__lib__util.js"></script>
+<script src="vendor/huashu-art-motion--scripts__engine__lib__paint.js"></script>
+<script src="vendor/huashu-art-motion--scripts__engine__lib__kit.js"></script>
+<script src="vendor/huashu-art-motion--scripts__engine__lib__motion.js"></script>
+<script src="vendor/huashu-art-motion--scripts__engine__lib__camera.js"></script>
+<script src="vendor/huashu-art-motion--scripts__engine__lib__diagram.js"></script>
+<script src="vendor/huashu-art-motion--scripts__engine__lib__typo.js"></script>
+<script src="vendor/huashu-art-motion--scripts__engine__lib__ui.js"></script>
+<script>window.CLIPS={};window.CLIP={lt:(t,at,fps)=>t-at+1/fps,fit:(iw,ih,bx,by,bw,bh)=>{const s=Math.min(bw/iw,bh/ih),w=iw*s,h=ih*s;return{x:bx+(bw-w)/2,y:by+(bh-h)/2,w,h,s}}};</script>
+<script src="vendor/huashu-art-motion--scripts__engine__clips__y3_whiteboard.js"></script>
+<script src="vendor/huashu-art-motion--scripts__engine__clips__y5_kinetic_type.js"></script>
+<script src="candidate_runtime.js"></script>
+</body></html>

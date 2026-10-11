@@ -176,14 +176,17 @@ class TestFormatCommands(unittest.TestCase):
 			str(self.unit.dir / "material.md"), str(self.unit.dir), item,
 			*(["--resume"] if resume else []), "--model", "google:gemini-3.8-flash", "--budget-usd", "0.50"])
 
+	def teaching_command(self,step='storyboard'):
+		return formats.Command(step,[str(ROOT/'workbench/run_teaching_plan.py'),str(self.unit.dir),'--budget-usd','0.50'])
+
 	def test_video_commands_exact_sequence_and_interpreters(self):
 		module = formats.get_format("video")
 		scene = self.unit.dir / "q2.scene.json"
 		self.assertEqual(module.commands(self.unit, "q2"),
-			[self.scene_command("q2"), *self.render_chain("q2", scene)])
+			[self.teaching_command(),self.scene_command("q2"), *self.render_chain("q2", scene)])
 		(self.unit.dir / "q2.failed.json").write_text("{}", encoding="utf-8")
 		self.assertEqual(module.commands(self.unit, "q2"),
-			[self.scene_command("q2", resume=True), *self.render_chain("q2", scene)])
+			[self.teaching_command(),self.scene_command("q2", resume=True), *self.render_chain("q2", scene)])
 		self.assertNotIn("--resume", module.commands(self.unit, "q1")[0].argv)
 		scene.write_text("{}", encoding="utf-8")
 		self.assertEqual(module.commands(self.unit, "q2"), self.render_chain("q2", scene))
@@ -196,7 +199,7 @@ class TestFormatCommands(unittest.TestCase):
 		compose = formats.Command("compose", [str(BOARD / "compose.py"),
 			str(self.unit.dir / "plan.json"), str(self.unit.dir), str(scene)])
 		self.assertEqual(module.commands(self.unit, "highlight"), [
-			self.scene_command("q3", "scenes"), self.scene_command("q2", "scenes", resume=True),
+			self.teaching_command('scenes'),self.scene_command("q3", "scenes"), self.teaching_command('scenes'),self.scene_command("q2", "scenes", resume=True),
 			compose, *self.render_chain("highlight", scene)])
 		for item in ("q2", "q3"):
 			(self.unit.dir / f"{item}.scene.json").write_text("{}", encoding="utf-8")
@@ -258,7 +261,7 @@ class TestFormatCommands(unittest.TestCase):
 			with self.subTest(format=fid):
 				self.assertEqual(formats.get_format(fid).commands(self.unit, fid), [
 					formats.Command("generate", [str(ROOT / f"workbench/run_{fid}.py"), str(self.unit.dir),
-						"--budget-usd", "0.50"]),
+						"--quality", "professional", "--budget-usd", "0.50"]),
 				])
 
 	def test_estimates(self):
