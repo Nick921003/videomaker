@@ -112,7 +112,7 @@ export async function renderChat() {
 
 	const chatColumn = el('section', 'teaching-chat__conversation');
 	chatColumn.setAttribute('aria-label', '影片提問');
-	chatColumn.append(el('h2', '', '問這支影片'));
+	chatColumn.append(el('h2', '', '對話'));
 	const messages = el('div', 'teaching-chat__messages');
 	messages.setAttribute('role', 'log');
 	messages.setAttribute('aria-live', 'polite');

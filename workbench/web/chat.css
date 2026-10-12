@@ -10,7 +10,7 @@
 	min-height: 100%;
 	padding: 28px;
 	color: var(--chat-ink);
-	font-size: 20px;
+	font-size: 16px;
 }
 
 body.page-chat-active .main-viewport {
@@ -31,7 +31,7 @@ body.page-chat-active .page-host {
 
 .teaching-chat__heading h1 {
 	margin: 4px 0 8px;
-	font-size: 26px;
+	font-size: 22px;
 	line-height: 1.25;
 }
 
@@ -48,7 +48,7 @@ body.page-chat-active .page-host {
 	display: grid;
 	gap: 7px;
 	min-width: min(320px, 100%);
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: 700;
 }
 
@@ -64,7 +64,7 @@ body.page-chat-active .page-host {
 .teaching-chat__unit select {
 	min-height: 46px;
 	padding: 8px 38px 8px 12px;
-	font-size: 18px;
+	font-size: 16px;
 }
 
 .teaching-chat__workspace {
@@ -95,7 +95,7 @@ body.page-chat-active .page-host {
 .teaching-chat__video-meta h2,
 .teaching-chat__conversation h2 {
 	margin: 0 0 6px;
-	font-size: 22px;
+	font-size: 18px;
 	line-height: 1.35;
 }
 
@@ -146,7 +146,7 @@ body.page-chat-active .page-host {
 	min-height: 42px;
 	padding: 8px 13px;
 	border-radius: 999px;
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: 700;
 }
 
@@ -169,7 +169,7 @@ body.page-chat-active .page-host {
 
 .teaching-chat__demos summary {
 	cursor: pointer;
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: 800;
 }
 
@@ -205,18 +205,18 @@ body.page-chat-active .page-host {
 }
 
 .teaching-chat__demo span {
-	font-size: 17px;
+	font-size: 16px;
 	font-weight: 750;
 }
 
 .teaching-chat__demo small {
 	color: var(--chat-muted);
-	font-size: 15px;
+	font-size: 14px;
 }
 
 .teaching-chat__review {
 	color: var(--chat-accent);
-	font-size: 17px;
+	font-size: 16px;
 	font-weight: 750;
 }
 
@@ -263,7 +263,7 @@ body.page-chat-active .page-host {
 .teaching-chat__speaker {
 	margin-bottom: 3px !important;
 	color: var(--chat-muted);
-	font-size: 15px;
+	font-size: 13px;
 	font-weight: 800;
 }
 
@@ -284,19 +284,19 @@ body.page-chat-active .page-host {
 	min-height: 78px;
 	resize: vertical;
 	padding: 11px 13px;
-	font-size: 20px;
+	font-size: 16px;
 	line-height: 1.45;
 }
 
 .teaching-chat__form > .button {
 	align-self: stretch;
 	min-width: 88px;
-	font-size: 18px;
+	font-size: 16px;
 }
 
 .teaching-chat__hint {
 	grid-column: 1 / -1;
-	font-size: 15px;
+	font-size: 13px;
 }
 
 @media (max-width: 1050px) {
@@ -323,11 +323,11 @@ body.page-chat-active .page-host {
 	.teaching-chat {
 		gap: 18px;
 		padding: 14px;
-		font-size: 18px;
+		font-size: 16px;
 	}
 
 	.teaching-chat__heading h1 {
-		font-size: 26px;
+		font-size: 22px;
 	}
 
 	.teaching-chat__video-meta,
