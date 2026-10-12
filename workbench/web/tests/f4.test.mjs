@@ -7,6 +7,23 @@ import { withDOM, descendants, click, settle } from './dom-helper.mjs';
 const fixture = async name => JSON.parse(await readFile(new URL(`../mock/${name}.json`, import.meta.url), 'utf8'));
 const find = (host, label) => descendants(host).find(node => node.tagName === 'button' && node.textContent === label);
 
+test('重複配音提示提供指定句號重配', async () => {
+	await withDOM(async () => {
+		const { renderMakeProducts } = await import('../js/pages/make-products.mjs');
+		const unit = await fixture('unit-done');
+		unit.items.find(item => item.item === 'q1').warnings = [{code:'tts_repeat', detail:'第 2 句'}];
+		const original = api.post, calls = [];
+		api.post = async (path, body) => { calls.push({path, body}); return {job_id:'repeat-q1'}; };
+		const page = renderMakeProducts(unit);
+		try {
+			page.mount(); await settle();
+			assert.match(page.textContent, /第 2 句可能重複唸/);
+			click(find(page, '重配這句')); await settle();
+			assert.deepEqual(calls, [{path:`/units/${unit.unit_id}/items/q1/renarrate`,body:{beats:[2]}}]);
+		} finally { page.dispose(); api.post = original; }
+	});
+});
+
 test('重新進入失敗工作時先呈現佇列與原因，只保留失敗項目待重試', async () => {
  await withDOM(async () => {
   const { renderMakeGenerate } = await import('../js/pages/make-generate.mjs');

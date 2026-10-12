@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""配音內容檢查：本機語音辨識 → 拼音 → 跟講稿逐音節比對，抓漏念。
+"""配音內容檢查：本機語音辨識 → 拼音 → 跟講稿逐音節比對，抓漏念與重複念。
 
 用法（需 GPT-SoVITS venv：faster-whisper＋pypinyin，videomaker 不新增依賴）：
   ~/projects/GPT-SoVITS/.venv/bin/python video_engine/board/asr_check.py <jobs.json> <結果.json>
@@ -15,6 +15,8 @@ import sys
 MODEL = os.environ.get("ASR_MODEL", "large-v3")
 DROP_RUN = 2
 DROP_RATIO = 0.25
+CHECK_VERSION = 2
+REPEAT_MIN = 6
 
 
 DIGITS = dict(zip("0123456789", "零一二三四五六七八九"))
@@ -95,7 +97,29 @@ def judge(text, heard):
 		problems.append("句尾漏念")
 	if ref and sum(miss) / len(ref) > DROP_RATIO:
 		problems.append("漏念比例過高")
-	return {"ok": not problems, "problems": problems, "missing": missing, "heard": heard}
+	if repeated_speech(ref, hyp):
+		problems.append("重複念")
+	return {"ok": not problems, "problems": problems, "missing": missing, "heard": heard, "version": CHECK_VERSION}
+
+
+def repeated_speech(ref, hyp):
+	"""至少多出六音節，且原稿中的連續片語出現次數超出原稿；稿內刻意重複仍允許。"""
+	if len(hyp) - len(ref) < REPEAT_MIN:
+		return False
+	def count(sequence, phrase):
+		found, index = 0, 0
+		while index <= len(sequence) - len(phrase):
+			if sequence[index:index + len(phrase)] == phrase:
+				found += 1
+				index += len(phrase)
+			else:
+				index += 1
+		return found
+	for start in range(len(ref) - REPEAT_MIN + 1):
+		phrase = ref[start:start + REPEAT_MIN]
+		if count(hyp, phrase) > count(ref, phrase):
+			return True
+	return False
 
 
 def main():

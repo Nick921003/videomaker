@@ -192,6 +192,17 @@ class TestVoiceIdentity(unittest.TestCase):
 		self.assertEqual(self.tts.call_count, 2)
 		self.assertNotEqual(before[0]["wav"], after[0]["wav"])
 
+	def test_old_asr_is_rechecked_without_resynthesizing_valid_cached_audio(self):
+		report = self.generate()
+		for record in [*report["beats"], *report["cache"]]:
+			record["asr"].pop("version", None)
+		write_json(self.voice / "narration.json", report)
+		self.tts.reset_mock(); self.asr.reset_mock()
+		self.generate()
+		self.tts.assert_not_called()
+		self.assertEqual(self.asr.call_count, 1)
+		self.assertEqual(len(self.asr.call_args.args[0]), 2)
+
 	def test_duplicate_sentences_share_one_synthesis(self):
 		self.doc["scenes"][0]["beats"] *= 2
 		records = self.generate()["beats"]

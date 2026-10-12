@@ -7,7 +7,7 @@ import * as svg from '../viewers/svg.mjs';
 import * as deck from '../viewers/deck.mjs';
 
 export function warningBeats(warnings = []) {
-	return [...new Set(warnings.filter(warning => warning.code === 'tts_missing')
+	return [...new Set(warnings.filter(warning => ['tts_missing','tts_repeat'].includes(warning.code))
 		.map(warning => Number(warning.detail.match(/第\s*(\d+)\s*句/)?.[1])).filter(beat => Number.isSafeInteger(beat) && beat > 0))];
 }
 
@@ -55,7 +55,8 @@ export function renderMakeProducts(unit, { query = {} } = {}) {
 			const notice = el('div', 'product-warning');
 			const retry = button('重配這句');
 			retry.disabled = busy;
-			notice.append(el('p', '', `第 ${beat} 句可能漏唸（檢查也可能誤判，請聽一下）`), retry);
+			const repeat = (item.warnings ?? []).some(warning => warning.code === 'tts_repeat' && warningBeats([warning]).includes(beat));
+			notice.append(el('p', '', `第 ${beat} 句可能${repeat ? '重複唸' : '漏唸'}（檢查也可能誤判，請聽一下）`), retry);
 			retry.addEventListener('click', async () => {
 				if (busy || disposed) return;
 				busy = true;
@@ -72,7 +73,7 @@ export function renderMakeProducts(unit, { query = {} } = {}) {
 			});
 			notices.append(notice);
 		}
-		for (const warning of item.warnings ?? []) if (warning.code !== 'tts_missing') notices.append(el('p', 'product-warning', warning.detail));
+		for (const warning of item.warnings ?? []) if (!['tts_missing','tts_repeat'].includes(warning.code)) notices.append(el('p', 'product-warning', warning.detail));
 	}
 	async function show(focus = false) {
 		const version = ++revision;

@@ -30,7 +30,7 @@ FORMAT = {
 			"name": "配音",
 			"model": "google:gemini-3.8-flash-tts（Charon 聲音）",
 			"cost": "5 分鐘約 US$0.09",
-			"detail": "每句一次 Gemini TTS，台灣華語口音；英文（sum、printf、VS Code）照原文唸，程式符號（<=、-o）依詞彙表唸中文。faster-whisper 拼音級漏字檢查，漏了就重配。可改回本機 GPT-SoVITS（免費，narrate.py --tts sovits）。",
+			"detail": "每句一次 Gemini TTS，台灣華語口音；英文（sum、printf、VS Code）照原文唸，程式符號（<=、-o）依詞彙表唸中文。faster-whisper 拼音級漏字與重複檢查，未通過就重配，最多三輪。可改回本機 GPT-SoVITS（免費，narrate.py --tts sovits）。",
 			"paid": True
 		},
 		{

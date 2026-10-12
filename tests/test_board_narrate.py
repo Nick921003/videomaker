@@ -31,6 +31,56 @@ PINYIN = SimpleNamespace(Style=SimpleNamespace(INITIALS="initial", FINALS="final
 
 
 class TestASRComparison(unittest.TestCase):
+	def test_repeated_sentence_is_rejected_but_scripted_repetition_is_allowed(self):
+		checker = load("asr_check")
+		text = "先手算預期結果，再輸入測試值，最後比對答案。"
+		with patch.dict(sys.modules, {"pypinyin": PINYIN}):
+			self.assertTrue(checker.judge(text, text)["ok"])
+			result = checker.judge(text, text + text)
+			self.assertFalse(result["ok"])
+			self.assertIn("重複念", result["problems"])
+			self.assertTrue(checker.judge(text + text, text + text)["ok"])
+			self.assertFalse(checker.judge(text, "先手算預期結果，先手算預期結果，再輸入測試值，最後比對答案。")["ok"])
+
+	def test_repeated_tts_is_automatically_resynthesized(self):
+		module, checker = load("narrate"), load("asr_check")
+		with tempfile.TemporaryDirectory() as temporary:
+			directory = Path(temporary)
+			scene, voice = directory / "q1.scene.json", directory / "voice"
+			text = "先手算預期結果，再輸入測試值，最後比對答案。"
+			write_json(scene, {"scenes": [{"beats": [{"say": text}]}]})
+			checks = []
+			def asr(jobs, out):
+				checks.append(jobs)
+				return {job["wav"]: checker.judge(text, text * (2 if len(checks) == 1 else 1)) for job in jobs}
+			with redirect_stdout(io.StringIO()), patch("llm.load_env"), patch.dict(sys.modules, {"pypinyin": PINYIN}), \
+				patch.object(module.sys, "argv", ["narrate.py", str(scene), str(voice), "--english", "off"]), \
+				patch.object(module.gemini_tts, "synth_gemini", side_effect=fake_synth) as synth, patch.object(module, "asr_check", side_effect=asr):
+				module.main()
+			self.assertEqual(synth.call_count, 2)
+			record = json.loads((voice / "narration.json").read_text())["beats"][0]
+			self.assertTrue(record["ok"])
+			self.assertEqual(record["asr"]["heard"], text)
+
+	def test_unresolved_repetition_is_reported_after_bounded_retries(self):
+		module, checker = load("narrate"), load("asr_check")
+		with tempfile.TemporaryDirectory() as temporary:
+			directory = Path(temporary)
+			scene, voice = directory / "q1.scene.json", directory / "voice"
+			text = "先手算預期結果，再輸入測試值。"
+			write_json(scene, {"scenes": [{"beats": [{"say": text}]}]})
+			def asr(jobs, out):
+				return {job["wav"]: checker.judge(text, text + text) for job in jobs}
+			output = io.StringIO()
+			with redirect_stdout(output), patch("llm.load_env"), patch.dict(sys.modules, {"pypinyin": PINYIN}), \
+				patch.object(module.sys, "argv", ["narrate.py", str(scene), str(voice), "--english", "off"]), \
+				patch.object(module.gemini_tts, "synth_gemini", side_effect=fake_synth) as synth, patch.object(module, "asr_check", side_effect=asr):
+				module.main()
+			self.assertEqual(synth.call_count, module.MAX_ROUNDS)
+			self.assertIn("@warn tts_repeat 第 1 句", output.getvalue())
+			identity = json.loads((voice / "timing.identity.json").read_text())
+			self.assertFalse(identity["beats"][0]["ok"])
+
 	def test_fake_asr_skips_english_code_digits_and_retains_chinese_missing_check(self):
 		checker = load("asr_check")
 		with patch.dict(sys.modules, {"pypinyin": PINYIN}):

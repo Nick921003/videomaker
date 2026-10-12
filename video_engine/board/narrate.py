@@ -24,6 +24,7 @@ sys.path.insert(0, HERE)
 
 import gemini_tts
 import synth
+from asr_check import CHECK_VERSION
 from compile import BEAT_GAP, LEAD_IN, SCENE_GAP, file_digest, speech_digest, speech_flags
 
 # 「G C C」這種空白隔開的字母，或 GCC、PATH 這類全大寫縮寫
@@ -210,7 +211,7 @@ def main():
 			print(f"[{k + 1}/{len(beats)}] 快取 {text}")
 			if not bound:
 				print(f"[{k + 1}/{len(beats)}] legacy 快取缺少音檔摘要，重新 ASR 驗收")
-			if not bound or not hit.get("asr") or not hit["asr"].get("ok"):
+			if not bound or not hit.get("asr") or not hit["asr"].get("ok") or hit["asr"].get("version") != CHECK_VERSION:
 				unchecked.append(k)
 		else:
 			todo.append(k)
@@ -224,6 +225,7 @@ def main():
 			for k in unchecked:
 				r = results[meta[k][3]]
 				records[k]["asr"] = {key2: r[key2] for key2 in ("ok", "problems", "missing", "heard")}
+				records[k]["asr"]["version"] = r.get("version", CHECK_VERSION)
 				if not r["ok"]:
 					failed.append(k)
 					print(f"  內容檢查未過（{'、'.join(r['problems'])}，疑似漏「{'、'.join(r['missing'])}」）：{meta[k][1]}")
@@ -250,6 +252,8 @@ def main():
 	for k, rec in enumerate(records):
 		if rec.get("asr", {}).get("missing"):
 			print(f"@warn tts_missing 第 {k + 1} 句", flush=True)
+		if "重複念" in rec.get("asr", {}).get("problems", []):
+			print(f"@warn tts_repeat 第 {k + 1} 句", flush=True)
 
 	# 接成一條：開頭留白、句間停頓、換場多停一點，跟 compile.py 估時的節奏一致
 	pieces, timing, t, sr, prev_scene = [], [], 0.0, None, 0
