@@ -31,13 +31,9 @@ export async function renderChat() {
 	const page = el('section', 'teaching-chat');
 	const header = el('header', 'teaching-chat__header');
 	const headerCopy = el('div', 'teaching-chat__heading');
-	headerCopy.append(
-		el('p', 'eyebrow', '現有教學影片'),
-		el('h1', '', '看影片，直接問這一段'),
-		el('p', 'teaching-chat__lede', '先看已完成的 48 秒樣片，再請工作台定位、重播或記下補強需求。'),
-	);
+	headerCopy.append(el('h1', '', 'AI 對話'));
 	const unitField = el('label', 'teaching-chat__unit');
-	unitField.append(el('span', '', '提問使用的教材'));
+	unitField.append(el('span', '', '教材'));
 	const unitSelect = el('select');
 	unitSelect.setAttribute('aria-label', '提問使用的教材');
 	for (const unit of units) {
@@ -135,13 +131,13 @@ export async function renderChat() {
 	inputLabel.setAttribute('for', 'teaching-chat-question');
 	const input = el('textarea');
 	input.id = 'teaching-chat-question';
-	input.rows = 3;
+	input.rows = 2;
 	input.placeholder = units.length ? '例如：為什麼條件會多判斷一次？' : '先到素材庫加入教材';
 	input.disabled = !units.length;
 	const send = control('button', 'button button-primary', '送出');
 	send.type = 'submit';
 	send.disabled = !units.length;
-	const formHint = el('p', 'teaching-chat__hint', 'Enter 送出，Shift+Enter 換行。風格需求只會先記錄，不會假裝已生成。');
+	const formHint = el('p', 'teaching-chat__hint', 'Enter 送出 · Shift+Enter 換行');
 	form.append(inputLabel, input, send, formHint);
 	chatColumn.append(messages, form);
 
