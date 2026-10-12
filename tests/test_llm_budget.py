@@ -1,11 +1,39 @@
 import os
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from video_engine import llm
 
 
 class TestModelOutputBudget(unittest.TestCase):
+    def test_google_sends_the_requested_json_schema_to_the_provider(self):
+        from google import genai
+        from studio.teaching_plan import SCHEMA
+
+        response = SimpleNamespace(text='{"ok":true}', usage_metadata=None)
+        with patch.dict(os.environ, {'GOOGLE_API_KEY':'test-key'}), \
+             patch.object(genai, 'Client') as client, \
+             patch.object(llm, 'report_usage'):
+            client.return_value.models.generate_content.return_value = response
+            data, _ = llm._google('test-model', 'system', 'material', SCHEMA, 8192, 'medium')
+            config = client.return_value.models.generate_content.call_args.kwargs['config']
+            self.assertEqual(config.response_json_schema, SCHEMA)
+            self.assertEqual(config.response_mime_type, 'application/json')
+            self.assertEqual(data, {'ok':True})
+
+    def test_google_unstructured_ingest_can_omit_the_schema(self):
+        from google import genai
+
+        response = SimpleNamespace(text='{"text":"material"}', usage_metadata=None)
+        with patch.dict(os.environ, {'GOOGLE_API_KEY':'test-key'}), \
+             patch.object(genai, 'Client') as client, \
+             patch.object(llm, 'report_usage'):
+            client.return_value.models.generate_content.return_value = response
+            llm._google('test-model', 'system', 'material', None, 16000, 'high')
+            config = client.return_value.models.generate_content.call_args.kwargs['config']
+            self.assertIsNone(config.response_json_schema)
+
     def test_stage_caps_are_hard_and_validate_request(self):
         self.assertEqual(llm.output_limit('mindmap'), 4096)
         self.assertEqual(llm.output_limit('paper',999999),16384)

@@ -7,7 +7,36 @@ import { withDOM, descendants, click, settle } from './dom-helper.mjs';
 const fixture = async name => JSON.parse(await readFile(new URL(`../mock/${name}.json`, import.meta.url), 'utf8'));
 const find = (host, label) => descendants(host).find(node => node.tagName === 'button' && node.textContent === label);
 
-test('生成頁只勾未完成項目，總額隨勾選改變並送出選取的 items', async () => {
+test('重新進入失敗工作時先呈現佇列與原因，只保留失敗項目待重試', async () => {
+ await withDOM(async () => {
+  const { renderMakeGenerate } = await import('../js/pages/make-generate.mjs');
+  const unit = await fixture('unit-analyzed');
+  const job = await fixture('job-failed');
+  unit.items[0] = { ...unit.items[0], status:'failed', job_id:job.job_id };
+  job.item = unit.items[0].item; job.unit_id = unit.unit_id;
+  job.current = 'storyboard';
+  job.error.reason = '@error unknown 簡報欄位不符合契約\nrun_teaching_plan.py失敗（結束碼 1）';
+  const original = api.get;
+  api.get = async path => path === '/formats' ? fixture('formats')
+   : path === '/queue' ? {running:null,queued:[]} : path.startsWith('/jobs/') ? job : unit;
+  const page = await renderMakeGenerate(unit);
+  try {
+   page.mount(); await settle();
+   assert.equal(page.getAttribute('data-selection'), 'collapsed');
+   const nodes = descendants(page);
+   const order = cls => nodes.findIndex(node => node.className.split(' ').includes(cls));
+   assert.ok(order('generate-queue') < order('generate-diagram'));
+   assert.ok(order('generate-feedback') < order('generate-diagram'));
+   assert.match(nodes.find(node => node.className === 'generation-message').textContent, /失敗/);
+   assert.match(page.textContent, /教學規劃的回傳格式不符/);
+   assert.ok(nodes.some(node => node.tagName === 'summary' && node.textContent === '查看錯誤紀錄'));
+   assert.match(nodes.find(node => node.className === 'generate-error-detail').textContent, /run_teaching_plan.py/);
+   assert.deepEqual(nodes.filter(node => node.tagName === 'input' && node.checked).map(node => node.value), [job.item]);
+  } finally { page.dispose(); api.get = original; }
+ });
+});
+
+test('失敗項目優先待重試，其他未完成項目仍可勾選且總額隨選擇更新', async () => {
 	await withDOM(async () => {
 		const { renderMakeGenerate } = await import('../js/pages/make-generate.mjs');
 		const unit = await fixture('unit-done');
@@ -20,8 +49,11 @@ test('生成頁只勾未完成項目，總額隨勾選改變並送出選取的 i
 			page = await renderMakeGenerate(unit);
 			const inputs = descendants(page).filter(node => node.tagName === 'input');
 			assert.equal(inputs.length, 8);
-			assert.equal(inputs.filter(node => node.checked).length, 2);
-			assert.match(page.textContent, /US\$0\.115/);
+			assert.equal(inputs.filter(node => node.checked).length, 1);
+			assert.match(page.textContent, /預估總計.*US\$0\.056/);
+			inputs.at(4).checked = true;
+			inputs.at(4).dispatchEvent(new Event('change'));
+			assert.match(page.textContent, /預估總計.*US\$0\.115/);
 			inputs.at(4).checked = false;
 			inputs.at(4).dispatchEvent(new Event('change'));
 			assert.match(page.textContent, /預估總計.*US\$0\.056/);

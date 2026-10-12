@@ -184,6 +184,7 @@ def _google(model, system, user, schema, max_tokens, effort):
 		system_instruction=system,
 		max_output_tokens=max_tokens,
 		response_mime_type="application/json",
+		response_json_schema=schema,
 		# 我們不用函式呼叫，關掉才不會每次都印警告
 		automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
 	)

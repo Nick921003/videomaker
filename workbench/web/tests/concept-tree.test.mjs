@@ -92,6 +92,20 @@ test('鍵盤focus聚焦可達分支，避免Tab落在視窗外而無法閱讀', 
  });
 });
 
+test('展開保留所選父概念的視角，不跳到解說葉節點', async () => {
+ await conceptDOM(async doc => {
+  const host=doc.createElement('div');const viewer=mountConceptTree(host,fixture(doc),{unit:'u',files:{svg:'map.svg'}});
+  try {
+   const parent=host.querySelector('[data-concept-id="a"]');
+   parent.querySelector('button').dispatchEvent(new Event('focus'));
+   const before=host.querySelector('.concept-canvas').style.transform;
+   click(parent);
+   assert.equal(host.querySelector('.concept-canvas').style.transform,before);
+   assert.ok(host.querySelector('[data-concept-id="detail"]'));
+  } finally {viewer.dispose();}
+ });
+});
+
 test('拖曳長節點本身移動畫布而不誤觸展開', async () => {
  await conceptDOM(async doc => {
   const host=doc.createElement('div');const viewer=mountConceptTree(host,fixture(doc),{unit:'u',files:{svg:'map.svg'}});

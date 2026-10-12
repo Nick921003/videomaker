@@ -60,12 +60,14 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	status.setAttribute('role', 'status');
 	const failures = el('div', 'generate-failures');
 	feedback.append(status, failures);
-	right.append(heading, idle, diagram, feedback, queueCard);
+	right.append(heading, feedback, queueCard, idle, diagram);
 	content.append(left, right);
-	const chosen = new Set(unit.items.filter(selectable).map(item => item.item));
+	const failedItems = unit.items.filter(item => item.status === 'failed' && item.job_id);
+	const chosen = new Set((failedItems.length ? failedItems : unit.items.filter(selectable)).map(item => item.item));
 	const watched = new Map();
 	for (const item of unit.items) if (item.job_id && ['queued', 'running', 'failed'].includes(item.status)) watched.set(item.job_id, null);
 	if (query.job) watched.set(query.job, null);
+	collapseSelection(watched.size > 0);
 	let disposed = false;
 	let mounted = false;
 	let submitting = false;
@@ -162,12 +164,20 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 			for (const job of [...watched.values()].filter(job => job?.state === 'failed')) {
 				const panel = el('section', 'generate-failure');
 				panel.setAttribute('role', 'alert');
+				const reason = job.error?.reason ?? '這次工作沒有完成。';
+				const planningContract = job.current === 'storyboard' && /簡報欄位不符合契約/.test(reason) && /run_teaching_plan\.py/.test(reason);
 				panel.append(el('h3', '', unit.items.find(item => item.item === job.item)?.label ?? job.item),
-					el('p', '', job.error?.reason ?? '這次工作沒有完成。'), el('p', 'section-note', job.error?.advice ?? ''));
+					el('p', '', planningContract ? '教學規劃的回傳格式不符，尚未進入影片配音與出片。' : reason),
+					el('p', 'section-note', job.error?.advice ?? ''));
+				if (planningContract) {
+					const detail = el('details', 'generate-error-detail');
+					detail.append(el('summary', '', '查看錯誤紀錄'), el('pre', '', reason));
+					panel.append(detail);
+				}
 				const inspect = button('查看失敗步驟');
 				inspect.setAttribute('data-focus-key', `${job.job_id}:inspect`);
 				focusTargets.push(inspect);
-				inspect.addEventListener('click', () => { pinned = job.job_id; draw(job); });
+				inspect.addEventListener('click', () => { pinned = job.job_id; draw(job); diagram.scrollIntoView?.({ block: 'nearest' }); });
 				panel.append(inspect);
 				if (job.error?.retry) {
 					const retry = button('重試');
@@ -191,6 +201,7 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 			?? [...watched.values()].find(job => job?.state === 'failed') ?? [...watched.values()].filter(Boolean).at(-1);
 		draw(focus);
 		status.textContent = queue.running || queue.queued.length ? '工作會依序製作，你可以切到其他頁。'
+			: [...watched.values()].some(job => job?.state === 'failed') ? '製作失敗，請查看下方原因；重試只會製作該項目。'
 			: [...watched.values()].some(job => job?.state === 'done') ? '製作完成，可以查看成品。' : '選取項目後，費用依實際用量計算。';
 	}
 	function schedule() {

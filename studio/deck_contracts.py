@@ -87,6 +87,12 @@ def _block(value, layout):
 				if variable['name'] in names:
 					raise DeckError('走讀變數名稱重複')
 				names.add(variable['name'])
+	elif layout == 'pipeline':
+		from studio.visual_components import validate_pipeline
+		try:
+			validate_pipeline(value)
+		except ValueError as exc:
+			raise DeckError(str(exc)) from exc
 	else:
 		raise DeckError("不支援的簡報版型")
 
@@ -113,7 +119,7 @@ def canonical_deck(value):
 		seen.add(slide_id)
 		if (not isinstance(slide["role"], str) or slide["role"] not in _ROLES or
 			not isinstance(slide["layout"], str) or
-			slide["layout"] not in (_LAYOUTS | {"concept", "walkthrough"} if professional else _LAYOUTS | {"concept"} if self_study else _LAYOUTS)):
+			slide["layout"] not in (_LAYOUTS | {"concept", "walkthrough", "pipeline"} if professional else _LAYOUTS | {"concept"} if self_study else _LAYOUTS)):
 			raise DeckError("簡報頁面種類或版型不符合契約")
 		_text(slide["title"], 120)
 		_text(slide["speaker_notes"], 2000)

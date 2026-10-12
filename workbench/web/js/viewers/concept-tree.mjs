@@ -79,7 +79,7 @@ export function mountConceptTree(host, svg, { unit, files }) {
 		current = id;
 		if (id === rootId || !children.get(id)?.length) { center(id);return; }
 		if (expanded.has(id)) { collapse(id);render(id); }
-		else { expanded.add(id);trail.push(id);render(children.get(id)[0]); }
+		else { expanded.add(id);trail.push(id);render(id); }
 	}
 	function collapse(id) {
 		const closed = new Set();
@@ -133,7 +133,7 @@ export function mountConceptTree(host, svg, { unit, files }) {
 		const focused = document.activeElement?.closest?.('.concept-card')?.getAttribute('data-concept-id');
 		canvas.replaceChildren();back.disabled = !trail.length;
 		if (clear) positions.clear();
-		const cardWidth = Math.min(320, Math.max(220, viewport.clientWidth - 40));
+		const cardWidth = Math.min(270, Math.max(200, viewport.clientWidth - 40));
 		const rows = visibleTree(rootId, children, expanded);
 		const visible = new Set(rows.map(row => row.id));
 		if (!visible.has(current)) current = rootId;

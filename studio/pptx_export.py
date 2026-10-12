@@ -208,6 +208,7 @@ def _export_professional(deck):
 	for item in deck['slides']:
 		block=item['blocks'][0]
 		if block['type']=='walkthrough':pages.extend((item,state) for state in block['states'])
+		elif block['type']=='pipeline':pages.extend((item,stage) for stage in block['stages'])
 		elif block['type']=='concept':
 			from copy import deepcopy
 			for start in range(0,len(block['items']),2):
@@ -220,7 +221,9 @@ def _export_professional(deck):
 		_text(slide,deck['title'],.8,.25,11.7,.3,size=12,min_size=12,color=_ACCENT)
 		_text(slide,item['title'],.8,.8,11.7,.75,size=30,min_size=24,bold=True,shape=slide.shapes.title)
 		_text(slide,item['question'],.8,1.6,11.7,.38,size=20,min_size=18,color=_ACCENT)
-		if state is None:
+		if item['blocks'][0]['type'] == 'pipeline':
+			_draw_pipeline(slide, item['blocks'][0], state)
+		elif state is None:
 			block=item['blocks'][0]
 			if block['type']=='concept':
 				_panel(slide,3.9,2.2,5.53,.66,fill=_ACCENT)
@@ -251,8 +254,35 @@ def _export_professional(deck):
 			_text(slide,'輸出',8.25,out_y,4.0,.35,size=18,min_size=16,color=_ACCENT)
 			_text(slide,state['output'],8.25,out_y+.42,4.0,.56,size=20,min_size=16,bold=True)
 		_panel(slide,.8,6.2,11.7,.9,fill=_WHITE)
-		_text(slide,state['explanation'] if state else item['explanation'],1.0,6.23,11.3,.84,size=20,min_size=16)
+		_text(slide,state['explanation'] if state and 'explanation' in state else item['explanation'],1.0,6.23,11.3,.84,size=20,min_size=16)
 		_text(slide,f'{index} / {len(pages)}',11.8,7.15,.8,.25,size=11,min_size=11,color=_ACCENT)
 		slide.notes_slide.notes_text_frame.text=(item['explanation']+'\n\n教材原文依據：\n'+
 			'\n\n'.join(item['source_quotes'])+'\n\n元件選擇：'+item['selection_reason'])
 	buffer=BytesIO();prs.save(buffer);return buffer.getvalue()
+
+
+def _draw_pipeline(slide, block, selected):
+	"""對應線上閱讀階段；原生卡片、方向連線與說明皆可編輯。"""
+	from studio.visual_components import pipeline_object
+	stages = pipeline_object(block, 'flow')['stages']
+	gap, row_height, top = .19, .54, 2.4
+	# 先畫連線，再畫卡片，避免連線穿過文字。
+	for index in range(1, len(stages)):
+		start_y = top + (index - 1) * (row_height + gap) + row_height
+		connector = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT,
+			Inches(2.85), Inches(start_y), Inches(2.85), Inches(start_y + gap))
+		connector.line.color.rgb = _ACCENT
+		connector.line.width = Pt(2)
+		# DrawingML 原生箭頭末端，PowerPoint 可修改。
+		from pptx.oxml.xmlchemy import OxmlElement
+		arrow = OxmlElement('a:tailEnd');arrow.set('type', 'triangle')
+		connector._element.spPr.get_or_add_ln().append(arrow)
+	for index, stage in enumerate(stages):
+		y = top + index * (row_height + gap)
+		active = stage['id'] == selected['id']
+		_panel(slide, .8, y, 4.1, row_height, fill=_ACCENT if active else _SOFT)
+		_text(slide, stage['label'], 1.0, y + .04, 3.7, row_height - .08,
+			size=20, min_size=16, color=_WHITE if active else _INK, bold=active)
+	_panel(slide, 5.3, 2.4, 7.2, 3.5, fill=_WHITE)
+	_text(slide, selected['label'], 5.6, 2.7, 6.6, .64, size=24, min_size=18, color=_ACCENT, bold=True)
+	_text(slide, selected['note'], 5.6, 3.55, 6.6, 2.0, size=22, min_size=16)

@@ -70,6 +70,36 @@ function walkthrough(card, block) {
 	return scene;
 }
 
+function pipeline(card, block) {
+	const scene = el('section', 'deck-pipeline');
+	scene.setAttribute('aria-label', '流程階段');
+	const list = el('ol', 'deck-pipeline-stages');
+	const items = block.stages.map((stage, index) => {
+		const item = el('li', 'deck-pipeline-stage');
+		item.setAttribute('data-stage-id', stage.id);
+		item.append(el('strong', '', stage.label));
+		// 說明只在目前階段呈現；名稱与完整流程一直保留。
+		const note = el('p', 'deck-pipeline-note', stage.note);note.hidden = index !== 0;
+		item.append(note);
+		list.append(item);
+		if (index < block.stages.length - 1) {
+			const arrow = el('span', 'deck-pipeline-arrow', '↓');
+			arrow.setAttribute('aria-hidden', 'true');item.append(arrow);
+		}
+		return item;
+	});
+	const controls = stepControls(card, items.length, selected => {
+		items.forEach((item, index) => {
+			const active = index === selected;
+			item.setAttribute('data-active', String(active));
+			if (active) item.setAttribute('aria-current', 'step');
+			else item.removeAttribute('aria-current');
+			item.querySelector('.deck-pipeline-note').hidden = !active;
+		});
+	});
+	scene.append(list, controls);return scene;
+}
+
 export function renderSlide(slide, { progressive = false } = {}) {
 	const role = ['hook', 'concept', 'example', 'pitfall', 'summary'].includes(slide.role) ? slide.role : 'concept';
 	const card = el('article', `deck-slide deck-role-${role}`);
@@ -78,6 +108,7 @@ export function renderSlide(slide, { progressive = false } = {}) {
 	const content = el('div', 'deck-slide-content');
 	const block = slide.blocks?.[0];
 	if (block?.type === 'walkthrough') content.append(walkthrough(card, block));
+	else if (block?.type === 'pipeline') content.append(pipeline(card, block));
 	else if (block?.type === 'code') content.append(el('pre', 'deck-code', block.lines.join('\n')));
 	else if (block?.type === 'compare') {
 		const columns = el('div', 'deck-compare');
@@ -104,7 +135,7 @@ export function renderSlide(slide, { progressive = false } = {}) {
 	card.append(content);
 	const explanation = slide.explanation && slide.explanation !== slide.takeaway ? el('p', 'deck-explanation', slide.explanation) : null;
 	if (explanation) card.append(explanation);
-	if (progressive && block?.type !== 'walkthrough') {
+	if (progressive && !['walkthrough', 'pipeline'].includes(block?.type)) {
 		const items = block?.type === 'concept' ? [...content.querySelector('.deck-concept-branches').children]
 			: block?.type === 'compare' ? [...content.querySelector('.deck-compare').children]
 			: block?.type === 'code' ? [content] : [...(content.querySelector('ul, ol')?.children ?? [])];

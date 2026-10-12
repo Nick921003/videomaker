@@ -13,6 +13,26 @@ const walkthrough = {
  ] }],
 };
 
+test('流程元件沿用階段資料，前後步驟還原高亮且文字不成為HTML', async () => {
+ await withDOM(async () => {
+  const stages=[{id:'input',label:'输入',note:'<script>教材文字</script>'},
+   {id:'check',label:'檢查',note:'核對來源'}, {id:'output',label:'輸出',note:'發佈結果'}];
+  const card=renderSlide({title:'處理流程',blocks:[{type:'pipeline',stages}]},{progressive:true});
+  const items=card.querySelectorAll('.deck-pipeline-stage');
+  assert.equal(items.length,3);
+  assert.equal(items[0].getAttribute('aria-current'),'step');
+  assert.equal(card.querySelectorAll('.deck-pipeline-arrow').length,2);
+  assert.equal(card.querySelector('script'),null);
+  assert.match(items[0].textContent,/<script>/);
+  click(card.querySelector('.deck-step-next'));
+  assert.equal(items[0].getAttribute('aria-current'),null);
+  assert.equal(items[1].getAttribute('aria-current'),'step');
+  click(card.querySelector('.deck-step-previous'));
+  assert.equal(items[0].getAttribute('aria-current'),'step');
+  assert.equal(card.querySelectorAll('[data-reveal-hidden="true"]').length,0);
+ });
+});
+
 test('走讀同步顯示問題、解釋、重點、執行行、變數與輸出，前後步驟可還原', async () => {
  await withDOM(async () => {
   const card = renderSlide(walkthrough);

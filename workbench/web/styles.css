@@ -3300,6 +3300,48 @@ a.make-step:hover, .make-step.active {
 /* clip 避免原生 focus 另建捲動位移；圖的相機只由 viewer 控制。 */
 .concept-viewport { overflow: clip; }
 
+/* 自學教材：流程持續可見，說明逐步展開；使用與對話一致的緊湊尺寸。 */
+.deck-pipeline { display: grid; gap: 14px; min-width: 0; }
+.deck-pipeline-stages { display: grid; gap: 24px; margin: 0; padding: 0; list-style: none; }
+.deck-pipeline-stage {
+	position: relative;
+	padding: 10px 14px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: var(--card);
+	overflow-wrap: anywhere;
+}
+.deck-pipeline-stage[data-active="true"] { border-color: var(--accent); background: var(--tint); }
+.deck-pipeline-stage strong { font-size: inherit; font-weight: 600; }
+.deck-pipeline-note { margin: 8px 0 0; line-height: 1.6; }
+.deck-pipeline-arrow { position: absolute; left: 22px; bottom: -25px; line-height: 24px; color: var(--accent); }
+.viewer-deck[data-contract-version="1.2"] .deck-slide { padding: 20px; gap: 14px; }
+.viewer-deck[data-contract-version="1.2"] .deck-slide-title { font-size: calc(24px * var(--deck-reading-scale, 1)); }
+.viewer-deck[data-contract-version="1.2"] .deck-slide-content,
+.viewer-deck[data-contract-version="1.2"] .deck-explanation,
+.viewer-deck[data-contract-version="1.2"] .deck-state,
+.viewer-deck[data-contract-version="1.2"] .deck-output { font-size: calc(16px * var(--deck-reading-scale, 1)); }
+.viewer-deck[data-contract-version="1.2"] .deck-question { font-size: calc(17px * var(--deck-reading-scale, 1)); }
+.viewer-deck[data-contract-version="1.2"] .deck-walkthrough-code { font-size: calc(15px * var(--deck-reading-scale, 1)); }
+.viewer-deck[data-contract-version="1.2"] .deck-takeaway { font-size: calc(16px * var(--deck-reading-scale, 1)); padding: 12px; }
+.viewer-deck[data-contract-version="1.2"] .deck-state { padding: 14px; }
+.viewer-deck[data-contract-version="1.2"] .deck-state h3 { font-size: 19px; margin-bottom: 12px; }
+.viewer-deck[data-contract-version="1.2"] .deck-state h4 { font-size: 15px; margin: 12px 0 6px; }
+.viewer-deck[data-contract-version="1.2"] .deck-step-controls { font-size: 13px; gap: 8px; }
+.viewer-deck[data-contract-version="1.2"] .deck-step-controls button { font-size: 13px; min-height: 32px; padding: 6px 10px; }
+.concept-tools { padding: 8px 10px; gap: 6px; }
+.concept-tools .button, .concept-layout { font-size: 13px; min-height: 32px; padding: 6px 10px; }
+.concept-card { padding: 12px; }
+.concept-toggle { font-size: 16px; line-height: 1.55; }
+.concept-card[data-node-kind="concept"] .concept-toggle { font-weight: 600; }
+@media (max-width: 700px) {
+	.viewer-deck[data-contract-version="1.2"] .deck-slide { padding: 14px; gap: 12px; }
+	.viewer-deck[data-contract-version="1.2"] .deck-slide-title { font-size: calc(21px * var(--deck-reading-scale, 1)); }
+	.viewer-deck[data-contract-version="1.2"] .deck-walkthrough-code { font-size: calc(15px * var(--deck-reading-scale, 1)); }
+	.viewer-deck[data-contract-version="1.2"] .deck-step-controls button,
+	.concept-tools .button, .concept-layout { min-height: 36px; }
+}
+
 /* ----------------------------------------------------
    對話式教材製作工作台 (Chat-driven Material Studio)
 ---------------------------------------------------- */
@@ -4194,4 +4236,51 @@ body.page-chat-active .main-viewport,
 .kinetic-sub-text.active {
 	opacity: 1;
 	transform: scale(1);
+}
+
+/* 製作頁：先看狀態與佇列，長清單不再撐開整頁。 */
+.make-page:has(.make-generate) { gap: 10px; grid-template-rows: auto auto auto; }
+.make-page:has(.make-generate) .intro-description { font-size: 14px; line-height: 1.5; }
+.make-page:has(.make-generate) .make-step { font-size: 13px; padding: 7px 10px; }
+.make-generate { grid-template-columns: minmax(250px, .85fr) minmax(0, 1.4fr); gap: 12px; font-size: 14px; }
+.make-generate .make-card { border-radius: 8px; box-shadow: none; }
+.generate-selection .make-card-heading { font-size: 15px; padding: 12px 14px; }
+.generate-checklist { max-height: min(440px, 56vh); overflow-y: auto; padding: 0 14px 8px; }
+.generate-group-label { font-size: 13px; padding: 10px 0 5px; }
+.generate-choice { grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px 8px; padding: 10px 0; font-size: 14px; }
+.generate-choice input { width: 16px; height: 16px; margin-top: 3px; }
+.generate-choice-copy { gap: 2px; line-height: 1.5; }
+.make-generate .generate-item-status { font-size: 12px; }
+.generate-estimate { grid-column: 3; font-size: 12px; padding-top: 3px; }
+.generate-total { padding: 10px 14px; font-size: 13px; gap: 8px; }
+.make-generate .button { min-height: 32px; font-size: 13px; padding: 6px 10px; }
+.generate-live { grid-template-rows: repeat(5, auto); }
+.generate-live-heading { padding: 12px 14px; gap: 10px; flex-wrap: wrap; }
+.generate-live-heading h2 { font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+.generate-actions { gap: 6px; }
+.generate-feedback { padding: 10px 14px; border-top: 0; overflow: visible; }
+.make-generate .generation-message { font-size: 13px; line-height: 1.5; }
+.generate-failure { padding: 10px; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.generate-failure h3 { font-size: 14px; line-height: 1.5; }
+.generate-failure .section-note { font-size: 12px; line-height: 1.5; }
+.generate-queue .make-card-heading { padding: 10px 14px 6px; font-size: 14px; }
+.generate-queue-list { max-height: 160px; padding: 0 14px 10px; }
+.make-generate .generate-queue-row { min-height: 32px; padding: 7px 8px; font-size: 13px; line-height: 1.5; gap: 12px; white-space: normal; background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.make-generate .generate-queue-row.status-failed { background: var(--tint); color: var(--accent); }
+.make-generate .generate-queue-row:hover { background: var(--tint); }
+.generate-failure > p:not(.section-note) { white-space: pre-line; }
+.generate-error-detail { margin-top: 6px; }
+.generate-error-detail summary { cursor: pointer; color: var(--soft); }
+.generate-error-detail pre { margin-top: 6px; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+.generation-idle { padding: 16px 14px; font-size: 14px; }
+.generate-diagram { height: 220px; border-top: 1px solid var(--line); }
+.generate-diagram .viewer-tools { padding: 8px 10px; gap: 6px; }
+@media (max-width: 760px) {
+	.make-generate { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+	.make-generate[data-selection="collapsed"] { grid-template-rows: auto; }
+	.make-generate[data-selection="expanded"] .generate-live { grid-row: 1; }
+	.generate-live-heading { padding: 10px 12px; gap: 8px; }
+	.generate-checklist { max-height: 300px; }
+	.make-generate .button { min-height: 36px; }
+	.generate-diagram { height: 220px; }
 }
