@@ -3,6 +3,7 @@ import fcntl
 import hashlib
 import json
 from pathlib import Path
+import uuid
 
 from studio.teaching_plan import SYSTEM, SCHEMA, build_plan, canonical_plan
 from workbench.library import read_json, safe_path, write_json
@@ -30,7 +31,22 @@ def get_plan(directory, complete_json, *, configuration='default'):
 				if meta.get('plan_digest')!=plan_digest(cached):
 					raise ValueError('共用教學規劃快取身份不一致')
 				return canonical_plan(cached,material)
-		plan = build_plan(material,complete_json,source_context(data))
+		candidate = {}
+		def complete(system, user, schema):
+			result = complete_json(system, user, schema)
+			if isinstance(result, tuple) and len(result) == 2:
+				candidate.update(candidate=result[0], source_excerpts=json.loads(user)['source_excerpts'])
+			return result
+		try:
+			plan = build_plan(material,complete,source_context(data))
+		except ValueError as exc:
+			if candidate:
+				try:
+					write_json(safe_path(directory,f'teaching_plan_attempts/{uuid.uuid4().hex}.json'),
+						{**candidate, 'content_version':data['content_version'], 'configuration':configuration, 'error':str(exc)})
+				except (OSError, TypeError, ValueError):
+					pass  # 診斷寫入失敗不得覆蓋原本的生成錯誤。
+			raise
 		# 生成期間來源改變就拒絕發佈，最後成功版本仍保留。
 		_, latest = generation_material(directory)
 		if latest['content_version'] != data['content_version']:

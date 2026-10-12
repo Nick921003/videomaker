@@ -12,6 +12,7 @@ import argparse
 import copy
 import glob
 import json
+import math
 import os
 import re
 import subprocess
@@ -52,10 +53,12 @@ class Budget:
 		self.path, self.cap, self.item = path, cap, item
 
 	def spent(self):
+		"""已知費用小計；未知費用仍留在 ledger，由工作台明示。"""
 		if not os.path.exists(self.path):
 			return 0.0
 		with open(self.path, encoding="utf-8") as f:
-			return sum(json.loads(line)["usd"] for line in f if line.strip())
+			amounts = (json.loads(line).get('usd') for line in f if line.strip())
+			return sum(usd for usd in amounts if type(usd) in (int,float) and math.isfinite(usd) and usd >= 0)
 
 	def guard(self, model, input_tokens, max_tokens):
 		p = PRICE[model]

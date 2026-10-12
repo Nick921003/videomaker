@@ -153,6 +153,18 @@ class TestLetters(unittest.TestCase):
 
 
 class TestBudget(unittest.TestCase):
+	def test_失敗呼叫費用未知仍保留紀錄且不讓影片預算加總崩潰(self):
+		with tempfile.TemporaryDirectory() as d:
+			path = os.path.join(d, 'usage.jsonl')
+			rows = [{'usd':.49}, {'usd':None, 'estimated_cost_usd':None, 'reported':False}]
+			with open(path, 'w', encoding='utf-8') as handle:
+				handle.write(''.join(json.dumps(row)+'\n' for row in rows))
+			budget = BA.Budget(path, .50)
+			self.assertAlmostEqual(budget.spent(), .49)
+			with self.assertRaises(BA.BudgetExceeded): budget.guard('gemini-3.8-flash', 1000, 12000)
+			with open(path, encoding='utf-8') as handle:
+				self.assertEqual([json.loads(line) for line in handle], rows)
+
 	def test_最壞情況會超過上限就拒絕呼叫(self):
 		with tempfile.TemporaryDirectory() as d:
 			b = BA.Budget(os.path.join(d, "usage.jsonl"), 0.10)

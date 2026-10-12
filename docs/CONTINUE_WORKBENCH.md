@@ -10,7 +10,7 @@
 
 目前正式素材庫服務在8876，真實製片入口 `http://127.0.0.1:8876/web/index.html#/make/1`，不用mock；`.venv/bin/python -m workbench.server --port 8876` 可重啟，模型轉接層會自行讀取.env。已有使用者工作時先確認佇列，不直接重啟。
 
-使用者試生單元4f2ef7bf2785的q4失敗，停在共同教學規劃，未配音／出片；錯誤「簡報欄位不符合契約」。已修正Google轉接層漏傳schema，回歸先失敗後通過；舊模型回應未留存，不能斷言具体缺哪個欄位，也尚未代按付費重試。製作頁縮至正文14／標題15／按鈕13px，狀態、原因與佇列置於流程圖之前，失敗時只預選失敗項目；1440×660、1280×720、768×900、375×812真實瀏覽器驗證佇列第一屏可見、選擇可捲動、無溢出及page error。
+使用者單元4f2ef7bf2785的q4已實際出片（工作dce5d8ddad684c579848089acb06a6e6），成品入口 http://127.0.0.1:8876/web/index.html#/make/4?unit=4f2ef7bf2785 。影片約84秒1080p有聲；桌機／手機Chrome播放、定位46秒、HTTP206通過。使用者重試的來源引文錯誤已改用後台原文片段ID恢復，教學表達可自然改寫但須語意正確；保留失敗候選。共同規劃不再被PPTX長程式碼排版阻擋，未知費用null不再使Board預算崩潰。第7／8／11句仍保留可能漏唸提示與逐句重配，人工試聽品質待確認。只有q4生成，本教材長程式碼簡報容量問題仍待改善。既有緊湊製作頁正文14／標題15／按鈕13px及四種尺寸驗證保持。詳細證據：docs/experiments/2026-10-12-q4-reference-retry.md。
 
 簡報第一批共用Board pipeline階段資料已接入Deck1.2、線上逐步高亮與原生PPTX；心智圖共同規劃1.1加入分類短名稱與父子关系引用，保留舊1.0相容與向外展開。人工基準在docs/experiments/shared-components-20261012，隔離預覽8877、單元b69bfb8c3481；不是付費AI成品。六種外部樣片尚未全部接入正式生成。
 
@@ -47,6 +47,6 @@ AGY透過/home/pjw92/.local/bin/agy原生CLI，未完成報告不可當成已驗
 
 ## 驗證與限制
 
-本次最新Python全套790項通過（1略過）、前端101項通過；簡報／心智圖Chrome1440／375px互動與真實PPTX／SVG下載通過，16頁PPTX經LibreOffice實轉PDF檢查。上述製作頁四種尺寸另行驗證通過。免費fixture與隔離資料；沒有代使用者呼叫付費生成或TTS，未新增依賴。使用者q4真實影片失敗仍保留，修正後完整出片與教學品質需另驗。
+最新Python全套795項OK（1略過）、前端101項通過。本次q4是真實模型與TTS成品，不是fixture；其他簡報／心智圖仍以之前的固定教材、Chrome互動及16頁PPTX實轉PDF證據為限。沒有新增依賴。單元已知費用小計US$0.143113，另4筆未知呼叫保留，不等於帳單總額。其他教材與整體教學／設計品質尚待驗收。
 
 運行：.venv/bin/python -m unittest discover -s tests -t .；node --test workbench/web/tests。Playwright Python /home/pjw92/.local/share/pipx/venvs/webwright/bin/python。證據與各階段報告已保存在docs/experiments。
