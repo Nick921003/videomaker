@@ -598,6 +598,13 @@ class StudioHandler(BaseHTTPRequestHandler):
 					return self._file(cand_file)
 				except (ValueError, APIError):
 					raise APIError(404, "找不到候選元件")
+			if path.startswith("/trials/"):
+				# 教學元件樣片只允許讀取固定展示目錄。
+				try:
+					trial_file = safe_path(ROOT / "prototypes" / "component_trials_20261011", path[len("/trials/"):])
+					return self._file(trial_file)
+				except (ValueError, APIError):
+					raise APIError(404, "找不到教學樣片")
 			match = re.fullmatch(r"/embed/([^/]+)/([^/]+)", path)
 			if match:
 				uid, item = match.groups()

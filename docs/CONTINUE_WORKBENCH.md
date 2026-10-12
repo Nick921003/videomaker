@@ -1,6 +1,12 @@
 # 新對話交接：多元教材工作台
 
-更新：2026-10-08（Asia/Taipei）。實際專案/home/pjw92/projects/videomaker；WindowsApps UNC預設cwd失效時明確使用WSL路徑。使用者要求先保存所有改動到分支並push。
+更新：2026-10-12（Asia/Taipei）。實際專案/home/pjw92/projects/videomaker；WindowsApps UNC預設cwd失效時明確使用WSL路徑。所有變更先做本機提交；未取得明確指示不push。
+
+## 2026-10-12 當前入口
+
+影片聊天計畫 `docs/superpowers/plans/2026-10-11-workbench-video-chat.md` 已完成：初始48秒成片、章節定位、正式 `/ask` 重用既有影片、其他課題元件樣片、補強需求紀錄、安全 `/trials/` Range路由與響應式介面皆已接入。新AI影片生成與補強派工仍未接入，不能把需求紀錄說成生成完成。
+
+驗證基線為前端108項與Python伺服器31項；1440／768／375px Playwright驗證通過。臨時試用服務在 `http://127.0.0.1:8876/?mock=1#/chat`，若程序已結束，以 `.venv/bin/python -m workbench.server --port 8876` 重啟。
 
 ## 目標與進度
 

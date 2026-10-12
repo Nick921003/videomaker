@@ -35,7 +35,7 @@
 
 對話需要保留教材／單元、正在觀看的影片與版本、重點或時間位置、尚未理解的概念及風格偏好。重用以教學內容確實對應為前提；學生只說「這裡不懂」而位置不明時，先問一個定位問題，不能擅自整片重製。
 
-目前程式證據：`workbench/server.py` 的 `ask()` 依問題匹配單元內的 story／highlight，回傳既有影片；`workbench/web/js/pages/library.mjs` 的 `showAnswer()` 有影片即掛載播放器，缺少影片才提供「生成這段」。`workbench/web/js/pages/chat.mjs` 的對話與進度使用固定內容、定時器，尚未接入真正的生成或觀看後補強路由。上述追問、對話狀態與另一版本重用是已確認的後續需求，這次沒有宣稱已完成實作。
+目前程式證據：`workbench/server.py` 的 `ask()` 依問題匹配單元內的 story／highlight，回傳既有影片；`workbench/web/js/pages/library.mjs` 的 `showAnswer()` 有影片即掛載播放器，缺少影片才提供「生成這段」。2026-10-12 起，`workbench/web/js/pages/chat.mjs` 會先播放既有48秒樣片，支援章節定位、重播、觀看後追問，並把一般問題送至正式 `/ask`；同題換風格只記錄補強需求，明示尚未生成。對話狀態、另一版本查找及補強片生成派工仍未接入。
 
 ## 所有風格都必須遵守的驗收
 

@@ -526,6 +526,31 @@ class TestStudio(unittest.TestCase):
 			self.api("GET", path, expected=404)
 		self.api("POST", "/api/units", {"markdown": "教材"}, expected=404)
 
+	def test_trial_media_supports_head_range_and_blocks_escape(self):
+		with tempfile.TemporaryDirectory() as temp:
+			root = Path(temp)
+			trial_root = root / "prototypes" / "component_trials_20261011"
+			video = trial_root / "coherent" / "out" / "coherent.mp4"
+			video.parent.mkdir(parents=True)
+			video.write_bytes(b"0123456789")
+			outside = root / "outside.mp4"
+			outside.write_bytes(b"private")
+			(trial_root / "escape.mp4").symlink_to(outside)
+
+			with patch.object(BS, "ROOT", root):
+				status, headers, body = self.request("HEAD", "/trials/coherent/out/coherent.mp4")
+				self.assertEqual((status, body), (200, b""))
+				self.assertEqual(headers["Content-Length"], "10")
+				self.assertEqual(headers["Content-Type"], "video/mp4")
+
+				status, headers, body = self.request("GET", "/trials/coherent/out/coherent.mp4",
+					headers={"Range": "bytes=2-5"})
+				self.assertEqual((status, body), (206, b"2345"))
+				self.assertEqual(headers["Content-Range"], "bytes 2-5/10")
+
+				for path in ("/trials/%2e%2e/outside.mp4", "/trials/escape.mp4"):
+					self.api("GET", path, expected=404)
+
 	def test_validation_codes_and_atomic_generate_validation(self):
 		for payload in ({"markdown": " "}, [], {"markdown": "教材", "source_ref": "bad"}):
 			self.assertEqual(self.api("POST", "/api/v1/units", payload, expected=400)["error"]["code"], "bad_request")
