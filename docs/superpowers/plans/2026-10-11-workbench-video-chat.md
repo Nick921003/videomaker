@@ -1,5 +1,7 @@
 # Workbench Video Chat Implementation Plan
 
+> 2026-10-12使用者試用後更正：本計畫只涵蓋影片互動分支。完整AI對話應從教材或學習問題開始，釐清內容後選擇影片／簡報／心智圖，再展示對應既有成品或製作新成品。固定48秒樣片不應作為AI對話的預設入口。本計畫的勾選狀態不代表完整AI對話功能已完成。
+
 > **For agentic workers:** 使用既有工作區執行；使用者已要求先提交現況，再整合供自行操作。依 writing-plans、adversarial-review 與 verification-before-completion 驗證；不覆蓋先前樣片或評選。維持現在含原型資產的 checkout，避免遺失剛提交的上下文。
 
 **Goal:** 在目前工作台用簡潔大字介面播放已確認的48秒教材與既有元件示範，觀看後可以對話定位、重播或留下指定重點的補強需求。
