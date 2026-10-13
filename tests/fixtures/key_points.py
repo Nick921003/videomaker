@@ -2,6 +2,7 @@
 from copy import deepcopy
 import hashlib
 
+from studio.teaching_plan import source_excerpts
 from tests.fixtures.teaching_quality import MATERIAL
 
 
@@ -55,12 +56,25 @@ def sample_key_points(structure='material'):
 	}
 
 
+def by_excerpt_ids(output):
+	"""把原文引用換成片段 id，模擬模型只回傳代號。"""
+	excerpts = source_excerpts(MATERIAL)
+	def ref(quote):
+		normalized = ' '.join(quote.split())
+		return next(item['id'] for item in excerpts if normalized in ' '.join(item['text'].split()))
+	for objective in output['objectives']:
+		objective['sources'] = [ref(quote) for quote in objective['sources']]
+	for point in output['points']:
+		point['sources'] = [ref(quote) for quote in point['sources']]
+	return output
+
+
 def model_output():
-	"""模型會回傳的形狀：沒有版本、結構、狀態欄位；無上層用空字串，無例子用 kind=none。"""
+	"""模型會回傳的形狀：來源是片段代號；沒有版本、結構、狀態欄位；無上層用空字串，無例子用 kind=none。"""
 	value = deepcopy(sample_key_points())
 	for objective in value['objectives']:
 		objective.pop('inferred')
 	for point in value['points']:
 		point['parent_id'] = point['parent_id'] or ''
 		point['example'] = point['example'] or {'kind': 'none', 'content': '', 'language': ''}
-	return {'title': value['title'], 'objectives': value['objectives'], 'points': value['points']}
+	return by_excerpt_ids({'title': value['title'], 'objectives': value['objectives'], 'points': value['points']})

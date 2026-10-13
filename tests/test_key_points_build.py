@@ -8,19 +8,6 @@ from tests.fixtures.key_points import model_output, sample_key_points
 from tests.fixtures.teaching_quality import MATERIAL
 
 
-def by_excerpt_ids(output):
-	"""把 fixture 的原文引用換成片段 id，模擬模型只回傳代號。"""
-	excerpts = source_excerpts(MATERIAL)
-	def ref(quote):
-		normalized = ' '.join(quote.split())
-		return next(item['id'] for item in excerpts if normalized in ' '.join(item['text'].split()))
-	for objective in output['objectives']:
-		objective['sources'] = [ref(quote) for quote in objective['sources']]
-	for point in output['points']:
-		point['sources'] = [ref(quote) for quote in point['sources']]
-	return output
-
-
 class TestBuildKeyPoints(unittest.TestCase):
 	def test_structure_detection(self):
 		self.assertEqual(K.structure_of(MATERIAL, ['md']), 'material')
@@ -29,6 +16,13 @@ class TestBuildKeyPoints(unittest.TestCase):
 		self.assertEqual(K.structure_of(MATERIAL, ['normalized_markdown']), 'inferred')
 		self.assertEqual(K.structure_of('# 標題\n\n只有內容。', ['md']), 'inferred')
 		self.assertEqual(K.structure_of(MATERIAL, []), 'inferred')
+
+	def test_structure_detection_is_not_fooled(self):
+		self.assertEqual(K.structure_of('# 學習目標達成率\n\n內容。', ['md']), 'inferred')
+		self.assertEqual(K.structure_of('#\n學習目標\n\n內容。', ['md']), 'inferred')
+		self.assertEqual(K.structure_of('# 標題\n\n```md\n## 學習目標\n- 範例\n```\n', ['md']), 'inferred')
+		self.assertEqual(K.structure_of('# 標題\n\n## 學習目標：\n- 能做到\n', ['md']), 'material')
+		self.assertEqual(K.structure_of('# 標題\n\n##學習目標\n- 能做到\n', ['md']), 'inferred')
 
 	def test_schema_only_allows_excerpt_ids_and_has_no_presentation_fields(self):
 		excerpts = source_excerpts(MATERIAL)
@@ -44,17 +38,30 @@ class TestBuildKeyPoints(unittest.TestCase):
 		calls = []
 		def complete(system, user, schema):
 			calls.append(json.loads(user))
-			return by_excerpt_ids(model_output()), {}
+			return model_output(), {}
 		value = K.build_key_points(MATERIAL, complete, source_kinds=['md'])
 		self.assertEqual(len(calls), 1)
 		self.assertEqual(calls[0]['structure'], 'material')
 		refs = {item['id']: item['text'] for item in source_excerpts(MATERIAL)}
-		raw = by_excerpt_ids(model_output())
+		raw = model_output()
 		self.assertEqual(value['points'][0]['sources'], [refs[i] for i in raw['points'][0]['sources']])
+		self.assertEqual(value['objectives'][0]['sources'], [refs[i] for i in raw['objectives'][0]['sources']])
 		self.assertEqual(value['status'], 'ready')
 		self.assertIsNone(value['points'][0]['parent_id'])
 		self.assertIsNone(value['points'][1]['example'])
 		self.assertEqual(K.problems(value, MATERIAL), [])
+
+	def test_non_excerpt_id_sources_are_rejected(self):
+		calls = []
+		def complete(system, user, schema):
+			calls.append(1)
+			output = model_output()
+			output['points'][0]['sources'] = ['的']
+			return output, {}
+		with self.assertRaises(K.KeyPointsError) as caught:
+			K.build_key_points(MATERIAL, complete, source_kinds=['md'])
+		self.assertEqual(len(calls), K.MAX_ATTEMPTS)
+		self.assertTrue(any('片段代號' in item for item in caught.exception.problems))
 
 	def test_inferred_material_starts_as_needs_review(self):
 		value = K.build_key_points(MATERIAL, lambda *_: (model_output(), {}), source_kinds=['pdf'])
@@ -104,8 +111,14 @@ class TestBuildKeyPoints(unittest.TestCase):
 		self.assertEqual(seen, ['重點放在差一錯誤'])
 
 	def test_oversized_material_is_refused_before_calling_model(self):
-		with self.assertRaises(K.KeyPointsError):
-			K.build_key_points('字' * 30001, lambda *_: self.fail('不得呼叫模型'), source_kinds=['md'])
+		calls = []
+		def complete(system, user, schema):
+			calls.append(1)
+			return model_output(), {}
+		with self.assertRaises(K.KeyPointsError) as caught:
+			K.build_key_points('字' * 30001, complete, source_kinds=['md'])
+		self.assertEqual(calls, [])
+		self.assertTrue(any('30000' in item for item in caught.exception.problems))
 
 
 if __name__ == '__main__':
