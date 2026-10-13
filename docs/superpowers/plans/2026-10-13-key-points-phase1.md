@@ -736,9 +736,12 @@ git commit -m "feat(key-points): extract key points with excerpt ids and bounded
 	- `class KeyPointsPending(ValueError)`
 	- `get_key_points(directory, complete_json, *, configuration='default', require_ready=True) -> dict`
 	- `current(directory) -> dict | None`：已發佈、對應目前教材與目前重抽要求才回傳
-	- `confirm(directory, content_version) -> dict`
+	- `confirm(directory, digest) -> dict`：綁定畫面上看到的那一份清單，不是教材版本
 	- `request_reextract(directory, note: str) -> None`
-	- `summary(directory) -> dict`：`{'status': 'missing'|'ready'|'needs_review', 'structure', 'content_version', 'key_points'}`
+	- `summary(directory) -> dict`：`{'status': 'missing'|'ready'|'needs_review', 'structure', 'content_version', 'digest', 'key_points'}`
+	- `digest_of(value) -> str`：runner 把它寫進成品的 `source.json`（`key_points_digest`）
+	- `product_is_current(directory, relative) -> bool`：成品的 `key_points_digest` 等於目前清單才算完成
+	- 快取鍵與 `current()` 都包含來源的 `[id, kind]` 清單：正文相同但來源種類改變也要重抽
 
 - [ ] **Step 1: 寫失敗的測試**
 
@@ -787,13 +790,42 @@ class TestWorkbenchKeyPoints(unittest.TestCase):
 		with self.assertRaises(W.KeyPointsPending):
 			W.get_key_points(self.directory, self.complete)
 		self.assertEqual(W.summary(self.directory)['status'], 'needs_review')
-		version = W.current(self.directory)['content_version']
+		digest = W.summary(self.directory)['digest']
 		with self.assertRaises(ValueError):
 			W.confirm(self.directory, '0' * 64)
-		W.confirm(self.directory, version)
+		W.confirm(self.directory, digest)
 		value = W.get_key_points(self.directory, self.complete)
 		self.assertEqual(value['status'], 'ready')
 		self.assertEqual(len(self.calls), 1)
+
+	def test_stale_confirm_cannot_approve_a_reextracted_list(self):
+		# 同教材版本重抽後，舊畫面帶的 digest 不得批准新清單。
+		self.as_pdf()
+		W.get_key_points(self.directory, self.complete, require_ready=False)
+		stale = W.summary(self.directory)['digest']
+		W.request_reextract(self.directory, '')
+		W.get_key_points(self.directory, self.complete, require_ready=False)
+		with self.assertRaises(ValueError):
+			W.confirm(self.directory, stale)
+		self.assertEqual(W.summary(self.directory)['status'], 'needs_review')
+
+	def test_source_kind_change_invalidates_ready_cache(self):
+		# 同一份 Markdown 改掛成 PDF 來源，結構變成推論，不能沿用已就緒的快取。
+		W.get_key_points(self.directory, self.complete)
+		self.as_pdf()
+		self.assertIsNone(W.current(self.directory))
+		with self.assertRaises(W.KeyPointsPending):
+			W.get_key_points(self.directory, self.complete)
+		self.assertEqual(len(self.calls), 2)
+
+	def test_products_follow_the_current_list(self):
+		W.get_key_points(self.directory, self.complete)
+		digest = W.summary(self.directory)['digest']
+		write_json(self.directory / 'slides/source.json', {'key_points_digest': digest})
+		self.assertTrue(W.product_is_current(self.directory, 'slides/source.json'))
+		W.request_reextract(self.directory, '')
+		self.assertFalse(W.product_is_current(self.directory, 'slides/source.json'))
+		self.assertFalse(W.product_is_current(self.directory, 'mindmap/source.json'))
 
 	def test_reextract_invalidates_and_sends_note(self):
 		W.get_key_points(self.directory, self.complete)
@@ -880,9 +912,15 @@ def _request(directory):
 		'nonce': value.get('nonce') if isinstance(value.get('nonce'), str) else None}
 
 
+def _sources(data):
+	# 來源種類決定結構是教材寫的還是推論的；正文相同但來源變了也要重抽。
+	return sorted([source['id'], source['kind']] for source in data['sources'])
+
+
 def _cache_key(data, configuration, request):
-	return hashlib.sha256(json.dumps({'content_version': data['content_version'], 'configuration': configuration,
-		'system': SYSTEM, 'request': request}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+	return hashlib.sha256(json.dumps({'content_version': data['content_version'], 'sources': _sources(data),
+		'configuration': configuration, 'system': SYSTEM, 'request': request},
+		sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
 def _publish(directory, value, meta):
@@ -898,9 +936,24 @@ def current(directory):
 	value = read_json(safe_path(directory, 'key_points.json'))
 	meta = read_json(safe_path(directory, 'key_points.source.json'), {})
 	if (value is None or not isinstance(meta, dict) or meta.get('digest') != _digest(value)
-		or meta.get('request') != _request(directory) or value.get('content_version') != data['content_version']):
+		or meta.get('request') != _request(directory) or meta.get('sources') != _sources(data)
+		or value.get('content_version') != data['content_version']):
 		return None
 	return canonical_key_points(value, material)
+
+
+def digest_of(value):
+	return _digest(value)
+
+
+def product_is_current(directory, relative):
+	"""成品必須來自目前這份重點清單；重抽、改版或換來源後，舊成品不算完成。"""
+	try:
+		value = current(directory)
+		record = read_json(safe_path(Path(directory), relative), {})
+	except (ValueError, OSError):
+		return False
+	return value is not None and isinstance(record, dict) and record.get('key_points_digest') == _digest(value)
 
 
 def get_key_points(directory, complete_json, *, configuration='default', require_ready=True):
@@ -931,18 +984,20 @@ def get_key_points(directory, complete_json, *, configuration='default', require
 			_, latest = generation_material(directory)
 			if latest['content_version'] != data['content_version']:
 				raise KeyPointsError(['抽取期間教材版本已改變'])
-			_publish(directory, value, {**provenance(data), 'cache_key': key, 'request': request})
+			_publish(directory, value, {**provenance(data), 'cache_key': key, 'request': request,
+				'sources': _sources(data)})
 	if require_ready and value['status'] != 'ready':
 		raise KeyPointsPending('重點清單是 AI 推論的，請先在單元頁確認')
 	return value
 
 
-def confirm(directory, content_version):
+def confirm(directory, digest):
+	"""綁定畫面上看到的那一份清單（digest），不是教材版本；重抽後舊畫面不能批准新清單。"""
 	directory = Path(directory)
 	with safe_path(directory, '.key_points.lock').open('a') as lock:
 		fcntl.flock(lock, fcntl.LOCK_EX)
 		value = current(directory)
-		if value is None or value['content_version'] != content_version:
+		if value is None or _digest(value) != digest:
 			raise ValueError('重點清單已改變，請重新讀取')
 		if value['status'] != 'ready':
 			value['status'] = 'ready'
@@ -966,9 +1021,9 @@ def summary(directory):
 	except (ValueError, OSError):
 		value = None
 	if value is None:
-		return {'status': 'missing', 'structure': None, 'content_version': None, 'key_points': None}
+		return {'status': 'missing', 'structure': None, 'content_version': None, 'digest': None, 'key_points': None}
 	return {'status': value['status'], 'structure': value['structure'],
-		'content_version': value['content_version'], 'key_points': value}
+		'content_version': value['content_version'], 'digest': _digest(value), 'key_points': value}
 ```
 
 注意：`current()` 回傳的 `canonical_key_points` 不會改動檔案；`summary()` 吞掉 `ValueError` 是因為教材本身仍待核對時（`generation_material` 會拋錯），單元頁要顯示「尚未產生」，不是讓整頁失敗。
@@ -1569,15 +1624,15 @@ class TestKeyPointsRunners(unittest.TestCase):
 		self.calls += 1
 		return model_output(), {}
 
-	def run(self, module):
+	def run_runner(self, module):
 		output = StringIO()
 		with contextlib.redirect_stdout(output):
 			status = module.main([str(self.directory), '--quality', 'keypoints'], self.complete)
 		return status, [parse_marker(line) for line in output.getvalue().splitlines()]
 
 	def test_one_extraction_feeds_both_outputs(self):
-		self.assertEqual(self.run(run_slides)[0], 0)
-		self.assertEqual(self.run(run_mindmap)[0], 0)
+		self.assertEqual(self.run_runner(run_slides)[0], 0)
+		self.assertEqual(self.run_runner(run_mindmap)[0], 0)
 		self.assertEqual(self.calls, 1)
 		deck = read_json(self.directory / 'slides/deck.json')
 		self.assertEqual(deck['contract_version'], '1.3')
@@ -1588,7 +1643,7 @@ class TestKeyPointsRunners(unittest.TestCase):
 	def test_inferred_material_stops_at_review(self):
 		path = self.directory / 'material.json'
 		data = read_json(path); data['sources'][0]['kind'] = 'pdf'; write_json(path, data)
-		status, markers = self.run(run_slides)
+		status, markers = self.run_runner(run_slides)
 		self.assertEqual(status, 1)
 		self.assertIn('key_points_review', json.dumps(markers, ensure_ascii=False))
 		self.assertFalse((self.directory / 'slides/deck.pptx').exists())
@@ -1599,6 +1654,19 @@ class TestKeyPointsRunners(unittest.TestCase):
 		for module in (formats.slides, formats.mindmap):
 			argv = module.commands(view, module.FORMAT['id'])[0].argv
 			self.assertEqual(argv[argv.index('--quality') + 1], 'keypoints')
+
+	def test_reextract_makes_existing_products_not_done(self):
+		from workbench.key_points import request_reextract
+		self.assertEqual(self.run_runner(run_slides)[0], 0)
+		self.assertEqual(self.run_runner(run_mindmap)[0], 0)
+		view = UnitView('x', self.directory, None)
+		self.assertTrue(formats.slides.is_done(view, 'slides'))
+		self.assertTrue(formats.mindmap.is_done(view, 'mindmap'))
+		record = read_json(self.directory / 'slides/source.json')
+		self.assertEqual(len(record['key_points_digest']), 64)
+		request_reextract(self.directory, '')
+		self.assertFalse(formats.slides.is_done(view, 'slides'))
+		self.assertFalse(formats.mindmap.is_done(view, 'mindmap'))
 
 
 if __name__ == '__main__':
@@ -1667,15 +1735,32 @@ from workbench._runner import arguments, captured, failure, guard_budget, marker
 改成
 
 ```python
+		record=provenance(source_data)
 		if args.quality=='keypoints':
 			from studio.handout import build_handout
 			from studio.key_points import KeyPointsError
+			from workbench.key_points import digest_of
 			try:
-				deck=build_handout(key_points(directory,ledger,args.budget_usd,complete_json),material)
+				points=key_points(directory,ledger,args.budget_usd,complete_json)
+				deck=build_handout(points,material)
 			except KeyPointsError as exc:
 				raise DeckError(str(exc)) from exc
+			# 記下成品來自哪一份清單；重抽後 is_done 才會判定舊成品過期。
+			record['key_points_digest']=digest_of(points)
 			marker('step','validate')
 		elif args.quality=='professional':
+```
+
+並把發佈那一行的
+
+```python
+			'slides/deck.pptx':pptx,'slides/source.json':json.dumps(provenance(source_data),ensure_ascii=False).encode()})
+```
+
+改成
+
+```python
+			'slides/deck.pptx':pptx,'slides/source.json':json.dumps(record,ensure_ascii=False).encode()})
 ```
 
 - [ ] **Step 5: 修改 `workbench/run_mindmap.py`**
@@ -1695,15 +1780,31 @@ from workbench._runner import arguments, captured, failure, guard_budget, marker
 改成
 
 ```python
+		record=provenance(source_data)
 		if args.quality=='keypoints':
 			from studio.concept_tree import build_concept_tree
 			from studio.key_points import KeyPointsError
+			from workbench.key_points import digest_of
 			try:
-				mindmap=build_concept_tree(key_points(directory,ledger,args.budget_usd,complete_json),material)
+				points=key_points(directory,ledger,args.budget_usd,complete_json)
+				mindmap=build_concept_tree(points,material)
 			except KeyPointsError as exc:
 				raise MindmapError(str(exc)) from exc
+			record['key_points_digest']=digest_of(points)
 			marker('step','validate')
 		elif args.quality=='professional':
+```
+
+並把發佈那一行的
+
+```python
+			'mindmap/mindmap.svg':svg,'mindmap/source.json':json.dumps(provenance(source_data),ensure_ascii=False).encode()})
+```
+
+改成
+
+```python
+			'mindmap/mindmap.svg':svg,'mindmap/source.json':json.dumps(record,ensure_ascii=False).encode()})
 ```
 
 - [ ] **Step 6: 格式預設改 keypoints**
@@ -1741,10 +1842,41 @@ from workbench._runner import arguments, captured, failure, guard_budget, marker
 
 `workbench/formats/mindmap.py`：`commands()` 中的 `"--quality", "professional"` 改成 `"--quality", "keypoints"`；`steps` 中 `generate` 與 `validate` 的 `name`／`detail` 改成與上面相同的兩段（`重點清單抽取`、`重點清單檢查`），最後一步保留原 id 與 name，只把 `detail` 改成 `"節點只放短詞，點開看說明與出處，並連回講義頁；這一步不再呼叫模型。"`。
 
+兩個格式的 `is_done` 也要改，讓重抽、改版或換來源後的舊成品不算完成（否則 `enqueue_generate` 會把它當成已完成而略過）。
+
+`workbench/formats/slides.py`：
+
+```python
+def is_done(unit: UnitView, item: str) -> bool:
+	from workbench.key_points import product_is_current
+	return _nonempty(unit.dir / "slides/deck.pptx") and product_is_current(unit.dir, "slides/source.json")
+```
+
+`workbench/formats/mindmap.py`：
+
+```python
+def is_done(unit: UnitView, item: str) -> bool:
+	from workbench.key_points import product_is_current
+	return _nonempty(unit.dir / "mindmap/mindmap.svg") and product_is_current(unit.dir, "mindmap/source.json")
+```
+
+技術決定（已定案）：舊的 `professional` 模式產出的簡報與心智圖沒有 `key_points_digest`，改版後會顯示為「未完成」，可以重新製作。目前正式單元只有 q4 做過影片，沒有簡報或心智圖成品，所以不影響現有資料。
+
 - [ ] **Step 7: 更新既有格式測試**
 
 Run: `rtk proxy grep -n "professional" tests/test_workbench_formats.py`
 把其中屬於 slides／mindmap 指令的 `"professional"` 改成 `"keypoints"`。若有斷言步驟名稱或說明文字，改成 Step 6 的新文字。
+
+`tests/test_workbench_formats.py` 約第 280–301 行的迴圈，會對四種格式寫入非空檔案後斷言 `is_done` 為真。slides／mindmap 現在還要求成品來自目前的重點清單，而這個測試沒有清單，所以把最後一個斷言改成依格式區分：
+
+```python
+				path.write_bytes(b"product")
+				self.assertEqual(module.outputs(self.unit, item), files)
+				# 簡報與心智圖還要求成品來自目前的重點清單；正向情況由 test_key_points_runners 驗證。
+				self.assertEqual(module.is_done(self.unit, item), fid in ("video", "highlight"))
+```
+
+不要為了讓測試通過而放寬 `is_done`。
 
 - [ ] **Step 8: 跑測試確認通過**
 
@@ -1770,7 +1902,7 @@ git commit -m "feat(workbench): build slides and mindmaps from key points by def
 - Consumes: `summary`、`confirm`、`request_reextract`（Task 3）
 - Produces:
 	- `GET /api/v1/units/{uid}/key-points` → `summary()` 的結果（多一個 `unit_id`）
-	- `POST /api/v1/units/{uid}/key-points`，body `{"action": "confirm", "content_version": "..."}` 或 `{"action": "reextract", "note": "..."}`
+	- `POST /api/v1/units/{uid}/key-points`，body `{"action": "confirm", "digest": "..."}` 或 `{"action": "reextract", "note": "..."}`
 	- `enqueue_generate` 要求 slides／mindmap 而重點清單是 `needs_review` 時回 409，code `key_points_review`
 
 - [ ] **Step 1: 寫失敗的測試**
@@ -1815,11 +1947,11 @@ class TestKeyPointsServer(unittest.TestCase):
 
 	def test_confirm_and_reextract(self):
 		self.extract('pdf')
-		version = self.studio.get_key_points(self.uid)['content_version']
+		digest = self.studio.get_key_points(self.uid)['digest']
 		with self.assertRaises(BS.APIError) as caught:
-			self.studio.review_key_points(self.uid, {'action': 'confirm', 'content_version': '0' * 64})
+			self.studio.review_key_points(self.uid, {'action': 'confirm', 'digest': '0' * 64})
 		self.assertEqual(caught.exception.status, 409)
-		self.assertEqual(self.studio.review_key_points(self.uid, {'action': 'confirm', 'content_version': version})['status'], 'ready')
+		self.assertEqual(self.studio.review_key_points(self.uid, {'action': 'confirm', 'digest': digest})['status'], 'ready')
 		self.assertEqual(self.studio.review_key_points(self.uid, {'action': 'reextract', 'note': '重點放在差一錯誤'})['status'], 'missing')
 		with self.assertRaises(BS.APIError) as caught:
 			self.studio.review_key_points(self.uid, {'action': 'delete'})
@@ -1862,7 +1994,7 @@ Expected: FAIL，`AttributeError: 'Studio' object has no attribute 'get_key_poin
 			directory = self._unit_dir(identifier)
 			if action == "confirm":
 				try:
-					confirm(directory, payload.get("content_version"))
+					confirm(directory, payload.get("digest"))
 				except (ValueError, OSError, TypeError) as exc:
 					raise APIError(409, "重點清單已改變，請重新讀取", code="key_points_version") from exc
 			elif action == "reextract":
@@ -1974,10 +2106,10 @@ SVG <g data-node-id> may carry data-handout-page="N". For version "1.2":
 
 ## 3. Key-point review banner (make-generate.mjs + api.mjs)
 API:
-- GET /api/v1/units/{uid}/key-points → {unit_id, status:"missing"|"ready"|"needs_review", structure:"material"|"inferred"|null, content_version, key_points}
-- POST same path with {action:"confirm", content_version} or {action:"reextract", note} → same shape as GET.
+- GET /api/v1/units/{uid}/key-points → {unit_id, status:"missing"|"ready"|"needs_review", structure:"material"|"inferred"|null, content_version, digest, key_points}
+- POST same path with {action:"confirm", digest} or {action:"reextract", note} → same shape as GET.
 - POST /api/v1/units/{uid}/generate with slides/mindmap returns 409 code "key_points_review" while status is needs_review.
-When status == "needs_review", show at the top of the generate step a banner: 「這份教材的學習目標是 AI 推論的，請確認」. Expandable table: objectives (each marked 「推論」 when inferred is true) and, per point: title, question, objectives ids (「補充」 when empty), type. Two actions: 「確認」 (POST confirm with the content_version from GET) and 「重新抽取」 with an optional single-line note input (max 200 chars). While needs_review, the slides and mindmap generate options are disabled with the reason shown. After either action, re-fetch and re-render.
+When status == "needs_review", show at the top of the generate step a banner: 「這份教材的學習目標是 AI 推論的，請確認」. Expandable table: objectives (each marked 「推論」 when inferred is true) and, per point: title, question, objectives ids (「補充」 when empty), type. Two actions: 「確認」 (POST confirm with the `digest` from GET — it identifies the exact list the user is looking at) and 「重新抽取」 with an optional single-line note input (max 200 chars). While needs_review, the slides and mindmap generate options are disabled with the reason shown. After either action, re-fetch and re-render.
 
 ## Acceptance (write these as node tests)
 handout.test.mjs:
@@ -1986,7 +2118,7 @@ handout.test.mjs:
 - deck text containing "<script>" appears as literal text, no element created.
 - an existing 1.2 deck still renders exactly as before (reuse an existing fixture).
 key-points-review.test.mjs:
-- needs_review → banner visible, confirm posts {action:"confirm", content_version} exactly, slides/mindmap options disabled.
+- needs_review → banner visible, confirm posts {action:"confirm", digest} exactly, slides/mindmap options disabled.
 - ready or missing → no banner.
 - reextract posts the trimmed note; a note over 200 chars is blocked client-side.
 concept-tree.test.mjs additions:
