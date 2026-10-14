@@ -1,0 +1,109 @@
+{
+	"type": "window",
+	"title": "系統內容",
+	"tabs": [
+		{
+			"id": "t_name",
+			"text": "電腦名稱"
+		},
+		{
+			"id": "t_hw",
+			"text": "硬體"
+		},
+		{
+			"id": "t_adv",
+			"text": "進階",
+			"active": true
+		},
+		{
+			"id": "t_prot",
+			"text": "系統保護"
+		},
+		{
+			"id": "t_remote",
+			"text": "遠端"
+		}
+	],
+	"body": [
+		{
+			"group": {
+				"title": "效能",
+				"body": [
+					{
+						"buttons": {
+							"items": [
+								{
+									"id": "perf",
+									"text": "設定(S)..."
+								}
+							],
+							"align": "right"
+						}
+					}
+				]
+			}
+		},
+		{
+			"group": {
+				"title": "使用者設定檔",
+				"body": [
+					{
+						"buttons": {
+							"items": [
+								{
+									"id": "profile",
+									"text": "設定(E)..."
+								}
+							],
+							"align": "right"
+						}
+					}
+				]
+			}
+		},
+		{
+			"group": {
+				"title": "啟動及修復",
+				"body": [
+					{
+						"buttons": {
+							"items": [
+								{
+									"id": "startup",
+									"text": "設定(T)..."
+								}
+							],
+							"align": "right"
+						}
+					}
+				]
+			}
+		},
+		{
+			"buttons": {
+				"items": [
+					{
+						"id": "envbtn",
+						"text": "環境變數(N)..."
+					}
+				],
+				"align": "right"
+			}
+		}
+	],
+	"footer": [
+		{
+			"id": "ok",
+			"text": "確定"
+		},
+		{
+			"id": "cancel",
+			"text": "取消"
+		},
+		{
+			"id": "apply",
+			"text": "套用(A)"
+		}
+	],
+	"_doc": "系統內容・進階分頁；以 Windows 11 繁中版真實截圖核對（docs/agy_results/2026-10-04-windows-path-ui-zh-tw.md）"
+}

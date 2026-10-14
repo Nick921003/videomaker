@@ -1,0 +1,122 @@
+{
+	"version": 1,
+	"title": "文字元件：full",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "note",
+			"type": "note",
+			"text": "先編譯，再執行",
+			"style": "accent"
+		},
+		{
+			"id": "result",
+			"type": "output"
+		}
+	],
+	"scenes": [
+		{
+			"id": "write",
+			"title": "寫出文字",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"note",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "先寫出提示，再顯示結果。",
+					"do": [
+						{
+							"act": "write",
+							"target": "note",
+							"cue": "寫出"
+						},
+						{
+							"act": "set",
+							"target": "result",
+							"cue": "結果",
+							"text": "7"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"note",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "note",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "note",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "note",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "note",
+							"cue": "箭頭",
+							"to": "result",
+							"label": "結果"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "note",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "note",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"note",
+				"result"
+			]
+		}
+	]
+}

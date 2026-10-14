@@ -1,0 +1,286 @@
+{
+	"stages": [
+		{
+			"id": "ingest",
+			"name": "教材整理",
+			"scope": "unit",
+			"status": "available",
+			"preview": "none",
+			"steps": [
+				{
+					"id": "extract",
+					"name": "本機抽取",
+					"model": "本機",
+					"paid": false,
+					"cost": "免費",
+					"detail": "讀取 PDF 或 PPTX 的文字；上限 5 MB、30 頁、6 萬字。"
+				},
+				{
+					"id": "normalize",
+					"name": "教材整理（確認後執行）",
+					"model": "google:gemini-3.8-flash",
+					"paid": true,
+					"cost": "依實際用量計費",
+					"detail": "修復換行、閱讀順序與辨識雜訊，逐頁核對引用並保留疑點。"
+				}
+			],
+			"planned_note": null
+		},
+		{
+			"id": "analysis",
+			"name": "教材分析",
+			"scope": "unit",
+			"status": "available",
+			"preview": "none",
+			"steps": [
+				{
+					"id": "selftest",
+					"name": "本機自我檢查",
+					"model": "本機",
+					"cost": "免費",
+					"detail": "每次規劃或分鏡呼叫前先做免費自檢；沿用既有快速模式，範例與測試分鏡必須通過量測閘，已知崩潰時間軸必須能執行。元件有問題就不呼叫模型；相關程式雜湊未變時沿用通過紀錄。規格要求的歷來分鏡全面檢查屬完整模式，現有 CLI 快速自檢會略過歷史輸出，亦未掃描工作室素材庫。",
+					"paid": false
+				},
+				{
+					"id": "plan",
+					"name": "教材整理（規劃）",
+					"model": "google:gemini-3.8-flash",
+					"cost": "約 US$0.015",
+					"detail": "整理學生會問的問題故事、建議秒數、詞彙表（含程式符號唸法）、必演畫面與推薦重點片。",
+					"paid": true
+				}
+			],
+			"planned_note": null
+		}
+	],
+	"formats": [
+		{
+			"id": "video",
+			"name": "教學影片",
+			"scope": "point",
+			"status": "available",
+			"preview": "video",
+			"steps": [
+				{
+					"id": "selftest",
+					"name": "本機自我檢查",
+					"model": "本機",
+					"cost": "免費",
+					"detail": "每次規劃或分鏡呼叫前先做免費自檢；沿用既有快速模式，範例與測試分鏡必須通過量測閘，已知崩潰時間軸必須能執行。元件有問題就不呼叫模型；相關程式雜湊未變時沿用通過紀錄。規格要求的歷來分鏡全面檢查屬完整模式，現有 CLI 快速自檢會略過歷史輸出，亦未掃描工作室素材庫。",
+					"paid": false
+				},
+				{
+					"id": "storyboard",
+					"name": "分鏡",
+					"model": "google:gemini-3.8-flash",
+					"cost": "每段約 US$0.02–0.04",
+					"detail": "只產生分鏡資料：元件、動作與旁白，不寫座標與秒數。工作室固定傳入此模型；整個單元預算上限 US$0.50。",
+					"paid": true
+				},
+				{
+					"id": "validate",
+					"name": "驗證閘",
+					"model": "本機",
+					"cost": "免費",
+					"detail": "檢查編譯、旁白的英文與程式符號、唸法撞名、標註數、必演畫面，以及越界、重疊、字級與決定性。",
+					"paid": false
+				},
+				{
+					"id": "repair",
+					"name": "修正",
+					"model": "google:gemini-3.8-flash",
+					"cost": "每次約 US$0.005–0.015",
+					"detail": "最多修正兩次；問題可定位時只重寫出問題的場景，無法定位時修正完整分鏡。費用納入同一單元預算。",
+					"paid": true
+				},
+				{
+					"id": "narrate",
+					"name": "配音",
+					"model": "google:gemini-3.8-flash-tts（Charon 聲音）",
+					"cost": "5 分鐘約 US$0.09",
+					"detail": "每句一次 Gemini TTS，台灣華語口音；英文（sum、printf、VS Code）照原文唸，程式符號（<=、-o）依詞彙表唸中文。faster-whisper 拼音級漏字與重複檢查，未通過就重配，最多三輪。可改回本機 GPT-SoVITS（免費，narrate.py --tts sovits）。",
+					"paid": true
+				},
+				{
+					"id": "render",
+					"name": "出片",
+					"model": "本機",
+					"cost": "免費",
+					"detail": "依配音實測時間編譯，建立 Canvas 播放器，通過 Playwright 量測檢查後截圖，使用 ffmpeg 編碼為影片。",
+					"paid": false
+				}
+			],
+			"planned_note": null
+		},
+		{
+			"id": "highlight",
+			"name": "重點片",
+			"scope": "unit",
+			"status": "available",
+			"preview": "video",
+			"steps": [
+				{
+					"id": "scenes",
+					"name": "補齊段落分鏡",
+					"model": "google:gemini-3.8-flash",
+					"cost": "每段約 US$0.02–0.04",
+					"detail": "補齊建議重點片中缺少的分鏡，已有分鏡直接沿用。",
+					"paid": true
+				},
+				{
+					"id": "compose",
+					"name": "串接重點片",
+					"model": "本機",
+					"paid": false,
+					"cost": "免費",
+					"detail": "把三至五段分鏡串起來；目錄過場由程式產生，不呼叫模型。"
+				},
+				{
+					"id": "narrate",
+					"name": "配音",
+					"model": "google:gemini-3.8-flash-tts（Charon 聲音）",
+					"cost": "5 分鐘約 US$0.09",
+					"detail": "每句一次 Gemini TTS，台灣華語口音；英文（sum、printf、VS Code）照原文唸，程式符號（<=、-o）依詞彙表唸中文。faster-whisper 拼音級漏字與重複檢查，未通過就重配，最多三輪。可改回本機 GPT-SoVITS（免費，narrate.py --tts sovits）。",
+					"paid": true
+				},
+				{
+					"id": "render",
+					"name": "出片",
+					"model": "本機",
+					"cost": "免費",
+					"detail": "依配音實測時間編譯，建立 Canvas 播放器，通過 Playwright 量測檢查後截圖，使用 ffmpeg 編碼為影片。",
+					"paid": false
+				}
+			],
+			"planned_note": null
+		},
+		{
+			"id": "mindmap",
+			"name": "概念心智圖",
+			"scope": "unit",
+			"status": "available",
+			"preview": "svg",
+			"steps": [
+				{
+					"id": "generate",
+					"name": "重點清單抽取",
+					"model": "google:gemini-3.8-flash",
+					"paid": true,
+					"cost": "試跑後填入",
+					"detail": "每份教材抽取一次重點清單（3–8 個重點），講義與心智圖共用；推論出的結構需先確認。"
+				},
+				{
+					"id": "validate",
+					"name": "重點清單檢查",
+					"model": "本機",
+					"paid": false,
+					"cost": "免費",
+					"detail": "學習目標都有涵蓋、出處逐字在教材裡、字數上限、不得有泛問。"
+				},
+				{
+					"id": "render",
+					"name": "繪製 SVG",
+					"model": "本機",
+					"paid": false,
+					"cost": "免費",
+					"detail": "節點只放短詞，點開看說明與出處，並連回講義頁；這一步不再呼叫模型。"
+				}
+			],
+			"planned_note": null
+		},
+		{
+			"id": "slides",
+			"name": "教學簡報",
+			"scope": "unit",
+			"status": "available",
+			"preview": "deck",
+			"steps": [
+				{
+					"id": "generate",
+					"name": "重點清單抽取",
+					"model": "google:gemini-3.8-flash",
+					"paid": true,
+					"cost": "試跑後填入",
+					"detail": "每份教材抽取一次重點清單（3–8 個重點），講義與心智圖共用；推論出的結構需先確認。"
+				},
+				{
+					"id": "validate",
+					"name": "重點清單檢查",
+					"model": "本機",
+					"paid": false,
+					"cost": "免費",
+					"detail": "學習目標都有涵蓋、出處逐字在教材裡、字數上限、不得有泛問。"
+				},
+				{
+					"id": "export",
+					"name": "轉成講義並匯出",
+					"model": "本機",
+					"paid": false,
+					"cost": "免費",
+					"detail": "一頁一個重點，匯出可編輯 PPTX；這一步不再呼叫模型。"
+				}
+			],
+			"planned_note": null
+		},
+		{
+			"id": "comic",
+			"name": "教學漫畫",
+			"scope": "unit",
+			"status": "planned",
+			"preview": "none",
+			"steps": [],
+			"planned_note": {
+				"order": 1,
+				"why": "先用對話與情境拆解學生常見的誤解，沿用分析出的問題。"
+			}
+		},
+		{
+			"id": "podcast",
+			"name": "師生 podcast",
+			"scope": "unit",
+			"status": "planned",
+			"preview": "none",
+			"steps": [],
+			"planned_note": {
+				"order": 2,
+				"why": "把學生提問與老師解釋串成可收聽的對話。"
+			}
+		},
+		{
+			"id": "interactive_text",
+			"name": "互動圖文",
+			"scope": "unit",
+			"status": "planned",
+			"preview": "none",
+			"steps": [],
+			"planned_note": {
+				"order": 3,
+				"why": "讓學生自己點選步驟，搭配圖文觀察狀態變化。"
+			}
+		},
+		{
+			"id": "worked_example",
+			"name": "引導式範例",
+			"scope": "unit",
+			"status": "planned",
+			"preview": "none",
+			"steps": [],
+			"planned_note": {
+				"order": 4,
+				"why": "逐步提示解題過程，再讓學生接手完成。"
+			}
+		},
+		{
+			"id": "quiz",
+			"name": "理解檢核",
+			"scope": "unit",
+			"status": "planned",
+			"preview": "none",
+			"steps": [],
+			"planned_note": {
+				"order": 5,
+				"why": "用短題確認理解，依錯誤回到對應的教材段落。"
+			}
+		}
+	]
+}

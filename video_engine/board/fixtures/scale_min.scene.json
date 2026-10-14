@@ -1,0 +1,24 @@
+{
+	"version": 1, "title": "數值標尺最少參數", "tag": "測試", "corner_note": "概念示意",
+	"objects": [
+		{"id": "s", "type": "scale", "min": 0, "max": 100,
+			"zones": [{"id": "range", "from": 0, "to": 100, "label": "範圍", "kind": "ok"}]}
+	],
+	"scenes": [
+		{"id": "basic", "title": "只有必要參數", "label": "最少參數", "layout": {"stack": ["s"]},
+			"beats": [
+				{"say": "先強調整個範圍，不指定其他參數。", "do": [{"act": "zone", "target": "s:range", "cue": "強調"}]},
+				{"say": "探針只給數值二十五，省略標籤與結果。", "do": [{"act": "probe", "target": "s", "value": 25, "cue": "探針"}]},
+				{"say": "圈住探針的具名錨點，再加一條底線。", "do": [
+					{"act": "circle", "target": "s:p0", "cue": "圈住"},
+					{"act": "underline", "target": "s:p0", "cue": "底線"}
+				]},
+				{"say": "標出七十五，再從探針畫箭頭到範圍。", "do": [
+					{"act": "mark", "target": "s", "value": 75, "label": "七十五", "cue": "標出"},
+					{"act": "arrow", "target": "s:p0", "to": "s:range", "cue": "箭頭"}
+				]}
+			]},
+		{"id": "clear", "title": "換場保留數線", "label": "淡出", "keep": ["s"], "layout": {"stack": ["s"]},
+			"beats": [{"say": "換場後只留下數線與原本的色帶。"}]}
+	]
+}

@@ -29,6 +29,21 @@ ALL = ["lesson", "slides", "actions", "validate", "storyboard", "synth", "timeli
 
 
 class TestJob(unittest.TestCase):
+	def test_usage_counts_all_attempts_without_changing_progress(self):
+		from video_engine.usage import normalize_usage
+		entry = normalize_usage('google','gemini-3.8-flash',{'in':10,'out':20,'thinking':3})
+		def runner(*_):
+			yield {'event':'stage_start','stage':'actions'}
+			yield {'event':'usage','stage':'actions','usage':entry}
+			yield {'event':'usage','stage':'actions','usage':entry}
+			yield {'event':'stage_end','stage':'actions'}
+		job = Job('/tmp/material.md','/tmp/out',60,runner)
+		job._pump('actions','actions')
+		self.assertEqual(job.usage.summary()['total_tokens'],66)
+		self.assertEqual(job.usage.summary()['call_count'],2)
+		self.assertEqual(job.stage,'actions')
+		self.assertEqual(job.pct,STAGE_WEIGHT['actions'])
+		self.assertEqual(len(job.events),2)
 	def test_權重總和是100(self):
 		self.assertEqual(sum(STAGE_WEIGHT.values()), 100)
 
@@ -133,6 +148,31 @@ class TestJob(unittest.TestCase):
 		# 這個呼叫不應該拋出例外
 		j2.resume()
 		self.assertEqual(j2.status, "done")
+
+
+	def test_completion_check_runs_before_done(self):
+		seen = []
+		j = Job("m.md", "/tmp/out", 110, fake_runner(ALL), completion_check=lambda job: seen.append(job.status) or None)
+		j.start()
+		j.approve([])
+		self.assertEqual(seen, ["running"])
+		self.assertEqual(j.status, "done")
+
+	def test_completion_check_failure_keeps_job_failed(self):
+		j = Job("m.md", "/tmp/out", 110, fake_runner(ALL), completion_check=lambda job: "影片檔案缺失")
+		j.start()
+		j.approve([])
+		self.assertEqual(j.status, "failed")
+		self.assertIn("影片檔案缺失", j.error)
+
+	def test_completion_check_exception_keeps_job_failed(self):
+		def fail(job):
+			raise OSError("檢查失敗")
+		j = Job("m.md", "/tmp/out", 110, fake_runner(ALL), completion_check=fail)
+		j.start()
+		j.approve([])
+		self.assertEqual(j.status, "failed")
+		self.assertIn("檢查失敗", j.error)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>同一堂課，讓不同效果接起來</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4ede2;color:#3b322a;font:16px system-ui,sans-serif}main{max-width:1280px;margin:auto;padding:30px 20px}h1{font-size:clamp(24px,4vw,36px);margin:0 0 10px}p{line-height:1.7;color:#796f62}.choices,.controls,.chapters{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}button,a{font:inherit}button{background:#fbf7f0;color:#3b322a;border:1px solid #c9a87c;border-radius:8px;padding:10px 16px;cursor:pointer}button[aria-pressed=true],#play{background:#19323b;color:#f3f7f4}.screen{position:relative;aspect-ratio:16/9;background:#fbf7f0;border-radius:12px;overflow:hidden;border:1px solid #dfd2bf}.screen iframe,.screen video{width:100%;height:100%;border:0;display:block}.screen video{display:none}.controls{align-items:center}input{flex:1;min-width:120px;accent-color:#b85c38}#clock{font-variant-numeric:tabular-nums}a{color:#3d6b7d}.chapters button{font-size:14px}#status{font-size:14px}#downloads{display:none}.note{border-top:1px solid #dfd2bf;margin-top:24px;padding-top:12px;font-size:14px}
+</style></head><body><main>
+<h1>同一堂課，讓不同效果接起來</h1><p>48 秒「一加到五」：暖色筆記 → 工程流程 → 次數圖表 → 紙面整理。先看共同主視覺，再切換對照；兩版教材與節奏相同。</p>
+<div class="choices"><button id="coherent" aria-pressed="true" disabled>共同主視覺（預設）</button><button id="switching" aria-pressed="false" disabled>整頁換色對照</button><button id="mp4" aria-pressed="false" disabled>播放成片 MP4</button></div>
+<div class="screen"><iframe id="preview" src="stage.html?v=2" title="迴圈動畫預覽"></iframe><video id="video" playsinline preload="metadata"></video></div>
+<div class="controls"><button id="play" disabled>播放</button><button id="restart" disabled>重播</button><input id="seek" type="range" min="0" max="47.9583333333" step="0.0416666667" value="0" aria-label="播放進度" disabled><span id="clock">0.0 / 48 秒</span></div>
+<div class="chapters" id="chapters"></div><p id="status" role="status">正在載入動畫與字型…</p>
+<p id="downloads"><a href="out/coherent.mp4" download>下載 1080p MP4</a> · <a href="out/coherent.srt" download>下載字幕 SRT</a></p>
+<p class="note">整頁換色對照是同內容的重建版本，供比較連貫性。全片只有動畫與字幕，無旁白。紙面收尾已改為局部折角揭露重點；適合度仍待看片確認。這是元件適配示範，尚未接入正式製片或 AI 自動選用。</p>
+</main><script type="module" src="review.mjs?v=2"></script></body></html>

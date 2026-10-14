@@ -1,0 +1,135 @@
+{
+	"contract_version": "1.1",
+	"title": "C 語言迴圈｜從看懂到避開錯誤",
+	"slides": [
+		{
+			"slide_id": "s1",
+			"role": "hook",
+			"title": "一到一百，如何不寫一百次加法？",
+			"layout": "concept",
+			"blocks": [
+				{
+					"type": "concept",
+					"center": "重複動作",
+					"items": [
+						{
+							"title": "起始",
+							"text": "先決定從哪個數開始"
+						},
+						{
+							"title": "繼續條件",
+							"text": "每輪先確認是否繼續"
+						},
+						{
+							"title": "更新",
+							"text": "改變變數，讓迴圈前進"
+						}
+					]
+				}
+			],
+			"takeaway": "理解這三件事，才能判斷迴圈會跑幾次、何時停止。",
+			"speaker_notes": "理解這三件事，才能判斷迴圈會跑幾次、何時停止。",
+			"source_quote": "迴圈說穿了只有三件事：從哪裡開始、什麼時候繼續、每一輪怎麼變。"
+		},
+		{
+			"slide_id": "s2",
+			"role": "concept",
+			"title": "條件說的是「繼續」，不是「停止」",
+			"layout": "compare",
+			"blocks": [
+				{
+					"type": "compare",
+					"left": {
+						"title": "累加一到五",
+						"items": [
+							"i 從 1 開始",
+							"i <= 5：第五次仍要執行",
+							"下一輪 i 是 6，条件不成立"
+						]
+					},
+					"right": {
+						"title": "長度五的陣列",
+						"items": [
+							"索引從 0 開始",
+							"合法索引是 0 到 4",
+							"使用 i < 5，避免越界"
+						]
+					}
+				}
+			],
+			"takeaway": "先看題目要包含哪些值，再決定用 < 或 <=。",
+			"speaker_notes": "先看題目要包含哪些值，再決定用 < 或 <=。",
+			"source_quote": "因為題目要從一加到五，五本身要算進去，所以條件寫成小於等於。"
+		},
+		{
+			"slide_id": "s3",
+			"role": "example",
+			"title": "走讀：每次更新 i，再檢查條件",
+			"layout": "code",
+			"blocks": [
+				{
+					"type": "code",
+					"language": "c",
+					"lines": [
+						"int n = 5, sum = 0;",
+						"for (int i = 1; i <= n; i++) {",
+						"    sum += i;",
+						"}"
+					]
+				}
+			],
+			"takeaway": "sum 先歸零；每輪累加當下的 i，更新後回到條件判斷。",
+			"speaker_notes": "sum 先歸零；每輪累加當下的 i，更新後回到條件判斷。",
+			"source_quote": "第四行的累加器一定要先設成零，不歸零的話裡面是垃圾值，加出來的東西沒有意義。"
+		},
+		{
+			"slide_id": "s4",
+			"role": "concept",
+			"title": "for 和 while：看結束時機怎麼決定",
+			"layout": "compare",
+			"blocks": [
+				{
+					"type": "compare",
+					"left": {
+						"title": "for：次數已知",
+						"items": [
+							"三要素集中在括號中",
+							"適合固定次數的重複",
+							"更新不容易漏寫"
+						]
+					},
+					"right": {
+						"title": "while：次數未知",
+						"items": [
+							"起始、條件、更新分開",
+							"例如讀到檔案結束",
+							"或等待使用者輸入零"
+						]
+					}
+				}
+			],
+			"takeaway": "選擇寫法的依據是重複次數與結束時機。",
+			"speaker_notes": "選擇寫法的依據是重複次數與結束時機。",
+			"source_quote": "for 把這三件事寫在同一行，一眼就看得完，適合次數已經知道的情況。"
+		},
+		{
+			"slide_id": "s5",
+			"role": "pitfall",
+			"title": "程式停不下來？先查有沒有更新",
+			"layout": "steps",
+			"blocks": [
+				{
+					"type": "steps",
+					"items": [
+						"找出條件使用的變數",
+						"檢查主體是否更新它",
+						"確認更新能讓條件變成不成立"
+					]
+				}
+			],
+			"takeaway": "語法正確不代表會停止；條件變數需要向結束狀態前進。",
+			"speaker_notes": "語法正確不代表會停止；條件變數需要向結束狀態前進。",
+			"source_quote": "用 while 的時候忘記在主體裡更新條件變數，條件就永遠成立，程式停不下來。"
+		}
+	]
+}

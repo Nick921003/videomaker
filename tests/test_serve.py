@@ -29,7 +29,7 @@ class TestServeHelpers(unittest.TestCase):
 	def test_副檔名白名單來自_ingest(self):
 		self.assertTrue(serve.allowed("a.md"))
 		self.assertTrue(serve.allowed("a.pptx"))
-		self.assertFalse(serve.allowed("a.pdf"))
+		self.assertTrue(serve.allowed("a.pdf"))
 		self.assertFalse(serve.allowed("a.md.exe"))
 
 	def test_檔名清理_去掉路徑元素(self):
@@ -241,7 +241,7 @@ class TestDrainBody(unittest.TestCase):
 		self.assertEqual(handler.responses[0][0], 409)
 		self.assertEqual(handler.rfile.read(), b"", "body 沒讀完的話，收尾關連線會送出 RST")
 
-	def test_檔案過大_413前body也要讀乾淨(self):
+	def test_檔案過大_413立即關閉且不讀body(self):
 		body = b"x" * 2000
 		handler = self._fake_handler(body)
 		old_job, old_ready, old_max = serve._job, serve.tts_ready, serve.MAX_UPLOAD
@@ -255,7 +255,8 @@ class TestDrainBody(unittest.TestCase):
 		handler._create()
 
 		self.assertEqual(handler.responses[0][0], 413)
-		self.assertEqual(handler.rfile.read(), b"", "body 沒讀完的話，收尾關連線會送出 RST")
+		self.assertTrue(handler.close_connection)
+		self.assertEqual(handler.rfile.read(), body, "大檔案須在讀取前立即拒絕")
 
 
 class TestParseRange(unittest.TestCase):

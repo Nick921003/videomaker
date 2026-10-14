@@ -1,0 +1,1227 @@
+{
+  "id": "paper",
+  "source_id": "v4-paper",
+  "duration": 15,
+  "fps": 24,
+  "frames": 360,
+  "exported": true,
+  "cold_and_reverse_seek": true,
+  "errors": [],
+  "text_measurements": [
+    {
+      "t": 0,
+      "text": "姓名與成績，描述的是同一位學生。",
+      "x": 608,
+      "y": 964,
+      "w": 704,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 0.5,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 0.666667,
+      "role": "content"
+    },
+    {
+      "t": 0.5,
+      "text": "姓名與成績，描述的是同一位學生。",
+      "x": 608,
+      "y": 964,
+      "w": 704,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 2.5,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 2.5,
+      "text": "name",
+      "x": 477.0625,
+      "y": 363,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 2.5,
+      "text": "Alice",
+      "x": 501.125,
+      "y": 425.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 2.5,
+      "text": "姓名與成績，描述的是同一位學生。",
+      "x": 608,
+      "y": 964,
+      "w": 704,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 3,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "name",
+      "x": 477.0625,
+      "y": 363,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "Alice",
+      "x": 501.125,
+      "y": 425.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "score",
+      "x": 1326.606201171875,
+      "y": 488.10955810546875,
+      "w": 106.78759765625,
+      "h": 7.488494873046875,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "95",
+      "x": 1361.435791015625,
+      "y": 495.0904541015625,
+      "w": 37.113525390625,
+      "h": 6.41668701171875,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "把兩個欄位放入同一個 Student 結構。",
+      "x": 582,
+      "y": 964,
+      "w": 756,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 5,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "name",
+      "x": 477.0625,
+      "y": 363,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "Alice",
+      "x": 501.125,
+      "y": 425.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "score",
+      "x": 1320.828125,
+      "y": 363,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "95",
+      "x": 1360.640625,
+      "y": 425.796875,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "把兩個欄位放入同一個 Student 結構。",
+      "x": 582,
+      "y": 964,
+      "w": 756,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 7,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "Student s",
+      "x": 324.2261962890625,
+      "y": 299.6106262207031,
+      "w": 256.36993408203125,
+      "h": 84.67626953125,
+      "font_px": 58,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "name",
+      "x": 477.0625,
+      "y": 363,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "Alice",
+      "x": 501.125,
+      "y": 425.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "score",
+      "x": 1320.828125,
+      "y": 363,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "95",
+      "x": 1360.640625,
+      "y": 425.796875,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "欄位跟著同一筆資料一起移動。",
+      "x": 652,
+      "y": 964,
+      "w": 616,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 8,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "Student s",
+      "x": 327,
+      "y": 302,
+      "w": 255,
+      "h": 84,
+      "font_px": 58,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "name",
+      "x": 565.9375,
+      "y": 433.359375,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "Alice",
+      "x": 590,
+      "y": 496.15625,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "score",
+      "x": 1292.78125,
+      "y": 401.046875,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "95",
+      "x": 1332.59375,
+      "y": 463.84375,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "欄位跟著同一筆資料一起移動。",
+      "x": 652,
+      "y": 964,
+      "w": 616,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 11,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "Student s",
+      "x": 327,
+      "y": 302,
+      "w": 255,
+      "h": 84,
+      "font_px": 58,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "name",
+      "x": 597.0625,
+      "y": 458,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "Alice",
+      "x": 621.125,
+      "y": 520.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "score",
+      "x": 1250.828125,
+      "y": 458,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "95",
+      "x": 1290.640625,
+      "y": 520.796875,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "同一筆資料",
+      "x": 726,
+      "y": 748,
+      "w": 180,
+      "h": 52,
+      "font_px": 36,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "，欄位一起移動。",
+      "x": 906,
+      "y": 748,
+      "w": 288,
+      "h": 52,
+      "font_px": 36,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "用 s.name 和 s.score，存取同一位學生。",
+      "x": 556.5,
+      "y": 964,
+      "w": 807,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 14.9,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "Student s",
+      "x": 327,
+      "y": 302,
+      "w": 255,
+      "h": 84,
+      "font_px": 58,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "name",
+      "x": 597.0625,
+      "y": 458,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "Alice",
+      "x": 621.125,
+      "y": 520.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "score",
+      "x": 1250.828125,
+      "y": 458,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "95",
+      "x": 1290.640625,
+      "y": 520.796875,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "同一筆資料",
+      "x": 726,
+      "y": 748,
+      "w": 180,
+      "h": 52,
+      "font_px": 36,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "，欄位一起移動。",
+      "x": 906,
+      "y": 748,
+      "w": 288,
+      "h": 52,
+      "font_px": 36,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "用 s.name 和 s.score，存取同一位學生。",
+      "x": 556.5,
+      "y": 964,
+      "w": 807,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 14.9,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "Student s",
+      "x": 327,
+      "y": 302,
+      "w": 255,
+      "h": 84,
+      "font_px": 58,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "name",
+      "x": 597.0625,
+      "y": 458,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "Alice",
+      "x": 621.125,
+      "y": 520.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "score",
+      "x": 1250.828125,
+      "y": 458,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "95",
+      "x": 1290.640625,
+      "y": 520.796875,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "同一筆資料",
+      "x": 726,
+      "y": 748,
+      "w": 180,
+      "h": 52,
+      "font_px": 36,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "，欄位一起移動。",
+      "x": 906,
+      "y": 748,
+      "w": 288,
+      "h": 52,
+      "font_px": 36,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 14.9,
+      "text": "用 s.name 和 s.score，存取同一位學生。",
+      "x": 556.5,
+      "y": 964,
+      "w": 807,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 11,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "Student s",
+      "x": 327,
+      "y": 302,
+      "w": 255,
+      "h": 84,
+      "font_px": 58,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "name",
+      "x": 597.0625,
+      "y": 458,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "Alice",
+      "x": 621.125,
+      "y": 520.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "score",
+      "x": 1250.828125,
+      "y": 458,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "95",
+      "x": 1290.640625,
+      "y": 520.796875,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "同一筆資料",
+      "x": 726,
+      "y": 748,
+      "w": 180,
+      "h": 52,
+      "font_px": 36,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "，欄位一起移動。",
+      "x": 906,
+      "y": 748,
+      "w": 288,
+      "h": 52,
+      "font_px": 36,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 11,
+      "text": "用 s.name 和 s.score，存取同一位學生。",
+      "x": 556.5,
+      "y": 964,
+      "w": 807,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 8,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "Student s",
+      "x": 327,
+      "y": 302,
+      "w": 255,
+      "h": 84,
+      "font_px": 58,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "name",
+      "x": 565.9375,
+      "y": 433.359375,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "Alice",
+      "x": 590,
+      "y": 496.15625,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "score",
+      "x": 1292.78125,
+      "y": 401.046875,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "95",
+      "x": 1332.59375,
+      "y": 463.84375,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 8,
+      "text": "欄位跟著同一筆資料一起移動。",
+      "x": 652,
+      "y": 964,
+      "w": 616,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 7,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "Student s",
+      "x": 324.2261962890625,
+      "y": 299.6106262207031,
+      "w": 256.36993408203125,
+      "h": 84.67626953125,
+      "font_px": 58,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "name",
+      "x": 477.0625,
+      "y": 363,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "Alice",
+      "x": 501.125,
+      "y": 425.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "score",
+      "x": 1320.828125,
+      "y": 363,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "95",
+      "x": 1360.640625,
+      "y": 425.796875,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 7,
+      "text": "欄位跟著同一筆資料一起移動。",
+      "x": 652,
+      "y": 964,
+      "w": 616,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 5,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "name",
+      "x": 477.0625,
+      "y": 363,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "Alice",
+      "x": 501.125,
+      "y": 425.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "score",
+      "x": 1320.828125,
+      "y": 363,
+      "w": 118.34375,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "95",
+      "x": 1360.640625,
+      "y": 425.796875,
+      "w": 38.703125,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 5,
+      "text": "把兩個欄位放入同一個 Student 結構。",
+      "x": 582,
+      "y": 964,
+      "w": 756,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 3,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "name",
+      "x": 477.0625,
+      "y": 363,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "Alice",
+      "x": 501.125,
+      "y": 425.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "score",
+      "x": 1326.606201171875,
+      "y": 488.10955810546875,
+      "w": 106.78759765625,
+      "h": 7.488494873046875,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "95",
+      "x": 1361.435791015625,
+      "y": 495.0904541015625,
+      "w": 37.113525390625,
+      "h": 6.41668701171875,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 3,
+      "text": "把兩個欄位放入同一個 Student 結構。",
+      "x": 582,
+      "y": 964,
+      "w": 756,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 2.5,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 2.5,
+      "text": "name",
+      "x": 477.0625,
+      "y": 363,
+      "w": 125.875,
+      "h": 67,
+      "font_px": 46.8,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 2.5,
+      "text": "Alice",
+      "x": 501.125,
+      "y": 425.796875,
+      "w": 77.734375,
+      "h": 50,
+      "font_px": 34.4,
+      "alpha": 1,
+      "role": "content"
+    },
+    {
+      "t": 2.5,
+      "text": "姓名與成績，描述的是同一位學生。",
+      "x": 608,
+      "y": 964,
+      "w": 704,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 0.5,
+      "text": "把同一位學生的資料放在一起",
+      "x": 110,
+      "y": 90,
+      "w": 815.375,
+      "h": 92,
+      "font_px": 64,
+      "alpha": 0.666667,
+      "role": "content"
+    },
+    {
+      "t": 0.5,
+      "text": "姓名與成績，描述的是同一位學生。",
+      "x": 608,
+      "y": 964,
+      "w": 704,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    },
+    {
+      "t": 0,
+      "text": "姓名與成績，描述的是同一位學生。",
+      "x": 608,
+      "y": 964,
+      "w": 704,
+      "h": 64,
+      "font_px": 44,
+      "alpha": 1,
+      "role": "subtitle"
+    }
+  ],
+  "seek_pixel_differences": [
+    {
+      "t": 0,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 0.5,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 2.5,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 3,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 5,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 7,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 8,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 11,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 14.9,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 14.9,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 11,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 8,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 7,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 5,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 3,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 2.5,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 0.5,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "t": 0,
+      "changed_pixels": 0,
+      "max_channel_delta": 0
+    }
+  ],
+  "seconds": 43.97
+}

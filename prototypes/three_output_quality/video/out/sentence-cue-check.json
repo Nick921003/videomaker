@@ -1,0 +1,98 @@
+[
+	{
+		"sentence": 0,
+		"t0": 0.55,
+		"t1": 6.83,
+		"first_visible_frame": 0.5833333333333334,
+		"frame_quantization_ms": 33.33,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 1,
+		"t0": 7.58,
+		"t1": 13.02,
+		"first_visible_frame": 7.583333333333333,
+		"frame_quantization_ms": 3.33,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 2,
+		"t0": 14.37,
+		"t1": 19.53,
+		"first_visible_frame": 14.375,
+		"frame_quantization_ms": 5.0,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 3,
+		"t0": 20.28,
+		"t1": 22.84,
+		"first_visible_frame": 20.291666666666668,
+		"frame_quantization_ms": 11.67,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 4,
+		"t0": 23.59,
+		"t1": 28.63,
+		"first_visible_frame": 23.625,
+		"frame_quantization_ms": 35.0,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 5,
+		"t0": 29.98,
+		"t1": 34.72,
+		"first_visible_frame": 30.0,
+		"frame_quantization_ms": 20.0,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 6,
+		"t0": 35.47,
+		"t1": 39.79,
+		"first_visible_frame": 35.5,
+		"frame_quantization_ms": 30.0,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 7,
+		"t0": 40.54,
+		"t1": 47.28,
+		"first_visible_frame": 40.541666666666664,
+		"frame_quantization_ms": 1.67,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 8,
+		"t0": 48.03,
+		"t1": 52.07,
+		"first_visible_frame": 48.041666666666664,
+		"frame_quantization_ms": 11.67,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 9,
+		"t0": 53.42,
+		"t1": 59.2,
+		"first_visible_frame": 53.458333333333336,
+		"frame_quantization_ms": 38.33,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 10,
+		"t0": 59.95,
+		"t1": 63.99,
+		"first_visible_frame": 59.958333333333336,
+		"frame_quantization_ms": 8.33,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	},
+	{
+		"sentence": 11,
+		"t0": 64.74,
+		"t1": 68.46,
+		"first_visible_frame": 64.75,
+		"frame_quantization_ms": 10.0,
+		"method": "sample-rebuilt WAV placement + saved trim padding; not phoneme alignment"
+	}
+]

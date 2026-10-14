@@ -1,0 +1,64 @@
+{
+	"version": 1,
+	"title": "同一個 name[32]：容量 32，長度 5",
+	"tag": "C 字串",
+	"corner_note": "概念示意",
+	"objects": [
+		{"id": "question", "type": "note", "text": "32 格，為什麼長度是 5？", "style": "headline"},
+		{"id": "hint", "type": "note", "text": "容量 ≠ 長度", "style": "accent"},
+		{"id": "src", "type": "note", "text": "\"Alice\"", "style": "code"},
+		{"id": "name", "type": "cells", "count": 6, "label": "name：32 格空間", "tail": "其餘仍未知", "accent": ["\\0"]},
+		{"id": "code", "type": "code", "caption": "執行到這一行", "lines": ["printf(\"%s\", name);"], "footer": "印出字串"},
+		{"id": "out", "type": "output", "label": "輸出"},
+		{"id": "nums", "type": "metrics", "items": [
+			{"label": "容量", "value": "32", "note": "宣告的格數"},
+			{"label": "長度", "value": "5", "note": "結束字元之前"},
+			{"label": "至少需要", "value": "6", "note": "五個字母 + 結束字元"}
+		]}
+	],
+	"scenes": [
+		{"id": "hook", "title": "容量和長度，是兩回事", "label": "看見問題", "layout": {"stack": ["question", "hint"]}, "beats": [
+			{"say": "這個陣列有三十二格，為什麼字串長度卻只有五？", "do": [{"act": "write", "target": "question"}]},
+			{"say": "因為陣列的容量，和放進去的字串長度，是兩回事。", "do": [{"act": "write", "target": "hint", "cue": "容量"}]}
+		]},
+		{"id": "formation", "title": "結束字元，標記字串的終點", "label": "字串形成", "layout": {"stack": ["src", "name"]}, "beats": [
+			{"say": "把 Alice 放進去時，除了五個字母，還會一起放入一個結束字元。", "spoken": "把 Alice 放進去時，除了五個字母，還會一起放入一個結束字元。", "do": [
+				{"act": "show", "target": "src"},
+				{"act": "show", "target": "name", "with": "prev"},
+				{"act": "fill", "target": "name", "from": "src", "values": ["A", "l", "i", "c", "e", "\\0"], "cue": "五個字母"}
+			]},
+			{"say": "它就像句點，告訴程式：字串到這裡結束。", "do": [{"act": "circle", "target": "name:i5", "cue": "句點"}]}
+		]},
+		{"id": "read", "title": "從開頭讀，遇到結束字元就停", "label": "一路讀到終點", "keep": ["name"], "layout": {"row": ["code", {"stack": ["name", "out"]}]}, "beats": [
+			{"say": "輸出字串時，程式從開頭往後讀，", "do": [
+				{"act": "show", "target": "code"},
+				{"act": "show", "target": "out", "with": "prev"},
+				{"act": "point", "target": "name", "index": 0, "cue": "開頭"}
+			]},
+			{"say": "把讀到的字母接起來。", "do": [
+				{"act": "hide", "target": "code"},
+				{"act": "scan", "target": "name", "range": [0, 4], "to": "out", "with": "prev"}
+			]},
+			{"say": "遇到結束字元就停，", "do": [
+				{"act": "stop", "target": "name", "index": 5, "note": "到這裡就停"},
+				{"act": "focus", "target": "name:i5", "with": "prev"}
+			]},
+			{"say": "所以印出來的是 Alice，而不會把整個陣列都印出來。", "do": [
+				{"act": "wide"},
+				{"act": "underline", "target": "out:text", "cue": "Alice"}
+			]}
+		]},
+		{"id": "compare", "title": "長度不含結束字元，容量要留一格", "label": "比較兩個量", "keep": ["name"], "layout": {"stack": ["name", "nums"]}, "beats": [
+			{"say": "所以這裡的容量是三十二，字串長度是五。", "do": [
+				{"act": "reveal", "target": "nums", "index": 0, "cue": "容量"},
+				{"act": "brace", "target": "name", "range": [0, 4], "label": "長度 5", "cue": "字串長度"},
+				{"act": "reveal", "target": "nums", "index": 1, "with": "prev"}
+			]},
+			{"say": "結束字元不算在長度裡，但仍然占一格；", "do": [{"act": "circle", "target": "name:i5", "cue": "占一格"}]},
+			{"say": "要存五個字母，至少得準備六格。", "do": [
+				{"act": "brace", "target": "name", "range": [0, 5], "label": "至少 6 格", "cue": "至少"},
+				{"act": "reveal", "target": "nums", "index": 2, "with": "prev"}
+			]}
+		]}
+	]
+}

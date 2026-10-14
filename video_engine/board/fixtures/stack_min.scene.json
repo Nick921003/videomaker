@@ -1,0 +1,19 @@
+{
+	"version": 1, "title": "遞迴", "tag": "測試", "corner_note": "概念示意",
+	"objects": [
+		{"id": "s", "type": "stack", "frames": [
+			{"id": "f3", "name": "fib(3)", "vars": [{"id": "f3_n", "name": "n", "value": "3"}]},
+			{"id": "f2", "name": "fib(2)", "vars": [{"id": "f2_n", "name": "n", "value": "2"}]},
+			{"id": "f1", "name": "fib(1)", "vars": [{"id": "f1_n", "name": "n", "value": "1"}]}
+		]}
+	],
+	"scenes": [
+		{"id": "rec", "title": "一層一層疊上去", "label": "遞迴", "layout": {"stack": ["s"]},
+			"beats": [
+				{"say": "fib 三呼叫 fib 二，再呼叫 fib 一。", "do": [{"act": "push", "target": "s:f2", "cue": "fib 二"}, {"act": "push", "target": "s:f1", "cue": "fib 一"}]},
+				{"say": "fib 一直接回傳，框拿掉。", "do": [{"act": "pop", "target": "s:f1", "cue": "回傳"}]},
+				{"say": "fib 二也做完，回到 fib 三。", "do": [{"act": "pop", "target": "s:f2", "value": "1", "cue": "做完"}, {"act": "set", "target": "s:f3_n", "value": "3"}]},
+				{"say": "最後把目前的框圈起來。", "do": [{"act": "circle", "target": "s:top", "cue": "圈起來"}, {"act": "underline", "target": "s", "with": "prev"}]}
+			]}
+	]
+}

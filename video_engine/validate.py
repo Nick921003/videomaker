@@ -20,6 +20,20 @@ SPELL_OUT = {"AI", "API", "AST", "DKT", "GPU", "CPU", "IDE", "UI", "TTS", "LLM",
 CHARS_PER_SEC = 5.5   # 含換氣與段間停頓的實測值（525 字 → 95 秒）
 # 這些直接唸出來 TTS 會出事，講稿要用口語說法
 RAW_FUNCS = re.compile(r"\b(strcpy|strlen|strcmp|printf|scanf|malloc|free|sizeof|fopen|fclose)\b", re.I)
+MAINLAND_TERMS = {
+	"大坑": "地雷／陷阱",
+	"踩坑": "踩雷",
+	"避坑": "避開陷阱",
+	"走讀": "導讀／一行一行看",
+	"代碼": "程式碼",
+	"內存": "記憶體",
+	"數組": "陣列",
+	"指針": "指標",
+	"字符串": "字串",
+	"字符": "字元",
+	"默認": "預設",
+	"優化": "最佳化",
+}
 MAX_CAMERA = 2
 BLOCKING = {"speech", "pause"}
 # 節奏閘：一段語音配一個視覺重點。同時動太多處，觀眾來不及看，畫面就顯得吵
@@ -216,6 +230,9 @@ def check_slide(slide, idx, audience_level="general"):
 			warns.append(f"中英黏在一起「{g}」，建議加半形空格")
 		if len(t) > profile["speech_chars"]:
 			warns.append(f"單段講稿 {len(t)} 字偏長（{audience_level} 建議約 {profile['speech_chars']} 字內），建議拆開並插入視覺動作")
+		for term, repl in MAINLAND_TERMS.items():
+			if term in t:
+				warns.append(f"講稿出現非台灣慣用語「{term}」，建議改成「{repl}」")
 
 	beat_code, active_code = set(), set()
 	for a in acts:

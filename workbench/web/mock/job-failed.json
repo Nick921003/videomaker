@@ -1,0 +1,48 @@
+{
+	"job_id": "mock-q4-failed",
+	"unit_id": "ff9e559208c9",
+	"item": "q4",
+	"format": "video",
+	"state": "failed",
+	"steps": [
+		{
+			"id": "selftest",
+			"state": "done"
+		},
+		{
+			"id": "storyboard",
+			"state": "done"
+		},
+		{
+			"id": "validate",
+			"state": "done"
+		},
+		{
+			"id": "repair",
+			"state": "failed"
+		},
+		{
+			"id": "narrate",
+			"state": "pending"
+		},
+		{
+			"id": "render",
+			"state": "pending"
+		}
+	],
+	"current": "repair",
+	"log": [
+		"@step storyboard",
+		"@step validate",
+		"@step repair",
+		"@error gemini_busy 503 UNAVAILABLE"
+	],
+	"spent_usd": 0.035,
+	"error": {
+		"code": "gemini_busy",
+		"reason": "Gemini 暫時忙碌或連線中斷",
+		"advice": "等 1–2 分鐘再按「重試」",
+		"retry": true
+	},
+	"warnings": []
+}

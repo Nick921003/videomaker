@@ -1,0 +1,58 @@
+{
+	"version": 1, "title": "數值標尺邊界測試", "tag": "測試", "corner_note": "概念示意",
+	"objects": [
+		{"id": "s", "type": "scale", "min": 0, "max": 100, "title": "可接受的數值範圍", "unit": "分",
+			"ticks": [0, 20, 40, 60, 80, 100],
+			"zones": [
+				{"id": "ok", "from": 20, "to": 80, "label": "正常", "kind": "ok"},
+				{"id": "edge", "from": 0, "to": 20, "label": "邊界", "kind": "edge"},
+				{"id": "bad", "from": 80, "to": 100, "label": "異常", "kind": "bad"}
+			]}
+	],
+	"scenes": [
+		{"id": "bounds", "title": "先測兩端與正常值", "label": "邊界測試", "layout": {"stack": ["s"]},
+			"beats": [
+				{"say": "標尺從零到一百，先標出下限與上限。", "do": [
+					{"act": "show", "target": "s", "cue": "標尺"},
+					{"act": "mark", "target": "s", "value": 0, "label": "下限", "cue": "下限"},
+					{"act": "mark", "target": "s", "value": 100, "label": "上限", "cue": "上限"}
+				]},
+				{"say": "邊界包含零，零通過，圈出探針標籤。", "do": [
+					{"act": "zone", "target": "s:edge", "cue": "邊界"},
+					{"act": "probe", "target": "s", "value": 0, "label": "零", "result": "pass", "cue": "零通過"},
+					{"act": "circle", "target": "s:p0", "cue": "圈出"}
+				]},
+				{"say": "一百也通過，在探針標籤下畫底線。", "do": [
+					{"act": "probe", "target": "s", "value": 100, "label": "一百", "result": "pass", "cue": "一百"},
+					{"act": "underline", "target": "s:p1", "cue": "底線"}
+				]},
+				{"say": "正常區的五十通過，箭頭連起兩個探針。", "do": [
+					{"act": "zone", "target": "s:ok", "cue": "正常區"},
+					{"act": "probe", "target": "s", "value": 50, "label": "五十", "result": "pass", "cue": "五十"},
+					{"act": "arrow", "target": "s:p0", "to": "s:p2", "label": "比較", "cue": "箭頭"}
+				]}
+			]},
+		{"id": "outside", "title": "異常與超出範圍", "label": "越界", "keep": ["s"], "layout": {"stack": ["s"]},
+			"beats": [
+				{"say": "異常區的九十五失敗，標籤留在標尺上。", "do": [
+					{"act": "zone", "target": "s:bad", "cue": "異常區"},
+					{"act": "probe", "target": "s", "value": 95, "label": "九十五", "result": "fail", "cue": "九十五"}
+				]},
+				{"say": "負十失敗，探針夾在左端並加省略號。", "do": [
+					{"act": "probe", "target": "s", "value": -10, "label": "負十", "result": "fail", "cue": "負十"}
+				]},
+				{"say": "一百一十失敗，探針夾在右端。", "do": [
+					{"act": "probe", "target": "s", "value": 110, "label": "一百一十", "result": "fail", "cue": "一百一十"}
+				]},
+				{"say": "一百零一也失敗，越界刻度同樣夾住。", "do": [
+					{"act": "probe", "target": "s", "value": 101, "label": "一百零一", "result": "fail", "cue": "一百零一"},
+					{"act": "mark", "target": "s", "value": -20, "label": "低於下限", "cue": "越界刻度"},
+					{"act": "mark", "target": "s", "value": 120, "label": "高於上限"}
+				]}
+			]},
+		{"id": "clear", "title": "換場清除標記", "label": "保留標尺", "keep": ["s"], "layout": {"stack": ["s"]},
+			"beats": [
+				{"say": "換場後探針與刻度淡出，原本色帶仍保留。"}
+			]}
+	]
+}

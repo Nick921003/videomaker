@@ -1,0 +1,82 @@
+[
+  {
+    "viewport": [
+      1350,
+      700
+    ],
+    "file": "lesson.csv",
+    "preview": true,
+    "paid_requests": 0,
+    "errors": []
+  },
+  {
+    "viewport": [
+      1350,
+      700
+    ],
+    "file": "lesson.docx",
+    "preview": true,
+    "paid_requests": 0,
+    "errors": []
+  },
+  {
+    "viewport": [
+      1350,
+      700
+    ],
+    "file": "lesson.xlsx",
+    "preview": true,
+    "paid_requests": 0,
+    "errors": []
+  },
+  {
+    "viewport": [
+      1350,
+      700
+    ],
+    "file": "lesson.png",
+    "preview": true,
+    "paid_requests": 0,
+    "errors": []
+  },
+  {
+    "viewport": [
+      375,
+      900
+    ],
+    "file": "lesson.csv",
+    "preview": true,
+    "paid_requests": 0,
+    "errors": []
+  },
+  {
+    "viewport": [
+      375,
+      900
+    ],
+    "file": "lesson.docx",
+    "preview": true,
+    "paid_requests": 0,
+    "errors": []
+  },
+  {
+    "viewport": [
+      375,
+      900
+    ],
+    "file": "lesson.xlsx",
+    "preview": true,
+    "paid_requests": 0,
+    "errors": []
+  },
+  {
+    "viewport": [
+      375,
+      900
+    ],
+    "file": "lesson.png",
+    "preview": true,
+    "paid_requests": 0,
+    "errors": []
+  }
+]

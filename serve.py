@@ -7,14 +7,20 @@
 用法：.venv/bin/python serve.py [埠號，預設 8899]
 """
 import collections
+import hmac
 import json
+import logging
 import os
+import re
+import secrets
 import shutil
 import subprocess
 import sys
 import threading
 import time
 import urllib.request
+import uuid
+from urllib.parse import unquote, urlsplit
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "video_engine"))
@@ -23,6 +29,19 @@ from ingest import SUPPORTED
 from jobstate import REVIEW_SEC, Job
 from run import next_free, resolve_material
 from script_gate import read_segments, revalidate, write_segments
+from studio.catalog import public_catalog
+from studio.contracts import ContractError, normalize_plan_request
+from studio.planner import plan_request
+from studio.planner_backends import PlannerBackendError, RulePlannerBackend, PaperTestPlannerBackend
+from studio.plans import PlanStore
+from studio.sources import SourceError, SourceStore
+from studio.execution import ExecutionSlot
+from studio.deck_facade import DeckJobFacade
+from studio.mindmap_facade import MindmapJobFacade
+from studio.paper_video import PaperVideoJob
+from studio.paper_video_facade import PaperVideoJobFacade
+from video_engine.llm import complete_json
+from studio.video_facade import FacadeError, VideoJobFacade, cleanup_studio_outputs
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = os.path.join(HERE, ".venv/bin/python")
@@ -30,13 +49,51 @@ RUN = os.path.join(HERE, "video_engine/run.py")
 MATERIALS = os.path.join(HERE, "video_engine/materials")
 OUT = os.path.join(HERE, "video_engine/out")
 WEB = os.path.join(HERE, "web")
+STATIC_ASSETS = {
+	"/assets/styles.css": (os.path.join(WEB, "styles.css"), "text/css; charset=utf-8"),
+	"/assets/js/api.mjs": (os.path.join(WEB, "js/api.mjs"), "text/javascript; charset=utf-8"),
+	"/assets/js/state.mjs": (os.path.join(WEB, "js/state.mjs"), "text/javascript; charset=utf-8"),
+	"/assets/js/render.mjs": (os.path.join(WEB, "js/render.mjs"), "text/javascript; charset=utf-8"),
+	"/assets/js/app.mjs": (os.path.join(WEB, "js/app.mjs"), "text/javascript; charset=utf-8"),
+}
 MAX_UPLOAD = 5 * 1024 * 1024
+MAX_JSON = 1024 * 1024
+_CSRF_TOKEN = secrets.token_urlsafe(32)
+_source_store = None
+_plan_store = PlanStore()
+_execution_slot = ExecutionSlot()
+_studio_jobs = {}
+_studio_lock = threading.RLock()
 CHUNK = 256 * 1024
 TTS_URL = os.environ.get("TTS_API_URL", "http://127.0.0.1:9880")
 
 _lock = threading.Lock()
 _job = None          # 同時只有一個
 _job_id = 0
+
+
+class RequestBodyError(ValueError):
+	def __init__(self, status, code, safe_message, close=False):
+		super().__init__(safe_message)
+		self.status = status
+		self.code = code
+		self.safe_message = safe_message
+		self.close = close
+
+
+def read_request_body(rfile, headers, max_bytes):
+	value = headers.get("Content-Length")
+	if value is None:
+		raise RequestBodyError(411, "length_required", "請提供 Content-Length", True)
+	if not re.fullmatch(r"[0-9]+", value):
+		raise RequestBodyError(400, "invalid_length", "Content-Length 不正確", True)
+	length = int(value)
+	if length > max_bytes:
+		raise RequestBodyError(413, "body_too_large", "上傳內容超過大小上限", True)
+	body = rfile.read(length)
+	if len(body) != length:
+		raise RequestBodyError(400, "short_body", "請求內容不完整", True)
+	return body
 
 
 class BadRange(Exception):
@@ -101,6 +158,11 @@ def _guard(job, fn, *args):
 	except Exception as e:
 		job.status = "failed"
 		job.error = f"{type(e).__name__}: {e}"
+	finally:
+		if job.status in ("done", "failed"):
+			owner = getattr(job, "execution_owner", None)
+			if owner:
+				_execution_slot.release(owner)
 
 
 _children = set()
@@ -154,6 +216,21 @@ def shutdown(srv):
 	還在寫檔案，而操作者以為已經停了。
 	"""
 	n = kill_children()
+	with _studio_lock:
+		facades = list(_studio_jobs.values())
+		_studio_jobs.clear()
+	for facade in facades:
+		facade.close()
+	active = [facade for facade in facades if
+		getattr(getattr(facade, 'job', None), 'worker_done', None) is not None and
+		not facade.job.worker_done.is_set()]
+	if _source_store is not None:
+		if active:
+			_source_store.close(preserve_paths=[facade.snapshot_path for facade in active])
+		else:
+			_source_store.close()
+	cleanup_studio_outputs(os.path.join(HERE, "video_engine/examples"), OUT,
+		preserve_dirs=[facade.reserved_dir for facade in active])
 	srv.server_close()
 	return n
 
@@ -211,18 +288,67 @@ class Handler(BaseHTTPRequestHandler):
 		self.send_response(code)
 		self.send_header("Content-Type", ctype)
 		self.send_header("Content-Length", str(len(body)))
+		if self.close_connection:
+			self.send_header("Connection", "close")
 		self.end_headers()
 		self.wfile.write(body)
 
 	def _json(self, code, obj):
 		self._send(code, json.dumps(obj, ensure_ascii=False).encode("utf-8"))
 
+	def _read_body(self, max_bytes):
+		try:
+			if hasattr(self, "connection"):
+				self.connection.settimeout(5)
+			return read_request_body(self.rfile, self.headers, max_bytes)
+		except RequestBodyError as exc:
+			if exc.close:
+				self.close_connection = True
+			self._json(exc.status, {"error": exc.safe_message, "code": exc.code})
+			return None
+		except OSError:
+			self.close_connection = True
+			self._json(400, {"error": "請求內容不完整", "code": "short_body"})
+			return None
+
+	def _csrf_ok(self):
+		token = self.headers.get("X-Studio-CSRF", "")
+		if not hmac.compare_digest(token, _CSRF_TOKEN):
+			return False
+		origin = self.headers.get("Origin")
+		if origin:
+			try:
+				parsed = urlsplit(origin)
+				if parsed.scheme not in ("http", "https") or parsed.hostname not in ("localhost", "127.0.0.1", "::1"):
+					return False
+				host = self.headers.get("Host", "")
+				if parsed.netloc != host:
+					return False
+			except ValueError:
+				return False
+		return True
+
 	def do_GET(self):
 		path, _, query = self.path.partition("?")
-		if path == "/":
-			with open(os.path.join(WEB, "index.html"), "rb") as f:
-				html = f.read()
-			return self._send(200, html, "text/html; charset=utf-8")
+		if path == "/api/studio/session":
+			return self._json(200, {"csrf_token": _CSRF_TOKEN,
+				"planner_modes": [{"id": "rule", "available": True, "cost_tier": "free"}]})
+		if path == "/api/studio/catalog":
+			if query not in ('', 'experiments=paper'):
+				return self._json(400, {"error":"試驗選項不正確", "code":"invalid_experiment"})
+			return self._json(200, {"capabilities": public_catalog(query == 'experiments=paper')})
+		if path.startswith("/api/studio/jobs/"):
+			return self._studio_get(path, query)
+		if path.startswith("/api/studio/artifacts/"):
+			return self._studio_artifact_get(path, query)
+		if path in STATIC_ASSETS:
+			asset_path, mime = STATIC_ASSETS[path]
+			with open(asset_path, "rb") as handle:
+				return self._send(200, handle.read(), mime)
+		if path in ("/", "/legacy", "/paper-video-test"):
+			page = "paper-video-test.html" if path == "/paper-video-test" else "index.html" if path == "/" else "legacy.html"
+			with open(os.path.join(WEB, page), "rb") as handle:
+				return self._send(200, handle.read(), "text/html; charset=utf-8")
 		if path.endswith("/events"):
 			return self._events()
 		if path.endswith("/script"):
@@ -261,7 +387,7 @@ class Handler(BaseHTTPRequestHandler):
 		with open(png, "rb") as f:
 			return self._send(200, f.read(), "image/png")
 
-	def _video(self, path, as_download):
+	def _video(self, path, as_download, public_file_name=None):
 		"""帶 Range 的影片回應。
 
 		瀏覽器的 <video> 只要沒收到 Accept-Ranges: bytes 就直接停用拖曳進度條——
@@ -287,7 +413,7 @@ class Handler(BaseHTTPRequestHandler):
 		# inline 也要給 filename：<a download> 沒帶檔名時瀏覽器拿網址最後一段命名，
 		# 會存成沒有副檔名的 "video"
 		self.send_header("Content-Disposition",
-			f'{"attachment" if as_download else "inline"}; filename="{os.path.basename(path)}"')
+			f'{"attachment" if as_download else "inline"}; filename="{public_file_name or os.path.basename(path)}"')
 		self.end_headers()
 		remain = end - start + 1
 		try:
@@ -338,33 +464,374 @@ class Handler(BaseHTTPRequestHandler):
 		self.wfile.flush()
 
 	def do_POST(self):
-		global _job, _job_id
+		if not self._csrf_ok():
+			self.close_connection = True
+			return self._json(403, {"error": "請求驗證失敗", "code": "csrf_failed"})
 		if self.path == "/jobs":
 			return self._create()
+		if self.path == "/api/studio/sources":
+			return self._studio_upload()
+		if re.fullmatch(r"/api/studio/sources/material:[0-9a-f]{32}/normalize", unquote(self.path)):
+			return self._studio_normalize()
+		if self.path == "/api/studio/jobs":
+			return self._studio_create_job()
+		if self.path == "/api/studio/plans" or self.path.startswith("/api/studio/plans?"):
+			return self._studio_plan()
+		if self.path.startswith("/api/studio/jobs/") and self.path.endswith("/review"):
+			return self._studio_post_review()
+		if self.path.startswith("/api/studio/artifacts/") and self.path.endswith("/review"):
+			return self._studio_artifact_review()
 		if self.path.endswith("/approve"):
 			return self._approve()
 		self._json(404, {"error": "找不到"})
 
+	def do_DELETE(self):
+		if not self._csrf_ok():
+			self.close_connection = True
+			return self._json(403, {"error": "請求驗證失敗", "code": "csrf_failed"})
+		prefix = "/api/studio/sources/"
+		if self.path.startswith(prefix) and self.path != prefix:
+			ref = unquote(self.path[len(prefix):])
+			try:
+				_source_store.remove(ref)
+			except SourceError as exc:
+				return self._json(404, {"error": exc.safe_message, "code": exc.code})
+			return self._json(200, {"ok": True})
+		return self._json(404, {"error": "找不到"})
+
+	def _studio_create_job(self):
+		body = self._read_body(MAX_JSON)
+		if body is None:
+			return
+		try:
+			payload = json.loads(body)
+			if not isinstance(payload, dict) or set(payload) != {"plan_id"} or not isinstance(payload["plan_id"], str):
+				raise ValueError("plan id")
+		except (ValueError, TypeError, UnicodeError):
+			return self._json(400, {"error": "工作請求格式不正確", "code": "invalid_job_request"})
+		record = _plan_store.get(payload["plan_id"])
+		if record is None:
+			return self._json(404, {"error": "找不到執行計畫", "code": "plan_missing"})
+		if record.plan["status"] != "ready":
+			return self._json(409, {"error": "計畫尚未準備好", "code": "plan_not_ready"})
+		source = record.plan["source"]
+		try:
+			source_record = _source_store.resolve(source["ref"], source["revision"])
+		except SourceError as exc:
+			status = 404 if exc.code == "source_missing" else 409
+			return self._json(status, {"error": exc.safe_message, "code": exc.code})
+		capability_id = record.plan["steps"][0]["capability_id"]
+		if capability_id not in ("video.micro_lesson.v1", "slides.lesson_deck.v1", "mindmap.concept_overview.v1", "video.paper_preview.v1"):
+			return self._json(409, {"error": "這種教材產物尚未開放", "code": "capability_unavailable"})
+		if capability_id in ("video.micro_lesson.v1", "video.paper_preview.v1") and not tts_ready():
+			return self._json(503, {"error": "語音服務尚未啟動", "code": "tts_unavailable"})
+		job_id = uuid.uuid4().hex
+		owner = "studio:" + job_id
+		if not _execution_slot.claim(owner):
+			return self._json(409, {"error": "已有教材工作在執行", "code": "execution_busy"})
+		snapshot = None
+		try:
+			snapshot = _source_store.snapshot_for_job(source["ref"], source["revision"], job_id)
+			if capability_id == "video.paper_preview.v1":
+				sec = record.plan["steps"][0]["options"]["duration_seconds"]
+				job = PaperVideoJob(snapshot, OUT, sec,
+					lambda system, user, schema: complete_json(system,user,schema,stage="paper",effort="medium"),
+					instruction=record.instruction,
+					duration_range=record.plan["steps"][0]["options"].get("duration_range"))
+				facade = PaperVideoJobFacade(job,job_id,record.plan_id,source_record.public,
+					snapshot,_source_store,_execution_slot,owner)
+				job.completion_check = facade.completion_check
+			elif capability_id == "video.micro_lesson.v1":
+				options = record.plan["steps"][0]["options"]
+				sec = options["duration_seconds"]
+				layout = options["layout"]
+				job = Job(snapshot, OUT, sec, real_runner(snapshot, sec, layout))
+				facade = VideoJobFacade(job, job_id, record.plan_id, source_record.public,
+					snapshot, _source_store, _execution_slot, owner)
+				job.completion_check = facade.completion_check
+			elif capability_id == "slides.lesson_deck.v1":
+				facade = DeckJobFacade(job_id, record.plan_id, source_record.public,
+					snapshot, _source_store, _execution_slot, owner, record.instruction,
+					lambda system, user, schema: complete_json(system, user, schema, stage="deck"))
+			else:
+				facade = MindmapJobFacade(job_id, record.plan_id, source_record.public,
+					snapshot, _source_store, _execution_slot, owner, record.instruction,
+					lambda system, user, schema: complete_json(system, user, schema, stage="mindmap"))
+			with _studio_lock:
+				_studio_jobs[job_id] = facade
+			threading.Thread(target=facade.start, daemon=True).start()
+		except SourceError as exc:
+			if snapshot:
+				_source_store.release_path(snapshot)
+			_execution_slot.release(owner)
+			status = 404 if exc.code == "source_missing" else 409
+			return self._json(status, {"error": exc.safe_message, "code": exc.code})
+		except Exception:
+			logging.exception("studio job 建立失敗")
+			with _studio_lock:
+				_studio_jobs.pop(job_id, None)
+			if snapshot:
+				_source_store.release_path(snapshot)
+			_execution_slot.release(owner)
+			return self._json(500, {"error": "影片工作無法建立", "code": "job_create_failed"})
+		return self._json(201, {"job_id": job_id})
+
+	def _studio_facade(self, job_id):
+		with _studio_lock:
+			return _studio_jobs.get(job_id)
+
+	def _studio_get(self, path, query):
+		parts = path.removeprefix("/api/studio/jobs/").split("/")
+		if not parts[0] or len(parts) > 3 or any(not part for part in parts):
+			return self._json(404, {"error": "找不到", "code": "not_found"})
+		facade = self._studio_facade(parts[0])
+		if facade is None:
+			return self._json(404, {"error": "找不到影片工作", "code": "job_missing"})
+		try:
+			if len(parts) == 1:
+				return self._json(200, facade.snapshot())
+			if parts[1:] == ["review"]:
+				return self._json(200, facade.get_review())
+			if parts[1:] == ["artifacts"]:
+				return self._json(200, {"artifacts": facade.artifacts()})
+			if parts[1:] == ["source"] and not query and hasattr(facade, "source_content"):
+				return self._json(200, facade.source_content())
+			if parts[1:] == ["events"]:
+				if query and not re.fullmatch(r"after=[0-9]+", query):
+					return self._json(400, {"error": "事件游標不正確", "code": "invalid_cursor"})
+				return self._studio_events(facade, int(query[6:]) if query else 0)
+			if len(parts) == 3 and parts[1] == "slides" and hasattr(facade, "slide_path"):
+				path = facade.slide_path(unquote(parts[2]))
+				with open(path, "rb") as handle:
+					return self._send(200, handle.read(), "image/png")
+		except FacadeError as exc:
+			status = 409 if exc.code == "review_conflict" else 404 if exc.code in ("slide_missing", "artifact_missing") else 503
+			return self._json(status, {"error": exc.safe_message, "code": exc.code})
+		except OSError:
+			return self._json(404, {"error": "找不到投影片", "code": "slide_missing"})
+		return self._json(404, {"error": "找不到", "code": "not_found"})
+
+	def _studio_events(self, facade, after):
+		self.send_response(200)
+		self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+		self.send_header("Cache-Control", "no-cache")
+		self.end_headers()
+		seen = after
+		try:
+			while True:
+				for item in facade.events_after(seen):
+					self.wfile.write(f"id: {item['seq']}\ndata: {json.dumps(item, ensure_ascii=False)}\n\n".encode())
+					seen = item["seq"]
+				snapshot = facade.snapshot()
+				if snapshot["status"] in ("done", "failed"):
+					self.wfile.write(f"event: snapshot\ndata: {json.dumps(snapshot, ensure_ascii=False)}\n\n".encode())
+					self.wfile.flush()
+					return
+				self.wfile.flush()
+				threading.Event().wait(0.4)
+		except (BrokenPipeError, ConnectionResetError, OSError):
+			return
+
+	def _studio_artifact_facade(self, artifact_id):
+		with _studio_lock:
+			facades = list(_studio_jobs.values())
+		for facade in facades:
+			if any(item["artifact_id"] == artifact_id for item in facade.artifacts()):
+				return facade
+		return None
+
+	def _studio_artifact_get(self, path, query):
+		match = re.fullmatch(r"/api/studio/artifacts/(artifact-[0-9a-f]{32})/content", path)
+		if not match:
+			return self._json(404, {"error": "找不到", "code": "not_found"})
+		facade = self._studio_artifact_facade(match.group(1))
+		if facade is None:
+			return self._json(404, {"error": "找不到影片產物", "code": "artifact_missing"})
+		try:
+			manifest = next(item for item in facade.artifacts() if item["artifact_id"] == match.group(1))
+			content = facade.artifact_content(match.group(1))
+			if manifest.get("kind") == "mindmap":
+				if not query:
+					return self._json(200, content)
+				if query not in ("view=svg", "download=1"):
+					return self._json(400, {"error": "下載參數不正確", "code": "invalid_download"})
+				try:
+					data = facade.svg_content(match.group(1), download=query == "download=1")
+				except FacadeError as exc:
+					return self._json(409 if exc.code == "artifact_conflict" else 404,
+						{"error": exc.safe_message, "code": exc.code})
+				self.send_response(200)
+				self.send_header("Content-Type", "image/svg+xml; charset=utf-8")
+				self.send_header("Content-Length", str(len(data)))
+				self.send_header("Content-Security-Policy", "sandbox")
+				self.send_header("X-Content-Type-Options", "nosniff")
+				self.send_header("Cache-Control", "no-store")
+				if query == "download=1":
+					self.send_header("Content-Disposition", f'attachment; filename="{manifest["download"]["file_name"]}"')
+				self.end_headers()
+				return self.wfile.write(data)
+			if manifest.get("kind") == "deck":
+				if not query:
+					return self._json(200, content)
+				if query != "download=1":
+					return self._json(400, {"error": "下載參數不正確", "code": "invalid_download"})
+				try:
+					data = facade.pptx_content(match.group(1))
+				except FacadeError as exc:
+					return self._json(409 if exc.code == "artifact_conflict" else 404,
+						{"error": exc.safe_message, "code": exc.code})
+				file_name = manifest["download"]["file_name"]
+				self.send_response(200)
+				self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+				self.send_header("Content-Length", str(len(data)))
+				self.send_header("Content-Disposition", f'attachment; filename="{file_name}"')
+				self.send_header("Cache-Control", "no-store")
+				self.end_headers()
+				return self.wfile.write(data)
+			return self._video(content, query == "download=1", manifest["download"]["file_name"])
+		except (FacadeError, OSError, StopIteration):
+			return self._json(404, {"error": "影片檔案無法使用", "code": "artifact_missing"})
+
+	def _studio_post_review(self):
+		job_id = self.path.removeprefix("/api/studio/jobs/").removesuffix("/review")
+		if not re.fullmatch(r"[0-9a-f]{32}", job_id) and job_id not in _studio_jobs:
+			return self._json(404, {"error": "找不到影片工作", "code": "job_missing"})
+		facade = self._studio_facade(job_id)
+		if facade is None:
+			return self._json(404, {"error": "找不到影片工作", "code": "job_missing"})
+		body = self._read_body(MAX_JSON)
+		if body is None:
+			return
+		try:
+			payload = json.loads(body)
+			if not isinstance(payload, dict) or set(payload) != {"segments"} or not isinstance(payload["segments"], list):
+				raise ValueError("review payload")
+			return self._json(200, facade.submit_review(payload["segments"]))
+		except (ValueError, TypeError, UnicodeError):
+			return self._json(400, {"error": "講稿格式不正確", "code": "invalid_review"})
+		except FacadeError as exc:
+			status = 409 if exc.code == "review_conflict" else 500 if exc.code == "review_failed" else 400
+			return self._json(status, {"error": exc.safe_message, "code": exc.code})
+
+	def _studio_artifact_review(self):
+		match = re.fullmatch(r"/api/studio/artifacts/(artifact-[0-9a-f]{32})/review", self.path)
+		if not match:
+			return self._json(404, {"error": "找不到", "code": "not_found"})
+		facade = self._studio_artifact_facade(match.group(1))
+		if facade is None:
+			return self._json(404, {"error": "找不到影片產物", "code": "artifact_missing"})
+		body = self._read_body(MAX_JSON)
+		if body is None:
+			return
+		try:
+			payload = json.loads(body)
+			if not isinstance(payload, dict) or set(payload) != {"decision"}:
+				raise ValueError("artifact review payload")
+			return self._json(200, {"artifact": facade.review_artifact(match.group(1), payload["decision"])})
+		except (ValueError, TypeError, UnicodeError):
+			return self._json(400, {"error": "產物審核格式不正確", "code": "invalid_decision"})
+		except FacadeError as exc:
+			status = 404 if exc.code == "artifact_missing" else 409 if exc.code == "artifact_conflict" else 400
+			return self._json(status, {"error": exc.safe_message, "code": exc.code})
+
+	def _studio_plan(self):
+		body = self._read_body(MAX_JSON)
+		if body is None:
+			return
+		mode = self.path.partition("?")[2]
+		if mode not in ("", "mode=rule", "mode=paper-test"):
+			return self._json(400, {"error": "規劃模式目前不可用", "code": "planner_mode_unavailable"})
+		try:
+			payload = json.loads(body)
+			request = normalize_plan_request(payload)
+		except (ValueError, TypeError, UnicodeError, ContractError):
+			return self._json(400, {"error": "規劃請求格式不正確", "code": "invalid_plan_request"})
+		try:
+			_source_store.resolve(request["source"]["ref"], request["source"]["revision"])
+		except SourceError as exc:
+			status = 404 if exc.code == "source_missing" else 409
+			return self._json(status, {"error": exc.safe_message, "code": exc.code})
+		try:
+			backend = PaperTestPlannerBackend() if mode == "mode=paper-test" else RulePlannerBackend()
+			record = plan_request(request, backend, _plan_store)
+		except PlannerBackendError as exc:
+			return self._json(503, {"error": exc.safe_message, "code": exc.code})
+		except ContractError:
+			return self._json(400, {"error": "規劃結果不符合契約", "code": "invalid_plan"})
+		return self._json(201, {"plan_id": record.plan_id, "plan": record.plan})
+
+	def _studio_normalize(self):
+		body = self._read_body(MAX_JSON)
+		if body is None:
+			return
+		try:
+			payload = json.loads(body)
+			if not isinstance(payload, dict) or set(payload) != {"revision"} or not isinstance(payload["revision"], str):
+				raise ValueError("revision")
+		except (ValueError, TypeError, UnicodeError):
+			return self._json(400, {"error": "整理請求格式不正確", "code": "invalid_normalization_request"})
+		ref = unquote(self.path).removeprefix("/api/studio/sources/").removesuffix("/normalize")
+		owner = "normalize:" + uuid.uuid4().hex
+		if not _execution_slot.claim(owner):
+			return self._json(409, {"error": "已有教材工作在執行", "code": "execution_busy"})
+		try:
+			source = _source_store.normalize(ref, payload["revision"])
+		except SourceError as exc:
+			status = 404 if exc.code == "source_missing" else 409 if exc.code in ("stale_source", "source_limit") else 422
+			payload = {"error": exc.safe_message, "code": exc.code}
+			if hasattr(exc, 'source'):
+				payload['source'] = exc.source
+			return self._json(status, payload)
+		finally:
+			_execution_slot.release(owner)
+		return self._json(200, {"source": source})
+
+	def _studio_upload(self):
+		body = self._read_body(MAX_UPLOAD)
+		if body is None:
+			return
+		try:
+			mp = parse_multipart(body, self.headers.get("Content-Type", ""))
+			source = _source_store.add_upload(mp.name, mp.blob)
+		except SourceError as exc:
+			status = 507 if exc.code == "source_limit" else 400
+			return self._json(status, {"error": exc.safe_message, "code": exc.code})
+		except (ValueError, IndexError) as exc:
+			logging.exception("教材上傳格式錯誤", exc_info=exc)
+			return self._json(400, {"error": "上傳格式不正確", "code": "invalid_upload"})
+		return self._json(201, {"source": source})
+
 	def _create(self):
 		global _job, _job_id
-		length = int(self.headers.get("Content-Length", 0))
-		# 409／503／413 都要在回覆前把整個 body 讀乾淨。BaseHTTPRequestHandler
-		# 預設 HTTP/1.0，回應送出後就關連線；receive buffer 裡還有沒讀完的資料的話，
-		# 對端看到的是 RST 不是正常關閉——瀏覽器只會回報「連不上」，
-		# 蓋掉真正的錯誤訊息（例如 TTS 沒開的 503），現場最常見的翻車點反而看不到
-		body = self.rfile.read(length)
+		body = self._read_body(MAX_UPLOAD)
+		if body is None:
+			return
 		with _lock:
 			if _job and _job.status in ("queued", "running", "awaiting_review"):
 				return self._json(409, {"error": "已經有一個工作在跑，等它跑完"})
 			if not tts_ready():
 				return self._json(503, {"error": f"語音服務 {TTS_URL} 沒有回應，先把 GPT-SoVITS 開起來"})
-			if length > MAX_UPLOAD:
-				return self._json(413, {"error": "檔案超過 5 MB"})
-			mp = parse_multipart(body, self.headers.get("Content-Type", ""))
+			try:
+				mp = parse_multipart(body, self.headers.get("Content-Type", ""))
+			except (ValueError, IndexError) as exc:
+				logging.exception("舊版上傳格式錯誤", exc_info=exc)
+				return self._json(400, {"error": "上傳格式不正確"})
 			name, blob, sec, layout, seed = mp.name, mp.blob, mp.sec, mp.layout, mp.seed
 			name = safe_name(name)
 			if not allowed(name):
 				return self._json(400, {"error": f"不支援 {name}，只吃 {'、'.join(SUPPORTED)}"})
+			owner = "legacy:" + uuid.uuid4().hex
+			if not _execution_slot.claim(owner):
+				return self._json(409, {"error": "已有教材工作在執行", "code": "execution_busy"})
+			try:
+				return self._create_claimed(name, blob, sec, layout, seed, owner)
+			except Exception:
+				_execution_slot.release(owner)
+				raise
+
+	def _create_claimed(self, name, blob, sec, layout, seed, owner):
+		global _job, _job_id
+		try:
 			os.makedirs(MATERIALS, exist_ok=True)
 			# 原始檔也要走「同名加序號」，跟 resolve_material 一致。
 			# 若這裡覆寫、那裡加序號，deck.pptx 被蓋掉但抽出來的變成 deck_2.md，
@@ -378,15 +845,25 @@ class Handler(BaseHTTPRequestHandler):
 			try:
 				md = resolve_material(raw, MATERIALS)
 			except ValueError as e:
+				_execution_slot.release(owner)
 				return self._json(400, {"error": str(e)})
 			_job_id += 1
 			_job = Job(md, OUT, sec, real_runner(md, sec, layout, seed))
+			_job.execution_owner = owner
 			threading.Thread(target=_guard, args=(_job, _start_job, _job), daemon=True).start()
-		self._json(201, {"job_id": _job_id})
+		except Exception:
+			_execution_slot.release(owner)
+			raise
+		return self._json(201, {"job_id": _job_id})
 
 	def _approve(self):
-		length = int(self.headers.get("Content-Length", 0))
-		payload = json.loads(self.rfile.read(length) or b"{}")
+		body = self._read_body(MAX_JSON)
+		if body is None:
+			return
+		try:
+			payload = json.loads(body or b"{}")
+		except (ValueError, UnicodeError):
+			return self._json(400, {"error": "審稿內容格式不正確"})
 		segs = payload.get("segments") or []
 		# 這裡刻意不看 review_expired()。倒數由計時器負責推進，claim() 誰搶到算誰的。
 		# 舊版在這裡判逾時，網路延遲一秒就把人改好的稿靜默丟掉
@@ -425,6 +902,9 @@ class Handler(BaseHTTPRequestHandler):
 			# 背景執行緒是同一個理由，只是這段沒有經過 _guard
 			_job.status = "failed"
 			_job.error = f"{type(e).__name__}: {e}"
+			owner = getattr(_job, "execution_owner", None)
+			if owner:
+				_execution_slot.release(owner)
 			return self._json(500, {"error": f"核可流程失敗：{_job.error}"})
 		_job.notice = notice
 		threading.Thread(target=_guard, args=(_job, _job.resume), daemon=True).start()
@@ -473,7 +953,11 @@ def parse_multipart(body, ctype):
 	.pptx 是二進位 zip，結尾本來就可能有 0x0D／0x0A／0x2D，
 	rstrip 會把檔案結構吃掉，解壓時炸 BadZipFile。
 	"""
-	boundary = ctype.split("boundary=")[-1].strip().strip('"').encode()
+	if not ctype.lower().startswith("multipart/form-data") or "boundary=" not in ctype:
+		raise ValueError("multipart boundary missing")
+	boundary = ctype.split("boundary=", 1)[1].split(";", 1)[0].strip().strip('"').encode("ascii")
+	if not boundary or len(boundary) > 70 or not body.startswith(b"--" + boundary + b"\r\n") or not body.rstrip(b"\r\n").endswith(b"--" + boundary + b"--"):
+		raise ValueError("multipart boundary invalid")
 	name, blob, sec, layout, seed = "", b"", None, None, None
 	for part in body.split(b"--" + boundary):
 		if b"\r\n\r\n" not in part:
@@ -483,7 +967,9 @@ def parse_multipart(body, ctype):
 			data = data[:-2]
 		h = head.decode("utf-8", "replace")
 		if 'name="file"' in h:
-			name = h.split('filename="')[1].split('"')[0]
+			if 'filename="' not in h:
+				raise ValueError("filename missing")
+			name = h.split('filename="', 1)[1].split('"', 1)[0]
 			blob = data
 		elif 'name="sec"' in h:
 			sec = data.decode().strip() or None
@@ -491,10 +977,16 @@ def parse_multipart(body, ctype):
 			layout = data.decode().strip() or None
 		elif 'name="seed"' in h:
 			seed = data.decode().strip() or None
+	if not name:
+		raise ValueError("file part missing")
 	return MultipartResult(name, blob, sec, layout, seed)
 
 
 def make_server(port):
+	global _source_store
+	if _source_store is None:
+		_source_store = SourceStore(MATERIALS)
+		cleanup_studio_outputs(os.path.join(HERE, "video_engine/examples"), OUT)
 	return ThreadingHTTPServer(("127.0.0.1", port), Handler)
 
 

@@ -10,6 +10,7 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "video_engine"))
 import ingest
+from video_engine.usage import UsageLedger
 
 # 權重照實測配（c_string.md：810 字 → 5 頁 98 秒影片，總計 167 秒）。
 # 等寬八格會騙人，會卡在第一格不動半分鐘
@@ -23,12 +24,13 @@ AFTER_REVIEW = ("synth", "video")
 
 
 class Job:
-	def __init__(self, material_path, out_dir, sec, runner, clock=time.time):
+	def __init__(self, material_path, out_dir, sec, runner, clock=time.time, completion_check=None):
 		self.material_path = material_path
 		self.out_dir = out_dir
 		self.sec = sec
 		self.runner = runner
 		self.clock = clock
+		self.completion_check = completion_check
 		self.status = "queued"
 		self.stage = None
 		self.events = []
@@ -43,6 +45,7 @@ class Job:
 		self.video_path = None
 		self.retried = False
 		self.notice = None
+		self.usage = UsageLedger()
 
 	@property
 	def pct(self):
@@ -51,6 +54,9 @@ class Job:
 	def _pump(self, stage_from, stage_to):
 		"""跑一段階段區間，把事件收進來。回傳是否成功"""
 		for ev in self.runner(stage_from, stage_to):
+			if ev['event'] == 'usage':
+				self.usage.add(ev['usage'], ev.get('stage'))
+				continue
 			self.events.append(ev)
 			self.stage = ev.get("stage")
 			if ev["event"] == "stage_end":
@@ -112,6 +118,15 @@ class Job:
 			raise RuntimeError(f"status 是 {self.status}，resume() 前必須先呼叫 claim() 成功")
 		if not self._pump(*AFTER_REVIEW):
 			return
+		if self.completion_check is not None:
+			try:
+				problem = self.completion_check(self)
+			except Exception as exc:
+				problem = f"完成檢查失敗：{exc}"
+			if problem:
+				self.status = "failed"
+				self.error = str(problem)
+				return
 		self.status = "done"
 		self.stage = None
 

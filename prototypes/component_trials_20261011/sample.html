@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>程式教材元件試片</title>
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#151918}
+    #frame{position:absolute;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:#151918}
+    #c,#stage{position:absolute;inset:0;width:1920px;height:1080px}#c{display:none}
+    #captions{position:absolute;left:0;right:0;bottom:0;height:168px;background:rgba(12,18,18,.96);color:#f5f2ea;display:flex;align-items:center;justify-content:center;padding:30px 90px;font:44px "Noto Sans CJK TC",sans-serif;line-height:1.5;text-align:center}
+    .trial-heading{position:absolute;left:110px;top:90px;font:64px "Noto Sans CJK TC";color:var(--kit-ink,#f3f1ec);margin:0;z-index:3;letter-spacing:-.02em}
+    .trial-assumption{position:absolute;left:110px;top:186px;font:30px "Noto Sans CJK TC";color:var(--kit-muted,#abbab6);z-index:3}
+    .array-cell{position:absolute;top:350px;width:290px;height:210px;border:2px solid rgba(237,235,230,.6);font:54px "Noto Sans CJK TC";display:grid;place-content:center;color:#edebe6;text-align:center;background:rgba(30,32,33,.9)}
+    .array-cell small{font-size:32px;color:#a6a39d}.array-cell.active{border-color:#ffd21e;color:#ffd21e;background:#24231b}
+    .paper-shell{position:absolute;left:270px;top:275px;width:1380px;height:580px;border:3px solid #233849;border-radius:22px;background:#fffdf4;box-shadow:0 18px 0 #dfcfae}
+    .paper-type{position:absolute;left:54px;top:24px;font:58px "Noto Sans CJK TC";color:#233849}
+    .paper-field{position:absolute;top:330px;width:600px;font:52px "Noto Sans CJK TC";text-align:center}
+    .paper-field .kit-label-card{width:100%;font-size:52px;padding:35px;transform-origin:50% 100%}
+    .paper-field .kit-label-sub{font-size:40px}.paper-note{position:absolute;top:730px;left:460px;width:1000px;font-size:36px}
+    .kit-stage{height:1080px}.kit-world{transform-origin:0 0}
+    #stage .ln{font-family:"Noto Sans CJK TC",sans-serif!important}#stage .ln .lat{font-family:"Noto Sans CJK TC",sans-serif!important}
+    #stage .kit-label-main,#stage .kit-label-sub,#stage .kit-note,#stage .kit-num{font-family:"Noto Sans CJK TC",sans-serif!important}
+    #stage .kit-dim-t{font:32px "Noto Sans CJK TC"!important}#stage .kit-lead-t{font:34px "Noto Sans CJK TC"!important}
+    #stage svg text{text-rendering:geometricPrecision}
+  </style>
+</head>
+<body><div id="frame"><canvas id="c" width="1920" height="1080"></canvas><div id="stage"></div><div id="captions"></div></div><script src="sample.js"></script></body>
+</html>

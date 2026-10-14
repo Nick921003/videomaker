@@ -1,0 +1,124 @@
+{
+	"version": 1,
+	"title": "視窗最少屬性與參數",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "edit",
+			"preset": "win11.edit_env_var"
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "資料夾已新增"
+		}
+	],
+	"scenes": [
+		{
+			"id": "input",
+			"title": "輸入資料夾",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"edit",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "輸入編譯器資料夾，再顯示提示。",
+					"do": [
+						{
+							"act": "show",
+							"target": "edit"
+						},
+						{
+							"act": "input",
+							"target": "edit:new",
+							"cue": "輸入",
+							"text": "C:\\mingw\\bin"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "提示"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"edit",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "edit",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "edit",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "edit",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "edit",
+							"cue": "箭頭",
+							"to": "result"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "edit",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "edit",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"edit",
+				"result"
+			]
+		}
+	]
+}

@@ -1,0 +1,50 @@
+[
+	{
+		"file": "code.js",
+		"before": "size: 36",
+		"after": "size: 44",
+		"count": 4
+	},
+	{
+		"file": "vars.js",
+		"before": "size: 28",
+		"after": "size: 32",
+		"count": 2
+	},
+	{
+		"file": "vars.js",
+		"before": "size: 30",
+		"after": "size: 32",
+		"count": 2
+	},
+	{
+		"file": "output.js",
+		"before": "LABEL = {size: 30}",
+		"after": "LABEL = {size: 32}",
+		"count": 1
+	},
+	{
+		"file": "cells.js",
+		"before": "LABEL_H = 50, STOP_H = 50",
+		"after": "LABEL_H = 60, STOP_H = 60",
+		"count": 1
+	},
+	{
+		"file": "cells.js",
+		"before": "size: 36",
+		"after": "size: 44",
+		"count": 3
+	},
+	{
+		"file": "cells.js",
+		"before": "size: 34",
+		"after": "size: 44",
+		"count": 1
+	},
+	{
+		"file": "cells.js",
+		"before": "size: 40",
+		"after": "size: 44",
+		"count": 1
+	}
+]

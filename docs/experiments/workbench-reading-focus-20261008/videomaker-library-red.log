@@ -1,0 +1,66 @@
+TAP version 13
+# Subtest: 素材庫每頁六張，顯示點數、成品與花費，卡片連到指定單元成品
+ok 1 - 素材庫每頁六張，顯示點數、成品與花費，卡片連到指定單元成品
+  ---
+  duration_ms: 16.132448
+  type: 'test'
+  ...
+# Subtest: 學生提問用選定單元送出，影片使用共用播放器且換教材或離頁會停止
+ok 2 - 學生提問用選定單元送出，影片使用共用播放器且換教材或離頁會停止
+  ---
+  duration_ms: 4.079782
+  type: 'test'
+  ...
+# Subtest: 超出範圍顯示鎖與固定文案，no_match 顯示找不到段落
+ok 3 - 超出範圍顯示鎖與固定文案，no_match 顯示找不到段落
+  ---
+  duration_ms: 2.710374
+  type: 'test'
+  ...
+# Subtest: 尚未生成的段落只送選定 story，失敗可重試，成功才跳③
+ok 4 - 尚未生成的段落只送選定 story，失敗可重試，成功才跳③
+  ---
+  duration_ms: 2.446254
+  type: 'test'
+  ...
+# Subtest: 空素材庫不能提問；舊提問回覆在換教材或離頁後不再出現
+ok 5 - 空素材庫不能提問；舊提問回覆在換教材或離頁後不再出現
+  ---
+  duration_ms: 3.737619
+  type: 'test'
+  ...
+# Subtest: 匹配結果提供教材名稱、對應重點與狀態，教材詳情失敗仍保留可觀看結果
+not ok 6 - 匹配結果提供教材名稱、對應重點與狀態，教材詳情失敗仍保留可觀看結果
+  ---
+  duration_ms: 4.045788
+  type: 'test'
+  location: '/home/pjw92/projects/videomaker/workbench/web/tests/library.test.mjs:140:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /對應教材/. Input:
+
+    '找到對應的段落問題對應這段問題故事'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: '找到對應的段落問題對應這段問題故事'
+  operator: 'match'
+  stack: |-
+    file:///home/pjw92/projects/videomaker/workbench/web/tests/library.test.mjs:151:10
+    async file:///home/pjw92/projects/videomaker/workbench/web/tests/library.test.mjs:20:4
+    async withDOM (file:///home/pjw92/projects/videomaker/workbench/web/tests/dom-helper.mjs:41:8)
+    async withLibrary (file:///home/pjw92/projects/videomaker/workbench/web/tests/library.test.mjs:12:2)
+    async TestContext.<anonymous> (file:///home/pjw92/projects/videomaker/workbench/web/tests/library.test.mjs:144:2)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 89.290075

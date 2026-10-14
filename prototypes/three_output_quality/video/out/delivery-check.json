@@ -1,0 +1,27 @@
+{
+	"audio_original_duration": "68.710000",
+	"video_duration": "69.666667",
+	"video_frames": 1672,
+	"last_voiced_end": 68.46,
+	"tail_after_last_voiced_end": 1.2066670000000101,
+	"audio_end_after_last_voiced_end": 0.25,
+	"full_decode_exit_0": [
+		"A-original.mp4",
+		"B-board.mp4",
+		"B-delivery-normalized.mp4",
+		"C-y3_whiteboard.mp4",
+		"C-y5_kinetic_type.mp4"
+	],
+	"A_B_input_audio_same_sha256": "70281c592392ac01a034e2a851ec1601e3195cb63c957e231e820f504a4d0a9d",
+	"encoded_video_sha256": "110114c450ad4ff3b6b5c9bde1a5e7e2cccd604a15374928f36a3fd410271340",
+	"normalized_picture_unchanged": true,
+	"loudness_original": {
+		"integrated_lufs": -18.22,
+		"true_peak_db": -0.91
+	},
+	"loudness_delivery": {
+		"integrated_lufs": -16.29,
+		"true_peak_db": -1.19
+	},
+	"word_precision": "not measured; only sample-rebuilt sentence WAV boundaries"
+}

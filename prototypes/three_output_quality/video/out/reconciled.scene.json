@@ -1,0 +1,338 @@
+{
+	"version": 1,
+	"title": "小於還是小於等於？搞懂迴圈邊界判斷",
+	"tag": "C 語言迴圈基礎",
+	"corner_note": "概念示意",
+	"objects": [
+		{
+			"id": "q_note",
+			"type": "note",
+			"text": "算出來常常多一或少一？\n到底該寫 < 還是 <=？",
+			"style": "headline"
+		},
+		{
+			"id": "hint_note",
+			"type": "note",
+			"text": "關鍵看兩件事：\n起點從幾開始？最後一格算不算？",
+			"style": "accent"
+		},
+		{
+			"id": "code_sum",
+			"type": "code",
+			"caption": "情境一：數數累加（1 到 5）",
+			"lines": [
+				"int sum = 0;",
+				"for (int i = 1; i <= 5; i++) {",
+				"    sum += i;",
+				"}"
+			],
+			"footer": "起點是 1，最後一個數字是 5"
+		},
+		{
+			"id": "vars_sum",
+			"type": "vars",
+			"title": "變數追蹤",
+			"vars": [
+				{
+					"id": "i",
+					"name": "i",
+					"type": "int",
+					"value": "1"
+				},
+				{
+					"id": "sum",
+					"name": "sum",
+					"type": "int",
+					"value": "0"
+				}
+			]
+		},
+		{
+			"id": "code_arr",
+			"type": "code",
+			"caption": "情境二：走訪長度為 5 的陣列",
+			"lines": [
+				"int arr[5] = {10, 20, 30, 40, 50};",
+				"for (int i = 0; i < 5; i++) {",
+				"    printf(\"%d \", arr[i]);",
+				"}"
+			],
+			"footer": "起點是 0，編號只有 0 到 4"
+		},
+		{
+			"id": "arr_cells",
+			"type": "cells",
+			"count": 5,
+			"label": "arr：長度 5（索引 0 到 4）",
+			"values": [
+				"10",
+				"20",
+				"30",
+				"40",
+				"50"
+			]
+		},
+		{
+			"id": "compare_metrics",
+			"type": "metrics",
+			"items": [
+				{
+					"label": "數數（1 到 N）",
+					"value": "<= N",
+					"note": "起點 1，包含 N"
+				},
+				{
+					"label": "陣列（長度 N）",
+					"value": "< N",
+					"note": "起點 0，只到 N-1"
+				}
+			]
+		},
+		{
+			"id": "rule_note",
+			"type": "note",
+			"text": "先看起點是 0 還是 1\n再確認最後一格在哪裡",
+			"style": "body"
+		}
+	],
+	"scenes": [
+		{
+			"id": "hook",
+			"title": "寫小於還是小於等於？",
+			"label": "差一錯誤",
+			"layout": {
+				"stack": [
+					"q_note",
+					"hint_note"
+				]
+			},
+			"beats": [
+				{
+					"say": "寫迴圈時答案常常多一或少一，到底什麼時候該寫小於，什麼時候寫小於等於？",
+					"spoken": "寫迴圈時答案常常多一或少一，到底什麼時候該寫小於，什麼時候寫小於等於？",
+					"do": [
+						{
+							"act": "write",
+							"target": "q_note"
+						}
+					]
+				},
+				{
+					"say": "這正是最常見的差一錯誤。關鍵在於：起點是幾、最後一格要不要算進去。",
+					"spoken": "這正是最常見的差一錯誤。關鍵在於：起點是幾、最後一格要不要算進去。",
+					"do": [
+						{
+							"act": "write",
+							"target": "hint_note",
+							"cue": "起點是幾"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "count",
+			"title": "情境一：一加到五，包含最後一格",
+			"label": "數數累加",
+			"layout": {
+				"row": [
+					"code_sum",
+					"vars_sum"
+				]
+			},
+			"beats": [
+				{
+					"say": "第一種情況是數數。如果要把一到五全部加起來，起點是一。",
+					"spoken": "第一種情況是數數。如果要把一到五全部加起來，起點是一。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "code_sum",
+							"line": 2,
+							"cue": "起點是一"
+						},
+						{
+							"act": "set",
+							"target": "vars_sum:i",
+							"value": "1",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "我們要算到五，五本身必須算進去。",
+					"spoken": "我們要算到五，五本身必須算進去。",
+					"do": [
+						{
+							"act": "set",
+							"target": "vars_sum:i",
+							"value": "5",
+							"cue": "五本身"
+						},
+						{
+							"act": "set",
+							"target": "vars_sum:sum",
+							"value": "15",
+							"calc": "10 + 5",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "所以當 i 走到五，條件仍然要成立，這裡要寫小於等於五。",
+					"spoken": "所以當 i 走到五，條件仍然要成立，這裡要寫小於等於五。",
+					"do": [
+						{
+							"act": "check",
+							"target": "vars_sum",
+							"text": "5 <= 5",
+							"result": true,
+							"cue": "條件仍然要成立"
+						},
+						{
+							"act": "circle",
+							"target": "code_sum:L2",
+							"cue": "小於等於五"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "array",
+			"title": "情境二：陣列五格，只到編號四",
+			"label": "陣列走訪",
+			"layout": {
+				"stack": [
+					"code_arr",
+					"arr_cells"
+				]
+			},
+			"beats": [
+				{
+					"say": "但是換成陣列，情況就不一樣了。這是一個長度為五的陣列。",
+					"spoken": "但是換成陣列，情況就不一樣了。這是一個長度為五的陣列。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "code_arr",
+							"line": 1,
+							"cue": "長度為五"
+						},
+						{
+							"act": "brace",
+							"target": "arr_cells",
+							"range": [
+								0,
+								4
+							],
+							"label": "長度 5",
+							"cue": "長度為五"
+						}
+					]
+				},
+				{
+					"say": "因為陣列是從第零格開始，五格的編號其實是零到四。",
+					"spoken": "因為陣列是從第零格開始，五格的編號其實是零到四。",
+					"do": [
+						{
+							"act": "point",
+							"target": "arr_cells",
+							"index": 0,
+							"cue": "第零格"
+						},
+						{
+							"act": "point",
+							"target": "arr_cells",
+							"index": 4,
+							"cue": "零到四"
+						}
+					]
+				},
+				{
+					"say": "如果寫成小於等於五，迴圈會跑到第五格，但根本沒有第五格，這會踩空越界！",
+					"spoken": "如果寫成小於等於五，迴圈會跑到第五格，但根本沒有第五格，這會踩空越界！",
+					"do": [
+						{
+							"act": "circle",
+							"target": "code_arr:L2",
+							"cue": "小於等於五"
+						},
+						{
+							"act": "stop",
+							"target": "arr_cells",
+							"index": 4,
+							"note": "沒有第 5 格！",
+							"cue": "踩空越界"
+						}
+					]
+				},
+				{
+					"say": "所以最後一格只能停在四，條件必須寫成小於五。",
+					"spoken": "所以最後一格只能停在四，條件必須寫成小於五。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "code_arr",
+							"line": 2,
+							"cue": "小於五"
+						},
+						{
+							"act": "underline",
+							"target": "code_arr:L2",
+							"cue": "小於五"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "summary",
+			"title": "起點決定條件，先看最後一格",
+			"label": "判斷口訣",
+			"layout": {
+				"stack": [
+					"compare_metrics",
+					"rule_note"
+				]
+			},
+			"beats": [
+				{
+					"say": "只要記住這兩個規則：從一開始數到 N，要包含最後的 N，就用小於等於；",
+					"spoken": "只要記住這兩個規則：從一開始數到 N，要包含最後的 N，就用小於等於；",
+					"do": [
+						{
+							"act": "reveal",
+							"target": "compare_metrics",
+							"index": 0,
+							"cue": "小於等於"
+						}
+					]
+				},
+				{
+					"say": "從零開始看 N 格，最後一格只有 N 減一，就用小於。",
+					"spoken": "從零開始看 N 格，最後一格只有 N 減一，就用小於。",
+					"do": [
+						{
+							"act": "reveal",
+							"target": "compare_metrics",
+							"index": 1,
+							"cue": "小於"
+						}
+					]
+				},
+				{
+					"say": "先看起點，再確認最後一格在哪裡，就不會再差一了。",
+					"spoken": "先看起點，再確認最後一格在哪裡，就不會再差一了。",
+					"do": [
+						{
+							"act": "write",
+							"target": "rule_note",
+							"cue": "先看起點"
+						}
+					]
+				}
+			]
+		}
+	]
+}

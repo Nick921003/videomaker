@@ -1,0 +1,164 @@
+{
+	"version": 1,
+	"title": "四物件巢狀排版與保留",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "code",
+			"type": "code",
+			"lines": [
+				"int n = 3;",
+				"n += 4;"
+			]
+		},
+		{
+			"id": "cells",
+			"type": "cells",
+			"count": 2,
+			"values": [
+				"3",
+				"7"
+			]
+		},
+		{
+			"id": "output",
+			"type": "output"
+		},
+		{
+			"id": "note",
+			"type": "note",
+			"text": "觀察運算結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "dense",
+			"title": "巢狀直排與橫排",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					{
+						"row": [
+							"code",
+							"cells"
+						]
+					},
+					{
+						"row": [
+							"output",
+							"note"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "先顯示程式和格子，再顯示輸出框。",
+					"do": [
+						{
+							"act": "show",
+							"target": "code"
+						},
+						{
+							"act": "show",
+							"target": "cells",
+							"with": "prev"
+						},
+						{
+							"act": "set",
+							"target": "output",
+							"cue": "輸出框",
+							"text": "7"
+						}
+					]
+				},
+				{
+					"say": "顯示第四個物件，讓版面保持完整。",
+					"do": [
+						{
+							"act": "write",
+							"target": "note",
+							"cue": "顯示"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "keep",
+			"title": "保留四物件再重排",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"code",
+							"output"
+						]
+					},
+					{
+						"stack": [
+							"cells",
+							"note"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "保留四個物件，標記第二行運算。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "code",
+							"cue": "標記",
+							"line": 2
+						}
+					]
+				},
+				{
+					"say": "隱藏提示文字，觀察其他物件重排。",
+					"do": [
+						{
+							"act": "hide",
+							"target": "note",
+							"cue": "隱藏"
+						}
+					]
+				},
+				{
+					"say": "再次顯示提示，讓四個物件回到版面。",
+					"do": [
+						{
+							"act": "show",
+							"target": "note",
+							"cue": "顯示"
+						}
+					]
+				},
+				{
+					"say": "先隱藏輸出，再顯示輸出框。",
+					"do": [
+						{
+							"act": "hide",
+							"target": "output",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "output",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"code",
+				"cells",
+				"output",
+				"note"
+			]
+		}
+	]
+}

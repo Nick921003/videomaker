@@ -1,0 +1,111 @@
+{
+	"contract_version": "1.0",
+	"title": "C 迴圈：從條件到正確寫法",
+	"root_id": "loop",
+	"nodes": [
+		{
+			"id": "loop",
+			"label": "迴圈",
+			"explanation": "把相同動作重複執行，核心是起始、繼續條件與每輪變化。",
+			"source_quote": "迴圈說穿了只有三件事：從哪裡開始、什麼時候繼續、每一輪怎麼變。"
+		},
+		{
+			"id": "condition",
+			"label": "繼續條件",
+			"explanation": "條件成立就繼續；條件不成立才停止。",
+			"source_quote": "中間那個是「繼續的條件」不是「結束的條件」，這個方向很多人會想反。"
+		},
+		{
+			"id": "usage",
+			"label": "怎麼用",
+			"explanation": "累加一到五用 i <= n，因為五也要算進去。",
+			"source_quote": "因為題目要從一加到五，五本身要算進去，所以條件寫成小於等於。"
+		},
+		{
+			"id": "boundary",
+			"label": "例子：陣列邊界",
+			"explanation": "長度五的陣列索引是零到四，用小於五，避免多跑一次。",
+			"source_quote": "但如果今天是走訪一個長度為五的陣列，索引是從零開始、到四結束，"
+		},
+		{
+			"id": "update",
+			"label": "每輪更新",
+			"explanation": "每次執行主體後更新變數，讓下一次條件判斷使用新狀態。",
+			"source_quote": "第五行括號裡用分號隔開的三段，依序是起始、繼續條件、每輪的變化。"
+		},
+		{
+			"id": "infinite",
+			"label": "常見錯誤：忘記更新",
+			"explanation": "while 忘記更新條件變數，條件可能永遠成立而停不下來。",
+			"source_quote": "用 while 的時候忘記在主體裡更新條件變數，條件就永遠成立，程式停不下來。"
+		},
+		{
+			"id": "choose",
+			"label": "選 for 或 while",
+			"explanation": "已知次數選 for；未知次數、讀到結束或等輸入零，適合 while。",
+			"source_quote": "for 把這三件事寫在同一行，一眼就看得完，適合次數已經知道的情況。"
+		},
+		{
+			"id": "for",
+			"label": "for：已知次數",
+			"explanation": "for 把起始、條件、更新集中在同一行，更容易檢查是否漏了更新。",
+			"source_quote": "for 因為把更新寫在括號裡比較不容易漏，這也是次數已知時優先用 for 的理由。"
+		},
+		{
+			"id": "while",
+			"label": "while：等待事件",
+			"explanation": "把三件事分開寫，適合結束時機由資料或輸入決定。",
+			"source_quote": "例如一直讀到檔案結束、或是等使用者輸入零才停。"
+		}
+	],
+	"edges": [
+		{
+			"from": "loop",
+			"to": "condition",
+			"label": "先理解",
+			"source_quote": "中間那個是「繼續的條件」不是「結束的條件」，這個方向很多人會想反。"
+		},
+		{
+			"from": "loop",
+			"to": "update",
+			"label": "確保前進",
+			"source_quote": "第五行括號裡用分號隔開的三段，依序是起始、繼續條件、每輪的變化。"
+		},
+		{
+			"from": "loop",
+			"to": "choose",
+			"label": "選擇寫法",
+			"source_quote": "for 把這三件事寫在同一行，一眼就看得完，適合次數已經知道的情況。"
+		},
+		{
+			"from": "condition",
+			"to": "usage",
+			"label": "用在累加",
+			"source_quote": "因為題目要從一加到五，五本身要算進去，所以條件寫成小於等於。"
+		},
+		{
+			"from": "condition",
+			"to": "boundary",
+			"label": "比較情境",
+			"source_quote": "但如果今天是走訪一個長度為五的陣列，索引是從零開始、到四結束，"
+		},
+		{
+			"from": "update",
+			"to": "infinite",
+			"label": "避免錯誤",
+			"source_quote": "用 while 的時候忘記在主體裡更新條件變數，條件就永遠成立，程式停不下來。"
+		},
+		{
+			"from": "choose",
+			"to": "for",
+			"label": "次數已知",
+			"source_quote": "for 因為把更新寫在括號裡比較不容易漏，這也是次數已知時優先用 for 的理由。"
+		},
+		{
+			"from": "choose",
+			"to": "while",
+			"label": "次數未知",
+			"source_quote": "例如一直讀到檔案結束、或是等使用者輸入零才停。"
+		}
+	]
+}

@@ -1,0 +1,519 @@
+{
+  "revision": 2,
+  "exported": true,
+  "duration": 48,
+  "frames": 1152,
+  "cold_forward_reverse_seek": true,
+  "pixel_differences": [
+    {
+      "time": 0,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 4,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 8,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 8.7,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 12,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 16,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 17.5,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 17.65,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 18.3,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 23,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 28,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 29,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 29.3,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 29.65,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 30.5,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 31,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 34,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 38,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 39,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 39.7,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 40.2,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 44,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 44.7,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 47.95,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 47.95,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 44.7,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 44,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 40.2,
+      "pixels": 2,
+      "max_delta": 1
+    },
+    {
+      "time": 39.7,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 39,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 38,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 34,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 31,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 30.5,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 29.65,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 29.3,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 29,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 28,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 23,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 18.3,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 17.65,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 17.5,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 16,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 12,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 8.7,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 8,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 4,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 0,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 0,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 4,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 8,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 8.7,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 12,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 16,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 17.5,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 17.65,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 18.3,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 23,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 28,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 29,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 29.3,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 29.65,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 30.5,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 31,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 34,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 38,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 39,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 39.7,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 40.2,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 44,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 44.7,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 47.95,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 47.95,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 44.7,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 44,
+      "pixels": 3,
+      "max_delta": 1
+    },
+    {
+      "time": 40.2,
+      "pixels": 2,
+      "max_delta": 1
+    },
+    {
+      "time": 39.7,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 39,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 38,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 34,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 31,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 30.5,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 29.65,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 29.3,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 29,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 28,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 23,
+      "pixels": 8,
+      "max_delta": 2
+    },
+    {
+      "time": 18.3,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 17.65,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 17.5,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 16,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 12,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 8.7,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 8,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 4,
+      "pixels": 0,
+      "max_delta": 0
+    },
+    {
+      "time": 0,
+      "pixels": 0,
+      "max_delta": 0
+    }
+  ],
+  "all_exported_frame_text_bounds_checked": true,
+  "all_exported_frame_text_collisions_checked": true,
+  "flow_reveal_checked": true,
+  "source_hashes": true,
+  "glyph_coverage": true,
+  "ui": [
+    {
+      "width": 375,
+      "play_pause_seek_replay": true,
+      "mode_preserves_time": true,
+      "mp4": true,
+      "page_errors": []
+    },
+    {
+      "width": 768,
+      "play_pause_seek_replay": true,
+      "mode_preserves_time": true,
+      "mp4": true,
+      "page_errors": []
+    },
+    {
+      "width": 1440,
+      "play_pause_seek_replay": true,
+      "mode_preserves_time": true,
+      "mp4": true,
+      "page_errors": []
+    }
+  ],
+  "errors": [],
+  "seconds": 154.54
+}

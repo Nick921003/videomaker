@@ -1,0 +1,608 @@
+............................@step storyboard
+@step validate
+  第 1 次未過驗證閘：
+    版面：t=1 場景 s2 的 b 字太小
+@step repair
+@step validate
+...............................................................................s..........................................................................................................................................................127.0.0.1 - - [08/Oct/2026 18:58:38] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:38] "POST /api/studio/plans?mode=paper-test HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:58:38] "POST /api/studio/plans?mode=rule HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 18:58:38] "POST /api/studio/plans?mode=paper-test HTTP/1.1" 400 -
+.127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "POST /api/studio/plans?mode=paper-test HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "POST /api/studio/jobs HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa/review HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa/slides/s1 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "POST /api/studio/jobs/df039737d1ff429a839a170befada7aa/review HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/jobs/df039737d1ff429a839a170befada7aa HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:39] "GET /api/studio/artifacts/artifact-be3621b4b1784fc69f3f2d6c840b4b60/content?download=1 HTTP/1.1" 206 -
+.127.0.0.1 - - [08/Oct/2026 18:58:40] "GET /api/studio/catalog HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:40] "GET /api/studio/catalog?experiments=paper HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:40] "GET /api/studio/catalog?experiments=unknown HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 18:58:40] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:58:40] "POST /api/studio/plans?mode=paper-test HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:58:40] "POST /api/studio/jobs HTTP/1.1" 400 -
+................................................................................主題：暖色文青（warm）
+[1/1] p1
+  元素 9 個已量測
+
+輸出：/tmp/tmpo50uuwjk
+幾何：/tmp/tmpo50uuwjk/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+  元素 22 個已量測
+
+輸出：/tmp/tmpjkjbuai5
+幾何：/tmp/tmpjkjbuai5/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 10 個已量測
+[2/5] p2
+  元素 9 個已量測
+[3/5] p3
+  元素 13 個已量測
+[4/5] p4
+  元素 10 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmpkvewcfwu
+幾何：/tmp/tmpkvewcfwu/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 10 個已量測
+[2/5] p2
+  元素 9 個已量測
+[3/5] p3
+  元素 13 個已量測
+[4/5] p4
+  元素 10 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmp8avzhoyh
+幾何：/tmp/tmp8avzhoyh/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 12 個已量測
+[2/5] p2
+  元素 11 個已量測
+[3/5] p3
+  元素 11 個已量測
+[4/5] p4
+  元素 13 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmp29rf4evu
+幾何：/tmp/tmp29rf4evu/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 12 個已量測
+[2/5] p2
+  元素 11 個已量測
+[3/5] p3
+  元素 11 個已量測
+[4/5] p4
+  元素 13 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmpmffcp04c
+幾何：/tmp/tmpmffcp04c/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 13 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmpnzihdt6b
+幾何：/tmp/tmpnzihdt6b/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 13 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmpw71h_ndf
+幾何：/tmp/tmpw71h_ndf/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 12 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmp6tkma_1x
+幾何：/tmp/tmp6tkma_1x/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 12 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmpu_5h55tj
+幾何：/tmp/tmpu_5h55tj/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 5 個已量測
+[2/4] p2
+  元素 5 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 5 個已量測
+
+輸出：/tmp/tmpl7j3tg4o
+幾何：/tmp/tmpl7j3tg4o/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 5 個已量測
+[2/4] p2
+  元素 5 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 5 個已量測
+
+輸出：/tmp/tmpcjeavz0u
+幾何：/tmp/tmpcjeavz0u/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 10 個已量測
+[2/5] p2
+  元素 9 個已量測
+[3/5] p3
+  元素 13 個已量測
+[4/5] p4
+  元素 10 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmphksp4c1v
+幾何：/tmp/tmphksp4c1v/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 12 個已量測
+[2/5] p2
+  元素 11 個已量測
+[3/5] p3
+  元素 11 個已量測
+[4/5] p4
+  元素 13 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmpvokxehm8
+幾何：/tmp/tmpvokxehm8/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 13 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmp1vrdfgmh
+幾何：/tmp/tmp1vrdfgmh/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 12 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmpo6svyat_
+幾何：/tmp/tmpo6svyat_/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 5 個已量測
+[2/4] p2
+  元素 5 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 5 個已量測
+
+輸出：/tmp/tmpd1vv61ko
+幾何：/tmp/tmpd1vv61ko/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 10 個已量測
+[2/5] p2
+  元素 9 個已量測
+[3/5] p3
+  元素 13 個已量測
+[4/5] p4
+  元素 10 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmpykl0jg_x
+幾何：/tmp/tmpykl0jg_x/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 12 個已量測
+[2/5] p2
+  元素 11 個已量測
+[3/5] p3
+  元素 11 個已量測
+[4/5] p4
+  元素 13 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmp_ndgv17w
+幾何：/tmp/tmp_ndgv17w/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 13 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmp04jdvgh_
+幾何：/tmp/tmp04jdvgh_/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 12 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmpi9ho5ide
+幾何：/tmp/tmpi9ho5ide/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 5 個已量測
+[2/4] p2
+  元素 5 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 5 個已量測
+
+輸出：/tmp/tmp_cuxlcn5
+幾何：/tmp/tmp_cuxlcn5/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 10 個已量測
+[2/5] p2
+  元素 9 個已量測
+[3/5] p3
+  元素 13 個已量測
+[4/5] p4
+  元素 10 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmpq9_87gmp
+幾何：/tmp/tmpq9_87gmp/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 12 個已量測
+[2/5] p2
+  元素 11 個已量測
+[3/5] p3
+  元素 11 個已量測
+[4/5] p4
+  元素 13 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmpco1gk1pb
+幾何：/tmp/tmpco1gk1pb/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 13 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmple1z8lp2
+幾何：/tmp/tmple1z8lp2/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 12 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmpoivttscj
+幾何：/tmp/tmpoivttscj/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 5 個已量測
+[2/4] p2
+  元素 5 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 5 個已量測
+
+輸出：/tmp/tmppop5i4j2
+幾何：/tmp/tmppop5i4j2/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 10 個已量測
+[2/5] p2
+  元素 9 個已量測
+[3/5] p3
+  元素 13 個已量測
+[4/5] p4
+  元素 10 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmplqa9lg2g
+幾何：/tmp/tmplqa9lg2g/layout.json
+主題：暖色文青（warm）
+[1/5] p1
+  元素 12 個已量測
+[2/5] p2
+  元素 11 個已量測
+[3/5] p3
+  元素 11 個已量測
+[4/5] p4
+  元素 13 個已量測
+[5/5] p5
+  元素 10 個已量測
+
+輸出：/tmp/tmp1tvp3whh
+幾何：/tmp/tmp1tvp3whh/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 13 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmp3dlylyab
+幾何：/tmp/tmp3dlylyab/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 12 個已量測
+[2/4] p2
+  元素 8 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 10 個已量測
+
+輸出：/tmp/tmpdy_ln2bb
+幾何：/tmp/tmpdy_ln2bb/layout.json
+主題：暖色文青（warm）
+[1/4] p1
+  元素 5 個已量測
+[2/4] p2
+  元素 5 個已量測
+[3/4] p3
+  元素 18 個已量測
+[4/4] p4
+  元素 5 個已量測
+
+輸出：/tmp/tmpnhsi6one
+幾何：/tmp/tmpnhsi6one/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+  元素 8 個已量測
+
+輸出：/tmp/tmpy3uaz5fp
+幾何：/tmp/tmpy3uaz5fp/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+  元素 14 個已量測
+
+輸出：/tmp/tmp1eaxzk5t
+幾何：/tmp/tmp1eaxzk5t/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+  元素 10 個已量測
+
+輸出：/tmp/tmp3x2ves1t
+幾何：/tmp/tmp3x2ves1t/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+  元素 6 個已量測
+
+輸出：/tmp/tmp8luw54zu
+幾何：/tmp/tmp8luw54zu/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+.................................................127.0.0.1 - - [08/Oct/2026 18:59:07] "GET /jobs/1/slide/..%2F..%2F..%2Fetc%2Fpasswd HTTP/1.1" 404 -
+.127.0.0.1 - - [08/Oct/2026 18:59:08] "GET /jobs/1/slide/p2 HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:08] "GET /jobs/1/slide/p9 HTTP/1.1" 404 -
+..127.0.0.1 - - [08/Oct/2026 18:59:09] "GET /jobs/1/video?dl=1 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:09] "GET /jobs/1/video HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:09] "GET /jobs/1/video HTTP/1.1" 206 -
+.127.0.0.1 - - [08/Oct/2026 18:59:10] "GET /jobs/1/video HTTP/1.1" 206 -
+.127.0.0.1 - - [08/Oct/2026 18:59:10] "GET /jobs/1/video HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:11] "GET /jobs/1/video HTTP/1.1" 416 -
+....................127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/artifacts/artifact-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/content?download=1 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/artifacts/artifact-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/content?download=1 HTTP/1.1" 206 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/artifacts/artifact-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/content?download=1 HTTP/1.1" 416 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "POST /api/studio/artifacts/artifact-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/review HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "POST /api/studio/artifacts/artifact-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/review HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "POST /api/studio/artifacts/artifact-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/review HTTP/1.1" 409 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/jobs/jobx/events?after=0 HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "POST /api/studio/plans HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "POST /api/studio/jobs HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/jobs/4523afd7150d480cb1c59b4f2eae1973 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/jobs/4523afd7150d480cb1c59b4f2eae1973 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/jobs/4523afd7150d480cb1c59b4f2eae1973 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/jobs/4523afd7150d480cb1c59b4f2eae1973 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/jobs/4523afd7150d480cb1c59b4f2eae1973 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/jobs/4523afd7150d480cb1c59b4f2eae1973 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/artifacts/artifact-fccc37a54fb945979f2850df6dd3f124/content HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "POST /api/studio/artifacts/artifact-fccc37a54fb945979f2850df6dd3f124/review HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:14] "GET /api/studio/artifacts/artifact-fccc37a54fb945979f2850df6dd3f124/content?download=1 HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:15] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:15] "POST /api/studio/sources/material:bfc9d839ab4542d4a1497dc7ef9b21f1/normalize HTTP/1.1" 422 -
+.127.0.0.1 - - [08/Oct/2026 18:59:15] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:15] "POST /api/studio/jobs HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 18:59:15] "POST /api/studio/plans HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:59:15] "POST /api/studio/jobs HTTP/1.1" 409 -
+.127.0.0.1 - - [08/Oct/2026 18:59:16] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:16] "POST /api/studio/plans HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:59:16] "POST /api/studio/jobs HTTP/1.1" 503 -
+127.0.0.1 - - [08/Oct/2026 18:59:16] "POST /api/studio/jobs HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:59:16] "GET /api/studio/jobs/543aa951274c45d382713646180cb0cb HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:16] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:16] "POST /jobs HTTP/1.1" 409 -
+.127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/session HTTP/1.1" 200 -
+ERROR:root:教材上傳格式錯誤
+Traceback (most recent call last):
+  File "/home/pjw92/projects/videomaker/serve.py", line 794, in _studio_upload
+    mp = parse_multipart(body, self.headers.get("Content-Type", ""))
+  File "/home/pjw92/projects/videomaker/serve.py", line 960, in parse_multipart
+    raise ValueError("multipart boundary invalid")
+ValueError: multipart boundary invalid
+127.0.0.1 - - [08/Oct/2026 18:59:17] "POST /api/studio/sources HTTP/1.1" 400 -
+.127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "POST /api/studio/plans HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "POST /api/studio/jobs HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/jobs/7f1fbfc78d214906bca3014a14eacc39 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/jobs/7f1fbfc78d214906bca3014a14eacc39/source HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "DELETE /api/studio/sources/material:d5623eaab9c842d898cee427b1994146 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/jobs/7f1fbfc78d214906bca3014a14eacc39/source HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/artifacts/artifact-b452d644cf7e4ab68929c1bc03c7bf0d/content HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/artifacts/artifact-b452d644cf7e4ab68929c1bc03c7bf0d/content?view=svg HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/artifacts/artifact-b452d644cf7e4ab68929c1bc03c7bf0d/content?download=1 HTTP/1.1" 409 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "POST /api/studio/artifacts/artifact-b452d644cf7e4ab68929c1bc03c7bf0d/review HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/artifacts/artifact-b452d644cf7e4ab68929c1bc03c7bf0d/content?download=1 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:17] "GET /api/studio/jobs/7f1fbfc78d214906bca3014a14eacc39/artifacts HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:18] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:18] "POST /api/studio/plans HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 18:59:18] "POST /api/studio/plans HTTP/1.1" 409 -
+.127.0.0.1 - - [08/Oct/2026 18:59:18] "POST /api/studio/sources/material%3A4b2d82fa7bfa450095fd2f17aebddc38/normalize HTTP/1.1" 403 -
+127.0.0.1 - - [08/Oct/2026 18:59:18] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:18] "POST /api/studio/sources/material%3A4b2d82fa7bfa450095fd2f17aebddc38/normalize HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:19] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:19] "POST /api/studio/sources/material%3A30433761935247e8bd8f71b2e8cc5709/normalize HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:19] "POST /api/studio/sources/material%3A30433761935247e8bd8f71b2e8cc5709/normalize HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:19] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:19] "POST /api/studio/plans HTTP/1.1" 201 -
+.127.0.0.1 - - [08/Oct/2026 18:59:20] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:20] "GET /api/studio/catalog HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:20] "POST /jobs HTTP/1.1" 403 -
+127.0.0.1 - - [08/Oct/2026 18:59:20] "POST /jobs HTTP/1.1" 403 -
+127.0.0.1 - - [08/Oct/2026 18:59:20] "POST /jobs HTTP/1.1" 403 -
+.127.0.0.1 - - [08/Oct/2026 18:59:20] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:20] "POST /api/studio/sources HTTP/1.1" 201 -
+127.0.0.1 - - [08/Oct/2026 18:59:20] "DELETE /api/studio/sources/material:7e2b1f60112a4527a4b778fbd0eba19f HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/js/api.mjs HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/js/state.mjs HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/js/render.mjs HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/js/app.mjs HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/nope.mjs HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/js/../app.mjs HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/js/%2e%2e/app.mjs HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/styles.css.bak HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 18:59:21] "GET /assets/js/app.mjs%00 HTTP/1.1" 404 -
+.127.0.0.1 - - [08/Oct/2026 18:59:22] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:22] "GET /legacy HTTP/1.1" 200 -
+.127.0.0.1 - - [08/Oct/2026 18:59:22] "GET /api/studio/session HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:22] "GET /api/studio/jobs/jobx/review HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:22] "GET /api/studio/jobs/jobx/artifacts HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 18:59:22] "GET /api/studio/jobs/jobx/events?after=-1 HTTP/1.1" 400 -
+127.0.0.1 - - [08/Oct/2026 18:59:22] "POST /api/studio/jobs/jobx/review HTTP/1.1" 400 -
+...................................ERROR:root:deck PPTX 匯出失敗
+Traceback (most recent call last):
+  File "/home/pjw92/projects/videomaker/studio/deck_facade.py", line 157, in review_artifact
+    self._pptx_bytes = export_pptx(self._deck)
+  File "/home/pjw92/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/lib/python3.10/unittest/mock.py", line 1114, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/home/pjw92/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/lib/python3.10/unittest/mock.py", line 1118, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/home/pjw92/.local/share/uv/python/cpython-3.10-linux-x86_64-gnu/lib/python3.10/unittest/mock.py", line 1173, in _execute_mock_call
+    raise effect
+RuntimeError: secret token
+..WARNING:root:deck job 失敗: DeckError
+..WARNING:root:deck job 失敗: DeckError
+....................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 704 tests in 58.310s
+
+OK (skipped=1)
+  元素 8 個已量測
+
+輸出：/tmp/tmpg97fy1p9
+幾何：/tmp/tmpg97fy1p9/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+  元素 8 個已量測
+
+輸出：/tmp/tmpnxuysbt3
+幾何：/tmp/tmpnxuysbt3/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+  元素 9 個已量測
+
+輸出：/tmp/tmpgs6ayzis
+幾何：/tmp/tmpgs6ayzis/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+  元素 12 個已量測
+
+輸出：/tmp/tmplmb6j7tl
+幾何：/tmp/tmplmb6j7tl/layout.json
+主題：暖色文青（warm）
+[1/1] p1
+主題：暖色文青（warm）
+[1/1] p1
+  元素 12 個已量測
+
+輸出：/tmp/tmpljvwbq3b
+幾何：/tmp/tmpljvwbq3b/layout.json

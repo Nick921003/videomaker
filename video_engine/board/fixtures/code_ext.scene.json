@@ -1,0 +1,134 @@
+{
+	"version": 1,
+	"title": "code元件擴充",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "code",
+			"type": "code",
+			"caption": "修正比較運算",
+			"footer": "新增行取代刪除行",
+			"lines": [
+				"if (n = 2) return 1;",
+				"if (n == 2) return 1;",
+				"return 0;"
+			],
+			"diff": {
+				"add": [
+					2
+				],
+				"del": [
+					1
+				]
+			},
+			"marks": [
+				{
+					"id": "eq",
+					"line": 2,
+					"text": "=="
+				},
+				{
+					"id": "ret",
+					"line": 3,
+					"text": "return"
+				}
+			]
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "比較是否相等"
+		}
+	],
+	"scenes": [
+		{
+			"id": "diff",
+			"title": "新增與刪除",
+			"label": "擴充驗收",
+			"layout": {
+				"row": [
+					"code",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "顯示修改前後的程式與比較提示。",
+					"do": [
+						{
+							"act": "show",
+							"target": "code",
+							"cue": "程式"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "提示"
+						}
+					]
+				},
+				{
+					"say": "標亮新增行，觀察比較運算。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "code",
+							"cue": "標亮",
+							"line": 2
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈出行內片段",
+			"label": "擴充驗收",
+			"layout": {
+				"row": [
+					"code",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈出兩個等號，確認片段錨點。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "code:eq",
+							"cue": "圈出"
+						}
+					]
+				},
+				{
+					"say": "替比較符號畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "code:eq",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "用箭頭連到比較提示。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "code:eq",
+							"cue": "箭頭",
+							"to": "result",
+							"label": "相等比較"
+						}
+					]
+				}
+			],
+			"keep": [
+				"code",
+				"result"
+			]
+		}
+	]
+}

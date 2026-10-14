@@ -1,0 +1,18 @@
+// Node 22 以目錄執行測試時，需要這個入口。
+import './router.test.mjs';
+import './api.test.mjs';
+import './overview.test.mjs';
+import './roadmap.test.mjs';
+import './app.test.mjs';
+import './diagram.test.mjs';
+import './panzoom.test.mjs';
+import './make.test.mjs';
+import './f4.test.mjs';
+import './library.test.mjs';
+import './usage.test.mjs';
+import './reading-focus.test.mjs';
+import './viewers.test.mjs';
+
+import "./concept-tree.test.mjs";
+import './handout.test.mjs';
+import './key-points-review.test.mjs';

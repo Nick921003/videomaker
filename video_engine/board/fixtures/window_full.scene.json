@@ -1,0 +1,422 @@
+{
+	"version": 1,
+	"title": "視窗完整屬性與操作",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "search",
+			"preset": "win11.search"
+		},
+		{
+			"id": "props",
+			"preset": "win11.sys_props",
+			"title": "系統內容",
+			"tabs": [
+				{
+					"id": "t_name",
+					"text": "電腦名稱"
+				},
+				{
+					"id": "t_hw",
+					"text": "硬體"
+				},
+				{
+					"id": "t_adv",
+					"text": "進階",
+					"active": true
+				},
+				{
+					"id": "t_prot",
+					"text": "系統保護"
+				},
+				{
+					"id": "t_remote",
+					"text": "遠端"
+				}
+			],
+			"body": [
+				{
+					"group": {
+						"title": "效能",
+						"body": [
+							{
+								"buttons": {
+									"items": [
+										{
+											"id": "perf",
+											"text": "設定(S)..."
+										}
+									],
+									"align": "right"
+								}
+							}
+						]
+					}
+				},
+				{
+					"group": {
+						"title": "使用者設定檔",
+						"body": [
+							{
+								"buttons": {
+									"items": [
+										{
+											"id": "profile",
+											"text": "設定(E)..."
+										}
+									],
+									"align": "right"
+								}
+							}
+						]
+					}
+				},
+				{
+					"group": {
+						"title": "啟動及修復",
+						"body": [
+							{
+								"buttons": {
+									"items": [
+										{
+											"id": "startup",
+											"text": "設定(T)..."
+										}
+									],
+									"align": "right"
+								}
+							}
+						]
+					}
+				},
+				{
+					"buttons": {
+						"items": [
+							{
+								"id": "envbtn",
+								"text": "環境變數(N)..."
+							}
+						],
+						"align": "right"
+					}
+				}
+			],
+			"footer": [
+				{
+					"id": "ok",
+					"text": "確定"
+				},
+				{
+					"id": "cancel",
+					"text": "取消"
+				},
+				{
+					"id": "apply",
+					"text": "套用(A)"
+				}
+			]
+		},
+		{
+			"id": "vars",
+			"preset": "win11.env_vars"
+		},
+		{
+			"id": "edit",
+			"preset": "win11.edit_env_var"
+		},
+		{
+			"id": "mouse",
+			"type": "cursor"
+		}
+	],
+	"scenes": [
+		{
+			"id": "search",
+			"title": "搜尋環境變數",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"search"
+				]
+			},
+			"beats": [
+				{
+					"say": "先顯示搜尋視窗，輸入環境變數。",
+					"do": [
+						{
+							"act": "show",
+							"target": "search"
+						},
+						{
+							"act": "input",
+							"target": "search:q",
+							"cue": "輸入",
+							"text": "環境變數"
+						}
+					]
+				},
+				{
+					"say": "圈起輸入框，再替輸入框畫底線。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "search:q",
+							"cue": "圈起"
+						},
+						{
+							"act": "underline",
+							"target": "search:q",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "箭頭指向搜尋結果，點選結果列。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "search:q",
+							"cue": "箭頭",
+							"to": "search:r0",
+							"label": "搜尋結果"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "點選",
+							"on": "search:r0"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "props",
+			"title": "系統內容進階分頁",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"props"
+				]
+			},
+			"beats": [
+				{
+					"say": "顯示系統內容，靠近環境變數按鈕。",
+					"do": [
+						{
+							"act": "show",
+							"target": "props"
+						},
+						{
+							"act": "focus",
+							"target": "props:envbtn",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "點選進階分頁，再圈起設定按鈕。",
+					"do": [
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "進階",
+							"on": "props:t_adv"
+						},
+						{
+							"act": "circle",
+							"target": "props:envbtn",
+							"cue": "圈起"
+						}
+					]
+				},
+				{
+					"say": "畫底線，箭頭連到確定，再點按鈕。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "props:envbtn",
+							"cue": "底線"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "點按鈕",
+							"on": "props:envbtn"
+						}
+					]
+				}
+			],
+			"keep": [
+				"mouse"
+			]
+		},
+		{
+			"id": "vars",
+			"title": "選取使用者變數",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"vars"
+				]
+			},
+			"beats": [
+				{
+					"say": "顯示環境變數，靠近使用者群組。",
+					"do": [
+						{
+							"act": "show",
+							"target": "vars"
+						},
+						{
+							"act": "focus",
+							"target": "vars:user",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "選取路徑變數，圈起選到的列。",
+					"do": [
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "選取",
+							"on": "vars:u_path"
+						},
+						{
+							"act": "circle",
+							"target": "vars:u_path",
+							"cue": "圈起"
+						}
+					]
+				},
+				{
+					"say": "替選取列畫底線，箭頭指向編輯鈕。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "vars:u_path",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "移到編輯按鈕，再點一下。",
+					"do": [
+						{
+							"act": "move",
+							"target": "mouse",
+							"cue": "移到",
+							"to": "vars:u_edit"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "點一下",
+							"on": "vars:u_edit"
+						}
+					]
+				}
+			],
+			"keep": [
+				"mouse"
+			]
+		},
+		{
+			"id": "edit",
+			"title": "新增編譯器資料夾",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"edit"
+				]
+			},
+			"beats": [
+				{
+					"say": "顯示編輯視窗，點新增並輸入路徑。",
+					"do": [
+						{
+							"act": "show",
+							"target": "edit"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "新增",
+							"on": "edit:b_new"
+						},
+						{
+							"act": "input",
+							"target": "edit:new",
+							"cue": "輸入",
+							"text": "C:\\mingw\\bin"
+						}
+					]
+				},
+				{
+					"say": "選取新列，圈起並畫上底線。",
+					"do": [
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "選取",
+							"on": "edit:new"
+						},
+						{
+							"act": "circle",
+							"target": "edit:b_new",
+							"cue": "圈起"
+						},
+						{
+							"act": "underline",
+							"target": "edit:b_new",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "箭頭連到新列，再按確定。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "edit:b_new",
+							"cue": "箭頭",
+							"to": "edit:new",
+							"label": "新增路徑"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"cue": "確定",
+							"on": "edit:ok"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示視窗。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "edit",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "edit",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"mouse"
+			]
+		}
+	]
+}

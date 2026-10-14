@@ -1,0 +1,172 @@
+{
+	"version": 1,
+	"title": "格子元件：min",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "cells",
+			"type": "cells",
+			"count": 4
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "觀察結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "operate",
+			"title": "填入與讀取",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"cells",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "把字元直接填入，旁邊顯示提示。",
+					"do": [
+						{
+							"act": "fill",
+							"target": "cells",
+							"cue": "填入",
+							"values": [
+								"A",
+								"B",
+								"C",
+								"\\0"
+							]
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"cue": "提示"
+						}
+					]
+				},
+				{
+					"say": "指向第一格，接著依序讀取字元。",
+					"do": [
+						{
+							"act": "point",
+							"target": "cells",
+							"cue": "指向",
+							"index": 0
+						},
+						{
+							"act": "scan",
+							"target": "cells",
+							"cue": "讀取",
+							"range": [
+								0,
+								2
+							]
+						}
+					]
+				},
+				{
+					"say": "遇到結束字元，就停在最後一格。",
+					"do": [
+						{
+							"act": "stop",
+							"target": "cells",
+							"cue": "停在",
+							"index": 3
+						}
+					]
+				},
+				{
+					"say": "用括線標出三個字元的範圍。",
+					"do": [
+						{
+							"act": "brace",
+							"target": "cells",
+							"cue": "括線",
+							"range": [
+								0,
+								2
+							],
+							"label": "三個字元"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"stack": [
+					"cells",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "cells",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "cells",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "cells",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "cells",
+							"cue": "箭頭",
+							"to": "result"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "cells",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "cells",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"cells",
+				"result"
+			]
+		}
+	]
+}

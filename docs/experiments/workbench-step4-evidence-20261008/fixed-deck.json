@@ -1,0 +1,95 @@
+{
+	"contract_version": "1.1",
+	"title": "Python 迴圈",
+	"slides": [
+		{
+			"slide_id": "s1",
+			"role": "hook",
+			"title": "先想一想",
+			"layout": "concept",
+			"blocks": [
+				{
+					"type": "concept",
+					"center": "迴圈",
+					"items": [
+						{
+							"title": "條件",
+							"text": "決定是否繼續"
+						},
+						{
+							"title": "更新",
+							"text": "讓狀態向終止前進"
+						}
+					]
+				}
+			],
+			"speaker_notes": "請學生舉例。",
+			"source_quote": "迴圈可重複執行",
+			"takeaway": "讀完這頁，確認條件與更新如何讓迴圈結束。"
+		},
+		{
+			"slide_id": "s2",
+			"role": "example",
+			"title": "程式範例",
+			"layout": "code",
+			"blocks": [
+				{
+					"type": "code",
+					"language": "python",
+					"lines": [
+						"for n in range(3):",
+						"    print(n)"
+					]
+				}
+			],
+			"speaker_notes": "逐行解釋。",
+			"source_quote": "for n in range(3)",
+			"takeaway": "讀完這頁，確認條件與更新如何讓迴圈結束。"
+		},
+		{
+			"slide_id": "s3",
+			"role": "pitfall",
+			"title": "比較兩種寫法",
+			"layout": "compare",
+			"blocks": [
+				{
+					"type": "compare",
+					"left": {
+						"title": "正確",
+						"items": [
+							"有終止條件"
+						]
+					},
+					"right": {
+						"title": "錯誤",
+						"items": [
+							"無終止條件"
+						]
+					}
+				}
+			],
+			"speaker_notes": "討論無限迴圈。",
+			"source_quote": "終止條件",
+			"takeaway": "讀完這頁，確認條件與更新如何讓迴圈結束。"
+		},
+		{
+			"slide_id": "s4",
+			"role": "summary",
+			"title": "實作步驟",
+			"layout": "steps",
+			"blocks": [
+				{
+					"type": "steps",
+					"items": [
+						"設定初值",
+						"檢查條件",
+						"更新變數"
+					]
+				}
+			],
+			"speaker_notes": "複習。",
+			"source_quote": "更新變數",
+			"takeaway": "讀完這頁，確認條件與更新如何讓迴圈結束。"
+		}
+	]
+}

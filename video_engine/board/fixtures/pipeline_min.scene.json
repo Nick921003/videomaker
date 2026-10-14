@@ -1,0 +1,32 @@
+{
+	"version": 1, "title": "直排流程", "tag": "測試", "corner_note": "概念示意",
+	"objects": [
+		{"id": "p", "type": "pipeline", "direction": "column", "stages": [
+			{"id": "a", "label": "輸入"},
+			{"id": "b", "label": "處理"},
+			{"id": "c", "label": "輸出"}
+		], "items": [{"id": "data", "text": "資料", "at": "a"}]}
+	],
+	"scenes": [
+		{"id": "flow", "title": "資料由上往下走", "label": "直排", "layout": {"stack": ["p"]}, "beats": [
+			{"say": "先選輸入站，再把資料送到處理站。", "do": [
+				{"act": "step", "target": "p:a", "cue": "輸入站"},
+				{"act": "move", "target": "p:data", "to": "b", "cue": "送到"}
+			]},
+			{"say": "處理站遇到問題，箭頭指回輸入站。", "do": [
+				{"act": "step", "target": "p:b", "cue": "處理站"},
+				{"act": "reject", "target": "p:b", "back_to": "a", "cue": "問題"}
+			]}
+		]},
+		{"id": "finish", "title": "資料保留到下一場", "label": "輸出", "keep": ["p"], "layout": {"stack": ["p"]}, "beats": [
+			{"say": "上一場標記淡掉，資料繼續往輸出站。", "do": [
+				{"act": "move", "target": "p:data", "to": "c", "cue": "繼續"},
+				{"act": "step", "target": "p:c", "cue": "輸出站"}
+			]},
+			{"say": "圈起輸出站，再畫底線確認結果。", "do": [
+				{"act": "circle", "target": "p:c", "cue": "圈起"},
+				{"act": "underline", "target": "p:data", "cue": "底線"}
+			]}
+		]}
+	]
+}

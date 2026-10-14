@@ -1,0 +1,293 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+async function withAPI(search, run) {
+	const previousLocation = globalThis.location;
+	const previousFetch = globalThis.fetch;
+	const requests = [];
+	globalThis.location = { search };
+	globalThis.fetch = async (path, options) => {
+		requests.push({ path, options });
+		const data = JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), 'utf8'));
+		return { ok: true, json: async () => data };
+	};
+	try {
+		const { api } = await import(`../js/api.mjs?test=${Math.random()}`);
+		await run(api, requests);
+	} finally {
+		globalThis.fetch = previousFetch;
+		if (previousLocation === undefined) delete globalThis.location;
+		else globalThis.location = previousLocation;
+	}
+}
+
+test('學生提問 mock 依問題選擇影片、超出範圍、未生成與沒有對應段落', async () => {
+	await withAPI('?mock=1', async (api, requests) => {
+		const ask = question => api.post('/ask', { unit_id: 'another-unit', question });
+		const story = await ask('迴圈為什麼多跑一次？');
+		assert.equal(story.kind, 'story');
+		assert.equal(story.video, '/media/another-unit/q2/video.mp4');
+		assert.equal((await ask('遞迴怎麼寫？')).kind, 'out_of_scope');
+		assert.equal((await ask('找不到的未知問題')).kind, 'no_match');
+		const unmade = await ask('尚未生成的段落');
+		assert.equal(unmade.kind, 'story');
+		assert.equal(unmade.video, null);
+		assert.equal(unmade.story, 'q5');
+		await assert.rejects(ask('  '));
+		assert.ok(requests.every(({ path }) => path.startsWith('mock/')));
+	});
+});
+
+test('建立教材後先維持未分析，分析工作完成才取得分析結果', async () => {
+	await withAPI('?mock=1', async api => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			await assert.rejects(api.post('/units', { markdown: '   ' }));
+			const created = await api.post('/units', { title: '我的教材', markdown: '# for 迴圈' });
+			assert.equal(created.created, true);
+			assert.equal((await api.post('/units', { markdown: '# for 迴圈' })).unit_id, created.unit_id);
+			assert.equal((await api.get(`/units/${created.unit_id}`)).analysis, null);
+			assert.ok((await api.get('/units')).some(unit => unit.unit_id === created.unit_id && !unit.analyzed));
+			const { job_id } = await api.post(`/units/${created.unit_id}/analyze`);
+			assert.deepEqual(await api.post(`/units/${created.unit_id}/analyze`), { job_id });
+			assert.equal((await api.get(`/jobs/${job_id}`)).format, 'analysis');
+			now += 4000;
+			assert.equal((await api.get(`/jobs/${job_id}`)).state, 'done');
+			assert.equal((await api.get(`/units/${created.unit_id}`)).analysis.points.length, 5);
+			assert.deepEqual(await api.post(`/units/${created.unit_id}/analyze`), { job_id: null, analyzed: true });
+		} finally { Date.now = previousNow; }
+	});
+});
+
+test('重配完成品只跑 narrate/render、每兩秒前進並清掉指定句號 warning', async () => {
+	await withAPI('?mock=1', async api => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			const path = '/units/ff9e559208c9/items/q2/renarrate';
+			for (const beats of [[], [0], [1.5], ['3']]) await assert.rejects(api.post(path, { beats }));
+			const { job_id } = await api.post(path, { beats: [3] });
+			let job = await api.get(`/jobs/${job_id}`);
+			assert.equal(job.current, 'narrate');
+			assert.ok(job.steps.filter(step => !['narrate', 'render'].includes(step.id)).every(step => step.state === 'skipped'));
+			assert.deepEqual(job.warnings, []);
+			now += 2000;
+			assert.equal((await api.get(`/jobs/${job_id}`)).current, 'render');
+			now += 2000;
+			job = await api.get(`/jobs/${job_id}`);
+			assert.equal(job.state, 'done');
+			const item = (await api.get('/units/ff9e559208c9')).items.find(item => item.item === 'q2');
+			assert.equal(item.job_id, job_id);
+			assert.equal(item.status, 'done');
+			assert.deepEqual(item.warnings, []);
+			assert.ok(item.files.video);
+		} finally { Date.now = previousNow; }
+	});
+});
+
+test('上傳 PDF 僅提供摘要，確認整理後的工作才建立教材', async () => {
+	await withAPI('?mock=1', async api => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			const body = new FormData();
+			body.append('file', new Blob(['PDF mock'], { type: 'application/pdf' }), 'lesson.pdf');
+			const upload = await api.post('/uploads', body);
+			assert.equal(upload.kind, 'pdf');
+			assert.ok(upload.excerpt && upload.pages > 0 && upload.estimate_usd > 0);
+			assert.deepEqual(await api.get('/queue'), { running: null, queued: [] });
+			const { job_id } = await api.post(`/uploads/${upload.upload_id}/normalize`);
+			assert.equal((await api.get(`/jobs/${job_id}`)).unit_id, null);
+			now += 4000;
+			const done = await api.get(`/jobs/${job_id}`);
+			assert.equal(done.state, 'done');
+			assert.ok(done.unit_id);
+			assert.equal((await api.get(`/units/${done.unit_id}`)).analysis, null);
+		} finally { Date.now = previousNow; }
+	});
+});
+
+test('正式 multipart 上傳保留 FormData，交由瀏覽器產生 boundary', async () => {
+	await withAPI('', async api => {
+		const body = new FormData();
+		body.append('file', new Blob(['source']), 'lesson.pptx');
+		let request;
+		globalThis.fetch = async (path, options) => {
+			request = { path, options };
+			return { ok: true, json: async () => ({ upload_id: 'real-upload' }) };
+		};
+		await api.post('/uploads', body);
+		assert.equal(request.path, '/api/v1/uploads');
+		assert.equal(request.options.body, body);
+		assert.equal(request.options.headers, undefined);
+	});
+});
+
+test('mock 固定映射讀取相對路徑，待機與忙碌佇列分開', async () => {
+	await withAPI('?mock=1', async (api, requests) => {
+		assert.equal(api.MOCK, true);
+		assert.ok((await api.get('/formats')).formats.length > 0);
+		assert.equal((await api.get('/api/v1/units'))[0].title, '迴圈');
+		assert.deepEqual(await api.get('/queue'), { running: null, queued: [] });
+		assert.ok(requests.every(({ path }) => path.startsWith('mock/')));
+	});
+	await withAPI('?mock=1&busy=1', async (api) => {
+		const queue = await api.get('/queue');
+		assert.equal(queue.running.state, 'running');
+		assert.equal(queue.queued.length, 1);
+	});
+});
+
+test('不同教材狀態與成品清單使用契約 mock', async () => {
+	await withAPI('?mock=1', async (api) => {
+		assert.equal((await api.get('/units/ff9e559208c9')).items.filter(item => item.status === 'done').length, 6);
+		assert.equal((await api.get('/units/ff9e559208c9?state=new')).analysis, null);
+		assert.equal((await api.get('/units/ff9e559208c9?state=analyzed')).analysis.points.length, 5);
+		assert.equal((await api.get('/units/ff9e559208c9/manifest')).products.length, 6);
+		assert.equal((await api.get('/usage')).totals.all, 0.287);
+	});
+});
+
+test('busy=1 的佇列固定使用忙碌範例，未生成工作時不會自行變成閒置', async () => {
+	await withAPI('?mock=1&busy=1', async (api) => {
+		const fixture = JSON.parse(await readFile(new URL('../mock/queue-busy.json', import.meta.url), 'utf8'));
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			assert.deepEqual(await api.get('/queue'), fixture);
+			now += 60000;
+			assert.deepEqual(await api.get('/queue'), fixture);
+		} finally {
+			Date.now = previousNow;
+		}
+	});
+});
+
+test('生成略過已完成項目；工作每兩秒前進並依形式結束', async () => {
+	await withAPI('?mock=1', async (api) => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			const { job_ids } = await api.post('/units/ff9e559208c9/generate', { items: ['q1', 'q5'] });
+			assert.equal(job_ids.length, 1);
+			let job = await api.get(`/jobs/${job_ids[0]}`);
+			assert.equal(job.current, 'selftest');
+			now += 1999;
+			assert.equal((await api.get(`/jobs/${job_ids[0]}`)).current, 'selftest');
+			now += 1;
+			job = await api.get(`/jobs/${job_ids[0]}`);
+			assert.equal(job.current, 'storyboard');
+			assert.equal(job.steps[0].state, 'done');
+			now += 10000;
+			job = await api.get(`/jobs/${job_ids[0]}`);
+			assert.equal(job.state, 'done');
+			assert.equal(job.current, null);
+			assert.ok(job.steps.every(step => step.state === 'done'));
+		} finally {
+			Date.now = previousNow;
+		}
+	});
+});
+
+test('q4 在修正步驟失敗，保留 gemini_busy 的原因與重試建議', async () => {
+	await withAPI('?mock=1', async (api) => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			const { job_ids } = await api.post('/units/ff9e559208c9/generate', { items: ['q4'] });
+			now += 6000;
+			const job = await api.get(`/jobs/${job_ids[0]}`);
+			assert.equal(job.state, 'failed');
+			assert.equal(job.current, 'repair');
+			assert.equal(job.error.code, 'gemini_busy');
+			assert.equal(job.error.retry, true);
+			assert.equal(job.steps.find(step => step.id === 'repair').state, 'failed');
+			assert.equal(job.steps.find(step => step.id === 'narrate').state, 'pending');
+			const retry = await api.post(`/jobs/${job.job_id}/retry`);
+			assert.notEqual(retry.job_id, job.job_id);
+			assert.equal((await api.get(`/jobs/${retry.job_id}`)).state, 'running');
+		} finally {
+			Date.now = previousNow;
+		}
+	});
+});
+
+test('正式模式只呼叫 /api/v1 並保留結構化錯誤', async () => {
+	await withAPI('?mock=0', async (api, requests) => {
+		assert.equal(api.MOCK, false);
+		globalThis.fetch = async (path, options) => {
+			requests.push({ path, options });
+			return { ok: true, json: async () => ({ job_ids: ['real-job'] }) };
+		};
+		assert.deepEqual(await api.post('/units/u1/generate', { items: ['q1'] }), { job_ids: ['real-job'] });
+		assert.equal(requests[0].path, '/api/v1/units/u1/generate');
+		assert.deepEqual(JSON.parse(requests[0].options.body), { items: ['q1'] });
+		globalThis.fetch = async () => ({ ok: false, status: 503, json: async () => ({
+			error: { code: 'gemini_busy', reason: '暫時忙碌', advice: '稍後重試' },
+		}) });
+		await assert.rejects(api.get('/queue'), error => error.code === 'gemini_busy' && error.advice === '稍後重試');
+	});
+});
+
+test('生成的工作出現在佇列，完成或失敗後接著跑下一個', async () => {
+	await withAPI('?mock=1', async (api) => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			const { job_ids } = await api.post('/units/ff9e559208c9/generate', { items: ['q4', 'q5'] });
+			let queue = await api.get('/queue');
+			assert.equal(queue.running.job_id, job_ids[0]);
+			assert.equal(queue.queued[0].job_id, job_ids[1]);
+			now += 6000;
+			queue = await api.get('/queue');
+			assert.equal(queue.running.job_id, job_ids[1]);
+			assert.equal(queue.queued.length, 0);
+			now += 12000;
+			assert.deepEqual(await api.get('/queue'), { running: null, queued: [] });
+		} finally {
+			Date.now = previousNow;
+		}
+	});
+});
+
+test('依心智圖與簡報自己的步驟前進，不套用影片步驟', async () => {
+	await withAPI('?mock=1', async (api) => {
+		const previousNow = Date.now;
+		let now = 10000;
+		Date.now = () => now;
+		try {
+			const { job_ids } = await api.post('/units/ff9e559208c9/generate?state=analyzed', { items: ['mindmap', 'slides'] });
+			assert.equal(job_ids.length, 2);
+			let job = await api.get(`/jobs/${job_ids[0]}`);
+			assert.deepEqual(job.steps.map(step => step.id), ['generate', 'validate', 'render']);
+			assert.equal(job.current, 'generate');
+			now += 2000;
+			assert.equal((await api.get(`/jobs/${job_ids[0]}`)).current, 'validate');
+			now += 4000;
+			job = await api.get(`/jobs/${job_ids[1]}`);
+			assert.deepEqual(job.steps.map(step => step.id), ['generate', 'validate', 'export']);
+			assert.equal(job.current, 'generate');
+			now += 6000;
+			assert.equal((await api.get(`/jobs/${job_ids[1]}`)).state, 'done');
+		} finally {
+			Date.now = previousNow;
+		}
+	});
+});
+
+test('重複送出略過已排隊工作；不能重試正在跑的工作', async () => {
+	await withAPI('?mock=1', async (api) => {
+		const { job_ids } = await api.post('/units/ff9e559208c9/generate', { items: ['q5'] });
+		assert.deepEqual(await api.post('/units/ff9e559208c9/generate', { items: ['q5'] }), { job_ids: [] });
+		await assert.rejects(api.post(`/jobs/${job_ids[0]}/retry`));
+	});
+});

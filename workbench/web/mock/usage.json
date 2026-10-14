@@ -1,0 +1,179 @@
+{
+	"totals": {
+		"today": 0.219,
+		"all": 0.287,
+		"by_model": {
+			"google:gemini-3.8-flash": 0.167,
+			"google:gemini-3.8-flash-tts": 0.12
+		}
+	},
+	"units": [
+		{
+			"unit_id": "ff9e559208c9",
+			"title": "迴圈",
+			"usd": 0.287,
+			"items": [
+				{
+					"item": "analysis",
+					"label": "教材分析",
+					"usd": 0.015,
+					"calls": [
+						{
+							"at": "2026-10-04T08:01:00Z",
+							"step": "plan",
+							"model": "google:gemini-3.8-flash",
+							"in": 2100,
+							"out": 900,
+							"usd": 0.015
+						}
+					]
+				},
+				{
+					"item": "q1",
+					"label": "第 1 點影片：每一圈的過程",
+					"usd": 0.053,
+					"calls": [
+						{
+							"at": "2026-10-04T08:07:00Z",
+							"step": "narrate",
+							"model": "google:gemini-3.8-flash-tts",
+							"in": 250,
+							"out": 1900,
+							"usd": 0.018
+						},
+						{
+							"at": "2026-10-04T08:06:00Z",
+							"step": "repair",
+							"model": "google:gemini-3.8-flash",
+							"in": 1600,
+							"out": 500,
+							"usd": 0.005
+						},
+						{
+							"at": "2026-10-04T08:05:00Z",
+							"step": "storyboard",
+							"model": "google:gemini-3.8-flash",
+							"in": 3200,
+							"out": 1700,
+							"usd": 0.03
+						}
+					]
+				},
+				{
+					"item": "q2",
+					"label": "第 2 點影片：多跑一次的原因",
+					"usd": 0.0575,
+					"calls": [
+						{
+							"at": "2026-10-05T09:03:00Z",
+							"step": "narrate",
+							"model": "google:gemini-3.8-flash-tts",
+							"in": 320,
+							"out": 2200,
+							"usd": 0.0225
+						},
+						{
+							"at": "2026-10-05T09:01:00Z",
+							"step": "storyboard",
+							"model": "google:gemini-3.8-flash",
+							"in": 3400,
+							"out": 1900,
+							"usd": 0.035
+						}
+					]
+				},
+				{
+					"item": "q3",
+					"label": "第 3 點影片：while 和 for 的選擇",
+					"usd": 0.0495,
+					"calls": [
+						{
+							"at": "2026-10-05T09:07:00Z",
+							"step": "narrate",
+							"model": "google:gemini-3.8-flash-tts",
+							"in": 280,
+							"out": 2000,
+							"usd": 0.0195
+						},
+						{
+							"at": "2026-10-05T09:05:00Z",
+							"step": "storyboard",
+							"model": "google:gemini-3.8-flash",
+							"in": 3100,
+							"out": 1700,
+							"usd": 0.03
+						}
+					]
+				},
+				{
+					"item": "q4",
+					"label": "第 4 點影片：無限迴圈",
+					"usd": 0.035,
+					"calls": [
+						{
+							"at": "2026-10-05T09:10:00Z",
+							"step": "repair",
+							"model": "google:gemini-3.8-flash",
+							"in": 1700,
+							"out": 500,
+							"usd": 0.005
+						},
+						{
+							"at": "2026-10-05T09:09:00Z",
+							"step": "storyboard",
+							"model": "google:gemini-3.8-flash",
+							"in": 3300,
+							"out": 1600,
+							"usd": 0.03
+						}
+					]
+				},
+				{
+					"item": "highlight",
+					"label": "重點片",
+					"usd": 0.06,
+					"calls": [
+						{
+							"at": "2026-10-05T09:12:00Z",
+							"step": "narrate",
+							"model": "google:gemini-3.8-flash-tts",
+							"in": 850,
+							"out": 6000,
+							"usd": 0.06
+						}
+					]
+				},
+				{
+					"item": "mindmap",
+					"label": "心智圖",
+					"usd": 0.008,
+					"calls": [
+						{
+							"at": "2026-10-05T09:15:00Z",
+							"step": "generate",
+							"model": "google:gemini-3.8-flash",
+							"in": 2200,
+							"out": 850,
+							"usd": 0.008
+						}
+					]
+				},
+				{
+					"item": "slides",
+					"label": "簡報",
+					"usd": 0.009,
+					"calls": [
+						{
+							"at": "2026-10-05T09:17:00Z",
+							"step": "generate",
+							"model": "google:gemini-3.8-flash",
+							"in": 2400,
+							"out": 1100,
+							"usd": 0.009
+						}
+					]
+				}
+			]
+		}
+	]
+}

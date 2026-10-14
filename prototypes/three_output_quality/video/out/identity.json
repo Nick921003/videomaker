@@ -1,0 +1,208 @@
+{
+	"version": 1,
+	"origin": "saved Gemini narration, renderer fixture; no generation in this run",
+	"spoken": [
+		"寫迴圈時答案常常多一或少一，到底什麼時候該寫小於，什麼時候寫小於等於？",
+		"這正是最常見的差一錯誤。關鍵在於：起點是幾、最後一格要不要算進去。",
+		"第一種情況是數數。如果要把一到五全部加起來，起點是一。",
+		"我們要算到五，五本身必須算進去。",
+		"所以當 i 走到五，條件仍然要成立，這裡要寫小於等於五。",
+		"但是換成陣列，情況就不一樣了。這是一個長度為五的陣列。",
+		"因為陣列是從第零格開始，五格的編號其實是零到四。",
+		"如果寫成小於等於五，迴圈會跑到第五格，但根本沒有第五格，這會踩空越界！",
+		"所以最後一格只能停在四，條件必須寫成小於五。",
+		"只要記住這兩個規則：從一開始數到 N，要包含最後的 N，就用小於等於；",
+		"從零開始看 N 格，最後一格只有 N 減一，就用小於。",
+		"先看起點，再確認最後一格在哪裡，就不會再差一了。"
+	],
+	"voice": {
+		"tts": "gemini",
+		"speed": 0.95,
+		"model": "gemini-3.8-flash-tts",
+		"voice_name": "unknown in saved metadata; not inferred"
+	},
+	"audio_sha256": "70281c592392ac01a034e2a851ec1601e3195cb63c957e231e820f504a4d0a9d",
+	"timing_sha256": "c0c5925b2628d26e148d788e9f421dca3dbfd7569f0465432a416d45fab00896",
+	"master_pcm_rebuilt_byte_identical": true,
+	"scene_spoken_mismatches": [
+		0,
+		4,
+		7,
+		9,
+		10
+	],
+	"beats": [
+		{
+			"index": 0,
+			"text": "寫迴圈時答案常常多一或少一，到底什麼時候該寫小於，什麼時候寫小於等於？",
+			"wav": "00_b73cfb9ccc0c.wav",
+			"audio_sha256": "f8ee7cd51adf17e52657029ee5a295b9c9db5aea59c3513b754a8c9e3346b913",
+			"start": 0.4,
+			"duration": 6.68,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "写回圈时,答案常常多一或少一,到底什么时候该写小于,什么时候写小于等于?"
+			}
+		},
+		{
+			"index": 1,
+			"text": "這正是最常見的差一錯誤。關鍵在於：起點是幾、最後一格要不要算進去。",
+			"wav": "01_5bed537e1607.wav",
+			"audio_sha256": "a69e21fb2ffb2f7f08df576ec08344f05e1117878465ff0f5c3289c341e8048c",
+			"start": 7.43,
+			"duration": 5.84,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "這真是最常見的差異錯誤關鍵在於起點是幾最後一格要不要算進去"
+			}
+		},
+		{
+			"index": 2,
+			"text": "第一種情況是數數。如果要把一到五全部加起來，起點是一。",
+			"wav": "02_4327902529d1.wav",
+			"audio_sha256": "bae127ea2538759de7a104d639c4bde43884fe72537dab6eb293620ca28e1c19",
+			"start": 14.219999999999999,
+			"duration": 5.56,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "第一种情况是数数如果要把1到5全部加起来起点是1"
+			}
+		},
+		{
+			"index": 3,
+			"text": "我們要算到五，五本身必須算進去。",
+			"wav": "03_3c825e6199f7.wav",
+			"audio_sha256": "eea923aed1b57fb4f2e95e469bf77fb3cac52ff537aec022614132364e4677a4",
+			"start": 20.13,
+			"duration": 2.96,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "我们要算到5,5本身必须算进去"
+			}
+		},
+		{
+			"index": 4,
+			"text": "所以當 i 走到五，條件仍然要成立，這裡要寫小於等於五。",
+			"wav": "04_cdc177667106.wav",
+			"audio_sha256": "15d4dcffe5aa0b587b1a84ab733db59ba8c426a358b7702e3681b92c603b30e5",
+			"start": 23.44,
+			"duration": 5.44,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "所以当i走到5,条件仍然要成立,这里要写小于等于5。"
+			}
+		},
+		{
+			"index": 5,
+			"text": "但是換成陣列，情況就不一樣了。這是一個長度為五的陣列。",
+			"wav": "05_9d263ea586cd.wav",
+			"audio_sha256": "84fcd76144bd220fa746307f0d65bf923a4a7c9ac2fd79b33177f137f5475222",
+			"start": 29.830000000000002,
+			"duration": 5.14,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "但是換成陣列情況就不一樣了這是一個長度為5的陣列"
+			}
+		},
+		{
+			"index": 6,
+			"text": "因為陣列是從第零格開始，五格的編號其實是零到四。",
+			"wav": "06_9a9cede976b2.wav",
+			"audio_sha256": "07696bb24aee87c113afaf5af2199c381cb189b7c60d5e43c8e2422d5be28541",
+			"start": 35.32,
+			"duration": 4.72,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [
+					"到"
+				],
+				"heard": "因為陣列是從第0格開始,5格的編號其實是0-4"
+			}
+		},
+		{
+			"index": 7,
+			"text": "如果寫成小於等於五，迴圈會跑到第五格，但根本沒有第五格，這會踩空越界！",
+			"wav": "07_45d66ec1c418.wav",
+			"audio_sha256": "99803ec9c5f80f1e96657a2d3ba4cf59c9aa4ad192839f3e8579135c6f56904f",
+			"start": 40.39,
+			"duration": 7.14,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "如果写成小于等于5,回圈会跑到第五格,但根本没有第五格,这会踩空越界。"
+			}
+		},
+		{
+			"index": 8,
+			"text": "所以最後一格只能停在四，條件必須寫成小於五。",
+			"wav": "08_ded665f6de1e.wav",
+			"audio_sha256": "0ce2287cf073714531a180d1039e608cbd51b6c2f22542bba514f8975c35aa44",
+			"start": 47.88,
+			"duration": 4.44,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "所以最后一格只能停在4,条件必须写成小于5。"
+			}
+		},
+		{
+			"index": 9,
+			"text": "只要記住這兩個規則：從一開始數到 N，要包含最後的 N，就用小於等於；",
+			"wav": "09_60e34524d6bc.wav",
+			"audio_sha256": "15d0477b43cf401343d965105cbd3f720d94f885e26d527a8e5f54132711b448",
+			"start": 53.27,
+			"duration": 6.18,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "只要记住这两个规则,从1开始数到n,要包含最后的n,就用小于等于。"
+			}
+		},
+		{
+			"index": 10,
+			"text": "從零開始看 N 格，最後一格只有 N 減一，就用小於。",
+			"wav": "10_53a919d4ab12.wav",
+			"audio_sha256": "075b24db8b61a1750bcdf27a148194f0c7dcc1fb36c2edb07da9043519e6fe8f",
+			"start": 59.800000000000004,
+			"duration": 4.44,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [
+					"減"
+				],
+				"heard": "从0开始看n格,最后一格只有n-1,就用小余"
+			}
+		},
+		{
+			"index": 11,
+			"text": "先看起點，再確認最後一格在哪裡，就不會再差一了。",
+			"wav": "11_017b3dec1845.wav",
+			"audio_sha256": "9141bd6b2fce7808b696b26602b5bcad4db46bc50ec68cc0f4cde3eabc8cb965",
+			"start": 64.59,
+			"duration": 4.12,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "先看起点,再确认最后一个在哪里,就不会再插1了"
+			}
+		}
+	]
+}

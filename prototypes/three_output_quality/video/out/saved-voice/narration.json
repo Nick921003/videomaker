@@ -1,0 +1,216 @@
+{
+	"speed": 0.95,
+	"tts": "gemini",
+	"tts_usd_this_run": 0.020034,
+	"total": 68.71,
+	"beats": [
+		{
+			"digest": "b73cfb9ccc0c",
+			"text": "寫迴圈時答案常常多一或少一，到底什麼時候該寫小於，什麼時候寫小於等於？",
+			"ok": true,
+			"total": 6.68,
+			"voiced": 6.28,
+			"peak": 0.814,
+			"scene": 0,
+			"wav": "00_b73cfb9ccc0c.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "写回圈时,答案常常多一或少一,到底什么时候该写小于,什么时候写小于等于?"
+			}
+		},
+		{
+			"digest": "5bed537e1607",
+			"text": "這正是最常見的差一錯誤。關鍵在於：起點是幾、最後一格要不要算進去。",
+			"ok": true,
+			"total": 5.84,
+			"voiced": 5.44,
+			"peak": 0.728,
+			"scene": 0,
+			"wav": "01_5bed537e1607.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "這真是最常見的差異錯誤關鍵在於起點是幾最後一格要不要算進去"
+			}
+		},
+		{
+			"digest": "4327902529d1",
+			"text": "第一種情況是數數。如果要把一到五全部加起來，起點是一。",
+			"ok": true,
+			"total": 5.56,
+			"voiced": 5.16,
+			"peak": 0.9,
+			"scene": 1,
+			"wav": "02_4327902529d1.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "第一种情况是数数如果要把1到5全部加起来起点是1"
+			}
+		},
+		{
+			"digest": "3c825e6199f7",
+			"text": "我們要算到五，五本身必須算進去。",
+			"ok": true,
+			"total": 2.96,
+			"voiced": 2.56,
+			"peak": 0.788,
+			"scene": 1,
+			"wav": "03_3c825e6199f7.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "我们要算到5,5本身必须算进去"
+			}
+		},
+		{
+			"digest": "cdc177667106",
+			"text": "所以當 i 走到五，條件仍然要成立，這裡要寫小於等於五。",
+			"ok": true,
+			"total": 5.44,
+			"voiced": 5.04,
+			"peak": 0.837,
+			"scene": 1,
+			"wav": "04_cdc177667106.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "所以当i走到5,条件仍然要成立,这里要写小于等于5。"
+			}
+		},
+		{
+			"digest": "9d263ea586cd",
+			"text": "但是換成陣列，情況就不一樣了。這是一個長度為五的陣列。",
+			"ok": true,
+			"total": 5.14,
+			"voiced": 4.74,
+			"peak": 0.752,
+			"scene": 2,
+			"wav": "05_9d263ea586cd.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "但是換成陣列情況就不一樣了這是一個長度為5的陣列"
+			}
+		},
+		{
+			"digest": "9a9cede976b2",
+			"text": "因為陣列是從第零格開始，五格的編號其實是零到四。",
+			"ok": true,
+			"total": 4.72,
+			"voiced": 4.32,
+			"peak": 0.831,
+			"scene": 2,
+			"wav": "06_9a9cede976b2.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [
+					"到"
+				],
+				"heard": "因為陣列是從第0格開始,5格的編號其實是0-4"
+			}
+		},
+		{
+			"digest": "45d66ec1c418",
+			"text": "如果寫成小於等於五，迴圈會跑到第五格，但根本沒有第五格，這會踩空越界！",
+			"ok": true,
+			"total": 7.14,
+			"voiced": 6.74,
+			"peak": 0.824,
+			"scene": 2,
+			"wav": "07_45d66ec1c418.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "如果写成小于等于5,回圈会跑到第五格,但根本没有第五格,这会踩空越界。"
+			}
+		},
+		{
+			"digest": "ded665f6de1e",
+			"text": "所以最後一格只能停在四，條件必須寫成小於五。",
+			"ok": true,
+			"total": 4.44,
+			"voiced": 4.04,
+			"peak": 0.806,
+			"scene": 2,
+			"wav": "08_ded665f6de1e.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "所以最后一格只能停在4,条件必须写成小于5。"
+			}
+		},
+		{
+			"digest": "60e34524d6bc",
+			"text": "只要記住這兩個規則：從一開始數到 N，要包含最後的 N，就用小於等於；",
+			"ok": true,
+			"total": 6.18,
+			"voiced": 5.78,
+			"peak": 0.815,
+			"scene": 3,
+			"wav": "09_60e34524d6bc.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "只要记住这两个规则,从1开始数到n,要包含最后的n,就用小于等于。"
+			}
+		},
+		{
+			"digest": "53a919d4ab12",
+			"text": "從零開始看 N 格，最後一格只有 N 減一，就用小於。",
+			"ok": true,
+			"total": 4.44,
+			"voiced": 4.04,
+			"peak": 0.804,
+			"scene": 3,
+			"wav": "10_53a919d4ab12.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [
+					"減"
+				],
+				"heard": "从0开始看n格,最后一格只有n-1,就用小余"
+			}
+		},
+		{
+			"digest": "017b3dec1845",
+			"text": "先看起點，再確認最後一格在哪裡，就不會再差一了。",
+			"ok": true,
+			"total": 4.12,
+			"voiced": 3.72,
+			"peak": 0.808,
+			"scene": 3,
+			"wav": "11_017b3dec1845.wav",
+			"round": 1,
+			"asr": {
+				"ok": true,
+				"problems": [],
+				"missing": [],
+				"heard": "先看起点,再确认最后一个在哪里,就不会再插1了"
+			}
+		}
+	]
+}

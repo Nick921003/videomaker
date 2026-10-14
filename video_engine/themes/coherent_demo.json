@@ -1,0 +1,13 @@
+{
+	"name":"coherent_demo",
+	"label":"暖色教學基底／內容驅動示範",
+	"demo_only":true,
+	"canvas":{"bg":"#F4EDE2","grid":"#DADACE","margin":"#B85C38"},
+	"card":{"fill":"#FBF7F0","edge":"#DFD2BF","width":2},
+	"text":{"title":"#3B322A","body":"#4B4238","muted":"#796F62","accent":"#B85C38"},
+	"semantic":{"current":"#B85C38","condition":"#3D6B7D","result":"#49735C"},
+	"technical":{"bg":"#19323B","surface":"#23434D","line":"#64808A","text":"#F3F7F4","muted":"#B9C9C5","current":"#F2A58E","condition":"#99CFDE","result":"#B6D6B6","grid":"#2F4E58"},
+	"flat":{"bg":"#FFFDF7","grid":"#DFD2BF","fold":"#EADCC4","crease":"#C9A87C"},
+	"comparison":{"bg":"#FFFFFF","ink":"#26364A","line":"#C6D2D8"},
+	"effects":{"highlight":"#F2D9A0","transparent":"#00000000","shadow":"#3B322A24"}
+}

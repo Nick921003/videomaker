@@ -1,0 +1,129 @@
+{
+	"version": 1,
+	"title": "橫排箭頭與字元飛行",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "cells",
+			"type": "cells",
+			"count": 3,
+			"values": [
+				"O",
+				"K",
+				"\\0"
+			]
+		},
+		{
+			"id": "output",
+			"type": "output"
+		},
+		{
+			"id": "note",
+			"type": "note",
+			"text": "讀到結束字元就停"
+		}
+	],
+	"scenes": [
+		{
+			"id": "arrows",
+			"title": "三個物件的橫向連線",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"cells",
+					"output",
+					"note"
+				]
+			},
+			"beats": [
+				{
+					"say": "格子、輸出和提示依序橫排。",
+					"do": [
+						{
+							"act": "show",
+							"target": "cells"
+						},
+						{
+							"act": "show",
+							"target": "output",
+							"with": "prev"
+						},
+						{
+							"act": "show",
+							"target": "note",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "從第一格畫箭頭，連到輸出框。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "cells:i0",
+							"cue": "箭頭",
+							"to": "output"
+						}
+					]
+				},
+				{
+					"say": "再從輸出框畫箭頭，連到提示。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "output",
+							"cue": "箭頭",
+							"to": "note"
+						}
+					]
+				},
+				{
+					"say": "逐格讀取兩個字元，送到輸出框。",
+					"do": [
+						{
+							"act": "scan",
+							"target": "cells",
+							"cue": "讀取",
+							"range": [
+								0,
+								1
+							],
+							"to": "output:end"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "scan",
+			"title": "保留輸出並停下讀取",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"cells",
+					"output",
+					"note"
+				]
+			},
+			"beats": [
+				{
+					"say": "遇到結束字元就停，保留輸出結果。",
+					"do": [
+						{
+							"act": "stop",
+							"target": "cells",
+							"cue": "就停",
+							"index": 2
+						}
+					]
+				}
+			],
+			"keep": [
+				"cells",
+				"output",
+				"note"
+			]
+		}
+	]
+}

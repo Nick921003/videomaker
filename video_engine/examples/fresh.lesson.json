@@ -1,0 +1,191 @@
+{
+	"lesson_id": "fresh",
+	"title": "C 語言字串基礎",
+	"slides": [
+		{
+			"id": "p1",
+			"role": "hook",
+			"note": "強調 Python 習慣搬過來會出錯，並帶出忘記留結束字元那一格的災情。",
+			"elements": [
+				{
+					"id": "p1_title",
+					"type": "title",
+					"text": "為什麼 name = \"Alice\" 不行"
+				},
+				{
+					"id": "p1_sub",
+					"type": "subtitle",
+					"text": "從一個看似正常卻印出亂碼的宣告說起"
+				},
+				{
+					"id": "p1_a",
+					"type": "bullet",
+					"text": "C 沒有字串型態，name 只是字元陣列的起點"
+				},
+				{
+					"id": "p1_b",
+					"type": "bullet",
+					"text": "等號指定到的是位址，不是內容",
+					"hidden": true
+				},
+				{
+					"id": "p1_c",
+					"type": "callout",
+					"text": "char name[5] 存 Alice，結束字元沒地方放",
+					"hidden": true
+				},
+				{
+					"id": "p1_fig",
+					"type": "figure",
+					"kind": "compare",
+					"left": {
+						"title": "Python 習慣",
+						"items": [
+							"name = Alice",
+							"長度自己算"
+						]
+					},
+					"right": {
+						"title": "C 的現實",
+						"items": [
+							"字元陣列起點",
+							"要自己留一格"
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "p2",
+			"role": "concept",
+			"note": "核心是哨兵 \\0，以及容量與長度是兩件事，n 個字要 n 加一格。",
+			"elements": [
+				{
+					"id": "p2_title",
+					"type": "title",
+					"text": "字串就是收尾的字元陣列"
+				},
+				{
+					"id": "p2_sub",
+					"type": "subtitle",
+					"text": "結束字元是所有標準函式的判斷依據"
+				},
+				{
+					"id": "p2_a",
+					"type": "bullet",
+					"text": "char 陣列結尾多放一個結束字元當哨兵"
+				},
+				{
+					"id": "p2_b",
+					"type": "bullet",
+					"text": "沒有哨兵，函式會一路讀到陣列外面",
+					"hidden": true
+				},
+				{
+					"id": "p2_c",
+					"type": "callout",
+					"text": "容量是宣告格數，長度是哨兵前的字元數",
+					"hidden": true
+				},
+				{
+					"id": "p2_fig",
+					"type": "figure",
+					"kind": "boxes",
+					"items": [
+						"A",
+						"l",
+						"i",
+						"c",
+						"e 加結束字元"
+					],
+					"left": {},
+					"right": {}
+				}
+			]
+		},
+		{
+			"id": "p3",
+			"role": "walkthrough",
+			"note": "分四步走讀：宣告容量、複製內容、量長度、印出。特別點出第五行是容量、第六行不能用等號、第七行量到五。",
+			"elements": [
+				{
+					"id": "p3_title",
+					"type": "title",
+					"text": "宣告、複製、量長度"
+				},
+				{
+					"id": "p3_sub",
+					"type": "subtitle",
+					"text": "四步看懂一個最小的字串程式"
+				},
+				{
+					"id": "p3_code",
+					"type": "code",
+					"lang": "c",
+					"lines": [
+						"#include <stdio.h>",
+						"#include <string.h>",
+						"",
+						"int main() {",
+						"    char name[32];",
+						"    strcpy(name, \"Alice\");",
+						"    printf(\"%s 共 %d 個字\\n\", name, (int)strlen(name));",
+						"    return 0;",
+						"}"
+					]
+				}
+			]
+		},
+		{
+			"id": "p4",
+			"role": "pitfall",
+			"note": "收尾三個迷思：等號指定、等號比較、少留一格；以四步流程圖回顧。",
+			"elements": [
+				{
+					"id": "p4_title",
+					"type": "title",
+					"text": "三個一定會踩的坑"
+				},
+				{
+					"id": "p4_sub",
+					"type": "subtitle",
+					"text": "等號不能指定，也不能比較"
+				},
+				{
+					"id": "p4_a",
+					"type": "bullet",
+					"text": "指定內容要用字串複製函式，一個字元一個字元搬"
+				},
+				{
+					"id": "p4_b",
+					"type": "bullet",
+					"text": "用等號比較，比到的是兩塊記憶體位址",
+					"hidden": true
+				},
+				{
+					"id": "p4_c",
+					"type": "callout",
+					"text": "存 n 個字，陣列至少要 n 加一格",
+					"hidden": true
+				},
+				{
+					"id": "p4_fig",
+					"type": "figure",
+					"kind": "steps",
+					"items": [
+						"宣告容量",
+						"複製內容",
+						"量出長度",
+						"印出結果"
+					]
+				}
+			]
+		}
+	],
+	"voice": {
+		"model": "wang_teacher_v3",
+		"speed_factor": 0.95,
+		"text_lang": "zh",
+		"text_split_method": "cut5"
+	}
+}

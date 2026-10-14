@@ -1,0 +1,132 @@
+{
+	"version": 1,
+	"title": "程式碼元件：full",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{
+			"id": "code",
+			"type": "code",
+			"lines": [
+				"int n = 3;",
+				"n += 4;",
+				"printf(\"%d\", n);"
+			],
+			"caption": "逐行觀察程式",
+			"footer": "最後印出七"
+		},
+		{
+			"id": "result",
+			"type": "note",
+			"text": "觀察結果"
+		}
+	],
+	"scenes": [
+		{
+			"id": "highlight",
+			"title": "標記程式行",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"code",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "顯示程式，標記第二行的運算。",
+					"do": [
+						{
+							"act": "show",
+							"target": "code"
+						},
+						{
+							"act": "show",
+							"target": "result",
+							"with": "prev"
+						},
+						{
+							"act": "highlight",
+							"target": "code",
+							"cue": "第二行",
+							"line": 2
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "marks",
+			"title": "圈線與箭頭",
+			"label": "本機測試",
+			"layout": {
+				"row": [
+					"code",
+					"result"
+				]
+			},
+			"beats": [
+				{
+					"say": "圈起主角，再靠近查看。",
+					"do": [
+						{
+							"act": "circle",
+							"target": "code:L2",
+							"cue": "圈起"
+						},
+						{
+							"act": "focus",
+							"target": "code:L2",
+							"cue": "靠近"
+						}
+					]
+				},
+				{
+					"say": "替同一個目標畫上底線。",
+					"do": [
+						{
+							"act": "underline",
+							"target": "code:L2",
+							"cue": "底線"
+						}
+					]
+				},
+				{
+					"say": "從目標畫出箭頭，連到結果。",
+					"do": [
+						{
+							"act": "arrow",
+							"target": "code:L2",
+							"cue": "箭頭",
+							"to": "result",
+							"label": "結果"
+						}
+					]
+				},
+				{
+					"say": "拉回全景，隱藏後再顯示主角。",
+					"do": [
+						{
+							"act": "wide",
+							"cue": "拉回"
+						},
+						{
+							"act": "hide",
+							"target": "code",
+							"cue": "隱藏"
+						},
+						{
+							"act": "show",
+							"target": "code",
+							"cue": "顯示"
+						}
+					]
+				}
+			],
+			"keep": [
+				"code",
+				"result"
+			]
+		}
+	]
+}

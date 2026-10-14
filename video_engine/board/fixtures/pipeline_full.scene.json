@@ -1,0 +1,62 @@
+{
+	"version": 1, "title": "GCC 四個階段", "tag": "測試", "corner_note": "概念示意",
+	"objects": [
+		{"id": "gcc", "type": "pipeline", "title": "GCC 編譯流程", "direction": "row", "stages": [
+			{"id": "pre", "label": "預處理", "note": "展開原始碼"},
+			{"id": "cc", "label": "編譯", "note": "產生組合語言"},
+			{"id": "as", "label": "組譯", "note": "產生目的檔"},
+			{"id": "ld", "label": "連結", "note": "產生執行檔"}
+		], "items": [{"id": "file", "text": "hello.c", "at": "pre"}]}
+	],
+	"scenes": [
+		{"id": "preprocess", "title": "先展開原始碼", "label": "預處理", "layout": {"stack": ["gcc"]}, "beats": [
+			{"say": "第一站是預處理，展開巨集與標頭。", "do": [
+				{"act": "step", "target": "gcc:pre", "note": "展開巨集與標頭", "cue": "預處理"},
+				{"act": "circle", "target": "gcc:pre", "with": "prev"}
+			]},
+			{"say": "處理好的資料卡，接著送到編譯站。", "do": [
+				{"act": "move", "target": "gcc:file", "to": "cc", "text": "hello.i", "cue": "送到"}
+			]},
+			{"say": "這時副檔名改變，內容已經展開。", "do": [
+				{"act": "underline", "target": "gcc:file", "cue": "副檔名"}
+			]}
+		]},
+		{"id": "compile", "title": "編譯與錯誤回饋", "label": "編譯", "keep": ["gcc"], "layout": {"stack": ["gcc"]}, "beats": [
+			{"say": "第二站是編譯，把程式轉成組合語言。", "do": [
+				{"act": "step", "target": "gcc:cc", "note": "轉成組合語言", "cue": "編譯"}
+			]},
+			{"say": "如果編譯錯誤，就回頭修正原始碼。", "do": [
+				{"act": "reject", "target": "gcc:cc", "back_to": "pre", "text": "編譯錯誤", "cue": "編譯錯誤"}
+			]},
+			{"say": "修正後再次檢查，新的回饋取代舊的。", "do": [
+				{"act": "reject", "target": "gcc:cc", "back_to": "pre", "text": "修正後重試", "cue": "再次檢查"}
+			]},
+			{"say": "成功產生組合語言，送到下一站。", "do": [
+				{"act": "move", "target": "gcc:file", "to": "as", "text": "hello.s", "cue": "送到"}
+			]}
+		]},
+		{"id": "assemble_link", "title": "組譯後再連結", "label": "完成", "keep": ["gcc"], "layout": {"stack": ["gcc"]}, "beats": [
+			{"say": "第三站是組譯，把組合語言轉成目的檔。", "do": [
+				{"act": "step", "target": "gcc:as", "note": "組合語言轉目的檔", "cue": "組譯"}
+			]},
+			{"say": "目的檔產生後，資料卡送到連結站。", "do": [
+				{"act": "move", "target": "gcc:file", "to": "ld", "text": "hello.o", "cue": "送到"}
+			]},
+			{"say": "第四站是連結，把需要的函式接起來。", "do": [
+				{"act": "step", "target": "gcc:ld", "note": "接上函式庫", "cue": "連結"}
+			]},
+			{"say": "連結完成，同一張卡變成可執行檔。", "do": [
+				{"act": "move", "target": "gcc:file", "to": "ld", "text": "hello.exe", "cue": "完成"}
+			]}
+		]},
+		{"id": "result", "title": "同一份程式逐站改變", "label": "回顧", "keep": ["gcc"], "layout": {"stack": ["gcc"]}, "beats": [
+			{"say": "圈起最後的結果，底線標出連結站。", "do": [
+				{"act": "circle", "target": "gcc:file", "cue": "圈起"},
+				{"act": "underline", "target": "gcc:ld", "cue": "底線"}
+			]},
+			{"say": "箭頭指向連結站，目的檔在這裡接上函式。", "do": [
+				{"act": "arrow", "target": "gcc:as", "to": "gcc:ld", "label": "目的檔", "cue": "箭頭"}
+			]}
+		]}
+	]
+}
