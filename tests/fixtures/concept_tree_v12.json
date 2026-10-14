@@ -1,0 +1,74 @@
+{
+	"contract_version": "1.2",
+	"title": "C 語言迴圈基礎",
+	"layout": "progressive",
+	"root_id": "root",
+	"nodes": [
+		{
+			"id": "root",
+			"label": "C 語言迴圈基礎",
+			"kind": "concept",
+			"explanation": "",
+			"source_quote": "",
+			"handout_page": null
+		},
+		{
+			"id": "three_parts",
+			"label": "迴圈三要素",
+			"kind": "concept",
+			"explanation": "括號裡三段各管一件事：從哪裡開始、什麼時候繼續、每一輪怎麼變。中間那段是「繼續的條件」，成立才會再跑一輪，不是「結束的條件」。",
+			"source_quote": "迴圈說穿了只有三件事：從哪裡開始、什麼時候繼續、每一輪怎麼變。",
+			"handout_page": 2
+		},
+		{
+			"id": "choose",
+			"label": "for 與 while",
+			"kind": "concept",
+			"explanation": "for 把三件事寫在同一行，適合次數已經知道的情況；while 把三件事拆開寫，適合等到某件事發生才停，例如讀到檔案結束或使用者輸入零。",
+			"source_quote": "for 把這三件事寫在同一行，一眼就看得完，適合次數已經知道的情況。",
+			"handout_page": 3
+		},
+		{
+			"id": "boundary",
+			"label": "差一錯誤",
+			"kind": "concept",
+			"explanation": "因為五本身要算進去。若改成走訪長度為五的陣列，索引是零到四，就要用小於。",
+			"source_quote": "因為題目要從一加到五，五本身要算進去，所以條件寫成小於等於。",
+			"handout_page": 4
+		},
+		{
+			"id": "infinite",
+			"label": "無窮迴圈",
+			"kind": "concept",
+			"explanation": "多半是用 while 時忘了在主體裡更新條件變數，條件永遠成立。for 把更新寫在括號裡，比較不容易漏。",
+			"source_quote": "用 while 的時候忘記在主體裡更新條件變數，條件就永遠成立，程式停不下來。",
+			"handout_page": 5
+		}
+	],
+	"edges": [
+		{
+			"from": "root",
+			"to": "three_parts",
+			"label": "",
+			"source_quote": ""
+		},
+		{
+			"from": "three_parts",
+			"to": "choose",
+			"label": "",
+			"source_quote": ""
+		},
+		{
+			"from": "root",
+			"to": "boundary",
+			"label": "",
+			"source_quote": ""
+		},
+		{
+			"from": "root",
+			"to": "infinite",
+			"label": "",
+			"source_quote": ""
+		}
+	]
+}

@@ -40,7 +40,7 @@ class TestKeyPointsRunners(unittest.TestCase):
 		deck = read_json(self.directory / 'slides/deck.json')
 		self.assertEqual(deck['contract_version'], '1.3')
 		self.assertTrue((self.directory / 'slides/deck.pptx').stat().st_size > 0)
-		self.assertEqual(read_json(self.directory / 'mindmap/mindmap.json')['contract_version'], '1.2')
+		self.assertEqual(read_json(self.directory / 'mindmap/mindmap.json')['contract_version'], '1.3')
 		self.assertIn(b'data-handout-page="2"', (self.directory / 'mindmap/mindmap.svg').read_bytes())
 
 	def test_inferred_material_stops_at_review(self):

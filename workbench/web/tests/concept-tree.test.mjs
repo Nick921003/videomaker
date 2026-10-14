@@ -159,6 +159,69 @@ function v12Fixture(doc) {
  const quote=doc.createElement('desc');quote.setAttribute('data-node-quote','');quote.textContent='教材原文：先判斷條件';a.append(quote);
  return svg;
 }
+
+function v13Fixture(doc) {
+	const svg=doc.createElement('svg');svg.setAttribute('data-root-id','root');svg.setAttribute('data-layout','progressive');svg.setAttribute('data-contract-version','1.3');
+	for(const [id,kind,label] of [
+		['root','concept','迴圈'],['a','concept','條件'],['a-meaning','meaning','條件為真才進入本文。'],
+		['a-example-group','group','例子'],['a-example','example','for (i = 0;\n     i < 5; i++)'],
+		['a-pitfall-group','group','常見錯誤'],['a-pitfall-1','pitfall','錯：漏掉更新\n為什麼：條件永遠成立\n正確：每輪更新'],
+	]) {
+		const node=doc.createElement('g');node.setAttribute('data-node-id',id);node.setAttribute('data-node-kind',kind);
+		if(id==='a')node.setAttribute('data-handout-page','2');
+		const title=doc.createElement('title');title.setAttribute('data-node-label','');title.textContent=label;
+		const explanation=doc.createElement('desc');explanation.setAttribute('data-node-explanation','');
+		const quote=doc.createElement('desc');quote.setAttribute('data-node-quote','');quote.textContent=id==='root'?'':'條件控制是否繼續';
+		node.append(title,explanation,quote);svg.append(node);
+	}
+	for(const [from,to] of [['root','a'],['a','a-meaning'],['a-meaning','a-example-group'],['a-example-group','a-example'],
+		['a-meaning','a-pitfall-group'],['a-pitfall-group','a-pitfall-1']]) {
+		const edge=doc.createElement('path');edge.setAttribute('data-from',from);edge.setAttribute('data-to',to);svg.append(edge);
+	}
+	return svg;
+}
+
+test('1.3 版沒有詳情面板，點一下只長直屬下一層', async () => {
+	await conceptDOM(async doc => {
+		const host=doc.createElement('div');const viewer=mountConceptTree(host,v13Fixture(doc),{unit:'u',files:{svg:'map.svg'}});
+		const ids=()=>host.querySelectorAll('.concept-card').map(card=>card.getAttribute('data-concept-id')).sort();
+		try {
+			assert.equal(host.querySelector('.concept-detail'),null);
+			assert.deepEqual(ids(),['a','root']);
+			click(host.querySelector('[data-concept-id="a"]'));
+			assert.deepEqual(ids(),['a','a-meaning','root']);
+			click(host.querySelector('[data-concept-id="a-meaning"]'));
+			assert.deepEqual(ids(),['a','a-example-group','a-meaning','a-pitfall-group','root']);
+			click(host.querySelector('[data-concept-id="a-example-group"]'));
+			assert.deepEqual(ids(),['a','a-example','a-example-group','a-meaning','a-pitfall-group','root']);
+			assert.equal(host.querySelector('.concept-detail'),null);
+			click(host.querySelector('[data-concept-id="a-pitfall-group"]'));
+			assert.ok(host.querySelector('[data-concept-id="a-pitfall-1"]'));
+			click(host.querySelector('[data-concept-id="a-meaning"]'));
+			assert.deepEqual(ids(),['a','a-meaning','root']);
+			click(host.querySelector('[data-concept-id="a-meaning"]'));
+			assert.deepEqual(ids(),['a','a-example-group','a-meaning','a-pitfall-group','root']);
+		} finally {viewer.dispose();}
+	});
+});
+
+test('1.3 版卡片帶節點類型，程式例子保留換行與縮排', async () => {
+	await conceptDOM(async doc => {
+		const host=doc.createElement('div');const viewer=mountConceptTree(host,v13Fixture(doc),{unit:'u',files:{svg:'map.svg'}});
+		try {
+			for(const id of ['a','a-meaning','a-example-group'])click(host.querySelector(`[data-concept-id="${id}"]`));
+			assert.equal(host.querySelector('[data-concept-id="a-example-group"]').getAttribute('data-node-kind'),'group');
+			const example=host.querySelector('[data-concept-id="a-example"]');
+			assert.equal(example.getAttribute('data-node-kind'),'example');
+			assert.equal(example.querySelector('.concept-toggle').textContent,'for (i = 0;\n     i < 5; i++)');
+			click(host.querySelector('[data-concept-id="a-pitfall-group"]'));
+			const pitfall=host.querySelector('[data-concept-id="a-pitfall-1"]');
+			assert.equal(pitfall.getAttribute('data-node-kind'),'pitfall');
+			assert.equal(pitfall.querySelector('.concept-toggle').textContent,'錯：漏掉更新\n為什麼：條件永遠成立\n正確：每輪更新');
+		} finally {viewer.dispose();}
+	});
+});
+
 const panelOf=host=>host.querySelector('.concept-detail');
 const linkOf=host=>panelOf(host).querySelectorAll('*').find(node=>node.textContent==='看講義第 3 頁');
 

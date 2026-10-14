@@ -8,6 +8,8 @@ from xml.sax.saxutils import escape, quoteattr
 
 
 _ID = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
+# 重點 ID 最多 24 字元，1.3 的衍生分組後綴還需要 14 字元。
+_ID13 = re.compile(r"^[a-z][a-z0-9_-]{0,37}$")
 _TEXT = {"type": "string"}
 _SCHEMA = {"type": "object", "additionalProperties": False,
 	"required": ["contract_version", "title", "root_id", "nodes", "edges"],
@@ -50,10 +52,11 @@ def _text(value, maximum):
 def canonical_mindmap(value):
 	if not isinstance(value,dict):
 		raise MindmapError('心智圖欄位不符合契約')
-	explorable = value.get('contract_version') in ('1.1', '1.2')
-	handout = value.get('contract_version') == '1.2'
+	progressive = value.get('contract_version') == '1.3'
+	explorable = value.get('contract_version') in ('1.1', '1.2', '1.3')
+	handout = value.get('contract_version') in ('1.2', '1.3')
 	_fields(value, ("contract_version", "title", "root_id", "nodes", "edges") + (('layout',) if explorable else ()))
-	if value["contract_version"] not in ("1.0", '1.1', '1.2'):
+	if value["contract_version"] not in ("1.0", '1.1', '1.2', '1.3'):
 		raise MindmapError("不支援的心智圖版本")
 	if explorable and value['layout'] not in ('radial','progressive'):
 		raise MindmapError('心智圖布局不支援')
@@ -65,12 +68,22 @@ def canonical_mindmap(value):
 	for node in nodes:
 		_fields(node, ("id", "label", "explanation", "source_quote") + (('kind',) if explorable else ())
 			+ (('handout_page',) if handout else ()))
-		if not isinstance(node["id"], str) or not _ID.fullmatch(node["id"]) or node["id"] in ids:
+		if not isinstance(node["id"], str) or not (_ID13 if progressive else _ID).fullmatch(node["id"]) or node["id"] in ids:
 			raise MindmapError("概念 ID 不符合契約")
 		ids.add(node["id"])
-		if explorable and node['kind'] not in ('concept','meaning','usage','example','pitfall'):
+		kinds = ('concept','meaning','group','example','pitfall') if progressive else ('concept','meaning','usage','example','pitfall')
+		if explorable and node['kind'] not in kinds:
 			raise MindmapError('心智圖解說類型不支援')
 		is_root = node['id'] == value['root_id']
+		if progressive:
+			_text(node['label'], 120 if is_root else {'concept':24, 'meaning':150, 'group':8, 'example':400, 'pitfall':260}[node['kind']])
+			if node['explanation'] != '' or (is_root and node['source_quote'] != ''):
+				raise MindmapError('概念樹內容只放在節點名稱')
+			if not is_root: _text(node['source_quote'], 1000)
+			page = node['handout_page']
+			if not (type(page) is int and page >= 2 if not is_root and node['kind'] == 'concept' else page is None):
+				raise MindmapError('心智圖講義頁碼不符合契約')
+			continue
 		label_maximum = (120 if is_root else 24) if handout else 160 if explorable else 24
 		for key, maximum in (("label", label_maximum), ("explanation", 240), ("source_quote", 1000 if explorable else 300)):
 			# 1.2 的根節點只是單元名稱，沒有對應的單一說明與出處。
@@ -180,7 +193,7 @@ def build_mindmap(material, instruction, complete_json, *, source_context=None):
 def render_mindmap_svg(mindmap, material=None):
 	"""只輸出靜態 SVG 元素；圖文與關係先經封閉契約驗證。"""
 	mindmap = canonical_mindmap(mindmap)
-	if mindmap['contract_version'] in ('1.1', '1.2'):
+	if mindmap['contract_version'] in ('1.1', '1.2', '1.3'):
 		return _render_explorable_svg(mindmap,material)
 	if material is not None and (not isinstance(material, str) or len(material) > 30_000):
 		raise MindmapError("心智圖來源超出上限")
@@ -244,15 +257,20 @@ def _render_explorable_svg(mindmap, material):
 	for edge in mindmap['edges']: children[edge['from']].append(edge['to'])
 	from PIL import ImageFont
 	font=ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',20,index=3)
+	progressive=mindmap['contract_version']=='1.3'
+	mono=ImageFont.truetype('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',18,index=8) if progressive else None
 	sizes={}
 	def measure(id):
 		lines=[];current=''
+		code=progressive and nodes[id]['kind']=='example'
+		label_font=mono if code else font
 		for char in nodes[id]['label']:
-			if char=='\n' or current and font.getlength(current+char)>260:
+			if char=='\n' or current and label_font.getlength(current+char)>260:
 				lines.append(current);current='' if char=='\n' else char
 			else:current+=char
 		if current:lines.append(current)
-		height=max(80,len(lines)*26+40)
+		if code and nodes[id]['label'].endswith('\n'):lines.append('')
+		height=48 if progressive and nodes[id]['kind']=='group' else max(80,len(lines)*(24 if code else 26)+40)
 		child_height=sum(measure(child) for child in children[id])+max(0,len(children[id])-1)*40
 		sizes[id]=(height,lines,max(height,child_height))
 		return sizes[id][2]
@@ -277,14 +295,19 @@ def _render_explorable_svg(mindmap, material):
 	for node in mindmap['nodes']:
 		x,y,h,lines=positions[node['id']]
 		page=node.get('handout_page')
+		group=progressive and node['kind']=='group'
+		code=progressive and node['kind']=='example'
+		fill='#f5e2cf' if node['kind']=='concept' else '#fffaf2' if group else '#fffdf7'
 		parts.extend([f'<g data-node-id="{node["id"]}" data-node-kind="{node["kind"]}"'
 			+(f' data-handout-page="{page}"' if page else '')+'>',
 			f'<title data-node-label="">{_svg_text(node["label"])}</title>',
 			f'<desc data-node-explanation="">{_svg_text(node["explanation"])}</desc>',
 			f'<desc data-node-quote="">{_svg_text(node["source_quote"])}</desc>',
-			f'<rect x="{x}" y="{y-h/2}" width="300" height="{h}" rx="10" fill="{"#f5e2cf" if node["kind"]=="concept" else "#fffdf7"}" stroke="#c69373"/>'])
+			f'<rect x="{x}" y="{y-h/2}" width="300" height="{h}" rx="{24 if group else 10}" fill="{fill}" stroke="#c69373"/>'])
 		for index,line in enumerate(lines):
-			parts.append(f'<text x="{x+20}" y="{y-h/2+30+index*26}" fill="#302a25" font-family="Noto Sans CJK TC,sans-serif" font-size="20">{_svg_text(line)}</text>')
+			family='Noto Sans Mono CJK TC,monospace' if code else 'Noto Sans CJK TC,sans-serif'
+			preserve=' xml:space="preserve"' if code else ''
+			parts.append(f'<text x="{x+20}" y="{y-h/2+30+index*(24 if code else 26)}" fill="#302a25" font-family="{family}" font-size="{18 if code else 20}"{preserve}>{_svg_text(line)}</text>')
 		parts.append('</g>')
 	parts.append('</svg>')
 	return ''.join(parts).encode('utf-8')
