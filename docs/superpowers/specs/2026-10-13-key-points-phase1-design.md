@@ -182,3 +182,7 @@
 - 工作台版面問題（畫面破版、需要一直往下滑）。
 - 本機 TTS 選型：已派 Codex 調查，報告在 `~/projects/f5tts-trial/TTS_RESEARCH.md`，結論另行討論。
 - 重點清單的逐條編輯。
+
+## 狀態
+
+- 2026-10-14 後續修正：學習目標標題允許章節編號（`### 1. 學習目標`、`## 一、學習目標`）；真實教材實跑結果見 `docs/experiments/2026-10-13-key-points-trial/README.md`。
