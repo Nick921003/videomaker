@@ -34,6 +34,7 @@ PRICE = {
 	"claude-opus-5-5": {"in": 4.0, "out": 20.0, "cache_read": 0.20, "cache_write": 5.0},
 	"claude-sonnet-5-5": {"in": 2.0, "out": 10.0, "cache_read": 0.20, "cache_write": 2.5},
 	"gemini-3.8-flash": {"in": 0.75, "out": 3.75, "cache_read": 0.075, "cache_write": 0.75},
+	"gemini-4-argon": {"in": 4.0, "out": 20.0, "cache_read": 0.40, "cache_write": 4.0},
 }
 MAX_TOKENS = {"plan": 16000, "scene": 12000}
 MAX_REPAIRS = 2

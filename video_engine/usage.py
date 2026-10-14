@@ -56,6 +56,9 @@ def normalize_usage(provider, model, usage, on=None):
 		elif provider == 'google' and model == 'gemini-3.8-flash':
 			factor = 1 if (on or date.today()) <= date(2026,12,31) else 2
 			cost = factor * (uncached * .75 + output_count * 3.75 + cache_read * .075) / 1_000_000
+		elif provider == 'google' and model == 'gemini-4-argon':
+			# 使用者 2026-10-14 告知與 Opus 5.5 同價；快取讀取比照 Flash 取輸入一成，官方價出來再校正。
+			cost = (uncached * 4 + output_count * 20 + cache_read * .4) / 1_000_000
 	else:
 		cost = None
 	total = provider_total if provider_total is not None else input_count + output_count if known else None

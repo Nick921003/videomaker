@@ -18,6 +18,11 @@ class TestUsage(unittest.TestCase):
 		self.assertEqual(claude['total_tokens'], 3795)
 		self.assertAlmostEqual(claude['estimated_cost_usd'], .053132)
 
+	def test_gemini_argon_is_priced_so_budget_caps_apply(self):
+		from video_engine.usage import normalize_usage
+		entry = normalize_usage('google', 'gemini-4-argon', {'in':779, 'out':805, 'thinking':513, 'cache_read':50})
+		self.assertAlmostEqual(entry['estimated_cost_usd'], (729*4 + 1318*20 + 50*.4) / 1_000_000)
+
 	def test_cache_costs_and_expiring_google_introductory_rate(self):
 		from datetime import date
 		from video_engine.usage import normalize_usage
