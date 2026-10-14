@@ -169,6 +169,8 @@ def _draw_block(slide, block, role, self_study):
 def export_pptx(value):
 	"""從已驗證 Deck v1 產生 PPTX bytes，不寫入公開檔案。"""
 	deck = canonical_deck(value)
+	if deck['contract_version'] == '1.3':
+		return _export_handout(deck)
 	if deck['contract_version']=='1.2':
 		return _export_professional(deck)
 	self_study = deck["contract_version"] == "1.1"
@@ -286,3 +288,69 @@ def _draw_pipeline(slide, block, selected):
 	_panel(slide, 5.3, 2.4, 7.2, 3.5, fill=_WHITE)
 	_text(slide, selected['label'], 5.6, 2.7, 6.6, .64, size=24, min_size=18, color=_ACCENT, bold=True)
 	_text(slide, selected['note'], 5.6, 3.55, 6.6, 2.0, size=22, min_size=16)
+
+
+def _export_handout(deck):
+	"""講義每頁單獨讀得懂；放不下就指名哪一頁，不越界也不拆頁。"""
+	prs = Presentation()
+	prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
+	total = len(deck['slides'])
+	for index, item in enumerate(deck['slides'], 1):
+		slide = prs.slides.add_slide(prs.slide_layouts[5])
+		slide.background.fill.solid()
+		slide.background.fill.fore_color.rgb = _BG
+		try:
+			if item['kind'] == 'cover':
+				_handout_cover(slide, item)
+			elif item['kind'] == 'point':
+				_handout_point(slide, deck['title'], item)
+			else:
+				_handout_mistakes(slide, deck['title'], item)
+		except DeckError as exc:
+			raise DeckError(f'講義第 {index} 頁（{item["slide_id"]}）放不下：{exc}') from exc
+		_text(slide, f'{index} / {total}', 11.8, 7.15, .8, .25, size=11, min_size=11, color=_ACCENT)
+	buffer = BytesIO()
+	prs.save(buffer)
+	return buffer.getvalue()
+
+
+def _handout_cover(slide, item):
+	_text(slide, item['title'], .8, 1.5, 11.7, 1.1, size=40, min_size=28, bold=True, shape=slide.shapes.title)
+	_text(slide, '學習目標', .8, 2.95, 11.7, .45, size=20, min_size=18, color=_ACCENT, bold=True)
+	_panel(slide, .8, 3.5, 11.7, 3.4, fill=_WHITE)
+	lines = '\n'.join(f'{number}. {text}' for number, text in enumerate(item['objectives'], 1))
+	_text(slide, lines, 1.05, 3.65, 11.2, 3.1, size=22, min_size=14)
+
+
+def _handout_point(slide, title, item):
+	_text(slide, title, .8, .25, 11.7, .3, size=12, min_size=12, color=_ACCENT)
+	_text(slide, item['question'], .8, .62, 11.7, .9, size=28, min_size=22, bold=True, shape=slide.shapes.title)
+	_text(slide, item['title'], .8, 1.58, 11.7, .4, size=18, min_size=16, color=_ACCENT, bold=True)
+	mistakes, example = item['misconceptions'], item['example']
+	# 有例子時例子佔滿右欄整個高度，12 行程式才排得下；講解與常見錯誤疊在左欄。
+	left = 6.55 if example else 11.7
+	bottom = 4.2 if mistakes else 6.35
+	_text(slide, item['explanation'], .8, 2.15, left, bottom - 2.15, size=22, min_size=16)
+	if example:
+		code = example['kind'] == 'code'
+		_panel(slide, 7.6, 2.15, 4.9, 4.2, fill=RGBColor(46, 52, 47) if code else _SOFT)
+		_text(slide, example['content'], 7.75, 2.25, 4.6, 4.0, size=16, min_size=11,
+			color=_WHITE if code else _INK, font='Consolas' if code else 'Aptos')
+	if mistakes:
+		_panel(slide, .8, 4.3, left, 2.1, fill=_SOFT)
+		_text(slide, '常見錯誤', 1.0, 4.36, 3.0, .32, size=14, min_size=14, color=_ACCENT, bold=True)
+		lines = '\n'.join(f'錯：{m["wrong"]}　為什麼：{m["why"]}　正確：{m["correct"]}' for m in mistakes)
+		_text(slide, lines, 1.0, 4.72, left - .4, 1.62, size=15, min_size=11)
+	quote = item['sources'][0].replace('\n', ' ')
+	_text(slide, '出處：' + (quote if len(quote) <= 60 else quote[:60] + '…'), .8, 6.55, 10.8, .45,
+		size=11, min_size=10, color=_ACCENT)
+	slide.notes_slide.notes_text_frame.text = '教材原文依據：\n' + '\n\n'.join(item['sources'])
+
+
+def _handout_mistakes(slide, title, item):
+	_text(slide, title, .8, .25, 11.7, .3, size=12, min_size=12, color=_ACCENT)
+	_text(slide, '常見錯誤整理', .8, .62, 11.7, .9, size=30, min_size=24, bold=True, shape=slide.shapes.title)
+	body = '\n'.join(f'【{m["point_title"]}】錯：{m["wrong"]}　為什麼：{m["why"]}　正確：{m["correct"]}'
+		for m in item['items'])
+	_panel(slide, .8, 1.7, 11.7, 5.3, fill=_WHITE)
+	_text(slide, body, 1.0, 1.8, 11.3, 5.1, size=16, min_size=11)

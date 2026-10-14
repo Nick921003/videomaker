@@ -5,7 +5,7 @@ import json
 import re
 
 
-_VERSIONS = ("1.0", "1.1", "1.2")
+_VERSIONS = ("1.0", "1.1", "1.2", "1.3")
 _ROLES = frozenset(("hook", "concept", "example", "pitfall", "summary"))
 _LAYOUTS = frozenset(("bullets", "code", "compare", "steps"))
 _SLIDE_ID = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
@@ -97,12 +97,77 @@ def _block(value, layout):
 		raise DeckError("不支援的簡報版型")
 
 
+_HANDOUT_FIELDS = {
+	'cover': ('slide_id', 'kind', 'title', 'objectives'),
+	'point': ('slide_id', 'kind', 'question', 'title', 'explanation', 'example', 'misconceptions', 'sources'),
+	'mistakes': ('slide_id', 'kind', 'items'),
+}
+
+
+def _canonical_handout(value):
+	"""講義版：封面在前、常見錯誤整理只能在最後，中間 3–8 個重點頁。"""
+	slides = value['slides']
+	if not isinstance(slides, list) or not 4 <= len(slides) <= 10:
+		raise DeckError('講義頁數不符合契約')
+	seen = set()
+	for index, slide in enumerate(slides):
+		kind = slide.get('kind') if isinstance(slide, dict) else None
+		if (kind not in _HANDOUT_FIELDS or (kind == 'cover') != (index == 0)
+			or (kind == 'mistakes' and index != len(slides) - 1)):
+			raise DeckError('講義頁面種類或順序不符合契約')
+		_fields(slide, _HANDOUT_FIELDS[kind])
+		if not isinstance(slide['slide_id'], str) or not _SLIDE_ID.fullmatch(slide['slide_id']) or slide['slide_id'] in seen:
+			raise DeckError('簡報頁面 ID 不符合契約')
+		seen.add(slide['slide_id'])
+		if kind == 'cover':
+			_text(slide['title'], 160)
+			_items(slide['objectives'], 1, 6, 80)
+		elif kind == 'point':
+			_text(slide['question'], 60)
+			_text(slide['title'], 12)
+			_text(slide['explanation'], 150)
+			example = slide['example']
+			if example is not None:
+				_fields(example, ('kind', 'content', 'language'))
+				if example['kind'] not in ('code', 'formula', 'text') or not isinstance(example['language'], str):
+					raise DeckError('講義例子不符合契約')
+				_text(example['content'], 400)
+			mistakes = slide['misconceptions']
+			if not isinstance(mistakes, list) or len(mistakes) > 2:
+				raise DeckError('講義常見錯誤數量不符合契約')
+			for mistake in mistakes:
+				_fields(mistake, ('wrong', 'why', 'correct'))
+				for key in ('wrong', 'why', 'correct'):
+					_text(mistake[key], 80)
+			_items(slide['sources'], 1, 4, 1000)
+		else:
+			items = slide['items']
+			if not isinstance(items, list) or not 1 <= len(items) <= 8:
+				raise DeckError('常見錯誤整理數量不符合契約')
+			for item in items:
+				_fields(item, ('point_title', 'wrong', 'why', 'correct'))
+				_text(item['point_title'], 12)
+				for key in ('wrong', 'why', 'correct'):
+					_text(item[key], 80)
+	if not 3 <= sum(slide['kind'] == 'point' for slide in slides) <= 8:
+		raise DeckError('講義重點頁數不符合契約')
+
+
 def canonical_deck(value):
 	"""驗證模型 Deck 並回傳與原輸入隔離的資料。"""
 	_fields(value, ("contract_version", "title", "slides"))
 	if value["contract_version"] not in _VERSIONS:
 		raise DeckError("不支援的簡報版本")
 	_text(value["title"], 160)
+	if value["contract_version"] == "1.3":
+		_canonical_handout(value)
+		try:
+			encoded = json.dumps(value, ensure_ascii=False, allow_nan=False).encode("utf-8")
+		except (TypeError, ValueError, UnicodeError) as exc:
+			raise DeckError("簡報內容無法序列化") from exc
+		if len(encoded) > _MAX_JSON_BYTES:
+			raise DeckError("簡報內容超過大小上限")
+		return deepcopy(value)
 	slides = value["slides"]
 	if not isinstance(slides, list) or not 3 <= len(slides) <= 12:
 		raise DeckError("簡報頁數不符合契約")
