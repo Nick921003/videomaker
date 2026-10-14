@@ -82,6 +82,17 @@ class TestWorkbenchKeyPoints(unittest.TestCase):
 		self.assertFalse(W.product_is_current(self.directory, 'slides/source.json'))
 		self.assertFalse(W.product_is_current(self.directory, 'mindmap/source.json'))
 
+	def test_products_from_unconfirmed_list_are_not_current(self):
+		self.as_pdf()
+		W.get_key_points(self.directory, self.complete, require_ready=False)
+		digest = W.summary(self.directory)['digest']
+		write_json(self.directory / 'slides/source.json', {'key_points_digest': digest})
+		self.assertFalse(W.product_is_current(self.directory, 'slides/source.json'))
+		W.confirm(self.directory, digest)
+		confirmed = W.summary(self.directory)['digest']
+		write_json(self.directory / 'slides/source.json', {'key_points_digest': confirmed})
+		self.assertTrue(W.product_is_current(self.directory, 'slides/source.json'))
+
 	def test_reextract_invalidates_and_sends_note(self):
 		W.get_key_points(self.directory, self.complete)
 		W.request_reextract(self.directory, '重點放在差一錯誤')

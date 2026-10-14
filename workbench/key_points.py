@@ -70,7 +70,8 @@ def product_is_current(directory, relative):
 		record = read_json(safe_path(Path(directory), relative), {})
 	except (ValueError, OSError):
 		return False
-	return value is not None and isinstance(record, dict) and record.get('key_points_digest') == _digest(value)
+	return (value is not None and value['status'] == 'ready' and isinstance(record, dict)
+		and record.get('key_points_digest') == _digest(value))
 
 
 def get_key_points(directory, complete_json, *, configuration='default', require_ready=True):
