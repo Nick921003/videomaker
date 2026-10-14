@@ -8,6 +8,7 @@ import { renderKeyPointBanner, REVIEW_REASON, NOTE_LIMIT } from './key-point-ban
 const STATUS = { none: '尚未生成', queued: '排隊中', running: '製作中', done: '已完成', failed: '失敗' };
 const selectable = item => ['none', 'failed'].includes(item.status);
 const NEEDS_KEY_POINTS = ['slides', 'mindmap'];
+const KEY_POINTS_STALE_NOTE = '重點清單狀態暫時讀不到，稍後自動重試';
 
 export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {}) {
 	const registry = await api.get('/formats');
@@ -87,6 +88,7 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	let reviewMessage = '';
 	let reviewNote = '';
 	let reviewLoaded = false;
+	let keyPointsStale = false;
 	const suffix = api.MOCK && query.state ? `?${new URLSearchParams({ state: query.state })}` : '';
 	const unitPath = `/units/${encodeURIComponent(unit.unit_id)}`;
 	const blocked = item => review?.status === 'needs_review' && NEEDS_KEY_POINTS.includes(item.format);
@@ -144,8 +146,12 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	// 讀不到時不擋生成；伺服器仍會用 key_points_review 把關。
 	async function loadKeyPoints() {
 		let fresh = null;
-		try { fresh = await api.get(`${unitPath}/key-points${suffix}`); } catch {}
+		let failed = false;
+		try { fresh = await api.get(`${unitPath}/key-points${suffix}`); } catch { failed = true; }
 		if (disposed) return;
+		// 讀取失敗就取消「已載入」，讓下一次輪詢重試；成功則清除暫時提示。
+		if (failed) reviewLoaded = false;
+		keyPointsStale = failed;
 		const wasPending = review?.status === 'needs_review';
 		review = fresh?.status ? fresh : null;
 		renderReview();
@@ -295,6 +301,7 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 			if (!disposed && !document.hidden) {
 				renderQueue(queue);
 				if (errors.length) status.textContent = `部分工作進度暫時讀不到，稍後會再讀取。${errors.join('；')}`;
+				if (keyPointsStale) status.textContent += ` ${KEY_POINTS_STALE_NOTE}`;
 			}
 		} catch (error) {
 			if (!disposed) status.textContent = `${error.reason ?? error.message} ${error.advice ?? '稍後會再讀取。'}`;

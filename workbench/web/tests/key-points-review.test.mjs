@@ -18,16 +18,17 @@ const keyPoints = (status = 'needs_review', digest = 'digest-1') => ({
 	},
 });
 
-// 建立頁面並回傳可控的 api 替身；current 決定 GET 回傳的重點清單狀態。
-async function setup(initial) {
+// 建立頁面並回傳可控的 api 替身；current 決定 GET 回傳的重點清單狀態，failKeyPoints 指定前幾次重點清單 GET 會失敗。
+async function setup(initial, { failKeyPoints = 0 } = {}) {
 	const { renderMakeGenerate } = await import('../js/pages/make-generate.mjs');
 	const unit = await fixture('unit-analyzed');
 	const registry = await fixture('formats');
-	const state = { current: initial, posts: [], gets: [] };
+	const state = { current: initial, posts: [], gets: [], failKeyPoints };
 	const original = { get: api.get, post: api.post };
 	const kpPath = `/units/${unit.unit_id}/key-points`;
 	api.get = async path => {
 		state.gets.push(path);
+		if (path === kpPath && state.failKeyPoints > 0) { state.failKeyPoints -= 1; throw new Error('network'); }
 		return path === '/formats' ? registry : path === '/queue' ? { running: null, queued: [] }
 			: path === kpPath ? structuredClone(state.current) : structuredClone(unit);
 	};
@@ -76,12 +77,49 @@ test('ready 或 missing 不顯示橫幅，選項不受影響', async () => {
 		await withDOM(async () => {
 			const ctx = await setup(keyPoints(status));
 			try {
+				assert.ok(ctx.state.gets.includes(ctx.kpPath), `${status} 應請求重點清單`);
 				assert.equal(banner(ctx.page), undefined, status);
 				assert.equal(optionFor(ctx.page, 'slides').disabled, false);
 				assert.equal(optionFor(ctx.page, 'mindmap').disabled, false);
 			} finally { ctx.restore(); }
 		});
 	}
+});
+
+test('重點清單讀取失敗時顯示暫時提示，下一次輪詢重試並顯示橫幅', async () => {
+	await withDOM(async () => {
+		const ctx = await setup(keyPoints(), { failKeyPoints: 1 });
+		try {
+			assert.equal(banner(ctx.page), undefined, '讀取失敗時不顯示橫幅');
+			assert.match(ctx.page.textContent, /稍後自動重試/);
+			document.dispatchEvent(new Event('visibilitychange'));
+			await settle();
+			assert.equal(ctx.state.gets.filter(path => path === ctx.kpPath).length, 2, '下一次輪詢應重新讀取');
+			assert.ok(banner(ctx.page), '重試成功後顯示橫幅');
+			assert.doesNotMatch(ctx.page.textContent, /稍後自動重試/, '讀取成功後清除提示');
+		} finally { ctx.restore(); }
+	});
+});
+
+test('生成被 key_points_review（409）擋下時重新讀取重點清單並顯示橫幅', async () => {
+	await withDOM(async () => {
+		const ctx = await setup(keyPoints('ready'));
+		try {
+			assert.equal(banner(ctx.page), undefined);
+			ctx.state.current = keyPoints();
+			api.post = async (path, body) => {
+				ctx.state.posts.push({ path, body });
+				throw Object.assign(new Error('x'), { status: 409, code: 'key_points_review', reason: '這份教材的學習目標是 AI 推論的，需要先確認' });
+			};
+			const before = ctx.state.gets.filter(path => path === ctx.kpPath).length;
+			click(find(ctx.page, '開始生成'));
+			await settle();
+			assert.equal(ctx.state.posts.length, 1);
+			assert.match(ctx.state.posts[0].path, /\/generate$/);
+			assert.equal(ctx.state.gets.filter(path => path === ctx.kpPath).length, before + 1, '409 後應重新讀取重點清單');
+			assert.ok(banner(ctx.page), '重新讀取後顯示橫幅');
+		} finally { ctx.restore(); }
+	});
 });
 
 test('重新抽取送出去除前後空白的備註，超過 200 字在前端擋下', async () => {
