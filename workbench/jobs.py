@@ -30,6 +30,7 @@ ERRORS = {
 	"budget": {"reason": "這份教材已花到上限 US$0.50", "advice": "少選幾點或提高上限", "retry": False},
 	"selftest": {"reason": "元件檢查沒過，為了不浪費錢沒有呼叫 AI", "advice": "回報開發者", "retry": False},
 	"too_large": {"reason": "超過 5 MB／30 頁／6 萬字", "advice": "拆小再上傳", "retry": False},
+	"key_points_review": {"reason": "這份教材的學習目標是 AI 推論的，需要先確認", "advice": "到單元頁檢查重點與學習目標，按「確認」或「重新抽取」", "retry": False},
 	"interrupted": {"reason": "伺服器重啟，工作中斷", "advice": "重試", "retry": True},
 	"unknown": {"reason": "{detail}", "advice": "重試或回報", "retry": True},
 }

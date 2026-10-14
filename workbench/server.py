@@ -318,6 +318,29 @@ class Studio:
 				raise APIError(409, "教材版本已改變，請重新核對", code="material_version") from exc
 			return {"unit_id": identifier, "content_version": data["content_version"], "reviewed": True}
 
+	def get_key_points(self, identifier):
+		from workbench.key_points import summary
+		return {"unit_id": identifier, **summary(self._unit_dir(identifier))}
+
+	def review_key_points(self, identifier, payload):
+		from workbench.key_points import confirm, request_reextract
+		action = payload.get("action")
+		with self.lock:
+			directory = self._unit_dir(identifier)
+			if action == "confirm":
+				try:
+					confirm(directory, payload.get("digest"))
+				except (ValueError, OSError, TypeError) as exc:
+					raise APIError(409, "重點清單已改變，請重新讀取", code="key_points_version") from exc
+			elif action == "reextract":
+				try:
+					request_reextract(directory, payload.get("note") or "")
+				except ValueError as exc:
+					raise APIError(400, str(exc)) from exc
+			else:
+				raise APIError(400, "不支援的動作")
+		return self.get_key_points(identifier)
+
 	def get_material(self, identifier):
 		self._unit_dir(identifier)
 		return {**self.library.material(identifier),
@@ -367,6 +390,12 @@ class Studio:
 	def enqueue_generate(self, identifier, payload):
 		with self.lock:
 			self._check_material(identifier)
+			# 簡報與心智圖不需要舊分析結果；放在 _plan 之後會先被「請先分析教材」擋掉而看不到真因
+			wanted = payload.get("items")
+			if isinstance(wanted, list) and any(item in ("slides", "mindmap") for item in wanted):
+				from workbench.key_points import summary
+				if summary(self._unit_dir(identifier))["status"] == "needs_review":
+					raise APIError(409, "重點清單是 AI 推論的，請先確認", "請在單元頁檢查重點與學習目標後按「確認」。", code="key_points_review")
 			plan = self._plan(identifier)
 			requested = payload.get("items")
 			if not isinstance(requested, list) or any(not isinstance(item, str) for item in requested):
@@ -622,10 +651,12 @@ class StudioHandler(BaseHTTPRequestHandler):
 				return self._json(200, studio.job_queue.queue())
 			if path == "/api/v1/usage":
 				return self._json(200, studio.get_usage())
-			match = re.fullmatch(r"/api/v1/units/([^/]+)(/manifest|/material)?", path)
+			match = re.fullmatch(r"/api/v1/units/([^/]+)(/manifest|/material|/key-points)?", path)
 			if match:
 				uid, manifest = match.groups()
 				studio._unit_dir(uid)
+				if manifest == "/key-points":
+					return self._json(200, studio.get_key_points(uid))
 				return self._json(200, studio.get_material(uid) if manifest == "/material" else
 					studio.manifest(uid) if manifest else studio.get_unit(uid))
 			match = re.fullmatch(r"/api/v1/jobs/([^/]+)", path)
@@ -649,6 +680,9 @@ class StudioHandler(BaseHTTPRequestHandler):
 				payload = self._body()
 				return self._json(200, studio.review_material(uid, payload) if action == "review" else
 					studio.enqueue_analyze(uid) if action == "analyze" else studio.enqueue_generate(uid, payload))
+			match = re.fullmatch(r"/api/v1/units/([^/]+)/key-points", path)
+			if match:
+				return self._json(200, studio.review_key_points(match[1], self._body()))
 			match = re.fullmatch(r"/api/v1/units/([^/]+)/items/([^/]+)/renarrate", path)
 			if match:
 				return self._json(200, studio.enqueue_renarrate(*match.groups(), self._body()))

@@ -33,15 +33,22 @@ class TestMarkers(unittest.TestCase):
 
 	def test_classify_explicit_codes_and_retry_policy(self):
 		self.assertEqual(set(jobs.ERRORS), {"gemini_busy", "repair_exhausted", "quote_mismatch",
-			"budget", "selftest", "too_large", "interrupted", "unknown"})
+			"budget", "selftest", "too_large", "interrupted", "key_points_review", "unknown"})
 		for code in jobs.ERRORS:
 			with self.subTest(code=code):
 				error = jobs.classify(code, "第 2 句", ["one", "two", "three", "four"])
 				assert_shape(error, SHAPES["job_error"])
 				self.assertEqual(error["code"], code)
-				self.assertEqual(error["retry"], code not in {"budget", "selftest", "too_large"})
+				self.assertEqual(error["retry"], code not in {"budget", "selftest", "too_large", "key_points_review"})
 		self.assertEqual(jobs.classify("tts_missing", "第 2 句", [])["code"], "unknown")
 		self.assertIn("第一個；第二個", jobs.classify("repair_exhausted", "第一個；第二個", [])["reason"])
+
+	def test_classify_key_points_review_marker(self):
+		kind, code, detail = jobs.parse_marker("@error key_points_review 學習目標待確認\n")
+		error = jobs.classify(code, detail, ["執行中", "@error key_points_review 學習目標待確認"])
+		self.assertEqual((kind, error["code"], error["retry"]), ("error", "key_points_review", False))
+		self.assertNotEqual(error["reason"], "學習目標待確認")
+		self.assertIn("確認", error["advice"])
 
 	def test_classify_fallback_and_unknown_tail(self):
 		for tail in ("429", "503", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "Timeout", "Time out", "timed out"):
@@ -183,7 +190,7 @@ class TestJobQueue(unittest.TestCase):
 			queue.retry(second)
 
 	def test_nonretryable_and_unmarked_failures(self):
-		for code, line in (("budget", "@error budget 上限"), ("gemini_busy", "HTTP 429"), ("unknown", "bad input")):
+		for code, line in (("budget", "@error budget 上限"), ("key_points_review", "@error key_points_review 待確認"), ("gemini_busy", "HTTP 429"), ("unknown", "bad input")):
 			with self.subTest(code=code):
 				def runner(argv, on_line):
 					on_line(line)
