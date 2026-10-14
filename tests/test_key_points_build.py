@@ -24,6 +24,12 @@ class TestBuildKeyPoints(unittest.TestCase):
 		self.assertEqual(K.structure_of('# 標題\n\n## 學習目標：\n- 能做到\n', ['md']), 'material')
 		self.assertEqual(K.structure_of('# 標題\n\n##學習目標\n- 能做到\n', ['md']), 'inferred')
 
+	def test_numbered_goals_heading_counts_as_material(self):
+		for heading in ('### 1. 學習目標', '## 1、學習目標', '## 一、學習目標', '## (1) 學習目標'):
+			with self.subTest(heading=heading):
+				self.assertEqual(K.structure_of(f'# 標題\n\n{heading}\n- 能做到\n', ['md']), 'material')
+		self.assertEqual(K.structure_of('# 標題\n\n## 1. 學習目標達成率\n- 數字\n', ['md']), 'inferred')
+
 	def test_schema_only_allows_excerpt_ids_and_has_no_presentation_fields(self):
 		excerpts = source_excerpts(MATERIAL)
 		schema = K.model_schema(excerpts)

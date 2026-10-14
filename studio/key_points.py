@@ -14,7 +14,8 @@ RESERVED_IDS = ('root', 'cover', 'mistakes')
 _ID = re.compile(r'[a-z][a-z0-9_]{0,23}')
 # 只擋「X 是什麼」這類短泛問；「這個括號的用處是什麼？」帶了具體對象，要放行。
 _GENERIC = (re.compile(r'^什麼是'), re.compile(r'^[^，,的]{1,10}是什麼[？?]?$'))
-_GOALS_HEADING = re.compile(r'^#{1,6}[ \t]+學習目標[ \t]*[:：]?[ \t]*$', re.MULTILINE)
+# 教材常在標題前加章節編號（### 1. 學習目標、## 一、學習目標），編號不影響它是學習目標段落。
+_GOALS_HEADING = re.compile(r'^#{1,6}[ \t]+(?:(?:\d+|[一二三四五六七八九十]+)[.、．]|[(（]\d+[)）])?[ \t]*學習目標[ \t]*[:：]?[ \t]*$', re.MULTILINE)
 _TOP = ('contract_version', 'content_version', 'title', 'structure', 'status', 'objectives', 'points')
 _OBJECTIVE = ('id', 'text', 'inferred', 'sources')
 _POINT = ('id', 'title', 'question', 'type', 'objectives', 'explanation', 'example',
