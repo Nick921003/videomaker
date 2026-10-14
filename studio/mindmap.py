@@ -50,9 +50,10 @@ def _text(value, maximum):
 def canonical_mindmap(value):
 	if not isinstance(value,dict):
 		raise MindmapError('心智圖欄位不符合契約')
-	explorable = value.get('contract_version') == '1.1'
+	explorable = value.get('contract_version') in ('1.1', '1.2')
+	handout = value.get('contract_version') == '1.2'
 	_fields(value, ("contract_version", "title", "root_id", "nodes", "edges") + (('layout',) if explorable else ()))
-	if value["contract_version"] not in ("1.0", '1.1'):
+	if value["contract_version"] not in ("1.0", '1.1', '1.2'):
 		raise MindmapError("不支援的心智圖版本")
 	if explorable and value['layout'] not in ('radial','progressive'):
 		raise MindmapError('心智圖布局不支援')
@@ -62,15 +63,24 @@ def canonical_mindmap(value):
 		raise MindmapError("心智圖節點或關係數量不符")
 	ids = set()
 	for node in nodes:
-		_fields(node, ("id", "label", "explanation", "source_quote") + (('kind',) if explorable else ()))
+		_fields(node, ("id", "label", "explanation", "source_quote") + (('kind',) if explorable else ())
+			+ (('handout_page',) if handout else ()))
 		if not isinstance(node["id"], str) or not _ID.fullmatch(node["id"]) or node["id"] in ids:
 			raise MindmapError("概念 ID 不符合契約")
 		ids.add(node["id"])
 		if explorable and node['kind'] not in ('concept','meaning','usage','example','pitfall'):
 			raise MindmapError('心智圖解說類型不支援')
-		for key, maximum in (("label", 160 if explorable else 24), ("explanation", 240), ("source_quote", 1000 if explorable else 300)):
-			if not (explorable and key=='explanation' and node[key]==''):
+		is_root = node['id'] == value['root_id']
+		label_maximum = (120 if is_root else 24) if handout else 160 if explorable else 24
+		for key, maximum in (("label", label_maximum), ("explanation", 240), ("source_quote", 1000 if explorable else 300)):
+			# 1.2 的根節點只是單元名稱，沒有對應的單一說明與出處。
+			optional = (explorable and key == 'explanation' and not handout) or (handout and is_root and key != 'label')
+			if not (optional and node[key] == ''):
 				_text(node[key], maximum)
+		if handout:
+			page = node['handout_page']
+			if not (page is None if is_root else type(page) is int and page >= 2):
+				raise MindmapError('心智圖講義頁碼不符合契約')
 	root = value["root_id"]
 	if root not in ids:
 		raise MindmapError("根概念不存在")
@@ -83,8 +93,13 @@ def canonical_mindmap(value):
 			raise MindmapError("概念關係不符合樹狀結構")
 		parents.add(child)
 		children[parent].append(child)
-		_text(edge["label"], 16)
-		_text(edge["source_quote"], 1000 if explorable else 300)
+		if handout:
+			# 重點清單不記上下層關係的名稱，畫面上不能自己編一個。
+			if edge['label'] != '' or edge['source_quote'] != '':
+				raise MindmapError('概念樹不另標關係')
+		else:
+			_text(edge["label"], 16)
+			_text(edge["source_quote"], 1000 if explorable else 300)
 	seen = set()
 	def visit(node_id):
 		if node_id in seen:
@@ -165,7 +180,7 @@ def build_mindmap(material, instruction, complete_json, *, source_context=None):
 def render_mindmap_svg(mindmap, material=None):
 	"""只輸出靜態 SVG 元素；圖文與關係先經封閉契約驗證。"""
 	mindmap = canonical_mindmap(mindmap)
-	if mindmap['contract_version']=='1.1':
+	if mindmap['contract_version'] in ('1.1', '1.2'):
 		return _render_explorable_svg(mindmap,material)
 	if material is not None and (not isinstance(material, str) or len(material) > 30_000):
 		raise MindmapError("心智圖來源超出上限")
@@ -253,7 +268,7 @@ def _render_explorable_svg(mindmap, material):
 	place(mindmap['root_id'],0,30)
 	width=int(max(x+300 for x,_,_,_ in positions.values())+30)
 	height=int(max(y+h/2 for _,y,h,_ in positions.values())+30)
-	parts=[f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" data-root-id="{mindmap["root_id"]}" data-contract-version="1.1" data-layout="{mindmap["layout"]}" role="img" aria-labelledby="mindmap-title">',
+	parts=[f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" data-root-id="{mindmap["root_id"]}" data-contract-version="{mindmap["contract_version"]}" data-layout="{mindmap["layout"]}" role="img" aria-labelledby="mindmap-title">',
 		f'<title id="mindmap-title">{_svg_text(mindmap["title"])}</title>',
 		'<rect width="100%" height="100%" fill="#fffaf2"/>']
 	for edge in mindmap['edges']:
@@ -261,7 +276,9 @@ def _render_explorable_svg(mindmap, material):
 		parts.append(f'<path data-from="{edge["from"]}" data-to="{edge["to"]}" data-relation={quoteattr(edge["label"])} d="M{x1+300},{y1} C{x1+335},{y1} {x2-35},{y2} {x2},{y2}" fill="none" stroke="#b97755" stroke-width="2"/>')
 	for node in mindmap['nodes']:
 		x,y,h,lines=positions[node['id']]
-		parts.extend([f'<g data-node-id="{node["id"]}" data-node-kind="{node["kind"]}">',
+		page=node.get('handout_page')
+		parts.extend([f'<g data-node-id="{node["id"]}" data-node-kind="{node["kind"]}"'
+			+(f' data-handout-page="{page}"' if page else '')+'>',
 			f'<title data-node-label="">{_svg_text(node["label"])}</title>',
 			f'<desc data-node-explanation="">{_svg_text(node["explanation"])}</desc>',
 			f'<desc data-node-quote="">{_svg_text(node["source_quote"])}</desc>',
