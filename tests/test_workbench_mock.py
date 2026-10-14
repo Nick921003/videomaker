@@ -29,6 +29,7 @@ JSON_SHAPES = {
 	"ask-no-match.json": SHAPES["ask"],
 	"ask-out-of-scope.json": SHAPES["ask"],
 	"upload.json": SHAPES["upload"],
+	"key-points-review.json": SHAPES["key_points"],
 }
 QUESTIONS = (
 	"for 迴圈每一圈做了什麼？",
@@ -73,7 +74,7 @@ class TestShapeChecker(unittest.TestCase):
 	def test_exports_required_contracts(self):
 		self.assertEqual(set(SHAPES), {
 			"formats", "unit_summary", "unit", "analysis", "item", "job",
-			"job_error", "queue", "usage", "manifest", "ask", "api_error", "upload",
+			"job_error", "queue", "usage", "manifest", "ask", "api_error", "upload", "key_points",
 		})
 
 	def test_accepts_nested_lists_nullable_and_numeric_types(self):

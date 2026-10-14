@@ -10,6 +10,8 @@ _PREVIEW = Enum("Preview", {value: value for value in ("video", "svg", "deck", "
 _ITEM_STATUS = Enum("ItemStatus", {value: value for value in ("none", "queued", "running", "done", "failed")})
 _JOB_STATE = Enum("JobState", {value: value for value in ("queued", "running", "done", "failed")})
 _STEP_STATE = Enum("StepState", {value: value for value in ("pending", "running", "done", "failed", "skipped")})
+_KEY_POINTS_STATUS = Enum("KeyPointsStatus", {value: value for value in ("missing", "needs_review", "ready")})
+_KEY_POINTS_STRUCTURE = Enum("KeyPointsStructure", {value: value for value in ("material", "inferred")})
 _ASK_KIND = Enum("AskKind", {value: value for value in ("story", "highlight", "out_of_scope", "no_match")})
 _SOURCE_REF = (dict, None)
 _FILES = {str: str}
@@ -59,6 +61,10 @@ SHAPES: dict[str, object] = {
 	"manifest": {"unit_id": str, "title": str, "source_ref": _SOURCE_REF, "products": [_PRODUCT]},
 	"ask": {"kind": _ASK_KIND, "story": (str, None), "score": _NUMBER, "reason": str, "video": (str, None)},
 	"api_error": {"error": {"code": str, "reason": str, "advice": str}},
+	"key_points": {
+		"unit_id": str, "status": _KEY_POINTS_STATUS, "structure": (_KEY_POINTS_STRUCTURE, None),
+		"content_version": (str, None), "digest": (str, None), "key_points": (dict, None),
+	},
 	"upload": {"upload_id": str, "kind": str, "excerpt": str, "pages": (int, None), "chars": int, "estimate_usd": _NUMBER},
 }
 SHAPES["unit"] = {
