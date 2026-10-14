@@ -4278,9 +4278,52 @@ body.page-chat-active .main-viewport,
 @media (max-width: 760px) {
 	.make-generate { grid-template-columns: minmax(0, 1fr); gap: 10px; }
 	.make-generate[data-selection="collapsed"] { grid-template-rows: auto; }
-	.make-generate[data-selection="expanded"] .generate-live { grid-row: 1; }
+	.make-generate[data-selection="expanded"] .generate-live { grid-row: 2; }
 	.generate-live-heading { padding: 10px 12px; gap: 8px; }
 	.generate-checklist { max-height: 300px; }
 	.make-generate .button { min-height: 36px; }
 	.generate-diagram { height: 220px; }
+}
+
+/* 重點清單確認橫幅：佔滿整列，位於選擇區之前。 */
+.key-point-review { grid-column: 1 / -1; grid-row: 1; min-width: 0; }
+.key-point-banner { padding: 14px 18px; border: 1px solid #e3cdb5; border-radius: 10px; background: #fff7ed; display: grid; gap: 10px; }
+.key-point-banner-message { margin: 0; font-weight: 700; color: var(--ink); }
+.key-point-details summary { cursor: pointer; color: var(--soft); }
+.key-point-details { overflow-x: auto; }
+.key-point-table { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 14px; }
+.key-point-table th, .key-point-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; }
+.key-point-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.key-point-note-field { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--soft); }
+.key-point-note { min-width: 200px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: var(--card); }
+.key-point-message { margin: 0; min-height: 1em; font-size: 14px; color: var(--accent); }
+.generate-item-reason { display: block; margin-top: 2px; font-size: 13px; color: var(--soft); }
+
+/* Deck 1.3 講義：沿用 1.2 的閱讀版型，頁面內容改為講義結構。 */
+.viewer-deck[data-contract-version="1.3"] .deck-viewport { overflow: auto; touch-action: pan-y; cursor: auto; user-select: text; }
+.viewer-deck[data-contract-version="1.3"] .deck-canvas { position: relative; width: 100%; height: auto; transform: none !important; }
+.viewer-deck[data-contract-version="1.3"] .deck-slide { height: auto; min-height: 100%; padding: clamp(16px, 3vw, 36px); gap: 14px; --deck-scale: 1 !important; font-size: calc(18px * var(--deck-reading-scale, 1)); }
+.viewer-deck[data-contract-version="1.3"] .deck-slide-title { font-size: calc(26px * var(--deck-reading-scale, 1)); }
+.deck-handout-subtitle { margin: 0; color: var(--accent); font-weight: 600; }
+.deck-handout-body { margin: 0; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.deck-handout-panel { padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--tint); white-space: pre-wrap; overflow-wrap: anywhere; }
+.deck-handout-label { margin: 0 0 8px; font-size: 1em; color: var(--soft); }
+.deck-handout-misconceptions { padding: 12px 14px; border: 1px solid #e3cdb5; border-radius: 8px; background: #fff7ed; }
+.deck-handout-mistake { margin-bottom: 10px; }
+.deck-handout-mistake p { margin: 2px 0; overflow-wrap: anywhere; }
+.deck-handout-source { margin: auto 0 0; font-size: 0.85em; color: var(--soft); overflow-wrap: anywhere; }
+
+/* 心智圖 1.2 詳情：寬螢幕在右側，窄螢幕換到圖下方。 */
+.concept-body { display: flex; align-items: stretch; min-height: 0; }
+.concept-body .concept-viewport { flex: 1 1 auto; min-width: 0; }
+.concept-detail { flex: 0 0 min(320px, 34%); padding: 14px 16px; border-left: 1px solid var(--line); background: var(--card); overflow-y: auto; }
+.concept-detail[hidden] { display: none; }
+.concept-detail-title { margin: 0 0 8px; font-size: 18px; }
+.concept-detail-explanation { margin: 0 0 10px; line-height: 1.7; overflow-wrap: anywhere; }
+.concept-detail-quote h4 { margin: 0 0 4px; font-size: 14px; color: var(--soft); }
+.concept-detail-quote blockquote { margin: 0; padding-left: 10px; border-left: 2px solid var(--accent); color: var(--soft); overflow-wrap: anywhere; }
+.concept-detail-link { margin-top: 10px; }
+@media (max-width: 700px) {
+	.concept-body { flex-direction: column; }
+	.concept-detail { flex-basis: auto; max-height: 40%; border-left: 0; border-top: 1px solid var(--line); }
 }

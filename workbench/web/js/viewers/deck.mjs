@@ -151,6 +151,57 @@ export function renderSlide(slide, { progressive = false } = {}) {
 	return card;
 }
 
+// 講義頁：文字一律走 textContent，教材內容不得變成 HTML。
+export function renderHandoutPage(slide) {
+	const card = el('article', `deck-slide deck-handout deck-handout-${slide.kind}`);
+	const section = (title, className) => {
+		const box = el('section', className);
+		box.append(el('h3', 'deck-handout-label', title));
+		return box;
+	};
+	if (slide.kind === 'cover') {
+		card.append(el('h2', 'deck-slide-title', slide.title));
+		const goals = section('學習目標', 'deck-handout-objectives');
+		goals.append(list(slide.objectives, true));
+		card.append(goals);
+		return card;
+	}
+	if (slide.kind === 'mistakes') {
+		card.append(el('h2', 'deck-slide-title', '常見錯誤整理'));
+		for (const item of slide.items ?? []) {
+			const row = el('div', 'deck-handout-mistake');
+			row.append(el('strong', '', `【${item.point_title}】`), el('p', '', `錯：${item.wrong}`),
+				el('p', '', `為什麼：${item.why}`), el('p', '', `正確：${item.correct}`));
+			card.append(row);
+		}
+		return card;
+	}
+	card.append(el('h2', 'deck-slide-title', slide.question), el('p', 'deck-handout-subtitle', slide.title),
+		el('p', 'deck-handout-body', slide.explanation));
+	const example = slide.example;
+	if (example?.content) {
+		if (example.kind === 'code') {
+			const pre = el('pre', 'deck-code deck-handout-example');
+			const code = el('code', '', example.content);
+			if (example.language) code.setAttribute('data-language', example.language);
+			pre.append(code);
+			card.append(pre);
+		} else card.append(el('div', 'deck-handout-example deck-handout-panel', example.content));
+	}
+	if (slide.misconceptions?.length) {
+		const box = section('常見錯誤', 'deck-handout-misconceptions');
+		for (const item of slide.misconceptions) {
+			const row = el('div', 'deck-handout-mistake');
+			row.append(el('p', '', `錯：${item.wrong}`), el('p', '', `為什麼：${item.why}`), el('p', '', `正確：${item.correct}`));
+			box.append(row);
+		}
+		card.append(box);
+	}
+	const source = slide.sources?.[0];
+	if (source) card.append(el('p', 'deck-handout-source', `出處：${source.length > 60 ? `${source.slice(0, 60)}…` : source}`));
+	return card;
+}
+
 export function fitSlide(card, version = '1.1') {
 	const content = card.querySelector('.deck-slide-content');
 	if (!card.clientHeight || !content?.clientHeight) return;
@@ -216,8 +267,12 @@ export async function mount(host, { unit, files, signal }) {
 	signal?.throwIfAborted();
 	root.setAttribute('data-contract-version', deck.contract_version ?? '1.0');
 	if (!deck.slides?.length) throw new Error('這份簡報還沒有投影片。');
+	// 1.3 講義與 1.2 同為閱讀版型，只是每頁內容換成講義結構。
+	const handoutMode = deck.contract_version === '1.3';
+	const reading = handoutMode || deck.contract_version === '1.2';
+	if (handoutMode) notes.hidden = true;
 	for (const [i, slide] of deck.slides.entries()) {
-		const option = el('option', '', `${i + 1}. ${slide.title}`);
+		const option = el('option', '', `${i + 1}. ${handoutMode ? slide.question ?? slide.title ?? '常見錯誤整理' : slide.title}`);
 		option.value = String(i);
 		jump.append(option);
 	}
@@ -226,9 +281,9 @@ export async function mount(host, { unit, files, signal }) {
 	function show(index) {
 		page = Math.max(0, Math.min(deck.slides.length - 1, index));
 		jump.value = String(page);
-		const card = renderSlide(deck.slides[page], { progressive: deck.contract_version === '1.2' });
+		const card = handoutMode ? renderHandoutPage(deck.slides[page]) : renderSlide(deck.slides[page], { progressive: deck.contract_version === '1.2' });
 		canvas.replaceChildren(card);
-		fitSlide(card, deck.contract_version ?? '1.0');
+		if (!handoutMode) fitSlide(card, deck.contract_version ?? '1.0');
 		counter.textContent = `${page + 1} / ${deck.slides.length}`;
 		previous.disabled = page === 0;
 		next.disabled = page === deck.slides.length - 1;
@@ -250,8 +305,8 @@ export async function mount(host, { unit, files, signal }) {
 	};
 	doc.addEventListener('keydown', keydown);
 	let controls;
-	if (deck.contract_version === '1.2') {
-		viewport.setAttribute('aria-label', '自學簡報，左右鍵逐步閱讀與翻頁，上下捲動');
+	if (reading) {
+		viewport.setAttribute('aria-label', handoutMode ? '講義，左右鍵翻頁，上下捲動' : '自學簡報，左右鍵逐步閱讀與翻頁，上下捲動');
 		let scale = 1;
 		const listeners = [];
 		for (const control of toolbar.children) {

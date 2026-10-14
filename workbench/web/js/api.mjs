@@ -6,6 +6,7 @@ const files = new Map();
 const jobs = new Map();
 const units = new Map();
 const uploads = new Map();
+const reviewedUnits = new Set();
 let serial = 0;
 
 // 所有 mock 檔案都從頁面根目錄讀取，兩種伺服器路徑共用。
@@ -16,6 +17,7 @@ const mockFiles = Object.freeze({
 	'/units/:id?state=new': 'unit-new.json',
 	'/units/:id?state=analyzed': 'unit-analyzed.json',
 	'/units/:id?state=analyzed12': 'unit-analyzed-12.json',
+	'/units/:id/key-points?state=review': 'key-points-review.json',
 	'/uploads': 'upload.json',
 	'/units/:id/manifest': 'manifest.json',
 	'/units/:id/items/:item/renarrate': 'job-running.json',
@@ -151,6 +153,15 @@ async function settleStages() {
 	}
 }
 
+// 只有 ?state=review 的示範會進入待確認；確認後同一頁面內視為 ready。
+async function mockKeyPoints(unitId, state) {
+	const data = await fixture('/units/:id/key-points?state=review');
+	if (state !== 'review') return { unit_id: unitId, status: 'missing', structure: null, content_version: null, digest: null, key_points: null };
+	data.unit_id = unitId;
+	if (reviewedUnits.has(unitId)) Object.assign(data, { status: 'ready', digest: 'mock-digest-2', key_points: { ...data.key_points, status: 'ready' } });
+	return data;
+}
+
 async function mockGet(url) {
 	await settleStages();
 	const path = url.pathname;
@@ -173,6 +184,8 @@ async function mockGet(url) {
 		return running || queued.length ? { running, queued } : fixture('/queue');
 	}
 	if (Object.hasOwn(mockFiles, path)) return fixture(path);
+	const keyPoints = path.match(/^\/units\/([^/]+)\/key-points$/);
+	if (keyPoints) return mockKeyPoints(decodeURIComponent(keyPoints[1]), url.searchParams.get('state'));
 	if (/^\/units\/[^/]+\/manifest$/.test(path)) return fixture('/units/:id/manifest');
 	if (/^\/units\/[^/]+$/.test(path)) {
 		const state = url.searchParams.get('state');
@@ -243,6 +256,16 @@ async function mockPost(url, body) {
 		if (existing) return { job_id: existing.id };
 		units.set(unitId, { ...unit, unit_id: unitId });
 		return { job_id: await createJob(unitId, 'analysis', 'analysis') };
+	}
+	const review = url.pathname.match(/^\/units\/([^/]+)\/key-points$/);
+	if (review) {
+		const unitId = decodeURIComponent(review[1]);
+		const current = await mockKeyPoints(unitId, url.searchParams.get('state'));
+		if (body.action === 'confirm') {
+			if (body.digest !== current.digest) throw failure('key_points_version', '重點清單已改變，請重新讀取');
+			reviewedUnits.add(unitId);
+		} else if (body.action !== 'reextract') throw failure('bad_request', '不支援的動作');
+		return mockKeyPoints(unitId, url.searchParams.get('state'));
 	}
 	const generate = url.pathname.match(/^\/units\/([^/]+)\/generate$/);
 	if (generate || url.pathname === '/generate') {

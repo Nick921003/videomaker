@@ -1,0 +1,22 @@
+{
+	"unit_id": "ff9e559208c9",
+	"status": "needs_review",
+	"structure": "inferred",
+	"content_version": "mock-content-version",
+	"digest": "mock-digest-1",
+	"key_points": {
+		"contract_version": "1.0",
+		"title": "C 語言迴圈基礎",
+		"structure": "inferred",
+		"status": "needs_review",
+		"objectives": [
+			{ "id": "o1", "text": "用 for 與 while 寫出正確的重複動作，並知道各適合什麼場合", "inferred": true, "sources": [] },
+			{ "id": "o2", "text": "避開差一錯誤與無窮迴圈兩個常見的坑", "inferred": true, "sources": [] }
+		],
+		"points": [
+			{ "id": "three_parts", "title": "迴圈三要素", "question": "for 後面括號裡為什麼用分號隔成三段？", "type": "concept", "objectives": ["o1"] },
+			{ "id": "choose", "title": "for 與 while", "question": "什麼時候該改用 while 而不是 for？", "type": "compare", "objectives": [] },
+			{ "id": "boundary", "title": "差一錯誤", "question": "一加到五時，條件為什麼寫 i <= 5？", "type": "mistake", "objectives": ["o2"] }
+		]
+	}
+}

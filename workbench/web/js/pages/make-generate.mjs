@@ -3,9 +3,11 @@ import { el, money } from '../ui.mjs';
 import { go } from '../router.mjs';
 import { layoutSteps, render, setLive } from '../diagram.mjs';
 import { button, viewerTools, panViewer } from '../viewers/common.mjs';
+import { renderKeyPointBanner, REVIEW_REASON, NOTE_LIMIT } from './key-point-banner.mjs';
 
 const STATUS = { none: '尚未生成', queued: '排隊中', running: '製作中', done: '已完成', failed: '失敗' };
 const selectable = item => ['none', 'failed'].includes(item.status);
+const NEEDS_KEY_POINTS = ['slides', 'mindmap'];
 
 export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {}) {
 	const registry = await api.get('/formats');
@@ -61,7 +63,10 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	const failures = el('div', 'generate-failures');
 	feedback.append(status, failures);
 	right.append(heading, feedback, queueCard, idle, diagram);
-	content.append(left, right);
+	// 橫幅佔滿整列，放在選擇區與製作過程之前。
+	const reviewSlot = el('div', 'key-point-review');
+	reviewSlot.hidden = true;
+	content.append(reviewSlot, left, right);
 	const failedItems = unit.items.filter(item => item.status === 'failed' && item.job_id);
 	const chosen = new Set((failedItems.length ? failedItems : unit.items.filter(selectable)).map(item => item.item));
 	const watched = new Map();
@@ -77,10 +82,16 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 	let drawnJob;
 	let queueSignature = '';
 	let pinned;
+	let review = null;
+	let reviewBusy = false;
+	let reviewMessage = '';
+	let reviewNote = '';
+	let reviewLoaded = false;
 	const suffix = api.MOCK && query.state ? `?${new URLSearchParams({ state: query.state })}` : '';
 	const unitPath = `/units/${encodeURIComponent(unit.unit_id)}`;
+	const blocked = item => review?.status === 'needs_review' && NEEDS_KEY_POINTS.includes(item.format);
 	function refreshTotal() {
-		const selected = unit.items.filter(item => selectable(item) && chosen.has(item.item));
+		const selected = unit.items.filter(item => selectable(item) && !blocked(item) && chosen.has(item.item));
 		total.textContent = `預估總計 · ${money(selected.reduce((sum, item) => sum + item.estimate_usd, 0))}`;
 		start.disabled = submitting || !selected.length;
 		start.hidden = left.hidden && !selected.length;
@@ -95,8 +106,8 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 				const input = el('input');
 				input.type = 'checkbox';
 				input.value = item.item;
-				input.disabled = submitting || !selectable(item);
-				input.checked = selectable(item) && chosen.has(item.item);
+				input.disabled = submitting || !selectable(item) || blocked(item);
+				input.checked = selectable(item) && !blocked(item) && chosen.has(item.item);
 				input.addEventListener('change', () => {
 					if (input.checked) chosen.add(item.item);
 					else chosen.delete(item.item);
@@ -104,11 +115,56 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 				});
 				const copy = el('span', 'generate-choice-copy');
 				copy.append(el('span', '', item.label), el('span', 'generate-item-status', STATUS[item.status]));
+				if (blocked(item)) copy.append(el('span', 'generate-item-reason', REVIEW_REASON));
 				row.append(input, copy, el('span', 'generate-estimate', money(item.estimate_usd)));
 				checklist.append(row);
 			}
 		}
 		refreshTotal();
+	}
+	function renderReview() {
+		const pending = review?.status === 'needs_review';
+		reviewSlot.hidden = !pending;
+		if (!pending) { reviewSlot.replaceChildren(); return; }
+		reviewSlot.replaceChildren(renderKeyPointBanner(review, {
+			busy: reviewBusy, message: reviewMessage, note: reviewNote,
+			onNote: value => { reviewNote = value; },
+			onConfirm: () => reviewAction({ action: 'confirm', digest: review.digest }),
+			onReextract: note => {
+				reviewNote = note;
+				if (note.length > NOTE_LIMIT) {
+					reviewMessage = `備註最多 ${NOTE_LIMIT} 字，請縮短後再送出。`;
+					renderReview();
+					return;
+				}
+				reviewAction({ action: 'reextract', note });
+			},
+		}));
+	}
+	// 讀不到時不擋生成；伺服器仍會用 key_points_review 把關。
+	async function loadKeyPoints() {
+		let fresh = null;
+		try { fresh = await api.get(`${unitPath}/key-points${suffix}`); } catch {}
+		if (disposed) return;
+		const wasPending = review?.status === 'needs_review';
+		review = fresh?.status ? fresh : null;
+		renderReview();
+		if (wasPending !== (review?.status === 'needs_review')) renderChecklist();
+	}
+	async function reviewAction(body) {
+		if (reviewBusy || disposed) return;
+		reviewBusy = true;
+		reviewMessage = '';
+		renderReview();
+		try {
+			await api.post(`${unitPath}/key-points${suffix}`, body);
+			if (body.action === 'reextract') reviewNote = '';
+		} catch (error) {
+			reviewMessage = `${error.reason ?? error.message} ${error.advice ?? ''}`.trim();
+		}
+		reviewBusy = false;
+		// 無論成敗都重讀，確保畫面與伺服器上的清單與 digest 一致。
+		await loadKeyPoints();
 	}
 	async function refreshUnit() {
 		const fresh = await api.get(`${unitPath}${suffix}`);
@@ -169,6 +225,7 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 				panel.append(el('h3', '', unit.items.find(item => item.item === job.item)?.label ?? job.item),
 					el('p', '', planningContract ? '教學規劃的回傳格式不符，尚未進入影片配音與出片。' : reason),
 					el('p', 'section-note', job.error?.advice ?? ''));
+				if (job.error?.code === 'key_points_review') panel.append(el('p', 'section-note', '請先在頁面上方檢查並確認重點清單，再重新生成。'));
 				if (planningContract) {
 					const detail = el('details', 'generate-error-detail');
 					detail.append(el('summary', '', '查看錯誤紀錄'), el('pre', '', reason));
@@ -214,6 +271,7 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 		try {
 			const queue = await api.get('/queue');
 			if (disposed || document.hidden) return;
+			if (!reviewLoaded) { reviewLoaded = true; await loadKeyPoints(); if (disposed || document.hidden) return; }
 			for (const job of [queue.running, ...queue.queued].filter(Boolean)) {
 				if (job.unit_id === unit.unit_id || job === queue.running) watched.set(job.job_id, job);
 			}
@@ -252,11 +310,12 @@ export async function renderMakeGenerate(initialUnit, { query = {}, onUnit } = {
 			accepted = true;
 			if (!disposed) { await refreshUnit(); await poll(); }
 		} catch (error) {
+			if (!disposed && error.code === 'key_points_review') loadKeyPoints();
 			if (!disposed) status.textContent = accepted ? `工作已送出，暫時無法讀取最新進度。${error.reason ?? error.message}` : `${error.reason ?? error.message} ${error.advice ?? ''}`;
 		} finally { submitting = false; if (!disposed) renderChecklist(); }
 	}
 	start.addEventListener('click', () => run(async () => {
-		const items = unit.items.filter(item => selectable(item) && chosen.has(item.item)).map(item => item.item);
+		const items = unit.items.filter(item => selectable(item) && !blocked(item) && chosen.has(item.item)).map(item => item.item);
 		const result = await api.post(`${unitPath}/generate${suffix}`, { items });
 		if (disposed) return;
 		for (const id of result.job_ids) watched.set(id, null);

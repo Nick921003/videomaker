@@ -13,7 +13,7 @@ export function visibleTree(root, children, expanded) {
 	walk(root, 0); return rows;
 }
 
-export function mountConceptTree(host, svg, { unit, files }) {
+export function mountConceptTree(host, svg, { unit, files, onOpenHandoutPage }) {
 	const rootId = svg.getAttribute('data-root-id');
 	const version = svg.getAttribute('data-contract-version') ?? '1.0';
 	const nodes = new Map(), children = new Map(), parents = new Map();
@@ -24,6 +24,7 @@ export function mountConceptTree(host, svg, { unit, files }) {
 			kind: node.getAttribute('data-node-kind') ?? 'concept',
 			explanation: node.querySelector('desc[data-node-explanation]')?.textContent ?? '',
 			quote: node.querySelector('desc[data-node-quote]')?.textContent ?? '',
+			handoutPage: Number(node.getAttribute('data-handout-page')) || null,
 		});
 		children.set(id, []);
 	}
@@ -58,7 +59,14 @@ export function mountConceptTree(host, svg, { unit, files }) {
 	tools.append(back, reset, layout, smaller, larger, fullscreen, download);
 	const viewport = el('div', 'concept-viewport');viewport.tabIndex = 0;
 	viewport.setAttribute('aria-label', '心智圖，點選或 Enter 展開概念，Backspace 返回，方向鍵移動畫布');
-	const canvas = el('div', 'concept-canvas');viewport.append(canvas);root.append(tools, viewport);host.replaceChildren(root);
+	const canvas = el('div', 'concept-canvas');viewport.append(canvas);
+	// 1.2 的節點已含完整解說與出處，點選後在側欄閱讀；舊版維持原結構。
+	const detail = version === '1.2' ? el('aside', 'concept-detail scroll-box') : null;
+	if (detail) {
+		detail.setAttribute('aria-live', 'polite');detail.setAttribute('aria-label', '概念詳情');detail.hidden = true;
+		const body = el('div', 'concept-body');body.append(viewport, detail);root.append(tools, body);
+	} else root.append(tools, viewport);
+	host.replaceChildren(root);
 	let current = rootId, trail = [], positions = new Map(), lastWidth = 0, restoringFocus = false;
 	const expanded = new Set([rootId]);
 	let camera = { x: 0, y: 0, scale: 1 };
@@ -75,8 +83,27 @@ export function mountConceptTree(host, svg, { unit, files }) {
 			: viewport.clientHeight / 2 - (parseFloat(card.style.top) + height / 2) * camera.scale;
 		animate();apply();
 	}
+	function showDetail(id) {
+		const data = nodes.get(id);
+		detail.replaceChildren(el('h3', 'concept-detail-title', data.label));
+		if (data.explanation) detail.append(el('p', 'concept-detail-explanation', data.explanation));
+		if (data.quote) {
+			const quote = el('section', 'concept-detail-quote');
+			quote.append(el('h4', '', '教材原文'), el('blockquote', '', data.quote));
+			detail.append(quote);
+		}
+		if (data.handoutPage) {
+			const label = `看講義第 ${data.handoutPage} 頁`;
+			if (onOpenHandoutPage) {
+				const link = el('button', 'button concept-detail-link', label);link.type = 'button';
+				link.addEventListener('click', () => onOpenHandoutPage(data.handoutPage));detail.append(link);
+			} else detail.append(el('p', 'concept-detail-link', label));
+		}
+		detail.hidden = false;
+	}
 	function activate(id) {
 		current = id;
+		if (detail) showDetail(id);
 		if (id === rootId || !children.get(id)?.length) { center(id);return; }
 		if (expanded.has(id)) { collapse(id);render(id); }
 		else { expanded.add(id);trail.push(id);render(id); }

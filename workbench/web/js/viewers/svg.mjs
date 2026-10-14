@@ -48,7 +48,7 @@ function renderInspector(panel, meta, isSelected) {
 	panel.replaceChildren(card);
 }
 
-export async function mount(host, { unit, item, files, signal }) {
+export async function mount(host, { unit, item, files, signal, onOpenHandoutPage }) {
 	const root = el('section', 'viewer viewer-svg');
 	const toolbar = viewerTools(root);
 	if (files?.svg) {
@@ -77,7 +77,7 @@ export async function mount(host, { unit, item, files, signal }) {
 				|| /url\(\s*['"]?(?!#)/i.test(attribute.value)) node.removeAttribute(attribute.name);
 		}
 	}
-	if (original.getAttribute('data-root-id')) return mountConceptTree(host, original, { unit, files });
+	if (original.getAttribute('data-root-id')) return mountConceptTree(host, original, { unit, files, onOpenHandoutPage });
 	const bounds = svgBounds(original);
 	const svg = document.importNode(original, true);
 	svg.removeAttribute('viewBox');

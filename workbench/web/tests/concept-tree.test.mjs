@@ -151,3 +151,69 @@ test('收合父分支清理子孫展開歷史，Backspace後Enter重新展開可
   } finally {viewer.dispose();}
  });
 });
+
+function v12Fixture(doc) {
+ const svg=fixture(doc,'1.2');
+ const find=id=>svg.querySelectorAll('g[data-node-id]').find(node=>node.getAttribute('data-node-id')===id);
+ const a=find('a');a.setAttribute('data-handout-page','3');
+ const quote=doc.createElement('desc');quote.setAttribute('data-node-quote','');quote.textContent='教材原文：先判斷條件';a.append(quote);
+ return svg;
+}
+const panelOf=host=>host.querySelector('.concept-detail');
+const linkOf=host=>panelOf(host).querySelectorAll('*').find(node=>node.textContent==='看講義第 3 頁');
+
+test('1.2 版不合成 :meaning 節點，展開後只剩圖中本來的子節點', async () => {
+ await conceptDOM(async doc => {
+  const host=doc.createElement('div');const viewer=mountConceptTree(host,v12Fixture(doc),{unit:'u',files:{svg:'map.svg'}});
+  try {
+   click(host.querySelector('[data-concept-id="a"]'));
+   assert.equal(host.querySelector('[data-concept-id="a:meaning"]'),null);
+   assert.deepEqual(host.querySelectorAll('.concept-card').map(card=>card.getAttribute('data-concept-id')).sort(),['a','b','detail','example','root']);
+  } finally {viewer.dispose();}
+ });
+});
+
+test('1.2 版點選節點顯示詳情：標題、解說、教材原文與講義頁碼', async () => {
+ await conceptDOM(async doc => {
+  const host=doc.createElement('div');const opened=[];
+  const viewer=mountConceptTree(host,v12Fixture(doc),{unit:'u',files:{svg:'map.svg'},onOpenHandoutPage:page=>opened.push(page)});
+  try {
+   click(host.querySelector('[data-concept-id="a"]'));
+   const panel=panelOf(host);
+   assert.equal(panel.querySelector('.concept-detail-title').textContent,'條件');
+   assert.equal(panel.querySelector('.concept-detail-explanation').textContent,'先判斷條件');
+   assert.match(panel.querySelector('.concept-detail-quote').textContent,/教材原文/);
+   assert.match(panel.querySelector('.concept-detail-quote').textContent,/先判斷條件/);
+   click(linkOf(host));
+   assert.deepEqual(opened,[3]);
+  } finally {viewer.dispose();}
+ });
+});
+
+test('1.2 版 Enter 也能開詳情；host 沒給回呼時頁碼為純文字，根節點只有標題', async () => {
+ await conceptDOM(async doc => {
+  const host=doc.createElement('div');const viewer=mountConceptTree(host,v12Fixture(doc),{unit:'u',files:{svg:'map.svg'}});
+  try {
+   click(host.querySelector('[data-concept-id="root"]'));
+   assert.equal(panelOf(host).querySelector('.concept-detail-title').textContent,'迴圈');
+   assert.equal(panelOf(host).querySelector('.concept-detail-explanation'),null);
+   assert.equal(panelOf(host).querySelector('.concept-detail-quote'),null);
+   assert.equal(panelOf(host).querySelector('button'),null);
+   host.querySelector('[data-concept-id="a"]').querySelector('button').dispatchEvent(new Event('focus'));
+   const event=new Event('keydown',{cancelable:true});Object.defineProperty(event,'key',{value:'Enter'});host.querySelector('.concept-viewport').dispatchEvent(event);
+   assert.equal(panelOf(host).querySelector('.concept-detail-title').textContent,'條件');
+   assert.ok(linkOf(host));
+   assert.notEqual(linkOf(host).tagName,'button');
+  } finally {viewer.dispose();}
+ });
+});
+
+test('舊版心智圖不建立詳情面板', async () => {
+ await conceptDOM(async doc => {
+  const host=doc.createElement('div');const viewer=mountConceptTree(host,fixture(doc,'1.1'),{unit:'u',files:{svg:'map.svg'}});
+  try {
+   click(host.querySelector('[data-concept-id="a"]'));
+   assert.equal(panelOf(host),null);
+  } finally {viewer.dispose();}
+ });
+});

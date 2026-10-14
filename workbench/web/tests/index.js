@@ -14,3 +14,5 @@ import './reading-focus.test.mjs';
 import './viewers.test.mjs';
 
 import "./concept-tree.test.mjs";
+import './handout.test.mjs';
+import './key-points-review.test.mjs';
