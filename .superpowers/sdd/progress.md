@@ -144,3 +144,60 @@ Task 5: complete (commits d0be36a..41ad9c7, review clean after one fix round)
   hidden 不影響版位、五份決定性。版型分布 stage 6 / split 8 / code 5 / stack 3。
 事故：我用 git checkout 還原突變，抹掉 tests/test_render_slides.py 一整輪未提交的改動。
   已全部重寫。教訓：突變驗證一律用檔案備份還原，git checkout 是破壞性操作。
+
+
+# 重點清單第一期 — 執行進度
+
+計畫：`docs/superpowers/plans/2026-10-13-key-points-phase1.md`
+分支：`codex/multiformat-workbench-20261008`（起點 7b59277）
+模型：Task 1–7 Sonnet 5.5、Task 9 Haiku 5.5、審查 Sonnet 5.5、Task 8 AGY、Task 10 付費需使用者同意
+
+Task 1: complete (commits 7b59277..82cb600, review clean — spec ✅, Approved)
+  Minor（留給最終審查）：
+  - tests/test_key_points.py 缺錯誤型別／畸形結構的測試（None、list 當頂層、sources 非 list、inferred 非 bool、64KB 上限等）；現行程式都會擋，但沒有回歸保護
+  - studio/key_points.py:139-143 objective id 為 list 且被引用時 covered.update 拋 TypeError（fail-closed；schema 限定字串，實務不會發生）
+  - 引文強度：單字或重複引文可通過（片段 id 由程式還原，風險有限）
+  - 泛問 regex 可繞過（「請問什麼是…」「…是什麼呢？」）
+  - example.language 無長度上限
+  - title 120 與部分上限是函式內常數，未進 LIMITS
+Task 2: complete (commits 82cb600..e216dc1, fix round 1 → re-review clean, Approved)
+  已修：出處必須是片段 id、超長教材測試的 fail-open、structure_of 標題判定、提示詞 id 規則
+  Minor（留給最終審查）：
+  - structure_of：~~~ 或未關閉的 ``` 區塊內的「學習目標」標題仍判為 material（會跳過確認）；CRLF 目前上游已正規化
+  - 待使用者決定（原則）：material 模式下學習目標要逐條比對教材原文，還是允許照原意改寫（目前只檢查有出處）
+Task 3: complete (commits e216dc1..b01cbc6, review → fix round 1 [product_is_current 要求 ready] → controller verified diff = reviewer's prescription)
+  計畫測試修正：stale confirm 測試原本兩次抽取結果相同、永遠測不到，改成第二次回傳不同內容
+  待確認：全套跑時 test_workbench_jobs 兩項「工作未結束」逾時；單獨跑 3/3 通過，當時 CosyVoice 在背景安裝（load 3.4）。CosyVoice 裝完後重跑全套確認
+  Minor（留給最終審查）：
+  - summary() 吞掉所有 ValueError，「沒抽過／教材待核對／快取損壞」都顯示 missing；快取損壞時 UI 會一直顯示可產生但每次失敗
+  - current() 不比對 configuration／SYSTEM
+  - request_reextract 沒上鎖，write_json 固定 .tmp 名稱
+  - 缺測試：教材改版後確認、竄改清單後確認、已確認清單重抽後失去確認
+Task 4: complete (commits b01cbc6..5c4aaf6, review clean — spec ✅, Approved；審查實測無越界、無重疊)
+  Minor（留給最終審查）：
+  - tests/test_handout.py 越界測試沒檢查同頁文字框兩兩重疊（CLAUDE.md 保證「沒重疊」，建議補）
+  - deck_contracts.py:64 kind 為 list 時拋 TypeError 而非 DeckError
+  - cover／mistakes 頁的 slide_id 沒固定為 'cover'／'mistakes'
+  - 契約不檢查「有常見錯誤就必須有整理頁」及例子 12 行上限（匯出時才明確報錯）
+  - 合法重點清單（2 條滿 80 字錯誤＋例子）會在匯出時 DeckError；下游要顯示這個錯誤
+Task 5: complete (commits 5c4aaf6..4712172, review clean — spec ✅, Approved；1.0/1.1 不受影響，壞輸入都被擋)
+  Minor（留給最終審查）：
+  - tests/test_concept_tree.py 反向測試薄：缺 True 當頁碼、根節點有頁碼、非根 label >24、缺 handout_page、1.1 SVG 不變的鎖定測試
+  - concept_tree.py:41 第一條出處 >1000 字會讓整棵樹以籠統訊息失敗（模型路徑上限 900，不會發生）
+  - first_sentences 會吃掉開頭的句號（外觀）
+Task 6: complete (commits 4712172..062e1e7, review clean — spec ✅, Approved；超出 brief 的 5 處既有測試改動經審查確認皆必要、未放寬)
+  Minor（留給最終審查）：
+  - 待確認測試只涵蓋 slides；marker 用子字串比對
+  - _runner.py:113 用類別名稱字串比對 KeyPointsPending，改名會靜默退化
+  - Task 8 會再改 workbench/web/mock/formats.json 與 app.test.mjs，注意衝突
+  （jobs.py ERRORS 缺 key_points_review → 併入 Task 7）
+Task 7: complete (commits 062e1e7..948b36d, review clean — spec ✅, Approved；含 jobs ERRORS key_points_review)
+  Minor（留給最終審查）：
+  - Studio.retry 沒有待確認閘（runner 會立即拒絕，不會產出，只佔佇列）
+  - review_key_points 的 note：falsy 非字串被當成無意見；truthy 非字串回「最多 200 字」訊息不精確
+  - confirm 的 OSError 也回 409「已改變」（沿用 review_material 慣例）
+Task 9: complete (commits 948b36d..ce14fbf, controller review — 與 brief 逐字相同，Approved)
+  Minor：程式碼區塊內以「# 」開頭的註解行會被當成教材標題列出（C 的 #include 無空格不受影響）
+Task 8: AGY 額度用完（約 22 小時），使用者同意改派 Sonnet 5.5（進行中）
+Task 8: complete (commits ce14fbf..2eb9f86 — Sonnet 實作 ede5552、審查 Approved、fix round 1 [讀取失敗後輪詢重試＋測試] 2eb9f86，node 129/129)
+  Minor（留給最終審查）：「看講義第 N 頁」尚未接到簡報檢視器（純文字）；確認後焦點遺失；詳細面板在返回後仍顯示上一個節點；200 字邊界測試
