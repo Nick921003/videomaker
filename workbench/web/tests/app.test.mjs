@@ -322,11 +322,11 @@ test('流程頁接上總圖與 focus 路由，節點側欄讀取登記表，返�
 		await app.loadRoute();
 		const host = ids['page-host'];
 		assert.doesNotMatch(host.textContent, /下一步實作/);
-		assert.match(host.textContent, /概念與關係生成/);
+		assert.match(host.textContent, /重點清單抽取/);
 		assert.match(host.textContent, /試跑後填入/);
 		const find = id => descendants(host).find(node => node.getAttribute('data-node-id') === id);
 		find('mindmap:validate').dispatchEvent(new Event('click'));
-		assert.match(host.textContent, /樹狀結構、無循環/);
+		assert.match(host.textContent, /學習目標都有涵蓋/);
 		assert.match(host.textContent, /免費/);
 		const back = descendants(host).find(node => node.tagName === 'button' && node.textContent === '返回全圖');
 		back.dispatchEvent(new Event('click'));
@@ -336,7 +336,7 @@ test('流程頁接上總圖與 focus 路由，節點側欄讀取登記表，返�
 		assert.equal(find('mindmap:validate'), undefined);
 		find('comic').dispatchEvent(new Event('click'));
 		assert.match(host.textContent, /先用對話與情境拆解學生常見的誤解/);
-		assert.doesNotMatch(host.textContent, /概念與關係生成/);
+		assert.doesNotMatch(host.textContent, /重點清單抽取/);
 	});
 });
 

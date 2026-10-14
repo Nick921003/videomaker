@@ -10,27 +10,27 @@ FORMAT = {
 	"steps": [
 		{
 			"id": "generate",
-			"name": "教學簡報內容生成",
+			"name": "重點清單抽取",
 			"model": "google:gemini-3.8-flash",
 			"paid": True,
 			"cost": "試跑後填入",
-			"detail": "3–12 頁；每頁包含版型、可見結論、講者備註與原文引用。"
+			"detail": "每份教材抽取一次重點清單（3–8 個重點），講義與心智圖共用；推論出的結構需先確認。"
 		},
 		{
 			"id": "validate",
-			"name": "契約與引用驗證",
+			"name": "重點清單檢查",
 			"model": "本機",
 			"paid": False,
 			"cost": "免費",
-			"detail": "驗證簡報契約、每頁原文引用與最低可讀字級。"
+			"detail": "學習目標都有涵蓋、出處逐字在教材裡、字數上限、不得有泛問。"
 		},
 		{
 			"id": "export",
-			"name": "匯出簡報",
+			"name": "轉成講義並匯出",
 			"model": "本機",
 			"paid": False,
 			"cost": "免費",
-			"detail": "沿用簡報資料提供線上預覽，並匯出可編輯 PPTX。"
+			"detail": "一頁一個重點，匯出可編輯 PPTX；這一步不再呼叫模型。"
 		}
 	],
 	"planned_note": None
@@ -42,7 +42,7 @@ def estimate_usd(unit: UnitView, item: str) -> float:
 
 
 def commands(unit: UnitView, item: str) -> list[Command]:
-	return [Command("generate", [str(ROOT / "workbench/run_slides.py"), str(unit.dir), "--quality", "professional", "--budget-usd", "0.50"])]
+	return [Command("generate", [str(ROOT / "workbench/run_slides.py"), str(unit.dir), "--quality", "keypoints", "--budget-usd", "0.50"])]
 
 
 def outputs(unit: UnitView, item: str) -> dict[str, str]:
@@ -50,4 +50,5 @@ def outputs(unit: UnitView, item: str) -> dict[str, str]:
 
 
 def is_done(unit: UnitView, item: str) -> bool:
-	return _nonempty(unit.dir / "slides/deck.pptx")
+	from workbench.key_points import product_is_current
+	return _nonempty(unit.dir / "slides/deck.pptx") and product_is_current(unit.dir, "slides/source.json")

@@ -163,19 +163,19 @@
 			"steps": [
 				{
 					"id": "generate",
-					"name": "概念與關係生成",
+					"name": "重點清單抽取",
 					"model": "google:gemini-3.8-flash",
 					"paid": true,
 					"cost": "試跑後填入",
-					"detail": "3–12 個概念、父子關係與原文引用"
+					"detail": "每份教材抽取一次重點清單（3–8 個重點），講義與心智圖共用；推論出的結構需先確認。"
 				},
 				{
 					"id": "validate",
-					"name": "契約與引用驗證",
+					"name": "重點清單檢查",
 					"model": "本機",
 					"paid": false,
 					"cost": "免費",
-					"detail": "樹狀結構、無循環、每個概念與關係的引用確實在教材裡"
+					"detail": "學習目標都有涵蓋、出處逐字在教材裡、字數上限、不得有泛問。"
 				},
 				{
 					"id": "render",
@@ -183,7 +183,7 @@
 					"model": "本機",
 					"paid": false,
 					"cost": "免費",
-					"detail": "程式計算樹狀位置與換行，不由模型畫圖"
+					"detail": "節點只放短詞，點開看說明與出處，並連回講義頁；這一步不再呼叫模型。"
 				}
 			],
 			"planned_note": null
@@ -197,27 +197,27 @@
 			"steps": [
 				{
 					"id": "generate",
-					"name": "教學簡報內容生成",
+					"name": "重點清單抽取",
 					"model": "google:gemini-3.8-flash",
 					"paid": true,
 					"cost": "試跑後填入",
-					"detail": "3–12 頁；每頁包含版型、可見結論、講者備註與原文引用。"
+					"detail": "每份教材抽取一次重點清單（3–8 個重點），講義與心智圖共用；推論出的結構需先確認。"
 				},
 				{
 					"id": "validate",
-					"name": "契約與引用驗證",
+					"name": "重點清單檢查",
 					"model": "本機",
 					"paid": false,
 					"cost": "免費",
-					"detail": "驗證簡報契約、每頁原文引用與最低可讀字級。"
+					"detail": "學習目標都有涵蓋、出處逐字在教材裡、字數上限、不得有泛問。"
 				},
 				{
 					"id": "export",
-					"name": "匯出簡報",
+					"name": "轉成講義並匯出",
 					"model": "本機",
 					"paid": false,
 					"cost": "免費",
-					"detail": "沿用簡報資料提供線上預覽，並匯出可編輯 PPTX。"
+					"detail": "一頁一個重點，匯出可編輯 PPTX；這一步不再呼叫模型。"
 				}
 			],
 			"planned_note": null

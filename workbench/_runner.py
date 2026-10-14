@@ -21,7 +21,7 @@ def arguments(argv, description, *directories, quality=False):
 		parser.add_argument(directory)
 	parser.add_argument("--budget-usd", type=float, default=0.50)
 	if quality:
-		parser.add_argument('--quality',choices=('legacy','professional'),default='legacy')
+		parser.add_argument('--quality',choices=('legacy','professional','keypoints'),default='legacy')
 	args = parser.parse_args(argv)
 	if not math.isfinite(args.budget_usd) or args.budget_usd < 0:
 		parser.error("--budget-usd 必須是有限的非負數")
@@ -39,6 +39,19 @@ def teaching_plan(directory, ledger, cap, complete_json=None):
 		guard_budget(directory,cap,'deck',system,user,schema)
 		return captured(ledger,directory,'analysis','teaching_plan',complete_json,system,user,schema)
 	return get_plan(directory,complete,configuration=f'{provider}:{model}')
+
+
+def key_points(directory, ledger, cap, complete_json=None):
+	from functools import partial
+	from video_engine import llm
+	from workbench.key_points import get_key_points
+	os.environ.setdefault('VIDEO_ENGINE_LLM','google:gemini-3.8-flash')
+	provider,model=llm.target('deck')
+	complete_json=complete_json or partial(llm.complete_json,stage='deck')
+	def complete(system,user,schema):
+		guard_budget(directory,cap,'deck',system,user,schema)
+		return captured(ledger,directory,'analysis','key_points',complete_json,system,user,schema)
+	return get_key_points(directory,complete,configuration=f'{provider}:{model}')
 
 
 def assert_current_source(directory, expected):
@@ -96,6 +109,9 @@ def failure(exc, domain_error):
 	for cause in chain:
 		if isinstance(cause, BudgetExceeded):
 			marker("error", "budget", str(cause))
+			return 1
+		if type(cause).__name__ == 'KeyPointsPending':
+			marker("error", "key_points_review", str(cause))
 			return 1
 	if any(re.search(r"429|503|UNAVAILABLE|RESOURCE_EXHAUSTED|[Tt]ime ?out|timed out", str(cause)) for cause in chain):
 		marker("error", "gemini_busy", "生成服務暫時忙碌或連線中斷")

@@ -261,7 +261,7 @@ class TestFormatCommands(unittest.TestCase):
 			with self.subTest(format=fid):
 				self.assertEqual(formats.get_format(fid).commands(self.unit, fid), [
 					formats.Command("generate", [str(ROOT / f"workbench/run_{fid}.py"), str(self.unit.dir),
-						"--quality", "professional", "--budget-usd", "0.50"]),
+						"--quality", "keypoints", "--budget-usd", "0.50"]),
 				])
 
 	def test_estimates(self):
@@ -298,7 +298,8 @@ class TestFormatCommands(unittest.TestCase):
 				self.assertFalse(module.is_done(self.unit, item))
 				path.write_bytes(b"product")
 				self.assertEqual(module.outputs(self.unit, item), files)
-				self.assertTrue(module.is_done(self.unit, item))
+				# 簡報與心智圖還要求成品來自目前的重點清單；正向情況由 test_key_points_runners 驗證。
+				self.assertEqual(module.is_done(self.unit, item), fid in ("video", "highlight"))
 		deck = self.unit.dir / "slides/deck.json"
 		deck.write_text("{}", encoding="utf-8")
 		self.assertEqual(formats.get_format("slides").outputs(self.unit, "slides"),

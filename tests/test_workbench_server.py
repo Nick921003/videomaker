@@ -12,7 +12,9 @@ import zipfile
 
 from workbench import server as BS
 from workbench.library import Library, read_json, write_json
+from tests.fixtures.key_points import model_output
 from tests.fixtures.make_pptx import make
+from tests.fixtures.teaching_quality import MATERIAL
 from tests.workbench_shapes import SHAPES, assert_shape
 
 
@@ -39,6 +41,8 @@ class FakeRunner:
 		self.entered = threading.Event()
 		self.release = threading.Event()
 		self.release.set()
+		# 開啟時，簡報／心智圖成品會像真 runner 一樣記下目前重點清單的摘要。
+		self.key_points = False
 
 	def __call__(self, command, log):
 		self.commands.append(command)
@@ -81,6 +85,11 @@ class FakeRunner:
 			else:
 				write_json(directory / "slides/deck.json", {"slides": []})
 				(directory / "slides/deck.pptx").write_bytes(b"fake pptx")
+			if self.key_points:
+				from workbench.key_points import digest_of, get_key_points
+				points = get_key_points(directory, lambda *_: (model_output(), {}))
+				folder = "mindmap" if cli == "run_mindmap.py" else "slides"
+				write_json(directory / folder / "source.json", {"key_points_digest": digest_of(points)})
 		elif cli == "run_normalize.py":
 			uid, _ = Library(Path(command[3])).create_unit("# 整理後教材\n內容", source_kind=read_json(Path(command[2]) / "upload.json")["kind"])
 			log("@unit " + uid)
@@ -141,8 +150,8 @@ class TestStudio(unittest.TestCase):
 				assert_shape(value, {"job_id": (str, None)})
 		return value
 
-	def unit(self, analyzed=True):
-		result = self.api("POST", "/api/v1/units", {"markdown": "# 第一支程式\nC 語言教材。", "title": "測試教材",
+	def unit(self, analyzed=True, markdown="# 第一支程式\nC 語言教材。"):
+		result = self.api("POST", "/api/v1/units", {"markdown": markdown, "title": "測試教材",
 			"source_ref": {"platform": "bridgeai", "revision": "1"}})
 		uid = result["unit_id"]
 		directory = self.out / uid
@@ -231,7 +240,9 @@ class TestStudio(unittest.TestCase):
 		self.assertEqual([Path(c[1]).name for c in self.runner.commands], ["selftest.py", "author.py"])
 
 	def test_generate_order_all_formats_and_manifest(self):
-		uid, directory = self.unit()
+		# 簡報與心智圖要有目前的重點清單才算完成，所以用重點清單測試教材。
+		self.runner.key_points = True
+		uid, directory = self.unit(markdown=MATERIAL)
 		result = self.api("POST", f"/api/v1/units/{uid}/generate", {"items": ["slides", "q2", "mindmap", "q1", "highlight", "q2"]})
 		jobs = [self.wait_job(jid) for jid in result["job_ids"]]
 		self.assertEqual([j["item"] for j in jobs], ["q2", "q1", "highlight", "mindmap", "slides"])

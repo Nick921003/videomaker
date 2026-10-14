@@ -115,7 +115,8 @@ class TestWorkbenchRunners(unittest.TestCase):
 			self.assertIn("ppt/slides/slide1.xml", archive.namelist())
 			self.assertIn("迴圈".encode(), archive.read("ppt/slides/slide1.xml"))
 		view = formats.UnitView(directory.name, directory, None)
-		self.assertTrue(formats.get_format("slides").is_done(view, "slides"))
+		# 舊式（無重點清單）成品不算完成：is_done 要求成品記錄目前重點清單的摘要。
+		self.assertFalse(formats.get_format("slides").is_done(view, "slides"))
 		self.assertEqual(formats.get_format("slides").outputs(view, "slides"),
 			{"deck": "slides/deck.json", "pptx": "slides/deck.pptx"})
 		self.assert_usage(directory, "slides")
