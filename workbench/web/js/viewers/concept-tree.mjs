@@ -74,13 +74,17 @@ export function mountConceptTree(host, svg, { unit, files, onOpenHandoutPage }) 
 	const animate = () => { canvas.style.transition = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'none' : 'transform 220ms ease'; };
 	function apply() { canvas.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`; }
 	function cardFor(id) { return [...canvas.querySelectorAll('.concept-card')].find(card => card.getAttribute('data-concept-id') === id); }
-	function center(id) {
-		const card = cardFor(id);if (!card) return;
-		const width = card.offsetWidth, height = card.offsetHeight;
+	// 可傳一張卡或一組卡；展開時對準新長出來的那一層，而不是被點的那張
+	function center(ids) {
+		const cards = [ids].flat().map(cardFor).filter(Boolean);if (!cards.length) return;
+		const left = Math.min(...cards.map(card => parseFloat(card.style.left)));
+		const top = Math.min(...cards.map(card => parseFloat(card.style.top)));
+		const width = Math.max(...cards.map(card => parseFloat(card.style.left) + card.offsetWidth)) - left;
+		const height = Math.max(...cards.map(card => parseFloat(card.style.top) + card.offsetHeight)) - top;
 		camera.scale = Math.min(1.1, Math.max(.95, (viewport.clientWidth - 32) / width));
-		camera.x = viewport.clientWidth / 2 - (parseFloat(card.style.left) + width / 2) * camera.scale;
-		camera.y = height * camera.scale > viewport.clientHeight - 48 ? 24 - parseFloat(card.style.top) * camera.scale
-			: viewport.clientHeight / 2 - (parseFloat(card.style.top) + height / 2) * camera.scale;
+		camera.x = viewport.clientWidth / 2 - (left + width / 2) * camera.scale;
+		camera.y = height * camera.scale > viewport.clientHeight - 48 ? 24 - top * camera.scale
+			: viewport.clientHeight / 2 - (top + height / 2) * camera.scale;
 		animate();apply();
 	}
 	function showDetail(id) {
@@ -106,7 +110,7 @@ export function mountConceptTree(host, svg, { unit, files, onOpenHandoutPage }) 
 		if (detail) showDetail(id);
 		if (id === rootId || !children.get(id)?.length) { center(id);return; }
 		if (expanded.has(id)) { collapse(id);render(id); }
-		else { expanded.add(id);trail.push(id);render(id); }
+		else { expanded.add(id);trail.push(id);render(id);center([id, ...children.get(id)]); }
 	}
 	function collapse(id) {
 		const closed = new Set();

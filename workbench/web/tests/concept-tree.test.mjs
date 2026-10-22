@@ -92,7 +92,7 @@ test('鍵盤focus聚焦可達分支，避免Tab落在視窗外而無法閱讀', 
  });
 });
 
-test('展開保留所選父概念的視角，不跳到解說葉節點', async () => {
+test('展開後視角移到父概念與新長出的那一層中間', async () => {
  await conceptDOM(async doc => {
   const host=doc.createElement('div');const viewer=mountConceptTree(host,fixture(doc),{unit:'u',files:{svg:'map.svg'}});
   try {
@@ -100,8 +100,14 @@ test('展開保留所選父概念的視角，不跳到解說葉節點', async ()
    parent.querySelector('button').dispatchEvent(new Event('focus'));
    const before=host.querySelector('.concept-canvas').style.transform;
    click(parent);
-   assert.equal(host.querySelector('.concept-canvas').style.transform,before);
-   assert.ok(host.querySelector('[data-concept-id="detail"]'));
+   const after=host.querySelector('.concept-canvas').style.transform;
+   assert.notEqual(after,before);
+   const child=host.querySelector('[data-concept-id="detail"]');
+   assert.ok(child);
+   const [x,scale]=after.match(/translate\(([-\d.]+)px.*scale\(([\d.]+)\)/).slice(1).map(Number);
+   const middle=(375/2-x)/scale;
+   assert.ok(parseFloat(parent.style.left)<middle && middle<parseFloat(child.style.left)+child.offsetWidth);
+   assert.ok(middle>parseFloat(parent.style.left)+parent.offsetWidth/2,'視角中心應往新的一層移');
   } finally {viewer.dispose();}
  });
 });
