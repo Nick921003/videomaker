@@ -14,9 +14,21 @@ const VARIANT_INFO = {
 		title: '方案 A：分支色彩 (Branch Color)',
 		desc: '各第一層分支獲派獨立色系，子層級隨深度漸淡繼承，連線採用分支色，根節點為深色實心。',
 	},
+	'variant-b1': {
+		title: '方案 B1：暖奶茶 (Warm Latte)',
+		desc: '暖陶土（Terracotta）深色根節點與柔和米奶茶畫布；5 大分支採用暖赭、琥珀、可可、焙茶、蜜栗柔和漸變，層次分明。',
+	},
+	'variant-b2': {
+		title: '方案 B2：森林 (Forest Sage)',
+		desc: '深針葉冷杉綠（Deep Spruce）根節點與鼠尾草微綠畫布；5 大分支採用翠柏、橄欖、青草、松針、山苔自然綠意漸變。',
+	},
+	'variant-b3': {
+		title: '方案 B3：莫蘭迪 (Morandi Muted)',
+		desc: '低飽和玄青灰墨（Ink Slate）根節點與雅致暖灰霧面畫布；5 大分支採用乾燥玫瑰、灰綠、灰藍、煙燻紫、芥黃低對比高級灰。',
+	},
 	'variant-b': {
-		title: '方案 B：階層漸變 (Depth Gradient)',
-		desc: '卡片採用精緻線性漸變，飽和度與尺寸隨深度遞減；畫布背景為深冷藍，卡片明亮立體對比鮮明。',
+		title: '方案 B1：暖奶茶 (Warm Latte)',
+		desc: '暖陶土深色根節點與柔和米奶茶畫布；5 大分支採用暖赭、琥珀、可可、焙茶、蜜栗柔和漸變，層次分明。',
 	},
 	'variant-c': {
 		title: '方案 C：大綱骨架 (Outline / XMind-like)',
@@ -32,7 +44,7 @@ class MindMapViewer {
 		this.connectorsSvg = document.getElementById('mindmap-connectors');
 		this.dialog = document.getElementById('meaning-dialog');
 		
-		this.currentVariant = 'variant-a';
+		this.currentVariant = document.body.className.trim() || 'variant-b1';
 		this.data = null;
 		this.nodesMap = new Map();
 		this.childrenMap = new Map();

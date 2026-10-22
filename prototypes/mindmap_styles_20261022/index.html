@@ -6,20 +6,28 @@
 	<title>心智圖視覺風格提案 (Mind Map Style Variants)</title>
 	<link rel="stylesheet" href="variants.css">
 </head>
-<body class="variant-a">
+<body class="variant-b1">
 	<header class="app-header">
 		<div class="header-left">
 			<h1 class="header-title" id="mindmap-title">心智圖載入中...</h1>
 			<span class="header-badge" id="node-count-badge">29 個節點（全部展開）</span>
 		</div>
 		<nav class="variant-tabs" role="tablist" aria-label="視覺風格方案切換">
-			<button type="button" role="tab" class="tab-button active" data-variant="variant-a" aria-selected="true" id="tab-variant-a">
+			<button type="button" role="tab" class="tab-button" data-variant="variant-a" aria-selected="false" id="tab-variant-a">
 				<span class="tab-indicator"></span>
 				<span class="tab-label">方案 A：分支色彩</span>
 			</button>
-			<button type="button" role="tab" class="tab-button" data-variant="variant-b" aria-selected="false" id="tab-variant-b">
+			<button type="button" role="tab" class="tab-button active" data-variant="variant-b1" aria-selected="true" id="tab-variant-b1">
 				<span class="tab-indicator"></span>
-				<span class="tab-label">方案 B：階層漸變</span>
+				<span class="tab-label">方案 B1：暖奶茶</span>
+			</button>
+			<button type="button" role="tab" class="tab-button" data-variant="variant-b2" aria-selected="false" id="tab-variant-b2">
+				<span class="tab-indicator"></span>
+				<span class="tab-label">方案 B2：森林</span>
+			</button>
+			<button type="button" role="tab" class="tab-button" data-variant="variant-b3" aria-selected="false" id="tab-variant-b3">
+				<span class="tab-indicator"></span>
+				<span class="tab-label">方案 B3：莫蘭迪</span>
 			</button>
 			<button type="button" role="tab" class="tab-button" data-variant="variant-c" aria-selected="false" id="tab-variant-c">
 				<span class="tab-indicator"></span>
@@ -35,8 +43,8 @@
 	</header>
 
 	<div class="variant-banner" id="variant-banner" role="status">
-		<span class="banner-title" id="variant-banner-title">方案 A：分支色彩 (Branch Color)</span>
-		<span class="banner-desc" id="variant-banner-desc">各主要分支具備獨立色系，子層級隨深度漸淡繼承，連線採用分支色，根節點為深色實心。</span>
+		<span class="banner-title" id="variant-banner-title">方案 B1：暖奶茶 (Warm Latte)</span>
+		<span class="banner-desc" id="variant-banner-desc">暖陶土深色根節點與柔和米奶茶畫布；5 大分支採用暖赭、琥珀、可可、焙茶、蜜栗柔和漸變，層次分明。</span>
 	</div>
 
 	<main class="viewport-wrapper">

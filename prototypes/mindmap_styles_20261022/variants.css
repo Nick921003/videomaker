@@ -393,148 +393,388 @@ body.variant-a {
 .variant-a .mindmap-connectors path[data-from="root"] { stroke: #0f172a; stroke-width: 3px; }
 
 /* -------------------------------------------------------------
- * 方案 B：階層漸變 (Depth Gradient)
+ * 方案 B：階層漸變 (Depth Gradient) - 三組淺色高雅配色
  * ------------------------------------------------------------- */
+
+/* 方案 B1：暖奶茶（Warm Latte / 陶土紅棕根節點） */
+body.variant-b1,
 body.variant-b {
-	--page-bg: #0b1329;
-	--page-color: #f8fafc;
-	--header-bg: #0f172a;
-	--header-border: #1e293b;
-	--header-title-color: #f8fafc;
-	--badge-bg: #1e293b;
-	--badge-color: #94a3b8;
-	--tabs-wrapper-bg: #1e293b;
-	--tab-color: #94a3b8;
-	--tab-hover-color: #ffffff;
-	--tab-active-bg: #334155;
-	--tab-active-color: #38bdf8;
-	--tool-bg: #1e293b;
-	--tool-border: #334155;
-	--tool-color: #e2e8f0;
-	--tool-hover-bg: #334155;
-	--banner-bg: #0f172a;
-	--banner-border: #1e293b;
-	--banner-title-color: #38bdf8;
-	--banner-desc-color: #94a3b8;
+	--page-bg: #efe6dc;
+	--page-color: #2b1d16;
+	--header-bg: #f8f3ed;
+	--header-border: #e2d7cb;
+	--header-title-color: #4a2818;
+	--badge-bg: #e5d8cb;
+	--badge-color: #6b4a37;
+	--tabs-wrapper-bg: #e9ddd0;
+	--tab-color: #7a5e4c;
+	--tab-hover-color: #3d2315;
+	--tab-active-bg: #ffffff;
+	--tab-active-color: #843822;
+	--tool-bg: #ffffff;
+	--tool-border: #dcd0c2;
+	--tool-color: #4a2e1d;
+	--tool-hover-bg: #f5ede4;
+	--banner-bg: #f8f3ed;
+	--banner-border: #e2d7cb;
+	--banner-title-color: #843822;
+	--banner-desc-color: #6b4e3d;
+
+	/* 根節點：陶土紅棕 */
+	--b-root-bg: linear-gradient(135deg, #8f3d26 0%, #843822 50%, #6e2c19 100%);
+	--b-root-color: #ffffff;
+	--b-root-border: rgba(110, 44, 25, 0.4);
+	--b-root-shadow: 0 10px 28px rgba(110, 44, 25, 0.25);
+	--b-connector-root: #843822;
+
+	/* 5 大分支漸變主題色（第一層分支） */
+	--b-br0-bg: linear-gradient(135deg, #a34828 0%, #8a351d 100%);
+	--b-br0-line: #a34828;
+	--b-br0-title: #8a351d;
+	--b-br0-border: #f0cbbd;
+
+	--b-br1-bg: linear-gradient(135deg, #a05c1c 0%, #884c12 100%);
+	--b-br1-line: #a05c1c;
+	--b-br1-title: #884c12;
+	--b-br1-border: #f5d7b0;
+
+	--b-br2-bg: linear-gradient(135deg, #7c5238 0%, #684128 100%);
+	--b-br2-line: #7c5238;
+	--b-br2-title: #684128;
+	--b-br2-border: #ebd3c2;
+
+	--b-br3-bg: linear-gradient(135deg, #8e5c2c 0%, #78491d 100%);
+	--b-br3-line: #8e5c2c;
+	--b-br3-title: #78491d;
+	--b-br3-border: #f2d5be;
+
+	--b-br4-bg: linear-gradient(135deg, #6f4c34 0%, #593b26 100%);
+	--b-br4-line: #6f4c34;
+	--b-br4-title: #593b26;
+	--b-br4-border: #e6cec0;
+
+	/* 深度 2 卡片 */
+	--b-d2-bg: linear-gradient(135deg, #ffffff 0%, #faf3eb 100%);
+	--b-d2-color: #2b1d16;
+	--b-d2-border: #ebd8c8;
+	--b-d2-shadow: 0 4px 14px rgba(74, 44, 24, 0.07);
+
+	/* 深度 3 卡片 */
+	--b-d3-bg: linear-gradient(135deg, #ffffff 0%, #f6efe8 100%);
+	--b-d3-color: #2b1d16;
+	--b-d3-border: #ded0c2;
+	--b-d3-shadow: 0 3px 10px rgba(74, 44, 24, 0.06);
+
+	/* 深度 4/5 卡片 */
+	--b-d4-bg: linear-gradient(135deg, #ffffff 0%, #f6efe8 100%);
+	--b-d4-color: #2b1d16;
+	--b-d4-border: #ded0c2;
+	--b-d4-shadow: 0 3px 10px rgba(74, 44, 24, 0.06);
+
+	/* 畫布格線與對話框色彩 */
+	--b-grid-color: rgba(132, 56, 34, 0.05);
+	--b-dialog-accent: #843822;
+	--b-dialog-tag-bg: #faeade;
+	--b-dialog-tag-color: #843822;
 }
 
-/* 方案 B 畫布背景：明顯深冷色藍調 */
-.variant-b .mindmap-viewport {
-	background-color: #0b1329;
+/* 方案 B2：森林（Forest / 鼠尾草灰綠畫布 + 深冷杉綠根節點） */
+body.variant-b2 {
+	--page-bg: #e8efe8;
+	--page-color: #15261d;
+	--header-bg: #f3f7f3;
+	--header-border: #d4dfd4;
+	--header-title-color: #16382b;
+	--badge-bg: #d7e4d7;
+	--badge-color: #3b5c49;
+	--tabs-wrapper-bg: #dae5da;
+	--tab-color: #4b6a57;
+	--tab-hover-color: #16382b;
+	--tab-active-bg: #ffffff;
+	--tab-active-color: #1d5a42;
+	--tool-bg: #ffffff;
+	--tool-border: #cbdacb;
+	--tool-color: #224231;
+	--tool-hover-bg: #eaf1ea;
+	--banner-bg: #f3f7f3;
+	--banner-border: #d4dfd4;
+	--banner-title-color: #1d5a42;
+	--banner-desc-color: #3b5c49;
+
+	/* 根節點：深冷杉綠 */
+	--b-root-bg: linear-gradient(135deg, #1b4332 0%, #16382b 50%, #102d22 100%);
+	--b-root-color: #ffffff;
+	--b-root-border: rgba(16, 45, 34, 0.4);
+	--b-root-shadow: 0 10px 28px rgba(16, 45, 34, 0.28);
+	--b-connector-root: #16382b;
+
+	/* 5 大分支漸變主題色（第一層分支） */
+	--b-br0-bg: linear-gradient(135deg, #23654b 0%, #1a4f3a 100%);
+	--b-br0-line: #23654b;
+	--b-br0-title: #1a4f3a;
+	--b-br0-border: #bad9cb;
+
+	--b-br1-bg: linear-gradient(135deg, #4d632e 0%, #3d4f24 100%);
+	--b-br1-line: #4d632e;
+	--b-br1-title: #3d4f24;
+	--b-br1-border: #d3dfbf;
+
+	--b-br2-bg: linear-gradient(135deg, #2b615f 0%, #204d4b 100%);
+	--b-br2-line: #2b615f;
+	--b-br2-title: #204d4b;
+	--b-br2-border: #bfdad8;
+
+	--b-br3-bg: linear-gradient(135deg, #1f5e4d 0%, #174b3d 100%);
+	--b-br3-line: #1f5e4d;
+	--b-br3-title: #174b3d;
+	--b-br3-border: #b8d8ce;
+
+	--b-br4-bg: linear-gradient(135deg, #3e5a36 0%, #30472a 100%);
+	--b-br4-line: #3e5a36;
+	--b-br4-title: #30472a;
+	--b-br4-border: #cadbc5;
+
+	/* 深度 2 卡片 */
+	--b-d2-bg: linear-gradient(135deg, #ffffff 0%, #f2f7f2 100%);
+	--b-d2-color: #15261d;
+	--b-d2-border: #d2e2d5;
+	--b-d2-shadow: 0 4px 14px rgba(16, 45, 34, 0.07);
+
+	/* 深度 3 卡片 */
+	--b-d3-bg: linear-gradient(135deg, #ffffff 0%, #edf4ed 100%);
+	--b-d3-color: #15261d;
+	--b-d3-border: #ccdcce;
+	--b-d3-shadow: 0 3px 10px rgba(16, 45, 34, 0.06);
+
+	/* 深度 4/5 卡片 */
+	--b-d4-bg: linear-gradient(135deg, #ffffff 0%, #edf4ed 100%);
+	--b-d4-color: #15261d;
+	--b-d4-border: #ccdcce;
+	--b-d4-shadow: 0 3px 10px rgba(16, 45, 34, 0.06);
+
+	/* 畫布格線與對話框色彩 */
+	--b-grid-color: rgba(22, 56, 43, 0.04);
+	--b-dialog-accent: #1d5a42;
+	--b-dialog-tag-bg: #deecdf;
+	--b-dialog-tag-color: #16382b;
+}
+
+/* 方案 B3：莫蘭迪（Morandi / 雅致灰霧畫布 + 玄青灰墨根節點） */
+body.variant-b3 {
+	--page-bg: #ebe7e3;
+	--page-color: #20272e;
+	--header-bg: #f5f2ee;
+	--header-border: #dcd7d0;
+	--header-title-color: #2c353d;
+	--badge-bg: #ded9d1;
+	--badge-color: #555e66;
+	--tabs-wrapper-bg: #dfdad3;
+	--tab-color: #5d6770;
+	--tab-hover-color: #222b33;
+	--tab-active-bg: #ffffff;
+	--tab-active-color: #455f75;
+	--tool-bg: #ffffff;
+	--tool-border: #d3cdc5;
+	--tool-color: #37424c;
+	--tool-hover-bg: #ece7e1;
+	--banner-bg: #f5f2ee;
+	--banner-border: #dcd7d0;
+	--banner-title-color: #455f75;
+	--banner-desc-color: #5d6770;
+
+	/* 根節點：玄青灰墨 */
+	--b-root-bg: linear-gradient(135deg, #37424c 0%, #2c353d 50%, #222b33 100%);
+	--b-root-color: #ffffff;
+	--b-root-border: rgba(34, 43, 51, 0.4);
+	--b-root-shadow: 0 10px 28px rgba(34, 43, 51, 0.26);
+	--b-connector-root: #2c353d;
+
+	/* 5 大分支漸變主題色（第一層分支） */
+	--b-br0-bg: linear-gradient(135deg, #94535d 0%, #80434c 100%);
+	--b-br0-line: #94535d;
+	--b-br0-title: #80434c;
+	--b-br0-border: #e0bec3;
+
+	--b-br1-bg: linear-gradient(135deg, #517162 0%, #405c4f 100%);
+	--b-br1-line: #517162;
+	--b-br1-title: #405c4f;
+	--b-br1-border: #bad4c8;
+
+	--b-br2-bg: linear-gradient(135deg, #4b677e 0%, #3a5266 100%);
+	--b-br2-line: #4b677e;
+	--b-br2-title: #3a5266;
+	--b-br2-border: #bdd1e0;
+
+	--b-br3-bg: linear-gradient(135deg, #705775 0%, #5d4562 100%);
+	--b-br3-line: #705775;
+	--b-br3-title: #5d4562;
+	--b-br3-border: #d1bfd4;
+
+	--b-br4-bg: linear-gradient(135deg, #7d6542 0%, #695232 100%);
+	--b-br4-line: #7d6542;
+	--b-br4-title: #695232;
+	--b-br4-border: #dbceb8;
+
+	/* 深度 2 卡片 */
+	--b-d2-bg: linear-gradient(135deg, #ffffff 0%, #f4f2f0 100%);
+	--b-d2-color: #20272e;
+	--b-d2-border: #dad5d0;
+	--b-d2-shadow: 0 4px 14px rgba(34, 43, 51, 0.07);
+
+	/* 深度 3 卡片 */
+	--b-d3-bg: linear-gradient(135deg, #ffffff 0%, #eeebe7 100%);
+	--b-d3-color: #20272e;
+	--b-d3-border: #d5d0c9;
+	--b-d3-shadow: 0 3px 10px rgba(34, 43, 51, 0.06);
+
+	/* 深度 4/5 卡片 */
+	--b-d4-bg: linear-gradient(135deg, #ffffff 0%, #eeebe7 100%);
+	--b-d4-color: #20272e;
+	--b-d4-border: #d5d0c9;
+	--b-d4-shadow: 0 3px 10px rgba(34, 43, 51, 0.06);
+
+	/* 畫布格線與對話框色彩 */
+	--b-grid-color: rgba(44, 53, 61, 0.04);
+	--b-dialog-accent: #455f75;
+	--b-dialog-tag-bg: #e2e8ee;
+	--b-dialog-tag-color: #2c353d;
+}
+
+/* 方案 B 畫布背景：柔和淺色與細緻網格 */
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-viewport {
+	background-color: var(--page-bg);
 	background-image: 
-		linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+		linear-gradient(var(--b-grid-color) 1px, transparent 1px),
+		linear-gradient(90deg, var(--b-grid-color) 1px, transparent 1px);
 	background-size: 32px 32px;
 }
 
-/* 方案 B 漸變卡片：明亮飽滿且與深冷背景強烈對比，隨深度飽和度與尺寸遞減 */
-.variant-b .mindmap-node[data-depth="0"] {
-	/* 根節點：最高飽和度線性漸變、最大字體與內距 */
-	background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4338ca 100%);
-	color: #ffffff;
-	border: 1px solid rgba(255, 255, 255, 0.35);
-	box-shadow: 0 12px 32px rgba(37, 99, 235, 0.45);
+/* 方案 B 節點共通樣式：隨深度遞減尺寸、飽和度，卡片以柔和陰影浮起於畫布 */
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="0"] {
+	/* 根節點：深色實心漸變、白字、最大字體與內距 */
+	background: var(--b-root-bg);
+	color: var(--b-root-color);
+	border: 1px solid var(--b-root-border);
+	box-shadow: var(--b-root-shadow);
 	padding: 18px 24px;
 	width: 320px;
 }
-.variant-b .mindmap-node[data-depth="0"] .node-title {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="0"] .node-title {
 	font-size: 20px;
 	font-weight: 700;
-	color: #ffffff;
+	color: var(--b-root-color);
 }
 
-.variant-b .mindmap-node[data-depth="1"] {
-	/* 深度 1：次高飽和度線性漸變 */
-	background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="1"] {
+	/* 深度 1：第一層分支獨立和諧色系漸變、白字 */
 	color: #ffffff;
-	border: 1px solid rgba(255, 255, 255, 0.3);
-	box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 	padding: 16px 20px;
 	width: 240px;
 }
-.variant-b .mindmap-node[data-depth="1"] .node-title {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="1"] .node-title {
 	font-size: 17px;
 	font-weight: 700;
 	color: #ffffff;
 }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="1"][data-branch="0"] { background: var(--b-br0-bg); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="1"][data-branch="1"] { background: var(--b-br1-bg); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="1"][data-branch="2"] { background: var(--b-br2-bg); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="1"][data-branch="3"] { background: var(--b-br3-bg); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="1"][data-branch="4"] { background: var(--b-br4-bg); }
 
-.variant-b .mindmap-node[data-depth="2"] {
-	/* 深度 2：中等飽和度漸變 */
-	background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-	color: #0f172a;
-	border: 1px solid rgba(14, 165, 233, 0.4);
-	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"] {
+	/* 深度 2：微光漸變卡片，輔以分支主題色邊框與標題色 */
+	background: var(--b-d2-bg);
+	color: var(--b-d2-color);
+	border: 1px solid var(--b-d2-border);
+	box-shadow: var(--b-d2-shadow);
 	padding: 14px 18px;
 	width: 220px;
 }
-.variant-b .mindmap-node[data-depth="2"] .node-title {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"] .node-title {
 	font-size: 15px;
 	font-weight: 700;
-	color: #0369a1;
 }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="0"] { border-color: var(--b-br0-border); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="0"] .node-title { color: var(--b-br0-title); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="1"] { border-color: var(--b-br1-border); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="1"] .node-title { color: var(--b-br1-title); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="2"] { border-color: var(--b-br2-border); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="2"] .node-title { color: var(--b-br2-title); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="3"] { border-color: var(--b-br3-border); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="3"] .node-title { color: var(--b-br3-title); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="4"] { border-color: var(--b-br4-border); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-branch="4"] .node-title { color: var(--b-br4-title); }
 
-.variant-b .mindmap-node[data-depth="2"][data-kind="meaning"] {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="2"][data-kind="meaning"] {
 	width: 280px;
 	padding: 10px 14px;
 }
 
-.variant-b .mindmap-node[data-depth="3"] {
-	/* 深度 3：低飽和度漸變 */
-	background: linear-gradient(135deg, #f0f9ff 0%, #e2e8f0 100%);
-	color: #1e293b;
-	border: 1px solid rgba(203, 213, 225, 0.6);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="3"] {
+	/* 深度 3：清爽淺色漸變 */
+	background: var(--b-d3-bg);
+	color: var(--b-d3-color);
+	border: 1px solid var(--b-d3-border);
+	box-shadow: var(--b-d3-shadow);
 	padding: 10px 14px;
 	width: 280px;
 }
-.variant-b .mindmap-node[data-depth="3"][data-kind="group"] {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="3"][data-kind="group"] {
 	width: 100px;
 	border-radius: var(--radius-pill);
 	padding: 6px 12px;
 }
-.variant-b .mindmap-node[data-depth="3"][data-kind="group"] .node-title {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="3"][data-kind="group"] .node-title {
 	font-size: 13px;
 	font-weight: 700;
 	text-align: center;
-	color: #0f172a;
+	color: var(--b-d3-color);
 }
 
-.variant-b .mindmap-node[data-depth="4"],
-.variant-b .mindmap-node[data-depth="5"] {
-	/* 深度 4 與 5：微弱飽和度至金屬冷灰階漸變、尺寸精簡 */
-	background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
-	color: #1e293b;
-	border: 1px solid rgba(203, 213, 225, 0.5);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="4"],
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-depth="5"] {
+	/* 深度 4 與 5：輕巧微光漸變、緊湊字級 */
+	background: var(--b-d4-bg);
+	color: var(--b-d4-color);
+	border: 1px solid var(--b-d4-border);
+	box-shadow: var(--b-d4-shadow);
 	padding: 10px 14px;
 	font-size: 13px;
 }
-.variant-b .mindmap-node[data-kind="example"] {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-kind="example"] {
 	width: 390px;
 }
-.variant-b .mindmap-node[data-kind="pitfall"] {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-kind="pitfall"] {
 	width: 380px;
 }
-.variant-b .mindmap-node[data-kind="group"] {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-kind="group"] {
 	width: 100px;
 	border-radius: var(--radius-pill);
 	padding: 6px 12px;
 }
-.variant-b .mindmap-node[data-kind="group"] .node-title {
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-node[data-kind="group"] .node-title {
 	font-size: 13px;
 	font-weight: 700;
 	text-align: center;
-	color: #0f172a;
+	color: var(--b-d4-color);
 }
 
-/* 方案 B 連線：冷光亮色 */
-.variant-b .mindmap-connectors path {
+/* 方案 B 連線樣式：使用分支漸變色 */
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-connectors path {
 	fill: none;
-	stroke: #38bdf8;
 	stroke-width: 2.2px;
 	stroke-opacity: 0.85;
 	stroke-linecap: round;
 }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-connectors path[data-branch="0"] { stroke: var(--b-br0-line); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-connectors path[data-branch="1"] { stroke: var(--b-br1-line); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-connectors path[data-branch="2"] { stroke: var(--b-br2-line); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-connectors path[data-branch="3"] { stroke: var(--b-br3-line); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-connectors path[data-branch="4"] { stroke: var(--b-br4-line); }
+:is(body.variant-b, body.variant-b1, body.variant-b2, body.variant-b3) .mindmap-connectors path[data-from="root"] { stroke: var(--b-connector-root); stroke-width: 2.8px; }
 
 /* -------------------------------------------------------------
  * 方案 C：大綱骨架 (Outline / XMind-like)
@@ -806,7 +1046,7 @@ body.variant-c {
 .dialog-kind {
 	font-size: 12px;
 	font-weight: 700;
-	color: #0284c7;
+	color: var(--b-dialog-accent, #0284c7);
 	text-transform: uppercase;
 }
 
@@ -868,7 +1108,7 @@ body.variant-c {
 	line-height: 1.6;
 	color: #475569;
 	background: #f8fafc;
-	border-left: 3px solid #0284c7;
+	border-left: 3px solid var(--b-dialog-accent, #0284c7);
 	padding: 10px 14px;
 	border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 	font-style: italic;
@@ -885,6 +1125,6 @@ body.variant-c {
 	font-weight: 600;
 	padding: 4px 10px;
 	border-radius: var(--radius-sm);
-	background: #e0f2fe;
-	color: #0369a1;
+	background: var(--b-dialog-tag-bg, #e0f2fe);
+	color: var(--b-dialog-tag-color, #0369a1);
 }
