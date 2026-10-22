@@ -54,6 +54,27 @@ class F5NarratorTextTest(unittest.TestCase):
 		tokens = [t for t in convert_char_to_pinyin(["帶着垃圾值"])[0] if t.strip()]
 		self.assertEqual(tokens[2:4], ["le4", "se4"])
 
+	def test_english_lead_picks_en_voice(self):
+		from tts_f5 import choose_voice
+		voices = {"default": {}, "en_lead": {}}
+		for text in ("像 for，就是把三件事寫在同一行。", "while 迴圈會先檢查條件。"):
+			self.assertEqual(choose_voice(text, voices), "en_lead", text)
+		for text in ("所以如果知道次數，就優先用 for。", "第五行是迴圈本身。"):
+			self.assertEqual(choose_voice(text, voices), "default", text)
+		# 沒掛英文開頭聲音就退回預設，不能找不到鍵
+		self.assertEqual(choose_voice("for 迴圈", {"default": {}}), "default")
+
+	def test_voice_seed_and_reference_follow_choice(self):
+		v = self.narrator(voices={"en_lead": (self.ref, "bit 的 and，也就是說。", 4)})
+		calls = []
+		v._infer = lambda spoken, speed, seed, voice: calls.append((seed, voice["text"])) or __import__("numpy").ones(2400, "float32") * .5
+		_, en = v.chunk("像 for，就是把三件事寫在同一行。")
+		_, zh = v.chunk("第五行是迴圈本身。")
+		self.assertEqual((en["voice"], en["seed"]), ("en_lead", 4))
+		self.assertEqual((zh["voice"], zh["seed"]), ("default", 5))
+		self.assertIn("bit", calls[0][1])
+		self.assertNotEqual(en["digest"], v.chunk("像 for，就是把三件事寫在同一行。", voice="default")[1]["digest"])
+
 	def test_pronunciation_change_changes_cache_key(self):
 		# 文字沒變但拼音變了，快取不能沿用舊音檔
 		a = self.narrator(pronunciation={"垃圾": "lè sè"})._pron_tag

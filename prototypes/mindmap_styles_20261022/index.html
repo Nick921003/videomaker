@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>心智圖視覺風格提案 (Mind Map Style Variants)</title>
+	<link rel="stylesheet" href="variants.css">
+</head>
+<body class="variant-a">
+	<header class="app-header">
+		<div class="header-left">
+			<h1 class="header-title" id="mindmap-title">心智圖載入中...</h1>
+			<span class="header-badge" id="node-count-badge">29 個節點（全部展開）</span>
+		</div>
+		<nav class="variant-tabs" role="tablist" aria-label="視覺風格方案切換">
+			<button type="button" role="tab" class="tab-button active" data-variant="variant-a" aria-selected="true" id="tab-variant-a">
+				<span class="tab-indicator"></span>
+				<span class="tab-label">方案 A：分支色彩</span>
+			</button>
+			<button type="button" role="tab" class="tab-button" data-variant="variant-b" aria-selected="false" id="tab-variant-b">
+				<span class="tab-indicator"></span>
+				<span class="tab-label">方案 B：階層漸變</span>
+			</button>
+			<button type="button" role="tab" class="tab-button" data-variant="variant-c" aria-selected="false" id="tab-variant-c">
+				<span class="tab-indicator"></span>
+				<span class="tab-label">方案 C：大綱骨架</span>
+			</button>
+		</nav>
+		<div class="header-tools">
+			<button type="button" class="tool-btn" id="btn-fit" title="符合視窗" aria-label="符合視窗">符合畫面</button>
+			<button type="button" class="tool-btn" id="btn-reset" title="回到起點" aria-label="回到起點">100%</button>
+			<button type="button" class="tool-btn icon-btn" id="btn-zoom-in" title="放大" aria-label="放大">＋</button>
+			<button type="button" class="tool-btn icon-btn" id="btn-zoom-out" title="縮小" aria-label="縮小">−</button>
+		</div>
+	</header>
+
+	<div class="variant-banner" id="variant-banner" role="status">
+		<span class="banner-title" id="variant-banner-title">方案 A：分支色彩 (Branch Color)</span>
+		<span class="banner-desc" id="variant-banner-desc">各主要分支具備獨立色系，子層級隨深度漸淡繼承，連線採用分支色，根節點為深色實心。</span>
+	</div>
+
+	<main class="viewport-wrapper">
+		<div class="mindmap-viewport" id="mindmap-viewport" tabindex="0" aria-label="心智圖畫布，可拖曳移動與滾輪縮放">
+			<div class="mindmap-canvas" id="mindmap-canvas">
+				<svg class="mindmap-connectors" id="mindmap-connectors" aria-hidden="true"></svg>
+				<div class="mindmap-nodes" id="mindmap-nodes"></div>
+			</div>
+		</div>
+	</main>
+
+	<!-- 概念說明對話框（點擊「看說明」展開） -->
+	<dialog class="meaning-dialog" id="meaning-dialog" aria-labelledby="dialog-title">
+		<div class="dialog-card">
+			<div class="dialog-header">
+				<div class="dialog-header-info">
+					<span class="dialog-kind" id="dialog-kind">概念說明</span>
+					<h2 class="dialog-title" id="dialog-title">說明詳情</h2>
+				</div>
+				<button type="button" class="dialog-close" id="dialog-close" aria-label="關閉說明">✕</button>
+			</div>
+			<div class="dialog-body">
+				<section class="dialog-section">
+					<h3 class="section-heading">完整說明內容</h3>
+					<p class="dialog-text" id="dialog-text"></p>
+				</section>
+				<section class="dialog-section" id="dialog-quote-section" hidden>
+					<h3 class="section-heading">教材原文引用</h3>
+					<blockquote class="dialog-quote" id="dialog-quote"></blockquote>
+				</section>
+				<div class="dialog-meta" id="dialog-page-meta" hidden>
+					<span class="dialog-page-tag" id="dialog-page-tag"></span>
+				</div>
+			</div>
+		</div>
+	</dialog>
+
+	<script type="module" src="render.js"></script>
+</body>
+</html>

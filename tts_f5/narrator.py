@@ -25,6 +25,13 @@ SIL_FLOOR = 0.015
 MAX_GAP_SEC = 1.5
 DEFAULT_POLYPHONE = Path(__file__).with_name("polyphone.json")
 DEFAULT_PRONUNCIATION = Path(__file__).with_name("pronunciation.json")
+# 句首（前兩個中文字以內）就是英文：用含英文開頭示範的參考音，T1 會把 for 念錯
+EN_LEAD = re.compile(r"\s*[\u4e00-\u9fff]{0,2}\s*[A-Za-z]")
+
+
+def choose_voice(text, voices):
+	"""預設挑法：有 en_lead 這組聲音且句首是英文就用它，其餘用 default"""
+	return "en_lead" if "en_lead" in voices and EN_LEAD.match(text) else "default"
 
 
 def load_polyphone(path=DEFAULT_POLYPHONE):
@@ -62,21 +69,28 @@ def analyse(x):
 
 
 class F5Narrator:
-	def __init__(self, ckpt, ref_wav, ref_text, *, seed=5, polyphone=None, pronunciation=None,
-			cache_dir=None, device="cuda"):
-		self.ckpt, self.ref_wav = Path(ckpt), Path(ref_wav)
-		for p in (self.ckpt, self.ref_wav):
-			if not p.exists():
-				raise FileNotFoundError(p)
-		self.seed, self.device = seed, device
+	def __init__(self, ckpt, ref_wav, ref_text, *, seed=5, voices=None, choose=choose_voice,
+			polyphone=None, pronunciation=None, cache_dir=None, device="cuda"):
+		"""ref_wav／ref_text／seed 是 default 聲音；voices 可再加幾組 {名稱: (參考音, 逐字稿, seed)}，
+		choose(片段原文, voices) 決定每個片段用哪一組"""
+		self.ckpt = Path(ckpt)
+		if not self.ckpt.exists():
+			raise FileNotFoundError(self.ckpt)
+		self.device, self.choose = device, choose
 		self.polyphone = load_polyphone() if polyphone is None else polyphone
 		self.pronunciation = load_pronunciation() if pronunciation is None else pronunciation
 		# pypinyin 的詞典是行程全域的；文字沒變、拼音變了，所以快取鍵要含這張表
 		from pypinyin import load_phrases_dict
 		load_phrases_dict({w: [[p] for p in py.split()] for w, py in self.pronunciation.items()})
 		self._pron_tag = hashlib.sha1(json.dumps(self.pronunciation, sort_keys=True).encode("utf-8")).hexdigest()[:8]
-		self.ref_sec = sf.info(str(self.ref_wav)).duration
-		self.ref_text = self.spoken(ref_text)
+		self.voices = {}
+		for name, (wav, text, s) in {"default": (ref_wav, ref_text, seed), **(voices or {})}.items():
+			wav = Path(wav)
+			if not wav.exists():
+				raise FileNotFoundError(wav)
+			self.voices[name] = {"wav": wav, "text": self.spoken(text), "sec": sf.info(str(wav)).duration, "seed": s}
+		d = self.voices["default"]
+		self.ref_wav, self.ref_text, self.ref_sec, self.seed = d["wav"], d["text"], d["sec"], d["seed"]
 		self.cache_dir = Path(cache_dir) if cache_dir else None
 		self._tts = None
 
@@ -92,7 +106,7 @@ class F5Narrator:
 
 	def chunks(self, text):
 		"""能整段送就整段；太長才依句號切，句子還太長再依逗號切"""
-		budget = SEGMENT_LIMIT - self.ref_sec
+		budget = SEGMENT_LIMIT - max(v["sec"] for v in self.voices.values())
 		if self.estimate(text) <= budget:
 			return [text.strip()]
 		out = []
@@ -104,27 +118,29 @@ class F5Narrator:
 					out.append(part)
 		return [c.strip() for c in out if c.strip()]
 
-	def _infer(self, spoken, speed, seed):
+	def _infer(self, spoken, speed, seed, voice):
 		if self._tts is None:
 			from f5_tts.api import F5TTS
 			self._tts = F5TTS(model="F5TTS_v1_Base", ckpt_file=str(self.ckpt), device=self.device)
-		w, sr, _ = self._tts.infer(ref_file=str(self.ref_wav), ref_text=self.ref_text,
+		w, sr, _ = self._tts.infer(ref_file=str(voice["wav"]), ref_text=voice["text"],
 			gen_text=spoken, seed=seed, speed=speed)
 		assert sr == SR, sr
 		return np.asarray(w, dtype=np.float32)
 
-	def chunk(self, text, seed=None):
+	def chunk(self, text, seed=None, voice=None):
 		"""單一片段 → (音訊, 紀錄)。有 cache_dir 時同樣輸入不重算"""
-		seed = self.seed if seed is None else seed
+		name = voice or self.choose(text, self.voices)
+		v = self.voices[name]
+		seed = v["seed"] if seed is None else seed
 		spoken = self.spoken(text)
-		_, speed = compute_target_duration_and_speed(spoken, self.ref_sec, self.ref_text)
-		tag = f"{spoken}|{speed}|{seed}|{self.ckpt.name}|{self.ref_wav.name}|{self.ref_text}|{self._pron_tag}"
+		_, speed = compute_target_duration_and_speed(spoken, v["sec"], v["text"])
+		tag = f"{spoken}|{speed}|{seed}|{self.ckpt.name}|{v['wav'].name}|{v['text']}|{self._pron_tag}"
 		digest = hashlib.sha1(tag.encode("utf-8")).hexdigest()[:12]
 		cached = self.cache_dir / f"{digest}.wav" if self.cache_dir else None
 		if cached and cached.exists():
 			x, _ = sf.read(str(cached), dtype="float32")
 		else:
-			x = trim(self._infer(spoken, speed, seed))
+			x = trim(self._infer(spoken, speed, seed, v))
 			if cached:
 				os.makedirs(self.cache_dir, exist_ok=True)
 				sf.write(str(cached), x, SR, subtype="PCM_16")
@@ -134,7 +150,7 @@ class F5Narrator:
 			warnings.append(f"近乎無聲（峰值 {peak:.2f}）")
 		if gap > MAX_GAP_SEC:
 			warnings.append(f"中間空白 {gap:.1f}s")
-		return x, {"text": text, "spoken": spoken, "seed": seed, "speed": speed, "digest": digest,
+		return x, {"text": text, "spoken": spoken, "voice": name, "seed": seed, "speed": speed, "digest": digest,
 			"wav": str(cached) if cached else None, "duration": round(len(x) / SR, 3),
 			"voiced": round(voiced, 3), "max_gap": round(gap, 2), "warnings": warnings}
 

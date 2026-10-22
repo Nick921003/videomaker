@@ -1,0 +1,890 @@
+/* 心智圖三種視覺風格樣式表 (variants.css) */
+
+:root {
+	--font-sans: 'Noto Sans TC', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, "Noto Sans Mono CJK TC", Menlo, Monaco, Consolas, monospace;
+	--line-height-normal: 1.5;
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
+	--radius-pill: 9999px;
+	
+	/* 方案 A 分支主題色系 */
+	--b0-hue: #0d9488;
+	--b0-dark: #115e59;
+	--b0-bg1: #f0fdfa;
+	--b0-border1: #5eead4;
+	--b0-bg2: #f7fefe;
+	--b0-border2: #99f6e4;
+	--b0-bg3: #ffffff;
+	--b0-border3: #ccfbf1;
+	
+	--b1-hue: #4f46e5;
+	--b1-dark: #3730a3;
+	--b1-bg1: #eef2ff;
+	--b1-border1: #a5b4fc;
+	--b1-bg2: #f5f7ff;
+	--b1-border2: #c7d2fe;
+	--b1-bg3: #ffffff;
+	--b1-border3: #e0e7ff;
+	
+	--b2-hue: #7c3aed;
+	--b2-dark: #5b21b6;
+	--b2-bg1: #f5f3ff;
+	--b2-border1: #c4b5fd;
+	--b2-bg2: #faf5ff;
+	--b2-border2: #ddd6fe;
+	--b2-bg3: #ffffff;
+	--b2-border3: #ede9fe;
+	
+	--b3-hue: #d97706;
+	--b3-dark: #92400e;
+	--b3-bg1: #fffbeb;
+	--b3-border1: #fcd34d;
+	--b3-bg2: #fefce8;
+	--b3-border2: #fde68a;
+	--b3-bg3: #ffffff;
+	--b3-border3: #fef3c7;
+	
+	--b4-hue: #059669;
+	--b4-dark: #065f46;
+	--b4-bg1: #ecfdf5;
+	--b4-border1: #6ee7b7;
+	--b4-bg2: #f0fdf4;
+	--b4-border2: #a7f3d0;
+	--b4-bg3: #ffffff;
+	--b4-border3: #d1fae5;
+}
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family: var(--font-sans);
+	line-height: var(--line-height-normal);
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	background: var(--page-bg, #f8fafc);
+	color: var(--page-color, #1e293b);
+	user-select: none;
+}
+
+/* 頂部導覽列 */
+.app-header {
+	height: 58px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 20px;
+	background: var(--header-bg, #ffffff);
+	border-bottom: 1px solid var(--header-border, #e2e8f0);
+	z-index: 20;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.header-title {
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--header-title-color, #0f172a);
+}
+
+.header-badge {
+	font-size: 12px;
+	font-weight: 600;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+	background: var(--badge-bg, #e2e8f0);
+	color: var(--badge-color, #475569);
+}
+
+/* 方案切換頁籤 */
+.variant-tabs {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--tabs-wrapper-bg, #f1f5f9);
+	padding: 4px;
+	border-radius: var(--radius-md);
+}
+
+.tab-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 14px;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	border: 0;
+	border-radius: var(--radius-sm);
+	background: transparent;
+	color: var(--tab-color, #64748b);
+	cursor: pointer;
+	transition: background-color 150ms ease, color 150ms ease;
+}
+
+.tab-button:hover {
+	color: var(--tab-hover-color, #0f172a);
+}
+
+.tab-button.active {
+	background: var(--tab-active-bg, #ffffff);
+	color: var(--tab-active-color, #0f172a);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tab-indicator {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+/* 縮放工具列 */
+.header-tools {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tool-btn {
+	padding: 6px 12px;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	border: 1px solid var(--tool-border, #cbd5e1);
+	border-radius: var(--radius-sm);
+	background: var(--tool-bg, #ffffff);
+	color: var(--tool-color, #334155);
+	cursor: pointer;
+	transition: background-color 120ms ease;
+}
+
+.tool-btn:hover {
+	background: var(--tool-hover-bg, #f8fafc);
+}
+
+.icon-btn {
+	width: 32px;
+	padding: 6px 0;
+	text-align: center;
+	font-size: 15px;
+}
+
+/* 方案特色橫幅說明 */
+.variant-banner {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 8px 24px;
+	background: var(--banner-bg, #f1f5f9);
+	border-bottom: 1px solid var(--banner-border, #e2e8f0);
+	font-size: 13px;
+	z-index: 10;
+}
+
+.banner-title {
+	font-weight: 700;
+	color: var(--banner-title-color, #0f172a);
+	white-space: nowrap;
+}
+
+.banner-desc {
+	color: var(--banner-desc-color, #64748b);
+	line-height: 1.4;
+}
+
+/* 畫布視窗與移動區域 */
+.viewport-wrapper {
+	flex: 1;
+	min-height: 0;
+	position: relative;
+	overflow: hidden;
+}
+
+.mindmap-viewport {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	overflow: hidden;
+	cursor: grab;
+	touch-action: none;
+	outline: none;
+}
+
+.mindmap-viewport:active {
+	cursor: grabbing;
+}
+
+.mindmap-canvas {
+	position: absolute;
+	left: 0;
+	top: 0;
+	transform-origin: 0 0;
+	will-change: transform;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.mindmap-canvas.smooth-transition {
+		transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
+}
+
+.mindmap-connectors {
+	position: absolute;
+	left: 0;
+	top: 0;
+	pointer-events: none;
+	overflow: visible;
+}
+
+.mindmap-nodes {
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+/* 節點通用基礎卡片樣式 */
+.mindmap-node {
+	position: absolute;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--radius-md);
+	background: var(--node-bg, #ffffff);
+	border: 1px solid var(--node-border, #cbd5e1);
+	box-shadow: var(--node-shadow, 0 2px 6px rgba(0, 0, 0, 0.05));
+	cursor: pointer;
+	overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.mindmap-node {
+		transition: box-shadow 150ms ease, border-color 150ms ease;
+	}
+}
+
+/* -------------------------------------------------------------
+ * 方案 A：分支色彩 (Branch Color)
+ * ------------------------------------------------------------- */
+body.variant-a {
+	--page-bg: #f8fafc;
+	--page-color: #0f172a;
+	--header-bg: #ffffff;
+	--header-border: #e2e8f0;
+	--banner-bg: #f8fafc;
+	--banner-border: #e2e8f0;
+	--banner-title-color: #0f172a;
+	--banner-desc-color: #475569;
+}
+
+.variant-a .mindmap-viewport {
+	background-color: #f8fafc;
+	background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+	background-size: 24px 24px;
+}
+
+/* 方案 A 根節點：深色實心 */
+.variant-a .mindmap-node[data-id="root"] {
+	background: #0f172a;
+	color: #ffffff;
+	border: 2px solid #334155;
+	box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35);
+	border-radius: var(--radius-lg);
+	padding: 18px 24px;
+	width: 320px;
+}
+
+.variant-a .mindmap-node[data-id="root"] .node-title {
+	font-size: 20px;
+	font-weight: 700;
+	color: #ffffff;
+}
+
+/* 分支色彩繼承與隨深度漸淡 */
+.variant-a .mindmap-node[data-branch="0"] { --b-color: var(--b0-hue); --b-text: var(--b0-dark); --b-s1: var(--b0-bg1); --b-br1: var(--b0-border1); --b-s2: var(--b0-bg2); --b-br2: var(--b0-border2); --b-s3: var(--b0-bg3); --b-br3: var(--b0-border3); }
+.variant-a .mindmap-node[data-branch="1"] { --b-color: var(--b1-hue); --b-text: var(--b1-dark); --b-s1: var(--b1-bg1); --b-br1: var(--b1-border1); --b-s2: var(--b1-bg2); --b-br2: var(--b1-border2); --b-s3: var(--b1-bg3); --b-br3: var(--b1-border3); }
+.variant-a .mindmap-node[data-branch="2"] { --b-color: var(--b2-hue); --b-text: var(--b2-dark); --b-s1: var(--b2-bg1); --b-br1: var(--b2-border1); --b-s2: var(--b2-bg2); --b-br2: var(--b2-border2); --b-s3: var(--b2-bg3); --b-br3: var(--b2-border3); }
+.variant-a .mindmap-node[data-branch="3"] { --b-color: var(--b3-hue); --b-text: var(--b3-dark); --b-s1: var(--b3-bg1); --b-br1: var(--b3-border1); --b-s2: var(--b3-bg2); --b-br2: var(--b3-border2); --b-s3: var(--b3-bg3); --b-br3: var(--b3-border3); }
+.variant-a .mindmap-node[data-branch="4"] { --b-color: var(--b4-hue); --b-text: var(--b4-dark); --b-s1: var(--b4-bg1); --b-br1: var(--b4-border1); --b-s2: var(--b4-bg2); --b-br2: var(--b4-border2); --b-s3: var(--b4-bg3); --b-br3: var(--b4-border3); }
+
+/* 方案 A 概念節點（第一、二層） */
+.variant-a .mindmap-node[data-kind="concept"]:not([data-id="root"]) {
+	background: #ffffff;
+	border: 1.5px solid var(--b-br1);
+	border-left: 6px solid var(--b-color);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+	padding: 14px 18px;
+	width: 220px;
+}
+
+.variant-a .mindmap-node[data-kind="concept"] .node-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--b-text);
+}
+
+/* 方案 A 概念解釋（單行省略 + 看說明晶片） */
+.variant-a .mindmap-node[data-kind="meaning"] {
+	background: var(--b-s1);
+	border: 1px solid var(--b-br1);
+	padding: 10px 14px;
+	width: 280px;
+}
+
+.variant-a .mindmap-node[data-kind="group"] {
+	background: var(--b-s2);
+	border: 1px solid var(--b-br2);
+	border-radius: var(--radius-pill);
+	padding: 6px 14px;
+	width: 100px;
+}
+
+.variant-a .mindmap-node[data-kind="group"] .node-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--b-text);
+	text-align: center;
+}
+
+/* 方案 A 範例程式與常見錯誤 */
+.variant-a .mindmap-node[data-kind="example"] {
+	background: var(--b-s3);
+	border: 1.5px solid var(--b-br2);
+	border-left: 4px solid var(--b-color);
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+	padding: 12px 16px;
+	width: 390px;
+}
+
+.variant-a .mindmap-node[data-kind="pitfall"] {
+	background: #fffafa;
+	border: 1.5px solid #fecaca;
+	border-left: 4px solid #ef4444;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+	padding: 12px 16px;
+	width: 380px;
+}
+
+/* 方案 A 連線樣式：使用分支色 */
+.variant-a .mindmap-connectors path {
+	fill: none;
+	stroke-width: 2.5px;
+	stroke-linecap: round;
+}
+.variant-a .mindmap-connectors path[data-branch="0"] { stroke: var(--b0-hue); }
+.variant-a .mindmap-connectors path[data-branch="1"] { stroke: var(--b1-hue); }
+.variant-a .mindmap-connectors path[data-branch="2"] { stroke: var(--b2-hue); }
+.variant-a .mindmap-connectors path[data-branch="3"] { stroke: var(--b3-hue); }
+.variant-a .mindmap-connectors path[data-branch="4"] { stroke: var(--b4-hue); }
+.variant-a .mindmap-connectors path[data-from="root"] { stroke: #0f172a; stroke-width: 3px; }
+
+/* -------------------------------------------------------------
+ * 方案 B：階層漸變 (Depth Gradient)
+ * ------------------------------------------------------------- */
+body.variant-b {
+	--page-bg: #0b1329;
+	--page-color: #f8fafc;
+	--header-bg: #0f172a;
+	--header-border: #1e293b;
+	--header-title-color: #f8fafc;
+	--badge-bg: #1e293b;
+	--badge-color: #94a3b8;
+	--tabs-wrapper-bg: #1e293b;
+	--tab-color: #94a3b8;
+	--tab-hover-color: #ffffff;
+	--tab-active-bg: #334155;
+	--tab-active-color: #38bdf8;
+	--tool-bg: #1e293b;
+	--tool-border: #334155;
+	--tool-color: #e2e8f0;
+	--tool-hover-bg: #334155;
+	--banner-bg: #0f172a;
+	--banner-border: #1e293b;
+	--banner-title-color: #38bdf8;
+	--banner-desc-color: #94a3b8;
+}
+
+/* 方案 B 畫布背景：明顯深冷色藍調 */
+.variant-b .mindmap-viewport {
+	background-color: #0b1329;
+	background-image: 
+		linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+	background-size: 32px 32px;
+}
+
+/* 方案 B 漸變卡片：明亮飽滿且與深冷背景強烈對比，隨深度飽和度與尺寸遞減 */
+.variant-b .mindmap-node[data-depth="0"] {
+	/* 根節點：最高飽和度線性漸變、最大字體與內距 */
+	background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4338ca 100%);
+	color: #ffffff;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	box-shadow: 0 12px 32px rgba(37, 99, 235, 0.45);
+	padding: 18px 24px;
+	width: 320px;
+}
+.variant-b .mindmap-node[data-depth="0"] .node-title {
+	font-size: 20px;
+	font-weight: 700;
+	color: #ffffff;
+}
+
+.variant-b .mindmap-node[data-depth="1"] {
+	/* 深度 1：次高飽和度線性漸變 */
+	background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+	color: #ffffff;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
+	padding: 16px 20px;
+	width: 240px;
+}
+.variant-b .mindmap-node[data-depth="1"] .node-title {
+	font-size: 17px;
+	font-weight: 700;
+	color: #ffffff;
+}
+
+.variant-b .mindmap-node[data-depth="2"] {
+	/* 深度 2：中等飽和度漸變 */
+	background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+	color: #0f172a;
+	border: 1px solid rgba(14, 165, 233, 0.4);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+	padding: 14px 18px;
+	width: 220px;
+}
+.variant-b .mindmap-node[data-depth="2"] .node-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: #0369a1;
+}
+
+.variant-b .mindmap-node[data-depth="2"][data-kind="meaning"] {
+	width: 280px;
+	padding: 10px 14px;
+}
+
+.variant-b .mindmap-node[data-depth="3"] {
+	/* 深度 3：低飽和度漸變 */
+	background: linear-gradient(135deg, #f0f9ff 0%, #e2e8f0 100%);
+	color: #1e293b;
+	border: 1px solid rgba(203, 213, 225, 0.6);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+	padding: 10px 14px;
+	width: 280px;
+}
+.variant-b .mindmap-node[data-depth="3"][data-kind="group"] {
+	width: 100px;
+	border-radius: var(--radius-pill);
+	padding: 6px 12px;
+}
+.variant-b .mindmap-node[data-depth="3"][data-kind="group"] .node-title {
+	font-size: 13px;
+	font-weight: 700;
+	text-align: center;
+	color: #0f172a;
+}
+
+.variant-b .mindmap-node[data-depth="4"],
+.variant-b .mindmap-node[data-depth="5"] {
+	/* 深度 4 與 5：微弱飽和度至金屬冷灰階漸變、尺寸精簡 */
+	background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+	color: #1e293b;
+	border: 1px solid rgba(203, 213, 225, 0.5);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+	padding: 10px 14px;
+	font-size: 13px;
+}
+.variant-b .mindmap-node[data-kind="example"] {
+	width: 390px;
+}
+.variant-b .mindmap-node[data-kind="pitfall"] {
+	width: 380px;
+}
+.variant-b .mindmap-node[data-kind="group"] {
+	width: 100px;
+	border-radius: var(--radius-pill);
+	padding: 6px 12px;
+}
+.variant-b .mindmap-node[data-kind="group"] .node-title {
+	font-size: 13px;
+	font-weight: 700;
+	text-align: center;
+	color: #0f172a;
+}
+
+/* 方案 B 連線：冷光亮色 */
+.variant-b .mindmap-connectors path {
+	fill: none;
+	stroke: #38bdf8;
+	stroke-width: 2.2px;
+	stroke-opacity: 0.85;
+	stroke-linecap: round;
+}
+
+/* -------------------------------------------------------------
+ * 方案 C：大綱骨架 (Outline / XMind-like)
+ * ------------------------------------------------------------- */
+body.variant-c {
+	--page-bg: #fafbfc;
+	--page-color: #0f172a;
+	--header-bg: #ffffff;
+	--header-border: #e2e8f0;
+	--banner-bg: #fafbfc;
+	--banner-border: #e2e8f0;
+	--banner-title-color: #18181b;
+	--banner-desc-color: #52525b;
+}
+
+.variant-c .mindmap-viewport {
+	background-color: #fafbfc;
+}
+
+.variant-c .mindmap-node[data-branch="0"] { --b-line: var(--b0-hue); --b-line-dark: var(--b0-dark); }
+.variant-c .mindmap-node[data-branch="1"] { --b-line: var(--b1-hue); --b-line-dark: var(--b1-dark); }
+.variant-c .mindmap-node[data-branch="2"] { --b-line: var(--b2-hue); --b-line-dark: var(--b2-dark); }
+.variant-c .mindmap-node[data-branch="3"] { --b-line: var(--b3-hue); --b-line-dark: var(--b3-dark); }
+.variant-c .mindmap-node[data-branch="4"] { --b-line: var(--b4-hue); --b-line-dark: var(--b4-dark); }
+
+/* 方案 C 根節點：圓潤膠囊 (Pill) */
+.variant-c .mindmap-node[data-id="root"] {
+	background: #18181b;
+	color: #ffffff;
+	border-radius: var(--radius-pill);
+	border: 0;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+	padding: 16px 28px;
+	width: 320px;
+}
+.variant-c .mindmap-node[data-id="root"] .node-title {
+	font-size: 20px;
+	font-weight: 700;
+	color: #ffffff;
+	text-align: center;
+}
+
+/* 方案 C 概念節點：保留外框卡片 */
+.variant-c .mindmap-node[data-kind="concept"]:not([data-id="root"]) {
+	background: #ffffff;
+	border: 2px solid var(--b-line, #3b82f6);
+	border-radius: var(--radius-md);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+	padding: 12px 18px;
+	width: 220px;
+}
+.variant-c .mindmap-node[data-kind="concept"] .node-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--b-line-dark, #0f172a);
+}
+
+/* 方案 C 深層節點（無外框，直接落在彩色分支底線上） */
+.variant-c .mindmap-node:not([data-kind="concept"]) {
+	background: transparent;
+	border: 0;
+	border-bottom: 2.5px solid var(--b-line, #3b82f6);
+	border-radius: 0;
+	box-shadow: none;
+	padding: 4px 6px 6px 6px;
+}
+
+.variant-c .mindmap-node[data-kind="meaning"] {
+	width: 280px;
+}
+
+.variant-c .mindmap-node[data-kind="group"] {
+	width: 100px;
+}
+.variant-c .mindmap-node[data-kind="group"] .node-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--b-line-dark, #0f172a);
+}
+
+.variant-c .mindmap-node[data-kind="example"] {
+	width: 390px;
+}
+
+.variant-c .mindmap-node[data-kind="pitfall"] {
+	width: 380px;
+}
+
+/* 方案 C 連線樣式：流向底線 */
+.variant-c .mindmap-connectors path {
+	fill: none;
+	stroke-width: 2.5px;
+	stroke-linecap: round;
+}
+.variant-c .mindmap-connectors path[data-branch="0"] { stroke: var(--b0-hue); }
+.variant-c .mindmap-connectors path[data-branch="1"] { stroke: var(--b1-hue); }
+.variant-c .mindmap-connectors path[data-branch="2"] { stroke: var(--b2-hue); }
+.variant-c .mindmap-connectors path[data-branch="3"] { stroke: var(--b3-hue); }
+.variant-c .mindmap-connectors path[data-branch="4"] { stroke: var(--b4-hue); }
+.variant-c .mindmap-connectors path[data-from="root"] { stroke: #18181b; stroke-width: 2.8px; }
+
+/* -------------------------------------------------------------
+ * 節點內容元件（單行省略、看說明晶片、程式碼、常見錯誤）
+ * ------------------------------------------------------------- */
+.node-content {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.node-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.node-page-tag {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: var(--radius-sm);
+	background: rgba(0, 0, 0, 0.06);
+	color: inherit;
+	opacity: 0.85;
+}
+
+/* 概念解釋：單行省略 + 看說明晶片 */
+.node-meaning-box {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+}
+
+.node-truncated-text {
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-size: 13.5px;
+	line-height: 1.4;
+	color: inherit;
+}
+
+.node-chip-explain {
+	flex-shrink: 0;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 3px 8px;
+	border-radius: var(--radius-sm);
+	border: 1px solid currentColor;
+	background: rgba(255, 255, 255, 0.6);
+	color: inherit;
+	cursor: pointer;
+	transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.node-chip-explain:hover {
+	background: #ffffff;
+	transform: translateY(-1px);
+}
+
+/* 程式碼卡片 */
+.node-code-block {
+	font-family: var(--font-mono);
+	font-size: 12.5px;
+	line-height: 1.45;
+	white-space: pre;
+	overflow-x: hidden;
+	tab-size: 4;
+	color: inherit;
+}
+
+/* 常見錯誤列表卡片 */
+.pitfall-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 12.5px;
+	line-height: 1.45;
+}
+
+.pitfall-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+}
+
+.pitfall-badge {
+	flex-shrink: 0;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 1px 5px;
+	border-radius: 3px;
+	line-height: 1.3;
+}
+
+.pitfall-badge-bad {
+	background: #fee2e2;
+	color: #b91c1c;
+}
+
+.pitfall-badge-why {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+.pitfall-badge-good {
+	background: #dcfce7;
+	color: #15803d;
+}
+
+.pitfall-text {
+	flex: 1;
+	word-break: break-word;
+	color: inherit;
+}
+
+/* -------------------------------------------------------------
+ * 概念說明對話框 (Dialog)
+ * ------------------------------------------------------------- */
+.meaning-dialog {
+	position: fixed;
+	inset: 0;
+	margin: auto;
+	border: 0;
+	border-radius: var(--radius-lg);
+	background: transparent;
+	padding: 0;
+	max-width: 560px;
+	width: calc(100vw - 40px);
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+	z-index: 100;
+}
+
+.meaning-dialog::backdrop {
+	background: rgba(15, 23, 42, 0.6);
+	backdrop-filter: blur(4px);
+}
+
+.dialog-card {
+	background: #ffffff;
+	border-radius: var(--radius-lg);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.dialog-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 18px 24px;
+	background: #f8fafc;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.dialog-header-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.dialog-kind {
+	font-size: 12px;
+	font-weight: 700;
+	color: #0284c7;
+	text-transform: uppercase;
+}
+
+.dialog-title {
+	font-size: 18px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.dialog-close {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	border: 1px solid #cbd5e1;
+	background: #ffffff;
+	color: #64748b;
+	font-size: 14px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.dialog-close:hover {
+	background: #f1f5f9;
+	color: #0f172a;
+}
+
+.dialog-body {
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	max-height: 65vh;
+	overflow-y: auto;
+}
+
+.dialog-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.section-heading {
+	font-size: 13px;
+	font-weight: 700;
+	color: #64748b;
+}
+
+.dialog-text {
+	font-size: 15px;
+	line-height: 1.65;
+	color: #1e293b;
+	white-space: pre-wrap;
+}
+
+.dialog-quote {
+	font-size: 14px;
+	line-height: 1.6;
+	color: #475569;
+	background: #f8fafc;
+	border-left: 3px solid #0284c7;
+	padding: 10px 14px;
+	border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+	font-style: italic;
+	white-space: pre-wrap;
+}
+
+.dialog-meta {
+	display: flex;
+	gap: 8px;
+}
+
+.dialog-page-tag {
+	font-size: 12px;
+	font-weight: 600;
+	padding: 4px 10px;
+	border-radius: var(--radius-sm);
+	background: #e0f2fe;
+	color: #0369a1;
+}

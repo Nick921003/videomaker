@@ -27,6 +27,10 @@ CKPT = os.environ.get("F5_CKPT", F5_BASE / "實驗/2026-10-19_參考音挑選/v4
 REF = os.environ.get("F5_REF", F5_BASE / "實驗/2026-10-19_參考音挑選/參考音/T1_王老師_scanf與and_5.7秒.wav")
 REF_TEXT = os.environ.get("F5_REF_TEXT", "就是在 scanf 的時候，scanf 的時候你要在變數前面加一個 and。")
 SEED = int(os.environ.get("F5_SEED", "5"))
+# 英文開頭的句子另用一組（2026-10-22 人耳：老師「bit 的 and」seed 4 最好）
+EN_REF = Path(os.environ.get("F5_EN_REF", F5_BASE / "實驗/2026-10-22_英文開頭參考音/參考音/E1_bit的and_seg_030.wav"))
+EN_REF_TEXT = os.environ.get("F5_EN_REF_TEXT", "bit 的 and ，也就是說把五跟七都寫成二進位，然後一個 bit 一個 bit 去比。")
+EN_SEED = int(os.environ.get("F5_EN_SEED", "4"))
 
 
 def main():
@@ -45,14 +49,17 @@ def main():
 	reseed_path = os.path.join(out_dir, "f5_reseed.json")
 	seeds = json.load(open(reseed_path, encoding="utf-8")) if os.path.exists(reseed_path) else {}
 
+	voices = {"en_lead": (EN_REF, EN_REF_TEXT, EN_SEED)} if EN_REF.exists() else {}
+	if not voices:
+		print(f"⚠ 找不到英文開頭參考音 {EN_REF}，英文開頭的句子也會用預設參考音（容易念錯）")
 	try:
-		voice = F5Narrator(CKPT, REF, REF_TEXT, seed=SEED, cache_dir=os.path.join(audio_dir, "f5_chunks"))
+		voice = F5Narrator(CKPT, REF, REF_TEXT, seed=SEED, voices=voices, cache_dir=os.path.join(audio_dir, "f5_chunks"))
 	except FileNotFoundError as e:
 		raise SystemExit(f"找不到 {e}（G 槽沒掛上，或用 F5_CKPT／F5_REF 指定）")
 
 	jobs = [(s["slide_id"], i, a["text"]) for s in actions["slides"]
 		for i, a in enumerate(s["actions"]) if a["type"] == "speech"]
-	print(f"共 {len(jobs)} 段語音（F5-TTS，seed {SEED}）")
+	print(f"共 {len(jobs)} 段語音（F5-TTS，預設 seed {SEED}，英文開頭 seed {EN_SEED}）")
 	flagged, t0 = [], time.time()
 	for n, (sid, idx, text) in enumerate(jobs, start=1):
 		key = f"{sid}#{idx}"
@@ -76,7 +83,7 @@ def main():
 			"backend": "f5",
 			"chunks": recs,
 		}
-		print(f"[{n}/{len(jobs)}] {key} {len(audio) / SR:.1f}s（{len(recs)} 片段）{'　⚠ ' + '；'.join(warnings) if warnings else ''}")
+		print(f"[{n}/{len(jobs)}] {key} {len(audio) / SR:.1f}s（{len(recs)} 片段：{'、'.join(r['voice'] for r in recs)}）{'　⚠ ' + '；'.join(warnings) if warnings else ''}")
 		json.dump(cache, open(dur_path, "w", encoding="utf-8"), ensure_ascii=False, indent="\t")
 
 	total = sum(v["duration"] for v in cache.values())
