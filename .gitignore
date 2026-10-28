@@ -1,5 +1,18 @@
-# 產出
-video_engine/out/
+# 產出（黑板片 printf 的原始碼例外：beats.js、index.html 等要進版控，渲染結果與音檔不進）
+video_engine/out/*
+!video_engine/out/vscode_printf_chalk/
+video_engine/out/vscode_printf_chalk/renders/
+video_engine/out/vscode_printf_chalk/qa/
+video_engine/out/vscode_printf_chalk/snapshots/
+video_engine/out/vscode_printf_chalk/node_modules/
+video_engine/out/vscode_printf_chalk/assets/audio/
+# 舊版用過的實機截圖，已不用；圖上可能有本機帳號路徑
+video_engine/out/vscode_printf_chalk/assets/img/
+
+# 媒體檔一律不進 git（語音快取、試聽合輯、成片）
+*.wav
+*.mp3
+*.mp4
 
 # 環境與金鑰
 .venv/
