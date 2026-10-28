@@ -95,10 +95,16 @@
 | `win11.sys_props` | 系統內容・進階分頁 | 分頁 `t_name` `t_hw` `t_adv`（進階）`t_prot` `t_remote`；三個「設定」鈕 `perf` `profile` `startup`；`envbtn`「環境變數(N)...」；`ok` `cancel` `apply` |
 | `win11.env_vars` | 環境變數 | 群組 `user`（使用者變數）：列 `u_onedrive` `u_path`（Path）`u_temp`，鈕 `u_new` `u_edit`「編輯(E)...」`u_del`；群組 `sys`（系統變數）：列 `s_comspec` `s_os` `s_path`，鈕 `s_new` `s_edit` `s_del`；`ok` `cancel` |
 | `win11.edit_env_var` | 編輯環境變數（Path） | 清單列 `r0`（原有的 WindowsApps）、`new`（空白列，用 `input` 打字）；右側鈕 `b_new`「新增(N)」`b_edit` `b_browse` `b_del` `b_up` `b_down` `b_text`；`ok` `cancel` |
+| `vscode.gear_menu` | VS Code 左下角齒輪選單 | 群組 `menu`；表格列 `cmd`（命令選擇區）`profile`（設定檔）`settings`（設定，Ctrl+,）`ext`（延伸模組）`keys`（鍵盤快速鍵）；用 `cursor` 的 `click` 點 `settings` |
 
 ## cursor — 滑鼠游標（不佔版面，畫在最上層；整片只需一個）
 - 動作：`click` 移到 `on`（錨點）並點一下｜`move` 移到 `to`
 - 錨點：無
+
+## icon — 圖示（鉛筆畫的小圖，用來指「畫面上的那個按鈕」）
+- 屬性：`name`（目前只有 `gear` 齒輪）、`caption`（選填，圖下方小字，例「左下角」）
+- 動作：無自己的動作，只用通用的 `show`／`circle` 等
+- 錨點：無子錨點；`cursor` 的 `click` 直接寫 `on: "物件id"`
 
 ## 通用動作（任何物件或錨點都能用）
 - `show` 淡入、`hide` 淡出（物件會先自動在第一次被動作指到時出現，通常不必 show）

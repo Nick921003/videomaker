@@ -66,7 +66,30 @@ class TestActionTiming(unittest.TestCase):
 	def test_cue_依字元位置比例定起點(self):
 		tl = self.timed([{"act": "show", "target": "src", "cue": "放進去"}])
 		act = tl["actions"][-1]
-		self.assertAlmostEqual(act["t0"], 2.0 + 10.0 * (3 / 10))
+		self.assertAlmostEqual(act["t0"], 2.0 + 10.0 * (3 / 10) - BC.CUE_LEAD)
+
+	def test_換頁第一句的cue不提前到句首之前(self):
+		tl = self.timed([{"act": "show", "target": "src", "cue": "把"}])
+		self.assertAlmostEqual(tl["actions"][-1]["t0"], 2.0)
+
+	def test_同頁的cue可以提前到上一句句尾(self):
+		doc = scene_doc(beats_b=[{"say": "六七八九十", "do": []}, {"say": "把字母放進去", "do": [{"act": "show", "target": "src", "cue": "把"}]}])
+		tl = compiled(doc, [{"t0": 0.0, "t1": 1.0}, {"t0": 2.0, "t1": 4.0}, {"t0": 4.1, "t1": 8.0}])
+		self.assertAlmostEqual(tl["actions"][-1]["t0"], 4.0)
+
+	def test_每頁最後一筆在句尾前收完(self):
+		tl = self.timed([{"act": "show", "target": "src", "cue": "束"}], timing=[{"t0": 0.0, "t1": 1.0}, {"t0": 2.0, "t1": 3.0}])
+		act = tl["actions"][-1]
+		self.assertAlmostEqual(act["t1"], 3.0 - BC.END_MARGIN)
+		self.assertLess(act["t0"], 2.0 + 0.9 - BC.CUE_LEAD)
+		self.assertTrue(any("句尾前收不完" in w for w in tl["warnings"]))
+
+	def test_換頁鏡頭在上一頁講完前起跑(self):
+		tl = compiled(scene_doc(), [{"t0": 0.3, "t1": 2.0}, {"t0": 2.5, "t1": 5.5}])
+		cam = [c for c in tl["camera"] if c["kind"] == "scene"][1]
+		self.assertAlmostEqual(cam["t"], 2.0 - BC.SCENE_CAM_EARLY)
+		self.assertAlmostEqual(cam["dur"], BC.SCENE_CAM_DUR)
+		self.assertLessEqual(tl["actions"][0]["t1"], cam["t"] + 1e-6)
 
 	def test_cue_不在句中要報錯(self):
 		with self.assertRaises(ValueError):
@@ -229,8 +252,8 @@ class TestCodexReview(unittest.TestCase):
 			{"act": "stop", "target": "arr", "index": 5, "with": "prev"}], say="一二三四五六七八九十")
 		tl = compiled(doc, [{"t0": 0, "t1": 4}])
 		fill, show, stop = tl["actions"]
-		self.assertAlmostEqual(stop["t0"], 2.8)
-		self.assertAlmostEqual(fill["t1"], 2.8 - BC.SEQ_MARGIN)
+		self.assertAlmostEqual(stop["t0"], 2.8 - BC.CUE_LEAD)
+		self.assertAlmostEqual(fill["t1"], 2.8 - BC.CUE_LEAD - BC.SEQ_MARGIN)
 
 	def test_同時刻的hide與show依動作順序(self):
 		tl = compiled(one_scene([{"id": "q", "type": "note", "text": "Q"}], [
@@ -307,3 +330,26 @@ class TestPresets(unittest.TestCase):
 		for name in ("win11.nope", "../catalog", "win11"):
 			with self.assertRaises(ValueError, msg=name):
 				compiled(self.doc({"id": "w", "preset": name}))
+
+
+class TestIconComponent(unittest.TestCase):
+	def doc(self, **icon):
+		objects = [{"id": "g", "type": "icon", **{"name": "gear", **icon}}, {"id": "m", "type": "cursor"}]
+		return one_scene(objects, [{"act": "show", "target": "g"}, {"act": "click", "target": "m", "on": "g"}], layout={"stack": ["g"]})
+
+	def test_icon_可show也可被cursor點到且無缺口(self):
+		tl = compiled(self.doc(caption="左下角"))
+		self.assertEqual(tl["gaps"], [])
+		self.assertEqual(tl["objects"]["g"]["type"], "icon")
+		self.assertTrue(tl["visibility"]["g"])
+		self.assertEqual(tl["actions"][-1]["args"]["on"], "g")
+
+	def test_icon_沒有子錨點(self):
+		doc = self.doc()
+		doc["scenes"][0]["beats"][0]["do"][1]["on"] = "g:cog"
+		with self.assertRaises(ValueError):
+			compiled(doc)
+
+	def test_icon_name不在清單內要報錯(self):
+		with self.assertRaises(ValueError):
+			compiled(self.doc(name="star"))

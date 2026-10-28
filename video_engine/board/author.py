@@ -430,6 +430,10 @@ def restore_terms(doc, glossary, md):
 AI_PHRASES = ("這正是", "這意味著", "換句話說", "你可能已經發現", "說到底", "歸根究柢", "本質上", "核心在於", "關鍵在於",
 	"真正的問題在於", "讓我們", "接下來帶", "話不多說", "說真的", "老實說", "講白了", "值得注意的是", "總的來說",
 	"綜上所述", "總而言之", "不僅", "展現了", "體現了", "彰顯了", "扮演著", "就不會再", "其實很簡單", "完全不同了")
+# 「喔」TTS 唸出來像「偶」，而且句尾掛著不像老師講話
+BANNED_SAY = ("喔",)
+# 把話講絕對：學生遇到例外就不信後面的話。只擋承諾與預言，描述程式行為的「永遠成立」是事實，不擋
+ABSOLUTE_SAY = ("絕對", "保證", "百分之百", "鐵定", "一定不會", "一定可以", "不可能")
 
 
 def ai_tone_problems(doc):
@@ -445,6 +449,9 @@ def ai_tone_problems(doc):
 					hits.append("不是…而是（第二次）")
 			if hits:
 				problems.append(f"旁白有 AI 腔 {hits}：改成老師當場會講的話——直接講事情、不下金句、不預告：{say}")
+			absolutes = [p for p in ABSOLUTE_SAY if p in say]
+			if absolutes:
+				problems.append(f"旁白把話講絕對 {absolutes}：改成有條件的講法（大部分情況、通常、我這邊實測是），不要保證或預言：{say}")
 	return problems
 
 
@@ -489,6 +496,9 @@ def narration_problems(doc, target, glossary=()):
 				tail = g["say_as"][-2:]
 				if len(g["say_as"]) > 2 and re.search(re.escape(g["say_as"]) + r"\s*" + re.escape(tail), spoken):
 					problems.append(f"唸法重複：「{g['term']}」唸成「{g['say_as']}」後接著「{tail}」，聽起來是「{g['say_as']}{tail}」，請改寫這句或用 spoken：{say}")
+			bad = [p for p in BANNED_SAY if p in say or p in spoken]
+			if bad:
+				problems.append(f"旁白用了 {bad}（TTS 會唸成「偶」，掛在句尾也不像老師講話），刪掉或改寫這句：{say}")
 			code = [t for t in CODE_TOKEN.findall(spoken) if re.search(r"[A-Za-z]", t)]
 			hit = spelled(spoken)
 			words = [w for w in re.findall(r"[A-Za-z]+", spoken) if w not in ENGLISH_OK]
@@ -686,6 +696,9 @@ def do_scene(md_path, out_dir, seg_id, budget, target=None, repair_target=None, 
 		system = f.read()
 	with open(os.path.join(HERE, "prompts", "components.md"), encoding="utf-8") as f:
 		system = system.replace("{{COMPONENTS}}", f.read())
+	# 旁白寫法與手寫講稿共用一份，改一處所有流程一起生效
+	with open(os.path.join(os.path.dirname(HERE), "prompts", "narration_style_tw.md"), encoding="utf-8") as f:
+		system = system.replace("{{NARRATION_STYLE}}", f.read())
 	screens = seg.get("screens") or []
 	# 操作類附操作範例（從搜尋一路演到驗證），概念類附字串範例；放在系統提示裡走快取
 	example = "env_path_howto.scene.json" if screens else "c_string.scene.json"

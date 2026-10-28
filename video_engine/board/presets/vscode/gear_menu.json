@@ -1,0 +1,26 @@
+{
+	"type": "window",
+	"body": [
+		{
+			"group": {
+				"id": "menu",
+				"title": "左下角齒輪",
+				"body": [
+					{
+						"table": {
+							"columns": ["選單", "快速鍵"],
+							"rows": [
+								{"id": "cmd", "cells": ["命令選擇區...", "Ctrl+Shift+P"]},
+								{"id": "profile", "cells": ["設定檔", ""]},
+								{"id": "settings", "cells": ["設定", "Ctrl+,"]},
+								{"id": "ext", "cells": ["延伸模組", "Ctrl+Shift+X"]},
+								{"id": "keys", "cells": ["鍵盤快速鍵", "Ctrl+K Ctrl+S"]}
+							]
+						}
+					}
+				]
+			}
+		}
+	],
+	"_doc": "VS Code 左下角齒輪選單的前五項（繁中介面）；以真實截圖核對：docs/experiments/2026-10-22-vscode-printf/截圖/printf/F_齒輪選單.png。群組標題「左下角齒輪」是說明用標籤，不是介面文字"
+}

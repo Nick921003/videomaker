@@ -77,7 +77,7 @@
 
 ## 視覺參考
 
-A＋C 已接受版：`/home/pjw92/projects/videomaker/video_engine/out/state_change_ac_20261001/movie.html`（720p，數值乘 1.5 即 1080p）。
+A＋C 已接受版：`video_engine/out/state_change_ac_20261001/movie.html`（本機產出，不在 git）（720p，數值乘 1.5 即 1080p）。
 對照函式：`row()`＝cells、`pointer()`＝`api.pointer`、`outputBox()`＝output、`codeScene`／C 段深色面板＝code、
 `comparison` 三欄＝metrics、`copies`／`scans` 的飛行字元＝fill／scan 的 overlay、`termination_note` 的圈＝stop。
 
@@ -212,7 +212,7 @@ S=$(mktemp -d)
 
 ### window（鉛筆風線框對話框）
 - 用途：示範軟體操作。**只畫已核對過的介面文字**；畫面是手繪示意，不仿真截圖。
-- 參考截圖（只看結構與文字，不照抄外觀）：`/tmp/claude-1000/-home-pjw92-projects-GPT-SoVITS/8886ac47-22ec-41a6-8d08-b96f8b6d6bbe/scratchpad/winref/`。
+- 參考截圖（只看結構與文字，不照抄外觀）：當時的 Windows 實機截圖（暫存檔，已不存在）。
 - 屬性（全部選填）：`title`、`tabs: [{id, text, active}]`、`body: [區塊]`、`footer: [{id, text}]`（靠右的按鈕列）。
 - 區塊（由上往下堆疊，間距 18）：
   - `{"field": {id}}`：輸入框（寬滿版、高 64），內容由 `input` 打出，打字中顯示游標。
@@ -242,3 +242,8 @@ S=$(mktemp -d)
   第一個動作開始前，游標從目標右下方（+140, +90）移入。
 - 外觀：經典箭頭游標（約 46px 高），`card.fill` 填色、`effects.pencil` 鉛筆描邊，尖端對準座標點。
 - 字級與尺寸在世界座標，**不隨版面縮放**；游標永遠畫在所有物件與標記之上。
+
+### icon（圖示）
+- 屬性：`name`（目前只有 `gear`，其他值編譯報錯）、`caption`（選填，圖下方小字）。純繪製，沒有自己的動作，只吃通用的 show／hide／circle 等。
+- 外觀：140×140 的鉛筆齒輪（8 齒外形＋中心圓，`text.body` 色，抖動 seed 取自物件 id）；有 `caption` 時下方空 8px 加一行 muted 32 置中小字，寬取 max(140, 字寬 + 24)。
+- 錨點：沒有子錨點，指物件本身（`gear_icon`）就是整個圖示的框，例：`cursor` 的 `click` 用 `on: "gear_icon"`。

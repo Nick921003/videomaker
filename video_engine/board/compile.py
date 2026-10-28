@@ -20,11 +20,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LEAD_IN = 0.4
 SEC_PER_CHAR = 0.24
 BEAT_GAP = 0.35
-SCENE_GAP = 0.6
+SCENE_GAP = 0.15
 TAIL = 1.2
 SEQ_MARGIN = 0.15
-# 換場鏡頭最早提前多久起跑：太早會在上一句還沒講完時就把畫面拉走
-SCENE_LEAD = 0.5
+# 換場鏡頭在上一頁最後一句講完前就起跑：等講完才動，中間那段靜止看起來像頓一下
+SCENE_CAM_EARLY = 0.3
+SCENE_CAM_DUR = 0.7
+# 每頁最後一筆在鏡頭起跑前收完，畫面不會在還沒畫完時被拉走
+END_MARGIN = SCENE_CAM_EARLY
+# 錨點比字音早一點出現，看起來才像跟著講；太早就變成搶話
+CUE_LEAD = 0.25
 CONTAINERS = ("stack", "row")
 
 
@@ -196,6 +201,8 @@ class Compiler:
 			for key in spec["req"]:
 				if key not in obj:
 					raise ValueError(f"{oid}（{obj['type']}）缺必填屬性 {key}")
+			if "names" in spec and obj.get("name") not in spec["names"]:
+				raise ValueError(f"{oid}（{obj['type']}）的 name 只能是 {spec['names']}：{obj.get('name')}")
 			objects[oid] = obj
 		self.objects = objects
 		appends, term_lines = {}, {}
@@ -403,15 +410,20 @@ class Compiler:
 	def anchored_start(self, a):
 		beat = self.beats[a["beat"]]
 		if a["cue"] is not None:
-			return beat["t0"] + (beat["t1"] - beat["t0"]) * beat["say"].index(a["cue"]) / len(beat["say"])
+			t = beat["t0"] + (beat["t1"] - beat["t0"]) * beat["say"].index(a["cue"]) / len(beat["say"])
+			# 同頁可以提前到上一句的句尾；換頁第一句不提前，鏡頭還沒到
+			prev = self.beats[a["beat"] - 1] if a["beat"] > 0 else None
+			floor = prev["t1"] if prev and prev["scene"] == beat["scene"] else beat["t0"]
+			return max(t - CUE_LEAD, floor)
 		if a["first"]:
 			return beat["t0"]
 		return None
 
 	def time_actions(self):
-		scene_end = {}
+		scene_end, scene_start = {}, {}
 		for b in self.beats:
-			scene_end[b["scene"]] = b["t1"]
+			scene_end[b["scene"]] = b["t1"] - END_MARGIN
+			scene_start.setdefault(b["scene"], b["t0"])
 		prev = None
 		for idx, a in enumerate(self.actions):
 			if a["with"] == "prev" and prev is not None and not a["first"]:
@@ -433,6 +445,13 @@ class Compiler:
 				dur = min(max(len(text) * spec["per_char"], spec["min"]), spec["max"])
 			else:
 				dur = spec["dur"]
+			limit = scene_end[a["scene"]]
+			if start + dur > limit + 1e-6:
+				# 先加快，快到一半還收不完才整個往前挪
+				dur = max(limit - start, dur / 2)
+				if start + dur > limit + 1e-6:
+					start = a["t0"] = max(limit - dur, scene_start[a["scene"]])
+					self.warnings.append(f"{self.where(a)} 句尾前收不完，往前挪到 {start:.2f}s")
 			a["t1"] = start + dur
 			prev = a
 
@@ -517,7 +536,7 @@ class Compiler:
 				enters.append(0.0)
 			else:
 				prev_last = max(b["t1"] for b in self.beats if b["scene"] == si - 1)
-				enters.append(max(prev_last, first["t0"] - SCENE_LEAD))
+				enters.append(max(prev_last - SCENE_CAM_EARLY, 0.0))
 		self.enters = enters
 		# 事件：(時間, 順序, 種類, 資料)
 		events = [(t, 0, si, "scene", si) for si, t in enumerate(enters)]
@@ -603,7 +622,7 @@ class Compiler:
 		for k, b in enumerate(self.beats):
 			end = self.beats[k + 1]["t0"] if k + 1 < len(self.beats) else self.duration
 			subtitles.append({"t0": b["t0"], "t1": end, "text": b["say"]})
-		camera = [{"t": t, "dur": 1.0, "kind": "scene", "scene": si} for si, t in enumerate(self.enters)]
+		camera = [{"t": t, "dur": SCENE_CAM_DUR, "kind": "scene", "scene": si} for si, t in enumerate(self.enters)]
 		for a in self.actions:
 			if a["act"] in ("focus", "wide"):
 				camera.append({"t": a["t0"], "dur": a["t1"] - a["t0"], "kind": a["act"], "target": a["target"], "scene": a["scene"]})

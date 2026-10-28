@@ -532,6 +532,19 @@
 					"blocks": true
 				}
 			}
+		},
+		"icon": {
+			"req": [
+				"name"
+			],
+			"opt": [
+				"caption"
+			],
+			"names": [
+				"gear"
+			],
+			"anchors": [],
+			"actions": {}
 		}
 	}
 }
