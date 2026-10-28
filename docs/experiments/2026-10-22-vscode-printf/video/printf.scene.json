@@ -1,0 +1,392 @@
+{
+	"version": 1,
+	"title": "按 Run Code 之後，printf 都沒出來？",
+	"tag": "VS Code",
+	"corner_note": "Windows＋Code Runner 實測",
+	"objects": [
+		{
+			"id": "code",
+			"type": "code",
+			"caption": "s1_scanf.c",
+			"lines": [
+				"#include <stdio.h>",
+				"",
+				"int main(void) {",
+				"    int n;",
+				"    printf(\"請輸入一個整數: \");",
+				"    scanf(\"%d\", &n);",
+				"    printf(\"你輸入的是 %d\\n\", n);",
+				"    return 0;",
+				"}"
+			]
+		},
+		{
+			"id": "out",
+			"type": "output",
+			"label": "輸出面板（Code Runner 預設）",
+			"max_text": "[Running] s1_scanf.exe"
+		},
+		{
+			"id": "buf",
+			"type": "cells",
+			"count": 8,
+			"label": "緩衝區：printf 的字先放這裡",
+			"tail": "還沒送出去"
+		},
+		{
+			"id": "ro",
+			"type": "note",
+			"text": "輸出面板只能看，不能打字",
+			"style": "accent"
+		},
+		{
+			"id": "keys",
+			"type": "note",
+			"text": "Ctrl + ,",
+			"style": "accent"
+		},
+		{
+			"id": "or",
+			"type": "note",
+			"text": "或",
+			"style": "small"
+		},
+		{
+			"id": "gear_icon",
+			"type": "icon",
+			"name": "gear",
+			"caption": "左下角"
+		},
+		{
+			"id": "gear",
+			"preset": "vscode.gear_menu"
+		},
+		{
+			"id": "settings",
+			"type": "window",
+			"title": "設定",
+			"body": [
+				{
+					"field": {
+						"id": "q"
+					}
+				},
+				{
+					"list": {
+						"rows": [
+							{
+								"id": "r0",
+								"text": "□ Code-runner: Run In Terminal"
+							}
+						],
+						"min_rows": 1
+					}
+				}
+			]
+		},
+		{
+			"id": "done_tip",
+			"type": "note",
+			"text": "打勾，在終端機執行",
+			"style": "small"
+		},
+		{
+			"id": "term",
+			"type": "terminal",
+			"title": "終端機",
+			"prompt": "PS C:\\cs101>"
+		},
+		{
+			"id": "mouse",
+			"type": "cursor"
+		}
+	],
+	"scenes": [
+		{
+			"id": "stuck",
+			"title": "按了 Run Code，結果卡住了",
+			"label": "① 症狀",
+			"layout": {
+				"stack": [
+					"code",
+					"out"
+				]
+			},
+			"beats": [
+				{
+					"say": "我們用 Code Runner 執行這支程式，",
+					"do": [
+						{
+							"act": "show",
+							"target": "code"
+						},
+						{
+							"act": "show",
+							"target": "out",
+							"with": "prev"
+						},
+						{
+							"act": "append",
+							"target": "out",
+							"text": "[Running] s1_scanf.exe",
+							"cue": "執行"
+						}
+					]
+				},
+				{
+					"say": "結果「請輸入一個整數」沒有出現，程式也一直卡著不動。",
+					"do": [
+						{
+							"act": "highlight",
+							"target": "code",
+							"line": 5,
+							"cue": "請輸入"
+						},
+						{
+							"act": "underline",
+							"target": "out:text",
+							"cue": "卡著"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "why",
+			"title": "字卡在緩衝區",
+			"label": "② 原因",
+			"layout": {
+				"stack": [
+					"buf",
+					"ro"
+				]
+			},
+			"beats": [
+				{
+					"say": "因為 printf 印出來的字，會先放進一個暫存區，叫做緩衝區。",
+					"do": [
+						{
+							"act": "show",
+							"target": "buf"
+						},
+						{
+							"act": "fill",
+							"target": "buf",
+							"values": [
+								"請",
+								"輸",
+								"入",
+								"一",
+								"個",
+								"整",
+								"數",
+								":"
+							],
+							"cue": "放進"
+						}
+					]
+				},
+				{
+					"say": "送到輸出面板的時候，這些字不會馬上送出去，要等程式結束才一起出來。",
+					"do": [
+						{
+							"act": "brace",
+							"target": "buf",
+							"range": [
+								0,
+								7
+							],
+							"label": "還在這裡",
+							"cue": "不會馬上"
+						}
+					]
+				},
+				{
+					"say": "而且輸出面板只能看、不能打字，所以 scanf 永遠等不到我們的輸入。",
+					"do": [
+						{
+							"act": "show",
+							"target": "ro",
+							"cue": "只能看"
+						},
+						{
+							"act": "write",
+							"target": "ro",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "open",
+			"title": "先打開設定",
+			"label": "③ 打開設定",
+			"layout": {
+				"stack": [
+					{
+						"row": [
+							"keys",
+							"or",
+							"gear_icon"
+						]
+					},
+					"gear"
+				]
+			},
+			"beats": [
+				{
+					"say": "解法是改一個設定。先按 Ctrl 加逗號打開設定，",
+					"spoken": "解法是改一個設定。先按 Control 加逗號打開設定，",
+					"do": [
+						{
+							"act": "show",
+							"target": "keys",
+							"cue": "逗號"
+						}
+					]
+				},
+				{
+					"say": "或是點左下角的齒輪，選單跳出來，再點設定。",
+					"do": [
+						{
+							"act": "show",
+							"target": "or",
+							"cue": "或是"
+						},
+						{
+							"act": "show",
+							"target": "gear_icon",
+							"with": "prev"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "gear_icon",
+							"cue": "齒輪"
+						},
+						{
+							"act": "show",
+							"target": "gear",
+							"cue": "選單"
+						},
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "gear:settings",
+							"cue": "點設定"
+						},
+						{
+							"act": "circle",
+							"target": "gear:settings",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "fix",
+			"title": "改一個設定就好",
+			"label": "④ 改設定",
+			"layout": {
+				"stack": [
+					"settings",
+					"done_tip"
+				]
+			},
+			"beats": [
+				{
+					"say": "在搜尋框打 run in terminal，",
+					"do": [
+						{
+							"act": "show",
+							"target": "settings",
+							"cue": "搜尋框"
+						},
+						{
+							"act": "input",
+							"target": "settings:q",
+							"text": "run in terminal",
+							"cue": "run"
+						}
+					]
+				},
+				{
+					"say": "把這一項勾起來就好了。",
+					"do": [
+						{
+							"act": "click",
+							"target": "mouse",
+							"on": "settings:r0",
+							"cue": "勾起來"
+						},
+						{
+							"act": "circle",
+							"target": "settings:r0",
+							"with": "prev"
+						},
+						{
+							"act": "show",
+							"target": "done_tip",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "ok",
+			"title": "改在終端機跑，就正常了",
+			"label": "⑤ 結果",
+			"layout": {
+				"stack": [
+					"term"
+				]
+			},
+			"beats": [
+				{
+					"say": "再執行一次，程式改在終端機裡跑，提示字馬上出現，我們打個五按 Enter，",
+					"do": [
+						{
+							"act": "show",
+							"target": "term"
+						},
+						{
+							"act": "type",
+							"target": "term",
+							"text": ".\\s1_scanf",
+							"cue": "再執行"
+						},
+						{
+							"act": "print",
+							"target": "term",
+							"lines": [
+								"請輸入一個整數:"
+							],
+							"cue": "提示字"
+						},
+						{
+							"act": "input",
+							"target": "term",
+							"text": "5"
+						}
+					]
+				},
+				{
+					"say": "結果就印出來啦。",
+					"do": [
+						{
+							"act": "print",
+							"target": "term",
+							"lines": [
+								"你輸入的是 5"
+							],
+							"cue": "印出來"
+						}
+					]
+				}
+			]
+		}
+	]
+}

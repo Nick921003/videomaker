@@ -1,0 +1,197 @@
+{
+	"1": {
+		"seed": 4,
+		"text": "這是一份作業：讓你輸入成績，再把成績印出來。",
+		"suspicious": false
+	},
+	"2": {
+		"seed": 3,
+		"text": "程式寫好了，我們按右上角這個三角形，用 Code Runner 跑跑看。",
+		"suspicious": false
+	},
+	"3": {
+		"seed": 4,
+		"text": "結果什麼都沒有出來，輸出面板只有一行 Running，程式就停在這裡。",
+		"suspicious": false
+	},
+	"4": {
+		"seed": 3,
+		"text": "很多同學第一次用 VS Code 跑程式，都卡在這裡。",
+		"suspicious": false
+	},
+	"5": {
+		"seed": 5,
+		"text": "我們畫到黑板上看。照順序，程式應該先印出「請輸入成績」，再停下來等你打字。",
+		"suspicious": false
+	},
+	"6": {
+		"seed": 4,
+		"text": "可是右邊的輸出面板，提示字該出現的地方是空的，程式就一直停在這裡等。",
+		"suspicious": false
+	},
+	"13": {
+		"seed": 2,
+		"text": "那要怎麼辦呢？網路上有一個解法，在 printf 後面加一行 fflush。",
+		"suspicious": false
+	},
+	"36": {
+		"seed": 5,
+		"text": "輸入 85，按 Enter，結果就出來了。",
+		"suspicious": false
+	},
+	"9": {
+		"seed": 5,
+		"text": "然後，printf 要印的字不會直接到畫面上，會先放進一個暫存的地方，這叫緩衝區。",
+		"suspicious": false
+	},
+	"17": {
+		"seed": 5,
+		"text": "問題是，輸出面板是唯讀的，只能看、不能打字。",
+		"suspicious": false
+	},
+	"7": {
+		"seed": 1,
+		"text": "奇怪，程式明明有寫 printf，為什麼提示字沒有出來呢？",
+		"suspicious": false
+	},
+	"8": {
+		"seed": 6,
+		"text": "先看程式是在哪裡跑。Code Runner 沒改設定的話，是在輸出面板跑。",
+		"suspicious": false
+	},
+	"10": {
+		"seed": 7,
+		"text": "在輸出面板跑的時候，緩衝區的字不會馬上印出來。",
+		"suspicious": false
+	},
+	"11": {
+		"seed": 5,
+		"text": "要等整支程式跑完，這些字才會一起出來。",
+		"suspicious": false
+	},
+	"12": {
+		"seed": 5,
+		"text": "同樣這支程式，如果改在右邊的終端機跑，printf 一執行，字就會顯示出來。",
+		"suspicious": false
+	},
+	"14": {
+		"seed": 1,
+		"text": "fflush 會把緩衝區裡的字推出去，不用等程式結束。",
+		"suspicious": false
+	},
+	"15": {
+		"seed": 4,
+		"text": "所以右邊這行提示字就出來了。",
+		"suspicious": false
+	},
+	"16": {
+		"seed": 1,
+		"text": "可是程式還有下一行 scanf，要等你打數字。",
+		"suspicious": false
+	},
+	"18": {
+		"seed": 6,
+		"text": "你從鍵盤打的數字送不進去，scanf 就一直等。",
+		"suspicious": false
+	},
+	"19": {
+		"seed": 8,
+		"text": "一開始程式停在那裡不動，就是因為 scanf 在等你輸入。",
+		"suspicious": false
+	},
+	"21": {
+		"seed": 2,
+		"text": "我們直接到電腦上做一次。",
+		"suspicious": false
+	},
+	"22": {
+		"seed": 8,
+		"text": "先看加了 fflush 的這支，按三角形跑，提示字出來了。",
+		"suspicious": false
+	},
+	"23": {
+		"seed": 2,
+		"text": "可是想在輸出面板打數字，下面就說這裡是唯讀的。",
+		"suspicious": false
+	},
+	"24": {
+		"seed": 3,
+		"text": "唯讀就是只能看，所以數字打不進去。",
+		"suspicious": false
+	},
+	"25": {
+		"seed": 8,
+		"text": "先別急著改設定，先按右上角這個紅色方塊，把卡住的程式停掉。",
+		"suspicious": false
+	},
+	"26": {
+		"seed": 3,
+		"text": "為什麼要先停？因為程式卡著，會一直佔著執行檔。",
+		"suspicious": false
+	},
+	"27": {
+		"seed": 5,
+		"text": "沒停掉的話，下次編譯會失敗，出現 Permission denied。",
+		"suspicious": false
+	},
+	"28": {
+		"seed": 3,
+		"text": "停掉之後，我們讓 Code Runner 改到終端機跑。",
+		"suspicious": false
+	},
+	"29": {
+		"seed": 5,
+		"text": "終端機就是下面這個可以打字的視窗。",
+		"suspicious": false
+	},
+	"30": {
+		"seed": 5,
+		"text": "先點左下角的齒輪，選設定。",
+		"suspicious": false
+	},
+	"31": {
+		"seed": 6,
+		"text": "在上面的搜尋框打 run in terminal。",
+		"suspicious": false
+	},
+	"32": {
+		"seed": 7,
+		"text": "找到 Code Runner 的 Run In Terminal，把它打勾。",
+		"suspicious": false
+	},
+	"33": {
+		"seed": 3,
+		"text": "這樣 Code Runner 以後都會在終端機跑。",
+		"suspicious": false
+	},
+	"35": {
+		"seed": 6,
+		"text": "這次在終端機跑，提示字直接出來了。",
+		"suspicious": false
+	},
+	"37": {
+		"seed": 6,
+		"text": "那如果在終端機裡卡住，要怎麼停呢？",
+		"suspicious": false
+	},
+	"38": {
+		"seed": 1,
+		"text": "左邊這個終端機，程式一樣停在等輸入。",
+		"suspicious": false
+	},
+	"39": {
+		"seed": 1,
+		"text": "先點一下終端機，讓它接收你按的鍵。",
+		"suspicious": false
+	},
+	"40": {
+		"seed": 8,
+		"text": "再按右邊這兩個鍵，Ctrl 加 C，程式就停了。",
+		"suspicious": false
+	},
+	"41": {
+		"seed": 7,
+		"text": "所以記得，程式要輸入東西，就要在終端機跑。",
+		"suspicious": false
+	}
+}
