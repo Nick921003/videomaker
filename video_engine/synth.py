@@ -26,8 +26,6 @@ llm.load_env()
 API_URL = os.environ.get("TTS_API_URL", "http://127.0.0.1:9880/tts")
 REF_AUDIO = os.environ.get("TTS_REF_AUDIO", "")
 REF_TEXT = os.environ.get("TTS_REF_TEXT", "")
-if not REF_AUDIO or not os.path.exists(REF_AUDIO):
-	raise SystemExit(f"找不到參考音訊，請在 .env 設 TTS_REF_AUDIO（目前：{REF_AUDIO or '未設定'}）")
 
 MAX_SINGLE_CHARS = 70  # 這個長度以內整句一次送（cut0），上下文完整最自然
 MIN_FRAG_CHARS = 12    # 真的要切時，片段不得短於這個字數；孤立片段會讓 AR 失控
@@ -64,6 +62,9 @@ def safe_fragments(text):
 
 
 def tts(text, speed):
+	# 真的要合成才檢查參考音：import 時就結束程式，沒有 .env 的環境連測試都載入不了（搬到 video-skills 時抓到）
+	if not REF_AUDIO or not os.path.exists(REF_AUDIO):
+		raise SystemExit(f"找不到參考音訊，請在 .env 設 TTS_REF_AUDIO（目前：{REF_AUDIO or '未設定'}）")
 	payload = {
 		"text": text,
 		"text_lang": "zh",

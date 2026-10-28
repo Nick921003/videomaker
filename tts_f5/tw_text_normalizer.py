@@ -137,7 +137,8 @@ def normalize_tw_teaching_text(text: str, auto_zh_lead: bool = True) -> str:
     # 9. 增加語音換氣邊界
     s = re.sub(r"加加\s*跟\s*加加", "加加，跟加加", s)
 
-    # 10. 清理多餘空白與標點
+    # 10. 清理多餘空白與標點；引號書名號不唸（F5 會把「唸成字母 A）
+    s = re.sub(r"[「」『』“”‘’《》〈〉]", "", s)
     s = re.sub(r"\s+", " ", s)
     s = re.sub(rf"(?<=[{CJK}])\s+(?=[{CJK}])", "", s)
     s = re.sub(rf"(?<=[{CJK}])(?=[A-Za-z])", " ", s)

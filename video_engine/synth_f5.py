@@ -22,7 +22,8 @@ import soundfile as sf
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tts_f5 import SR, F5Narrator  # noqa: E402
 
-F5_BASE = Path(os.environ.get("F5_BASE", "/mnt/g/我的雲端硬碟/論文研究/Analyses/TTS/F5-TTS"))
+# 權重與參考音在雲端硬碟（Colab 上是 /content/drive/MyDrive/論文研究/Analyses/TTS/F5-TTS），一律用環境變數指定，不寫死本機路徑
+F5_BASE = Path(os.environ.get("F5_BASE", "F5-TTS"))
 CKPT = os.environ.get("F5_CKPT", F5_BASE / "實驗/2026-10-19_參考音挑選/v4_未平滑權重.safetensors")
 REF = os.environ.get("F5_REF", F5_BASE / "實驗/2026-10-19_參考音挑選/參考音/T1_王老師_scanf與and_5.7秒.wav")
 REF_TEXT = os.environ.get("F5_REF_TEXT", "就是在 scanf 的時候，scanf 的時候你要在變數前面加一個 and。")
@@ -55,7 +56,7 @@ def main():
 	try:
 		voice = F5Narrator(CKPT, REF, REF_TEXT, seed=SEED, voices=voices, cache_dir=os.path.join(audio_dir, "f5_chunks"))
 	except FileNotFoundError as e:
-		raise SystemExit(f"找不到 {e}（G 槽沒掛上，或用 F5_CKPT／F5_REF 指定）")
+		raise SystemExit(f"找不到 {e}（設 F5_BASE 指到 F5-TTS 資料夾，或用 F5_CKPT／F5_REF 個別指定）")
 
 	jobs = [(s["slide_id"], i, a["text"]) for s in actions["slides"]
 		for i, a in enumerate(s["actions"]) if a["type"] == "speech"]

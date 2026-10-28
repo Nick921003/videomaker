@@ -75,6 +75,11 @@ class F5NarratorTextTest(unittest.TestCase):
 		self.assertIn("bit", calls[0][1])
 		self.assertNotEqual(en["digest"], v.chunk("像 for，就是把三件事寫在同一行。", voice="default")[1]["digest"])
 
+	def test_quote_marks_are_not_spoken(self):
+		# F5 會把「唸成字母 A（vscode_printf 旁白實測）
+		s = self.narrator().spoken("結果「請輸入一個整數」沒有出現，『緩衝區』“這裡”《手冊》")
+		self.assertEqual(s, "結果請輸入一個整數沒有出現，緩衝區這裡手冊")
+
 	def test_pronunciation_change_changes_cache_key(self):
 		# 文字沒變但拼音變了，快取不能沿用舊音檔
 		a = self.narrator(pronunciation={"垃圾": "lè sè"})._pron_tag
