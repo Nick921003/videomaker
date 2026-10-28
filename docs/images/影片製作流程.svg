@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 580" width="1080" height="580" font-family="'Noto Sans TC','Microsoft JhengHei','PingFang TC',sans-serif">
+	<defs>
+		<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+			<path d="M0 0L10 5L0 10z" fill="#555"/>
+		</marker>
+		<style>
+			.done { fill: #e7f3eb; stroke: #2f7d4f; stroke-width: 2; }
+			.todo { fill: #f6f6f6; stroke: #9a9a9a; stroke-width: 2; stroke-dasharray: 7 5; }
+			.main { fill: #cfe9d8; stroke: #1f6b40; stroke-width: 3; }
+			.t { font-size: 17px; fill: #222; text-anchor: middle; }
+			.s { font-size: 13px; fill: #555; text-anchor: middle; }
+			.lab { font-size: 14px; fill: #2f5d8a; font-weight: 600; }
+			.ln { stroke: #555; stroke-width: 2; fill: none; marker-end: url(#a); }
+			.lnd { stroke: #888; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#a); }
+			.badge { fill: #d9534f; }
+			.bt { font-size: 12px; fill: #fff; text-anchor: middle; font-weight: 600; }
+		</style>
+	</defs>
+	<rect width="1080" height="580" fill="#ffffff"/>
+
+	<!-- 學生端入口 -->
+	<rect class="todo" x="600" y="12" width="300" height="48" rx="10"/>
+	<text class="t" x="750" y="42">學生端：提出問題 → 對應到單元</text>
+	<path class="lnd" d="M640 60 L555 106"/>
+
+	<!-- 共用前半段 -->
+	<rect x="18" y="92" width="1044" height="118" rx="14" fill="#f2f7fc" stroke="#c9dcee"/>
+	<text class="lab" x="32" y="202">共用前半段（影片、PPT 都走這段）</text>
+
+	<rect class="done" x="30" y="108" width="170" height="64" rx="10"/>
+	<text class="t" x="115" y="136">教材</text><text class="s" x="115" y="158">PDF／Markdown</text>
+	<rect class="todo" x="240" y="108" width="170" height="64" rx="10"/>
+	<text class="t" x="325" y="136">教材架構</text><text class="s" x="325" y="158">重點、講解、示範資料</text>
+	<rect class="todo" x="450" y="108" width="170" height="64" rx="10"/>
+	<text class="t" x="535" y="136">拆單元</text><text class="s" x="535" y="158">一個單元一個重點</text>
+	<rect class="todo" x="660" y="108" width="170" height="64" rx="10"/>
+	<text class="t" x="745" y="136">排問題鏈</text><text class="s" x="745" y="158">問題→解法→新問題</text>
+	<rect class="done" x="870" y="108" width="170" height="64" rx="10"/>
+	<text class="t" x="955" y="136">每頁骨架</text><text class="s" x="955" y="158">這頁要讓學生懂什麼</text>
+
+	<path class="ln" d="M200 140 H238"/><path class="ln" d="M410 140 H448"/><path class="ln" d="M620 140 H658"/><path class="ln" d="M830 140 H868"/>
+	<rect class="badge" x="1000" y="98" width="56" height="22" rx="11"/><text class="bt" x="1028" y="114">人工審</text>
+
+	<!-- 分支 -->
+	<rect class="done" x="240" y="252" width="170" height="56" rx="10"/>
+	<text class="t" x="325" y="278">心智圖</text><text class="s" x="325" y="298">點一下長一層</text>
+	<rect class="main" x="450" y="252" width="170" height="56" rx="10"/>
+	<text class="t" x="535" y="286" font-weight="700">影片</text>
+	<rect class="todo" x="660" y="252" width="170" height="56" rx="10"/>
+	<text class="t" x="745" y="278">講義 PPT</text><text class="s" x="745" y="298">尚未接上共用段</text>
+	<rect class="todo" x="870" y="252" width="170" height="56" rx="10"/>
+	<text class="t" x="955" y="278">漫畫、測驗、閃卡</text><text class="s" x="955" y="298">之後</text>
+
+	<path class="ln" d="M325 172 V250"/>
+	<path class="ln" d="M935 172 L560 250"/>
+	<path class="lnd" d="M955 172 L760 250"/>
+	<path class="lnd" d="M975 172 V250"/>
+
+	<!-- 影片後半段 -->
+	<rect x="18" y="352" width="1044" height="124" rx="14" fill="#f3faf5" stroke="#cfe6d7"/>
+	<text class="lab" x="32" y="468">影片後半段（已跑通，範例：printf 黑板片）</text>
+	<path class="ln" d="M535 308 V330 H115 V366"/>
+
+	<rect class="done" x="30" y="368" width="170" height="70" rx="10"/>
+	<text class="t" x="115" y="396">分鏡表</text><text class="s" x="115" y="418">版型＋每句旁白＋畫什麼</text>
+	<rect class="done" x="240" y="368" width="170" height="70" rx="10"/>
+	<text class="t" x="325" y="396">旁白稿檢查</text><text class="s" x="325" y="418">台灣口語、擋 AI 腔</text>
+	<rect class="done" x="450" y="368" width="170" height="70" rx="10"/>
+	<text class="t" x="535" y="396">語音（F5-TTS）</text><text class="s" x="535" y="418">多 seed 機器自動挑</text>
+	<rect class="done" x="660" y="368" width="170" height="70" rx="10"/>
+	<text class="t" x="745" y="396">畫面</text><text class="s" x="745" y="418">黑板原理＋電腦操作</text>
+	<rect class="done" x="870" y="368" width="170" height="70" rx="10"/>
+	<text class="t" x="955" y="396">輸出成片</text><text class="s" x="955" y="418">Colab 渲染＋字幕</text>
+
+	<path class="ln" d="M200 403 H238"/><path class="ln" d="M410 403 H448"/><path class="ln" d="M620 403 H658"/><path class="ln" d="M830 403 H868"/>
+	<rect class="badge" x="1000" y="358" width="56" height="22" rx="11"/><text class="bt" x="1028" y="374">人工審</text>
+
+	<!-- 圖例 -->
+	<rect class="done" x="40" y="520" width="44" height="26" rx="6"/><text x="94" y="539" font-size="14" fill="#333">已跑通</text>
+	<rect class="todo" x="190" y="520" width="44" height="26" rx="6"/><text x="244" y="539" font-size="14" fill="#333">還沒自動化／還沒接上</text>
+	<rect class="badge" x="430" y="522" width="56" height="22" rx="11"/><text class="bt" x="458" y="538">人工審</text><text x="496" y="539" font-size="14" fill="#333">人工只留這兩關，其餘都有自動檢查</text>
+</svg>

@@ -60,3 +60,16 @@ D=$(mktemp -d); for f in c_loop c_string c_struct c_struct_combo c_struct_v3; do
 ## 風格
 
 縮排 **Tab（4 格）**。註解用**中文**，密度跟隨檔案既有慣例——稀疏但實在，只寫「為什麼」不寫「做什麼」。不新增第三方依賴（現有：Pillow、fontTools、python-pptx）。
+
+## 相關論文
+
+本專案的相關論文清單在 Obsidian vault `projects/videomaker-相關論文.md`（WSL 路徑 `/mnt/c/Users/pjw92/Desktop/Programming/Obsidian/Obsidian/projects/videomaker-相關論文.md`），由 paper-workshop 每日同步自動更新，含每篇「接到哪裡」與查核狀態。
+討論架構、方法選擇或寫報告前先查這份；引用論文說法要回原文核對，清單裡沒有的不要憑空補。專案內容有變（換模型、換架構）時，同步更新 `~/projects/paper-workshop/docs/專案清單.md`。
+
+## 參考紀錄
+
+參考或用到任何外部專案、模型、論文、方法（包括查過但沒用的），**當場**在 `docs/參考紀錄.md` 加一列：拿了什麼、用在哪、授權、狀態。不要等收尾才補。論文細節仍以 Obsidian 論文清單為準。
+
+## 同步到 video-skills
+
+影片相關的東西（`tts_f5/`、`video_engine/`、它們的測試與文件）**有任何新增或搬動**，就要對一次 `tools/video_skills_sync.py` 的 `INCLUDE`：新檔、新測試、新文件該不該帶過去、它用到的模組有沒有一起帶。腳本會用 import 追蹤自動擋下「用到卻沒帶」的專案模組，但新的測試與文件要自己決定要不要列進去。改完跑 `python3 tools/video_skills_sync.py`（不 commit），擋下的先修。推送走 `video-skills-sync` 技能。
