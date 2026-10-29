@@ -111,5 +111,73 @@ class TestModel(unittest.TestCase):
 		self.assertTrue(b["checks"]["run_in_terminal"])
 
 
+with open(os.path.join(ROOT, "video_engine", "themes", "vscode_dark.json"), encoding="utf-8") as _f:
+	THEME = json.load(_f)
+COLOR_FIELDS = ("fill", "stroke", "color")
+
+
+def theme_has(key):
+	v = THEME
+	for k in key.split("."):
+		v = v.get(k) if isinstance(v, dict) else None
+	return isinstance(v, str)
+
+
+class TestPaint(unittest.TestCase):
+	def test_指令顏色都是主題鍵(self):
+		desc, acts, tl = compiled()
+		for ops in probe("ops", desc, acts, [x / 6 * tl["duration"] for x in range(7)]):
+			self.assertTrue(ops)
+			for op in ops:
+				for f in COLOR_FIELDS:
+					if f in op:
+						self.assertTrue(theme_has(op[f]), (op["op"], f, op[f]))
+
+	def test_所有指令都在元件框內(self):
+		desc, acts, tl = compiled()
+		lay = probe("layout", desc, acts, [0])[0]
+		frame = {"x": 0, "y": 0, "w": lay["w"], "h": lay["h"]}
+		for ops in probe("ops", desc, acts, [x / 6 * tl["duration"] for x in range(7)]):
+			for op in ops:
+				if op["op"] == "rect":
+					self.assertTrue(inside(op, frame), op)
+				elif op["op"] == "text":
+					x0 = op["x"] - (op["w"] if op.get("align") == "end" else op["w"] / 2 if op.get("align") == "middle" else 0)
+					self.assertTrue(inside({"x": x0, "y": op["y"] - op["size"] / 2, "w": op["w"], "h": op["size"]}, frame), op)
+
+	def test_長輸出截斷不溢出(self):
+		long = "[Running] cd \"c:\\Users\\student\\c_homework\\\" && gcc score.c -o score && " + "很長的路徑" * 30
+		def edit(doc):
+			doc["scenes"][0]["beats"][0]["do"].append({"act": "run", "target": "vs", "output": [long]})
+		desc, acts, _ = compiled("vscode_min", edit)
+		run = act_time(acts, "run", 1)
+		lay = probe("layout", desc, acts, [0])[0]
+		p = lay["regions"]["panel"]
+		ops = probe("ops", desc, acts, [run["t1"] + 0.01])[0]
+		texts = [o for o in ops if o["op"] == "text" and p["y"] < o["y"] < p["y"] + p["h"]]
+		self.assertTrue(any(o["str"].endswith("…") for o in texts), [o["str"] for o in texts])
+		for o in texts:
+			self.assertLessEqual(o["x"] + o["w"], p["x"] + p["w"] + 0.5, o)
+
+	def test_svg決定性(self):
+		desc, acts, tl = compiled()
+		a, b = probe("svg", desc, acts, [tl["duration"] / 2, tl["duration"] / 2], theme=THEME)
+		self.assertEqual(a, b)
+		self.assertTrue(a.startswith("<svg"))
+		self.assertNotIn("NaN", a)
+		self.assertNotIn("undefined", a)
+
+	def test_元件不寫死色碼也不讀時鐘(self):
+		hexes = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+		banned = re.compile(r"Math\.random|Date\.now|performance\.now|new Date\(")
+		for dirpath, _, files in os.walk(os.path.join(ROOT, "video_engine", "components")):
+			for name in files:
+				if name.endswith(".js"):
+					with open(os.path.join(dirpath, name), encoding="utf-8") as f:
+						src = f.read()
+					self.assertIsNone(hexes.search(src), name)
+					self.assertIsNone(banned.search(src), name)
+
+
 if __name__ == "__main__":
 	unittest.main()

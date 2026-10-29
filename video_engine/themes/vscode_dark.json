@@ -6,6 +6,6 @@
 	"kw": "#569cd6", "ctl": "#c586c0", "fn": "#dcdcaa", "str": "#ce9178", "num": "#b5cea8", "vr": "#9cdcfe", "pl": "#d4d4d4",
 	"accent": "#0e7ad1", "link": "#3794ff", "file": "#519aba", "menu": "#252526", "menuLine": "#454545", "hover": "#04395e",
 	"win": "#1f1f1f", "winTitle": "#181818", "input": "#313131", "inputLine": "#454545", "tip": "#f3f3f3", "tipFg": "#1e1e1e",
-	"hl": "#ffd60a73",
+	"hl": "#ffd60a73", "stop": "#f14c4c", "status": "#007acc", "check": "#0078d4",
 	"ann": {"ink": "#f2f2f2", "muted": "#a0a0a0", "accent": "#ffd60a", "warn": "#ff4b3e", "ok": "#35d07f", "info": "#3794ff"}
 }
