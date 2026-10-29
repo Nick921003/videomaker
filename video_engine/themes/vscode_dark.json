@@ -1,0 +1,11 @@
+{
+	"name": "vscode_dark",
+	"label": "VS Code Dark+（仿真；色碼取自 printf 黑板片 vscodeMock，已對過實機截圖）",
+	"title": "#3c3c3c", "titleBox": "#2b2b2b", "fg": "#cccccc", "dim": "#a0a0a0", "act": "#333333", "actOn": "#ffffff", "actOff": "#9e9e9e",
+	"side": "#252526", "sel": "#37373d", "edit": "#1e1e1e", "tabBar": "#252526", "tabOff": "#2d2d2d", "line": "#3c3c3c", "lineNo": "#9e9e9e",
+	"kw": "#569cd6", "ctl": "#c586c0", "fn": "#dcdcaa", "str": "#ce9178", "num": "#b5cea8", "vr": "#9cdcfe", "pl": "#d4d4d4",
+	"accent": "#0e7ad1", "link": "#3794ff", "file": "#519aba", "menu": "#252526", "menuLine": "#454545", "hover": "#04395e",
+	"win": "#1f1f1f", "winTitle": "#181818", "input": "#313131", "inputLine": "#454545", "tip": "#f3f3f3", "tipFg": "#1e1e1e",
+	"hl": "#ffd60a73",
+	"ann": {"ink": "#f2f2f2", "muted": "#a0a0a0", "accent": "#ffd60a", "warn": "#ff4b3e", "ok": "#35d07f", "info": "#3794ff"}
+}

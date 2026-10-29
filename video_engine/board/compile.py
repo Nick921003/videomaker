@@ -31,6 +31,9 @@ END_MARGIN = SCENE_CAM_EARLY
 # 錨點比字音早一點出現，看起來才像跟著講；太早就變成搶話
 CUE_LEAD = 0.25
 CONTAINERS = ("stack", "row")
+with open(os.path.join(os.path.dirname(HERE), "themes", "tones.json"), encoding="utf-8") as _f:
+	TONES = tuple(json.load(_f)["tones"])
+MARKS = ("circle", "underline", "arrow")
 
 
 def file_digest(path):
@@ -333,6 +336,11 @@ class Compiler:
 					# 動作缺口：改成單純顯示目標，至少讓保底內容出現在畫面上
 					self.gaps.append({"kind": "action", "object": obj["id"], "wanted": f"{obj.get('_fallback_of') or obj['type']}.{act}", "fallback": "show", "where": where})
 					act, spec, args = "show", self.cat["generic_actions"]["show"], {}
+				if act in MARKS:
+					# 分鏡只寫語氣，顏色由各風格的主題決定
+					args.setdefault("tone", "accent")
+					if args["tone"] not in TONES:
+						raise ValueError(f"{where} 的語氣 {args['tone']} 不在 {TONES}")
 				for key in spec.get("req", []):
 					if key not in args:
 						raise ValueError(f"{where} 缺參數 {key}")

@@ -1,0 +1,7 @@
+{
+	"_doc": "分鏡只寫語氣，不寫顏色；各皮膚在這裡對應到自己主題檔的鍵（chalk 是 kit.js 的色字母）",
+	"tones": ["ink", "muted", "accent", "warn", "ok", "info"],
+	"board": {"ink": "text.body", "muted": "text.muted", "accent": "text.accent", "warn": "text.warn", "ok": "text.ok", "info": "text.info"},
+	"vscode": {"ink": "ann.ink", "muted": "ann.muted", "accent": "ann.accent", "warn": "ann.warn", "ok": "ann.ok", "info": "ann.info"},
+	"chalk": {"ink": "w", "muted": "m", "accent": "y", "warn": "p", "ok": "g", "info": "b"}
+}

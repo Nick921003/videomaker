@@ -353,3 +353,29 @@ class TestIconComponent(unittest.TestCase):
 	def test_icon_name不在清單內要報錯(self):
 		with self.assertRaises(ValueError):
 			compiled(self.doc(name="star"))
+
+
+class TestTones(unittest.TestCase):
+	def test_tones_各皮膚都對應六個語氣(self):
+		import json
+		themes = os.path.join(ROOT, "video_engine", "themes")
+		load = lambda n: json.load(open(os.path.join(themes, n), encoding="utf-8"))
+		tones, nb, vs = load("tones.json"), load("notebook.json"), load("vscode_dark.json")
+		self.assertEqual(tones["tones"], ["ink", "muted", "accent", "warn", "ok", "info"])
+		for skin in ("board", "vscode", "chalk"):
+			self.assertEqual(set(tones[skin]), set(tones["tones"]), skin)
+		dig = lambda d, path: __import__("functools").reduce(lambda o, k: o.get(k) if isinstance(o, dict) else None, path.split("."), d)
+		for tone, key in tones["board"].items():
+			self.assertIsInstance(dig(nb, key), str, key)
+		for tone, key in tones["vscode"].items():
+			self.assertIsInstance(dig(vs, key), str, key)
+
+	def test_通用標記的未知語氣要擋(self):
+		doc = scene_doc(beats_a=[{"say": "一二三四五", "do": [{"act": "write", "target": "q"}, {"act": "circle", "target": "q", "tone": "loud"}]}])
+		with self.assertRaisesRegex(ValueError, "loud"):
+			compiled(doc)
+
+	def test_通用標記沒寫語氣預設accent(self):
+		doc = scene_doc(beats_a=[{"say": "一二三四五", "do": [{"act": "write", "target": "q"}, {"act": "circle", "target": "q"}]}])
+		a = [x for x in compiled(doc)["actions"] if x["act"] == "circle"][0]
+		self.assertEqual(a["args"]["tone"], "accent")

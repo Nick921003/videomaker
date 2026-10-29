@@ -16,7 +16,7 @@
 
   // ---------------- palette: chalk colours and what they mean ----------------
   const C = { w: "#f2efe6", m: "#d6d2c4", y: "#f6d96b", p: "#f3a3ba", b: "#94cdea", g: "#aedb93", o: "#f5b26b" };
-  const TONE = { default: "w", ink: "w", muted: "m", accent: "y", warn: "p", ok: "g", accent2: "b", orange: "o" };
+  const TONE = { default: "w", ink: "w", muted: "m", accent: "y", warn: "p", ok: "g", accent2: "b", info: "b", orange: "o" };
   const tk = (t) => (t == null ? "w" : TONE[t] || (C[t] ? t : "w"));
   const color = (t) => (typeof t === "string" && (t[0] === "#" || t.indexOf("rgb") === 0) ? t : C[tk(t)]);
   const CHAPTER_TONES = ["p", "b", "y", "g", "o", "y", "b"];

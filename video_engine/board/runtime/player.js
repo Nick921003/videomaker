@@ -355,10 +355,10 @@
 	}
 	function drawMarks(t, world, states) {
 		api.setOwner('mark');
-		const accent = api.color('text.accent');
 		const taken = [], drawn = drawnBoxes();
 		for (const m of marks) {
 			if (t < m.t0) continue;
+			const accent = api.color(D.tones.board[(m.args && m.args.tone) || 'accent']);
 			const a = world.alpha(m.obj) * (1 - phase(t, m.tEnd, m.tEnd + MARK_FADE));
 			if (a < .004) continue;
 			const r = world.anchor(m.target);

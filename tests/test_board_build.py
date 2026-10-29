@@ -32,6 +32,7 @@ class TestBuild(unittest.TestCase):
 			self.assertEqual(data["theme"]["name"], "notebook")
 			self.assertIn("cells", data["catalog"]["types"])
 			self.assertIsNone(data["audio"])
+			self.assertEqual(data["tones"]["board"]["accent"], "text.accent")
 
 	def test_runtime_不寫死任何色碼(self):
 		for dirpath, _, files in os.walk(os.path.join(BOARD, "runtime")):

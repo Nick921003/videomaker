@@ -9,10 +9,16 @@
 			"dur": 0.4
 		},
 		"circle": {
-			"dur": 0.7
+			"dur": 0.7,
+			"opt": [
+				"tone"
+			]
 		},
 		"underline": {
-			"dur": 0.6
+			"dur": 0.6,
+			"opt": [
+				"tone"
+			]
 		},
 		"arrow": {
 			"dur": 0.8,
@@ -20,7 +26,8 @@
 				"to"
 			],
 			"opt": [
-				"label"
+				"label",
+				"tone"
 			],
 			"anchor_args": [
 				"to"

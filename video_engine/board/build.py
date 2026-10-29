@@ -20,6 +20,8 @@ def build(timeline, out_dir, audio=None, theme="notebook"):
 		theme_data = json.load(f)
 	with open(os.path.join(HERE, "catalog.json"), encoding="utf-8") as f:
 		catalog = json.load(f)
+	with open(os.path.join(THEMES, "tones.json"), encoding="utf-8") as f:
+		tones = json.load(f)
 	os.makedirs(out_dir, exist_ok=True)
 	dst_runtime = os.path.join(out_dir, "runtime")
 	if os.path.exists(dst_runtime):
@@ -35,7 +37,7 @@ def build(timeline, out_dir, audio=None, theme="notebook"):
 	if audio:
 		audio_name = "audio" + os.path.splitext(audio)[1]
 		shutil.copyfile(audio, os.path.join(out_dir, audio_name))
-	data = {"timeline": timeline, "theme": theme_data, "catalog": catalog, "audio": audio_name}
+	data = {"timeline": timeline, "theme": theme_data, "catalog": catalog, "tones": tones, "audio": audio_name}
 	with open(os.path.join(out_dir, "board_data.js"), "w", encoding="utf-8") as f:
 		f.write("window.BOARD_DATA = " + json.dumps(data, ensure_ascii=False) + ";\n")
 	return out_dir
