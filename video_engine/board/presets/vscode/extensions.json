@@ -1,0 +1,8 @@
+{
+	"search": "code runner",
+	"items": [
+		{"id": "code_runner", "name": "Code Runner", "author": "Jun Han", "desc": "Run C, C++, Java, JS, PHP, Python, Perl, Ruby, Go, Lua, Groovy, PowerShell, CMD, BASH, F#, C#, VBScript, TypeScript, CoffeeScript, Scala, Swift…", "installed": true},
+		{"id": "cpptools", "name": "C/C++", "author": "Microsoft", "desc": "C/C++ IntelliSense, debugging, and code browsing.", "installed": true}
+	],
+	"_doc": "延伸模組頁；沒有實機截圖，文字取自 VS Code Marketplace 的擴充說明，要用在成品前先對實機"
+}

@@ -206,6 +206,8 @@ class Compiler:
 					raise ValueError(f"{oid}（{obj['type']}）缺必填屬性 {key}")
 			if "names" in spec and obj.get("name") not in spec["names"]:
 				raise ValueError(f"{oid}（{obj['type']}）的 name 只能是 {spec['names']}：{obj.get('name')}")
+			if obj["type"] == "vscode":
+				self.check_vscode(obj, spec)
 			objects[oid] = obj
 		self.objects = objects
 		appends, term_lines = {}, {}
@@ -221,6 +223,25 @@ class Compiler:
 						term_lines[oid] = term_lines.get(oid, 0) + len(a.get("lines") or [])
 		self.total_appends = appends
 		self.term_lines = term_lines
+
+	def check_vscode(self, obj, spec):
+		oid = obj["id"]
+		if not isinstance(obj["files"], dict) or not obj["files"]:
+			raise ValueError(f"{oid}（vscode）的 files 要是 {{檔名: [行...]}}")
+		obj.setdefault("open", next(iter(obj["files"])))
+		if obj["open"] not in obj["files"]:
+			raise ValueError(f"{oid}（vscode）open 的檔不在 files：{obj['open']}")
+		if obj.setdefault("panel", "output") not in spec["panels"]:
+			raise ValueError(f"{oid}（vscode）panel 只能是 {spec['panels']}：{obj['panel']}")
+		presets = {}
+		for kind, suffix in (("menus", "_menu"), ("pages", "")):
+			for name in obj.get(kind, []):
+				if name not in spec[kind]:
+					raise ValueError(f"{oid}（vscode）沒有這個{kind}：{name}（只有 {spec[kind]}）")
+				with open(os.path.join(HERE, "presets", "vscode", name + suffix + ".json"), encoding="utf-8") as f:
+					presets[name] = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+		# 預設內容放進物件，項目的 id 才能當 {key} 錨點
+		obj["_presets"] = presets
 
 	def expand_preset(self, raw):
 		"""已核對過的介面（例：win11.env_vars）：preset 提供全部屬性，物件自己寫的屬性覆寫它。"""
@@ -249,6 +270,12 @@ class Compiler:
 				if name in declared_keys(obj):
 					return obj_id
 				continue
+			if "{file}" in pat:
+				m = re.fullmatch(re.escape(pat).replace(re.escape("{file}"), "(.+)"), name)
+				known = set(obj["files"]) | (set(obj.get("explorer", [])) if pat.startswith("file:") else set())
+				if m and m.group(1) in known:
+					return obj_id
+				continue
 			m = re.fullmatch(pat.replace("{n}", r"(\d+)"), name)
 			if not m:
 				continue
@@ -266,6 +293,9 @@ class Compiler:
 			return (0, obj["count"])
 		if t == "code" and pat == "L{n}":
 			return (1, len(obj["lines"]) + 1)
+		if t == "vscode" and pat == "L{n}":
+			# 編譯時不知道當下開哪個檔，取最長的檔
+			return (1, max(len(v) for v in obj["files"].values()) + 1)
 		if t == "metrics" and pat == "m{n}":
 			return (0, len(obj["items"]))
 		if t == "list" and pat == "r{n}":
@@ -385,6 +415,15 @@ class Compiler:
 					raise ValueError(f"{where} range 不合法：{r}")
 		elif obj["type"] == "code" and act == "highlight" and not index_ok(args["line"], 1, len(obj["lines"]) + 1):
 			raise ValueError(f"{where} line 超出行數：{args['line']}")
+		elif obj["type"] == "vscode":
+			if act == "highlight":
+				n = len(obj["files"][args.get("file", obj["open"])])
+				if not args["lines"] or not all(index_ok(v, 1, n + 1) for v in args["lines"]):
+					raise ValueError(f"{where} lines 超出行數（1..{n}）：{args['lines']}")
+			elif act == "open" and args["file"] not in obj["files"]:
+				raise ValueError(f"{where} 開的檔不在 files：{args['file']}")
+			elif act in ("menu", "page") and args["name"] not in obj["_presets"]:
+				raise ValueError(f"{where} 沒在物件的 {act}s 宣告：{args['name']}")
 
 	def seq_count(self, spec, args, obj, appended, where):
 		kind = spec.get("seq")

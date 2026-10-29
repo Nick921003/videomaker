@@ -1,0 +1,23 @@
+{
+	"version": 1,
+	"title": "VS Code 元件：min",
+	"tag": "元件回歸",
+	"objects": [
+		{"id": "vs", "type": "vscode", "files": {"hello.c": ["#include <stdio.h>", "int main(void) {", "\tprintf(\"hi\\n\");", "\treturn 0;", "}"]}},
+		{"id": "cursor", "type": "cursor"}
+	],
+	"scenes": [
+		{
+			"id": "run",
+			"title": "按下執行",
+			"layout": {"stack": ["vs"]},
+			"beats": [
+				{"say": "按右上角的三角形執行。", "do": [
+					{"act": "show", "target": "vs"},
+					{"act": "click", "target": "cursor", "on": "vs:run", "cue": "三角形"},
+					{"act": "run", "target": "vs", "output": ["hi"]}
+				]}
+			]
+		}
+	]
+}

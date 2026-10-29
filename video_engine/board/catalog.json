@@ -552,6 +552,107 @@
 			],
 			"anchors": [],
 			"actions": {}
+		},
+		"vscode": {
+			"req": [
+				"files"
+			],
+			"opt": [
+				"open",
+				"explorer",
+				"folder",
+				"panel",
+				"menus",
+				"pages"
+			],
+			"panels": [
+				"output",
+				"terminal"
+			],
+			"menus": [
+				"gear"
+			],
+			"pages": [
+				"settings",
+				"extensions"
+			],
+			"anchors": [
+				"run",
+				"gear",
+				"explorer",
+				"editor",
+				"panel",
+				"panel:end",
+				"settings:search",
+				"L{n}",
+				"tab:{file}",
+				"file:{file}",
+				"{key}"
+			],
+			"actions": {
+				"open": {
+					"dur": 0.5,
+					"req": [
+						"file"
+					]
+				},
+				"highlight": {
+					"dur": 0.5,
+					"req": [
+						"lines"
+					]
+				},
+				"run": {
+					"dur": 0.8,
+					"opt": [
+						"output"
+					],
+					"blocks": true
+				},
+				"print": {
+					"seq": "lines",
+					"per": [
+						0.2,
+						0.6
+					],
+					"req": [
+						"lines"
+					],
+					"blocks": true
+				},
+				"input": {
+					"seq": "chars",
+					"per": [
+						0.08,
+						0.16
+					],
+					"req": [
+						"text"
+					],
+					"blocks": true
+				},
+				"stop": {
+					"dur": 0.5
+				},
+				"menu": {
+					"dur": 0.5,
+					"req": [
+						"name"
+					]
+				},
+				"page": {
+					"dur": 0.6,
+					"req": [
+						"name"
+					]
+				},
+				"check": {
+					"dur": 0.3
+				},
+				"close": {
+					"dur": 0.4
+				}
+			}
 		}
 	}
 }

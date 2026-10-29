@@ -1,0 +1,56 @@
+{
+	"version": 1,
+	"title": "VS Code 元件：full",
+	"tag": "元件回歸",
+	"objects": [
+		{"id": "vs", "type": "vscode", "folder": "C_HOMEWORK", "panel": "terminal", "open": "score.c",
+			"explorer": ["score.c", "hello.c", "score.exe"],
+			"menus": ["gear"], "pages": ["settings", "extensions"],
+			"files": {
+				"score.c": ["#include <stdio.h>", "", "int main(void) {", "\tint score;", "\tprintf(\"請輸入成績: \");", "\tscanf(\"%d\", &score);", "\tprintf(\"你的成績是 %d\\n\", score);", "\treturn 0;", "}"],
+				"hello.c": ["#include <stdio.h>", "int main(void) {", "\tprintf(\"hello\\n\");", "}"]
+			}},
+		{"id": "cursor", "type": "cursor"}
+	],
+	"scenes": [
+		{
+			"id": "code",
+			"title": "看程式",
+			"layout": {"stack": ["vs"]},
+			"beats": [
+				{"say": "先印出請輸入成績，再讀進來。", "do": [
+					{"act": "show", "target": "vs"},
+					{"act": "highlight", "target": "vs", "lines": [5], "cue": "請輸入成績"},
+					{"act": "underline", "target": "vs:L6", "cue": "讀進來", "tone": "info"}
+				]},
+				{"say": "按三角形，在終端機輸入八十五。", "do": [
+					{"act": "click", "target": "cursor", "on": "vs:run", "cue": "三角形"},
+					{"act": "circle", "target": "vs:run", "cue": "三角形", "tone": "warn"},
+					{"act": "run", "target": "vs", "output": ["請輸入成績: "], "cue": "終端機"},
+					{"act": "input", "target": "vs", "text": "85", "cue": "八十五"},
+					{"act": "print", "target": "vs", "lines": ["你的成績是 85"]}
+				]}
+			]
+		},
+		{
+			"id": "settings",
+			"title": "改設定",
+			"layout": {"stack": ["vs"]},
+			"beats": [
+				{"say": "點左下角齒輪，選設定。", "do": [
+					{"act": "click", "target": "cursor", "on": "vs:gear", "cue": "齒輪"},
+					{"act": "menu", "target": "vs", "name": "gear", "cue": "齒輪"},
+					{"act": "click", "target": "cursor", "on": "vs:settings", "cue": "設定"},
+					{"act": "page", "target": "vs", "name": "settings", "cue": "設定"}
+				]},
+				{"say": "勾起在終端機執行，再看延伸模組。", "do": [
+					{"act": "circle", "target": "vs:run_in_terminal", "cue": "在終端機執行", "tone": "ok"},
+					{"act": "check", "target": "vs:run_in_terminal", "cue": "勾起"},
+					{"act": "page", "target": "vs", "name": "extensions", "cue": "延伸模組"},
+					{"act": "circle", "target": "vs:code_runner", "cue": "延伸模組"},
+					{"act": "close", "target": "vs"}
+				]}
+			]
+		}
+	]
+}

@@ -1,0 +1,10 @@
+{
+	"search": "run in terminal",
+	"found": "找到 15 項設置",
+	"items": [
+		{"id": "run_in_terminal", "group": "Code-runner", "title": "Run In Terminal", "desc": "Whether to run code in Integrated Terminal.", "check": false},
+		{"id": "verilog_run_in_terminal", "group": "Verilog", "title": "Run In Terminal", "desc": "Whether to run code in Integrated Terminal.", "check": false},
+		{"id": "focus_after_run", "group": "Terminal › Integrated", "title": "Focus After Run", "desc": "控制是否在執行「終端機: 在使用中終端機中執行選取的文字」之後，將集中處理終端機、可存取的緩衝區或兩者。", "select": "none"}
+	],
+	"_doc": "設定頁搜尋 run in terminal 的前三項（繁中介面）；以真實截圖核對：docs/experiments/2026-10-22-vscode-printf/截圖/printf/B1_設定_RunInTerminal未勾.png、B2_設定_RunInTerminal已勾.png"
+}

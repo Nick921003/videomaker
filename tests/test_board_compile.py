@@ -379,3 +379,50 @@ class TestTones(unittest.TestCase):
 		doc = scene_doc(beats_a=[{"say": "一二三四五", "do": [{"act": "write", "target": "q"}, {"act": "circle", "target": "q"}]}])
 		a = [x for x in compiled(doc)["actions"] if x["act"] == "circle"][0]
 		self.assertEqual(a["args"]["tone"], "accent")
+
+
+def fixture(name):
+	import json
+	with open(os.path.join(ROOT, "video_engine", "board", "fixtures", name + ".scene.json"), encoding="utf-8") as f:
+		return json.load(f)
+
+
+class TestVSCode(unittest.TestCase):
+	def test_vscode_min_能編譯(self):
+		tl = compiled(fixture("vscode_min"))
+		self.assertIn("run", [a["act"] for a in tl["actions"]])
+
+	def test_vscode_full_能編譯(self):
+		tl = compiled(fixture("vscode_full"))
+		vs = [o for o in tl["objects"] if o["id"] == "vs"][0] if isinstance(tl["objects"], list) else tl["objects"]["vs"]
+		self.assertEqual(sorted(vs["_presets"]), ["extensions", "gear", "settings"])
+
+	def test_vscode_tab錨點指到沒有的檔要擋(self):
+		doc = fixture("vscode_min")
+		doc["scenes"][0]["beats"][0]["do"].append({"act": "circle", "target": "vs:tab:score.c"})
+		with self.assertRaisesRegex(ValueError, "tab:score.c"):
+			compiled(doc)
+
+	def test_vscode_L錨點超出行數要擋(self):
+		doc = fixture("vscode_min")
+		doc["scenes"][0]["beats"][0]["do"].append({"act": "underline", "target": "vs:L9"})
+		with self.assertRaisesRegex(ValueError, "超出範圍"):
+			compiled(doc)
+
+	def test_vscode_highlight行號超出要擋(self):
+		doc = fixture("vscode_min")
+		doc["scenes"][0]["beats"][0]["do"].append({"act": "highlight", "target": "vs", "lines": [7]})
+		with self.assertRaisesRegex(ValueError, "超出"):
+			compiled(doc)
+
+	def test_vscode_未知預設要擋(self):
+		doc = fixture("vscode_min")
+		doc["objects"][0]["pages"] = ["debug"]
+		with self.assertRaisesRegex(ValueError, "debug"):
+			compiled(doc)
+
+	def test_vscode_沒宣告的頁面不能開(self):
+		doc = fixture("vscode_min")
+		doc["scenes"][0]["beats"][0]["do"].append({"act": "page", "target": "vs", "name": "settings"})
+		with self.assertRaisesRegex(ValueError, "settings"):
+			compiled(doc)
