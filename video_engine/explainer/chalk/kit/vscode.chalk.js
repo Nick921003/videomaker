@@ -90,7 +90,9 @@
 			for (var i = 0; i < cur.length; i++) {
 				var a = cur[i], to = an[(a.args.on || a.args.to).split(':').slice(1).join(':')];
 				if (!to || t < a.t0) break;
-				var q = center(to), arrive = a.t0 + (a.t1 - a.t0) * 0.6;
+				// 游標已經在目標上（前面先 move 過去）就直接按，不再空等移動時間
+				var q = center(to), near = Math.abs(q[0] - p[0]) + Math.abs(q[1] - p[1]) < 4;
+				var arrive = near ? a.t0 : a.t0 + (a.t1 - a.t0) * 0.6;
 				if (t < arrive) { var u = io2((t - a.t0) / (arrive - a.t0)); return { p: [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u], click: null }; }
 				p = q;
 				if (a.act === 'click') clickT = arrive;

@@ -20,26 +20,116 @@
 							"say": "這是一份作業：讓你輸入成績，再把成績印出來。",
 							"lead": 1.0,
 							"draw": "VS Code 打開 score.c（成績程式，沒有 fflush）",
-							"point": "「輸入成績」螢光筆 printf 那行；「印出來」螢光筆最後一行 printf"
+							"point": "「輸入成績」螢光筆 printf 那行；「印出來」螢光筆最後一行 printf",
+							"do": [
+								{
+									"act": "highlight",
+									"target": "vs",
+									"lines": [
+										5
+									],
+									"cue": "輸入成績"
+								},
+								{
+									"act": "highlight",
+									"target": "vs",
+									"lines": [
+										5,
+										7
+									],
+									"cue": "印出來"
+								}
+							]
 						},
 						{
 							"say": "程式寫好了，我們按右上角這個三角形，用 Code Runner 跑跑看。",
 							"lead": 1.2,
 							"draw": "游標移到 ▶、按下；▶ 換成紅色方塊",
-							"point": "「三角形」紅圈 ▶"
+							"point": "「三角形」紅圈 ▶",
+							"do": [
+								{
+									"act": "move",
+									"target": "cursor",
+									"to": "vs:run"
+								},
+								{
+									"act": "circle",
+									"target": "vs:run",
+									"cue": "三角形",
+									"tone": "warn"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:run",
+									"cue": "跑跑看"
+								},
+								{
+									"act": "run",
+									"target": "vs",
+									"cue": "跑跑看"
+								}
+							]
 						},
 						{
 							"say": "結果什麼都沒有出來，輸出面板只有一行 Running，程式就停在這裡。",
 							"lead": 0.8,
 							"draw": "輸出面板出現 [Running] 那一行，提示字沒有出現",
-							"point": "「Running」紅圈 [Running]"
+							"point": "「Running」紅圈 [Running]",
+							"do": [
+								{
+									"act": "print",
+									"target": "vs",
+									"lines": [
+										"[Running] cd \"c:\\Users\\student\\c_homework\\\" && gcc score.c -o score && \"c:\\Users\\student\\c_homework\\\"score"
+									]
+								},
+								{
+									"act": "circle",
+									"target": "vs:P1",
+									"cue": "Running",
+									"tone": "warn"
+								}
+							]
 						},
 						{
 							"say": "很多同學第一次用 VS Code 跑程式，都卡在這裡。",
 							"lead": 0.3,
 							"hold": 0.4
 						}
-					]
+					],
+					"screen": {
+						"type": "vscode",
+						"id": "vs",
+						"folder": "c_homework",
+						"panel": "output",
+						"open": "score.c",
+						"explorer": [
+							"score.c",
+							"hello.c"
+						],
+						"files": {
+							"score.c": [
+								"#include <stdio.h>",
+								"",
+								"int main(void) {",
+								"\tint score;",
+								"\tprintf(\"請輸入成績: \");",
+								"\tscanf(\"%d\", &score);",
+								"\tprintf(\"你的成績是 %d\\n\", score);",
+								"\treturn 0;",
+								"}"
+							],
+							"hello.c": [
+								"#include <stdio.h>",
+								"",
+								"int main(void) {",
+								"\tprintf(\"hello\\n\");",
+								"\treturn 0;",
+								"}"
+							]
+						}
+					}
 				},
 				{
 					"template": "two-col",
@@ -271,13 +361,63 @@
 							"say": "先看加了 fflush 的這支，按三角形跑，提示字出來了。",
 							"lead": 1.5,
 							"draw": "（舊第 16 句）按 ▶、輸出面板出現 Running 與提示字",
-							"point": "「提示字」螢光筆"
+							"point": "「提示字」螢光筆",
+							"do": [
+								{
+									"act": "move",
+									"target": "cursor",
+									"to": "vs:run"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:run"
+								},
+								{
+									"act": "run",
+									"target": "vs",
+									"output": [
+										"[Running] cd \"c:\\Users\\student\\c_homework\\\" && gcc score_fflush.c -o score_fflush && \"c:\\Users\\student\\c_homework\\\"score_fflush",
+										"",
+										"請輸入成績: "
+									]
+								},
+								{
+									"act": "underline",
+									"target": "vs:P3",
+									"cue": "提示字",
+									"tone": "accent"
+								}
+							]
 						},
 						{
 							"say": "可是想在輸出面板打數字，下面就說這裡是唯讀的。",
 							"lead": 1.5,
 							"draw": "（舊第 17 句）游標到輸出面板、打字、跳出唯讀提示框",
-							"point": "「唯讀」紅圈提示框"
+							"point": "「唯讀」紅圈提示框",
+							"do": [
+								{
+									"act": "move",
+									"target": "cursor",
+									"to": "vs:panel:end"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:panel:end"
+								},
+								{
+									"act": "tip",
+									"target": "vs",
+									"text": "無法在唯讀編輯器中編輯"
+								},
+								{
+									"act": "circle",
+									"target": "vs:tip",
+									"cue": "唯讀",
+									"tone": "warn"
+								}
+							]
 						},
 						{
 							"say": "唯讀就是只能看，所以數字打不進去。",
@@ -288,7 +428,37 @@
 							"lead": 1.5,
 							"hold": 0.6,
 							"draw": "（舊第 18 句）游標到紅色方塊、按下、程式停掉",
-							"point": "「紅色方塊」紅圈"
+							"point": "「紅色方塊」紅圈",
+							"do": [
+								{
+									"act": "move",
+									"target": "cursor",
+									"to": "vs:run"
+								},
+								{
+									"act": "circle",
+									"target": "vs:run",
+									"cue": "紅色方塊",
+									"tone": "warn"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:run"
+								},
+								{
+									"act": "stop",
+									"target": "vs"
+								},
+								{
+									"act": "print",
+									"target": "vs",
+									"lines": [
+										"",
+										"[Done] exited with code=1 in 11.243 seconds"
+									]
+								}
+							]
 						},
 						{
 							"say": "為什麼要先停？因為程式卡著，會一直佔著執行檔。",
@@ -306,27 +476,109 @@
 						{
 							"say": "終端機就是下面這個可以打字的視窗。",
 							"lead": 0.3,
-							"point": "（舊第 20 句）「終端機」終端機分頁螢光筆"
+							"point": "（舊第 20 句）「終端機」終端機分頁螢光筆",
+							"do": [
+								{
+									"act": "underline",
+									"target": "vs:ptab:terminal",
+									"cue": "終端機",
+									"tone": "accent"
+								}
+							]
 						},
 						{
 							"say": "先點左下角的齒輪，選設定。",
 							"lead": 1.8,
 							"hold": 0.6,
 							"draw": "（舊第 21 句）點齒輪、選設定、設定視窗打開",
-							"point": "「齒輪」紅圈齒輪"
+							"point": "「齒輪」紅圈齒輪",
+							"do": [
+								{
+									"act": "move",
+									"target": "cursor",
+									"to": "vs:gear"
+								},
+								{
+									"act": "circle",
+									"target": "vs:gear",
+									"cue": "齒輪",
+									"tone": "warn"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:gear"
+								},
+								{
+									"act": "menu",
+									"target": "vs",
+									"name": "gear"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:settings"
+								},
+								{
+									"act": "page",
+									"target": "vs",
+									"name": "settings"
+								}
+							]
 						},
 						{
 							"say": "在上面的搜尋框打 run in terminal。",
 							"lead": 1.8,
 							"hold": 0.6,
 							"draw": "（舊第 22 句）點搜尋框、打 run in terminal",
-							"point": "「搜尋框」紅圈"
+							"point": "「搜尋框」紅圈",
+							"do": [
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:settings:search"
+								},
+								{
+									"act": "type",
+									"target": "vs",
+									"text": "run in terminal"
+								},
+								{
+									"act": "circle",
+									"target": "vs:settings:search",
+									"cue": "搜尋框",
+									"tone": "warn"
+								}
+							]
 						},
 						{
 							"say": "找到 Code Runner 的 Run In Terminal，把它打勾。",
 							"lead": 1.5,
 							"draw": "（舊第 23 句）游標到勾選框、打勾",
-							"point": "標題螢光筆底線、打勾處紅圈"
+							"point": "標題螢光筆底線、打勾處紅圈",
+							"do": [
+								{
+									"act": "underline",
+									"target": "vs:run_in_terminal",
+									"cue": "Code Runner",
+									"tone": "accent"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:run_in_terminal"
+								},
+								{
+									"act": "check",
+									"target": "vs:run_in_terminal"
+								},
+								{
+									"act": "circle",
+									"target": "vs:run_in_terminal",
+									"cue": "打勾",
+									"tone": "warn"
+								}
+							]
 						},
 						{
 							"say": "這樣 Code Runner 以後都會在終端機跑。",
@@ -336,23 +588,143 @@
 						{
 							"say": "我們換回沒加 fflush 的那支，再跑一次。",
 							"lead": 1.5,
-							"draw": "（舊第 24 句）關設定視窗、點 score.c 分頁、按 ▶"
+							"draw": "（舊第 24 句）關設定視窗、點 score.c 分頁、按 ▶",
+							"do": [
+								{
+									"act": "close",
+									"target": "vs"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:tab:score.c"
+								},
+								{
+									"act": "open",
+									"target": "vs",
+									"file": "score.c"
+								},
+								{
+									"act": "click",
+									"target": "cursor",
+									"on": "vs:run"
+								}
+							]
 						},
 						{
 							"say": "這次在終端機跑，提示字直接出來了。",
 							"lead": 1.0,
 							"draw": "（舊第 25 句）終端機分頁打開、提示字出來",
-							"point": "「提示字」螢光筆"
+							"point": "「提示字」螢光筆",
+							"do": [
+								{
+									"act": "panel",
+									"target": "vs",
+									"name": "terminal"
+								},
+								{
+									"act": "run",
+									"target": "vs",
+									"output": [
+										"PS C:\\Users\\student\\c_homework> cd \"c:\\Users\\student\\c_homework\\\" ; if ($?) { gcc score.c -o score } ; if ($?) { .\\score }",
+										"請輸入成績: "
+									]
+								},
+								{
+									"act": "underline",
+									"target": "vs:P2",
+									"cue": "提示字",
+									"tone": "accent"
+								}
+							]
 						},
 						{
 							"say": "輸入 85，按 Enter，結果就出來了。",
 							"lead": 2.0,
 							"hold": 0.8,
 							"draw": "（舊第 26 句）打 85、Enter、結果出來",
-							"point": "「結果」綠勾"
+							"point": "「結果」綠勾",
+							"do": [
+								{
+									"act": "input",
+									"target": "vs",
+									"text": "85"
+								},
+								{
+									"act": "print",
+									"target": "vs",
+									"lines": [
+										"你的成績是 85",
+										"PS C:\\Users\\student\\c_homework> "
+									]
+								},
+								{
+									"act": "stop",
+									"target": "vs"
+								},
+								{
+									"act": "circle",
+									"target": "vs:P3",
+									"cue": "結果",
+									"tone": "ok"
+								}
+							]
 						}
 					],
-					"spine": "實際操作：fflush 版能顯示但打不進去 → 先停掉 → 設定 Run In Terminal → 換回沒加 fflush 的版本，提示字直接出現，也能輸入"
+					"spine": "實際操作：fflush 版能顯示但打不進去 → 先停掉 → 設定 Run In Terminal → 換回沒加 fflush 的版本，提示字直接出現，也能輸入",
+					"screen": {
+						"type": "vscode",
+						"id": "vs",
+						"folder": "c_homework",
+						"panel": "output",
+						"open": "score_fflush.c",
+						"menus": [
+							"gear"
+						],
+						"pages": [
+							"settings"
+						],
+						"explorer": [
+							"score.c",
+							"score.exe",
+							"score_fflush.c",
+							"score_fflush.exe",
+							"hello.c"
+						],
+						"files": {
+							"score.c": [
+								"#include <stdio.h>",
+								"",
+								"int main(void) {",
+								"\tint score;",
+								"\tprintf(\"請輸入成績: \");",
+								"\tscanf(\"%d\", &score);",
+								"\tprintf(\"你的成績是 %d\\n\", score);",
+								"\treturn 0;",
+								"}"
+							],
+							"score_fflush.c": [
+								"#include <stdio.h>",
+								"",
+								"int main(void) {",
+								"\tint score;",
+								"\tprintf(\"請輸入成績: \");",
+								"\tfflush(stdout);",
+								"\tscanf(\"%d\", &score);",
+								"\tprintf(\"你的成績是 %d\\n\", score);",
+								"\treturn 0;",
+								"}"
+							],
+							"hello.c": [
+								"#include <stdio.h>",
+								"",
+								"int main(void) {",
+								"\tprintf(\"hello\\n\");",
+								"\treturn 0;",
+								"}"
+							]
+						}
+					}
 				}
 			]
 		},
