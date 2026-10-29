@@ -72,6 +72,8 @@ class TestScreenPage(unittest.TestCase):
 		self.assertEqual((run["act"], run["cue"], run["args"]["output"]), ("run", "Running", ["[Running]"]))
 		self.assertEqual(scr["do"]["3"][1]["args"]["tone"], "warn")
 		self.assertGreater(run["dur"], 0)
+		self.assertTrue(run["blocks"])
+		self.assertFalse(scr["do"]["3"][1]["blocks"])
 
 	def test_screen頁cue不在旁白要擋(self):
 		with self.assertRaisesRegex(ValueError, "跑跑看囉"):

@@ -234,5 +234,31 @@ class TestExport(unittest.TestCase):
 				self.assertEqual(im.size, (1280, 800))
 
 
+class TestChalkAdapter(unittest.TestCase):
+	def test_黑板轉接的動作時間取自逐字時間(self):
+		if not NODE:
+			self.skipTest("沒有 node")
+		screen = {"lines": [2, 3], "screen": {"id": "vs"}, "do": {
+			"2": [{"act": "circle", "target": "vs:run", "obj": "vs", "args": {"tone": "warn"}, "n": None, "cue": "三角形", "dur": 0.7},
+				{"act": "run", "target": "vs", "obj": "vs", "args": {"output": ["x"]}, "n": None, "cue": None, "dur": 0.8, "blocks": True},
+				{"act": "input", "target": "vs", "obj": "vs", "args": {"text": "85"}, "n": 2, "cue": None, "dur": 0.24, "blocks": True}],
+		}}
+		with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+			json.dump({"screen": screen, "spans": {"2": {"三角形": [2.0, 2.4]}}, "starts": {"2": 1.0, "3": 5.0}}, f, ensure_ascii=False)
+		try:
+			r = subprocess.run([NODE, PROBE, "schedule", f.name], capture_output=True, text=True, timeout=30)
+		finally:
+			os.unlink(f.name)
+		self.assertEqual(r.returncode, 0, r.stderr)
+		acts = json.loads(r.stdout)
+		circle, run, inp = acts
+		self.assertEqual((circle["t0"], circle["t1"]), (2.0, 2.7))
+		self.assertEqual(circle["line"], 2)
+		# 沒寫 cue 的動作從開始畫的時刻起跑，會擋路的動作一個接一個
+		self.assertEqual((run["t0"], run["t1"]), (1.0, 1.8))
+		self.assertAlmostEqual(inp["t0"], 1.8)
+		self.assertAlmostEqual(inp["t1"], 2.04)
+
+
 if __name__ == "__main__":
 	unittest.main()

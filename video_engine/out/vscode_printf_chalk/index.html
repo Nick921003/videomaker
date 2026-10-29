@@ -44,6 +44,11 @@
     <script src="lib/core.js"></script>
     <script src="lib/story.js"></script>
     <script src="lib/kit/kit.js"></script>
+    <script src="lib/themes.js"></script>
+    <script src="lib/components/vscode/model.js"></script>
+    <script src="lib/components/vscode/paint.js"></script>
+    <script src="lib/components/vscode/svg.js"></script>
+    <script src="lib/kit/vscode.chalk.js"></script>
     <script src="beats.js"></script>
     <script>
       /* V8 黑板报 starter driver — the film minus the topic. Everything below comes from window.STORY:
@@ -393,6 +398,8 @@
           options: { tones: {}, title: {}, recap: {}, bulb: true, outline: true },
         };
 
+        // 分鏡寫了 screen 描述的電腦畫面由共用 VS Code 元件畫，不用在 beats.js 寫程式
+        var vsScreens = window.ChalkVSCode ? ChalkVSCode.mountAll(API, D.screens) : null;
         var beats = (window.Beats || function (api) { api.story.lines.forEach(function (L) { if (!api.isEnd(L.i)) api.placeholder(L.i); }); return { render: function () {} }; })(API) || {};
 
         // ---------------- after the beats: the rest of the chrome ----------------
@@ -702,7 +709,7 @@
         }
 
         // ---------------- drive ----------------
-        function frame(t) { K.render(t); if (beats.render) beats.render(t); }
+        function frame(t) { K.render(t); if (vsScreens) vsScreens(t); if (beats.render) beats.render(t); }
         frame(0);
         window.__starter = API;
         var tl = gsap.timeline({ paused: true });

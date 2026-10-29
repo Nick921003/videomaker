@@ -35,7 +35,7 @@ def screen_actions(pg, first):
 	for a in c.actions:
 		spec = a["spec"]
 		dur = spec["dur"] if "dur" in spec else (a["n"] or 1) * sum(spec["per"]) / 2
-		do.setdefault(str(first + a["beat"]), []).append({k: a[k] for k in ("act", "target", "obj", "args", "n", "cue")} | {"dur": dur})
+		do.setdefault(str(first + a["beat"]), []).append({k: a[k] for k in ("act", "target", "obj", "args", "n", "cue")} | {"dur": dur, "blocks": a["blocks"]})
 	return c.objects[obj["id"]], do
 
 
