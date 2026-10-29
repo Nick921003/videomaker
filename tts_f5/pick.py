@@ -53,39 +53,44 @@ def cer(ref, hyp):
 
 
 def rise_st(f0):
-	"""最後一段有聲音（≥ 5 格）的音高變化，單位半音；前三分之一中位數 → 後三分之一中位數。f0 裡 0 代表無聲"""
+	"""最後一段有聲音（≥ 5 格、10 ms 一格）的音高變化，單位半音；前三分之一中位數 → 後三分之一中位數。f0 裡 0 代表無聲。
+	句尾常拖一小段氣聲或雜音（< 5 格），要跳過它往前找真正的最後一個音節；量不出來回傳 None，
+	不可以回 0——0 會被當成「最平」反而挑中（2026-10-28 第 6、27 句就這樣，312 個候選有 32 個量不出來）"""
 	f0 = np.asarray(f0, dtype=float)
 	idx = np.flatnonzero(f0 > 0)
-	if len(idx) < 5:
-		return 0.0
-	# 從尾巴往回找連續有聲段，中間斷 2 格以內當作同一段
-	end = start = idx[-1]
-	for k in idx[::-1][1:]:
-		if start - k > 3:
-			break
-		start = k
-	seg = f0[start:end + 1]
-	seg = seg[seg > 0][-30:]
-	if len(seg) < 5:
-		return 0.0
-	n = max(1, len(seg) // 3)
-	return float(12 * np.log2(np.median(seg[-n:]) / np.median(seg[:n])))
+	# 有聲音的格切成一段一段，中間斷 3 格以內當作同一段
+	runs, start = [], None
+	for a, b in zip(idx, list(idx[1:]) + [None]):
+		start = a if start is None else start
+		if b is None or b - a > 3:
+			runs.append((start, a))
+			start = None
+	for a, b in reversed(runs):
+		seg = f0[a:b + 1]
+		seg = seg[seg > 0][-30:]
+		if len(seg) >= 5:
+			n = max(1, len(seg) // 3)
+			return float(12 * np.log2(np.median(seg[-n:]) / np.median(seg[:n])))
+	return None
 
 
 def choose(cands, question=False):
 	"""cands：[{cer, rise, dev, gap}, ...]，第 0 個通常是預設 seed。
 	回傳 (選中的索引, 是否可疑)。可疑＝沒有一個過門檻，此時仍從全部候選裡挑最好的"""
 	def ok(c):
-		return c["cer"] <= CER_MAX and c["gap"] <= GAP_MAX and (question or c["rise"] <= RISE_MAX)
+		# 句尾量不出來（None）不算及格：寧可標可疑給人看，也不要假裝通過
+		return c["cer"] <= CER_MAX and c["gap"] <= GAP_MAX and (question or (c["rise"] is not None and c["rise"] <= RISE_MAX))
 	pool = [i for i, c in enumerate(cands) if ok(c)]
 	suspicious = not pool
 	pool = pool or list(range(len(cands)))
 	keys = ["cer", "dev"] + ([] if question else ["rise"])
 	score = {i: 0 for i in pool}
 	# 名次＝比它好的候選有幾個；同分同名次，不然排在前面的 seed 白白多拿分
+	# 量不出來的值排最後
+	val = lambda i, k: float("inf") if cands[i][k] is None else cands[i][k]
 	for k in keys:
 		for i in pool:
-			score[i] += sum(1 for j in pool if cands[j][k] < cands[i][k])
+			score[i] += sum(1 for j in pool if val(j, k) < val(i, k))
 	return min(pool, key=lambda i: (score[i], i)), suspicious
 
 

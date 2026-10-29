@@ -24,11 +24,6 @@
 		"text": "我們畫到黑板上看。照順序，程式應該先印出「請輸入成績」，再停下來等你打字。",
 		"suspicious": false
 	},
-	"6": {
-		"seed": 4,
-		"text": "可是右邊的輸出面板，提示字該出現的地方是空的，程式就一直停在這裡等。",
-		"suspicious": false
-	},
 	"13": {
 		"seed": 2,
 		"text": "那要怎麼辦呢？網路上有一個解法，在 printf 後面加一行 fflush。",
@@ -54,11 +49,6 @@
 		"text": "奇怪，程式明明有寫 printf，為什麼提示字沒有出來呢？",
 		"suspicious": false
 	},
-	"8": {
-		"seed": 6,
-		"text": "先看程式是在哪裡跑。Code Runner 沒改設定的話，是在輸出面板跑。",
-		"suspicious": false
-	},
 	"10": {
 		"seed": 7,
 		"text": "在輸出面板跑的時候，緩衝區的字不會馬上印出來。",
@@ -79,19 +69,9 @@
 		"text": "fflush 會把緩衝區裡的字推出去，不用等程式結束。",
 		"suspicious": false
 	},
-	"15": {
-		"seed": 4,
-		"text": "所以右邊這行提示字就出來了。",
-		"suspicious": false
-	},
 	"16": {
 		"seed": 1,
 		"text": "可是程式還有下一行 scanf，要等你打數字。",
-		"suspicious": false
-	},
-	"18": {
-		"seed": 6,
-		"text": "你從鍵盤打的數字送不進去，scanf 就一直等。",
 		"suspicious": false
 	},
 	"19": {
@@ -99,44 +79,14 @@
 		"text": "一開始程式停在那裡不動，就是因為 scanf 在等你輸入。",
 		"suspicious": false
 	},
-	"21": {
-		"seed": 2,
-		"text": "我們直接到電腦上做一次。",
-		"suspicious": false
-	},
 	"22": {
 		"seed": 8,
 		"text": "先看加了 fflush 的這支，按三角形跑，提示字出來了。",
 		"suspicious": false
 	},
-	"23": {
-		"seed": 2,
-		"text": "可是想在輸出面板打數字，下面就說這裡是唯讀的。",
-		"suspicious": false
-	},
-	"24": {
-		"seed": 3,
-		"text": "唯讀就是只能看，所以數字打不進去。",
-		"suspicious": false
-	},
-	"25": {
-		"seed": 8,
-		"text": "先別急著改設定，先按右上角這個紅色方塊，把卡住的程式停掉。",
-		"suspicious": false
-	},
 	"26": {
 		"seed": 3,
 		"text": "為什麼要先停？因為程式卡著，會一直佔著執行檔。",
-		"suspicious": false
-	},
-	"27": {
-		"seed": 5,
-		"text": "沒停掉的話，下次編譯會失敗，出現 Permission denied。",
-		"suspicious": false
-	},
-	"28": {
-		"seed": 3,
-		"text": "停掉之後，我們讓 Code Runner 改到終端機跑。",
 		"suspicious": false
 	},
 	"29": {
@@ -159,16 +109,6 @@
 		"text": "找到 Code Runner 的 Run In Terminal，把它打勾。",
 		"suspicious": false
 	},
-	"33": {
-		"seed": 3,
-		"text": "這樣 Code Runner 以後都會在終端機跑。",
-		"suspicious": false
-	},
-	"35": {
-		"seed": 6,
-		"text": "這次在終端機跑，提示字直接出來了。",
-		"suspicious": false
-	},
 	"37": {
 		"seed": 6,
 		"text": "那如果在終端機裡卡住，要怎麼停呢？",
@@ -187,11 +127,6 @@
 	"40": {
 		"seed": 8,
 		"text": "再按右邊這兩個鍵，Ctrl 加 C，程式就停了。",
-		"suspicious": false
-	},
-	"41": {
-		"seed": 7,
-		"text": "所以記得，程式要輸入東西，就要在終端機跑。",
 		"suspicious": false
 	}
 }

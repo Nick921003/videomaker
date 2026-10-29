@@ -34,7 +34,18 @@ class PickTest(unittest.TestCase):
 		self.assertAlmostEqual(self.p.rise_st(flat), 0.0)
 		self.assertGreater(self.p.rise_st(up), 2.0)
 		self.assertLess(self.p.rise_st(down), 0.0)
-		self.assertEqual(self.p.rise_st([0] * 10 + [200] * 3), 0.0)
+		self.assertIsNone(self.p.rise_st([0] * 10 + [200] * 3))
+
+	def test_rise_skips_short_trailing_blip(self):
+		# 句尾拖一小段氣聲（3 格）：跳過它，量前面真正的最後一個音節
+		import numpy as np
+		f0 = [0] * 5 + list(np.linspace(200, 260, 30)) + [0] * 8 + [180] * 3 + [0] * 5
+		self.assertGreater(self.p.rise_st(f0), 2.0)
+
+	def test_choose_unmeasured_rise_is_not_a_pass(self):
+		c = [{"cer": 0.0, "rise": None, "dev": 0.0, "gap": 0.2}, {"cer": 0.05, "rise": -3.0, "dev": 0.0, "gap": 0.2}]
+		self.assertEqual(self.p.choose(c), (1, False))
+		self.assertEqual(self.p.choose([c[0]]), (0, True))
 
 	def test_rise_uses_last_voiced_run(self):
 		# 前面一段大上揚、後面一段平：只看最後一段

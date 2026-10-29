@@ -67,7 +67,7 @@ def main():
 		k, sus = choose(cands, question=text.rstrip().endswith(("？", "?")))
 		picks[str(i)] = {"seed": cands[k]["seed"], "text": text, "suspicious": sus}
 		report[str(i)] = {"text": text, "picked": cands[k]["seed"], "suspicious": sus, "candidates": cands}
-		print(f"{i:>2} seed {cands[k]['seed']:>2}{'  ⚠ 可疑' if sus else ''}  cer {cands[k]['cer']:.2f} 句尾 {cands[k]['rise']:+.1f}  {text[:24]}", flush=True)
+		print(f"{i:>2} seed {cands[k]['seed']:>2}{'  ⚠ 可疑' if sus else ''}  cer {cands[k]['cer']:.2f} 句尾 {'量不出' if cands[k]['rise'] is None else format(cands[k]['rise'], '+.1f')}  {text[:24]}", flush=True)
 		json.dump(picks, open(pp, "w", encoding="utf-8"), ensure_ascii=False, indent="\t")
 		json.dump(report, open(os.path.join(a.story, "pick_report.json"), "w", encoding="utf-8"), ensure_ascii=False, indent="\t")
 
