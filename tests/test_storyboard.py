@@ -47,5 +47,43 @@ class TestStoryboard(unittest.TestCase):
 			build(sample("three-col"))
 
 
+VS = {"type": "vscode", "id": "vs", "files": {"score.c": ["int main(void) {", "}"]}, "panel": "output"}
+
+
+def screen_sample(do2):
+	sb = sample()
+	sb["chapters"][0]["pages"][1] = {"template": "screen", "kind": "vscode", "screen": dict(VS), "lines": [
+		{"say": "我們按右上角這個三角形，跑跑看。", "do": [{"act": "click", "target": "cursor", "on": "vs:run", "cue": "跑跑看"},
+			{"act": "circle", "target": "vs:run", "cue": "三角形", "tone": "warn"}]},
+		{"say": "輸出面板只有一行 Running。", "do": do2},
+	]}
+	return sb
+
+
+class TestScreenPage(unittest.TestCase):
+	def test_screen頁寫進screens_json(self):
+		out = build(screen_sample([{"act": "run", "target": "vs", "output": ["[Running]"], "cue": "Running"}]))
+		scr = json.loads(out["screens.json"])[0]
+		self.assertEqual(scr["lines"], [3, 4])
+		self.assertEqual(scr["screen"]["id"], "vs")
+		self.assertEqual(scr["screen"]["open"], "score.c")
+		self.assertEqual([a["act"] for a in scr["do"]["3"]], ["click", "circle"])
+		run = scr["do"]["4"][0]
+		self.assertEqual((run["act"], run["cue"], run["args"]["output"]), ("run", "Running", ["[Running]"]))
+		self.assertEqual(scr["do"]["3"][1]["args"]["tone"], "warn")
+		self.assertGreater(run["dur"], 0)
+
+	def test_screen頁cue不在旁白要擋(self):
+		with self.assertRaisesRegex(ValueError, "跑跑看囉"):
+			build(screen_sample([{"act": "run", "target": "vs", "cue": "跑跑看囉"}]))
+
+	def test_screen頁錨點不存在要擋(self):
+		with self.assertRaisesRegex(ValueError, "tab:hello.c"):
+			build(screen_sample([{"act": "circle", "target": "vs:tab:hello.c"}]))
+
+	def test_舊的screen頁沒有screen欄位照舊(self):
+		self.assertEqual(json.loads(build(sample())["screens.json"]), [{"lines": [3], "kind": "vscode"}])
+
+
 if __name__ == "__main__":
 	unittest.main()
