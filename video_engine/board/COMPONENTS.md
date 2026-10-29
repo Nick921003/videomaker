@@ -247,3 +247,10 @@ S=$(mktemp -d)
 - 屬性：`name`（目前只有 `gear`，其他值編譯報錯）、`caption`（選填，圖下方小字）。純繪製，沒有自己的動作，只吃通用的 show／hide／circle 等。
 - 外觀：140×140 的鉛筆齒輪（8 齒外形＋中心圓，`text.body` 色，抖動 seed 取自物件 id）；有 `caption` 時下方空 8px 加一行 muted 32 置中小字，寬取 max(140, 字寬 + 24)。
 - 錨點：沒有子錨點，指物件本身（`gear_icon`）就是整個圖示的框，例：`cursor` 的 `click` 用 `on: "gear_icon"`。
+
+## vscode（跨風格共用元件）
+
+版面、狀態、錨點、繪圖指令都在 `video_engine/components/vscode/`（`model.js`、`paint.js`），黑板與文章配圖也用同一份；
+`runtime/components/vscode.js` 只負責把指令畫成鉛筆筆觸（`tones.json` 的 `vscode_to_board` 對色）。
+要改 VS Code 畫面長相或錨點，改共用模組，不要在手帳轉接裡另寫。手帳畫面小，轉接用 1.6 倍字級（`_text`），
+標成 `detail` 的小字（狀態列）不畫。欄位與動作見 `video_engine/components/vscode/README.md`。

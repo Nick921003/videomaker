@@ -4,11 +4,12 @@
 	'use strict';
 	var SIZE = [1600, 1000];
 
-	function metrics(size) {
-		var k = size[1] / 1000;
+	// fs 是字級倍率：手帳畫面縮得小，字和跟字有關的行高一起放大，外框尺寸不變
+	function metrics(size, fs) {
+		var k = size[1] / 1000, f = k * (fs || 1);
 		return {
-			k: k, titleH: 48 * k, actW: 68 * k, expW: Math.min(320 * k, size[0] * 0.24), tabH: 52 * k, ptabH: 48 * k, statusH: 26 * k,
-			ui: 22 * k, code: 24 * k, pitch: 36 * k, out: 24 * k, outPitch: 38 * k, gutter: 100 * k, pad: 28 * k,
+			k: k, f: f, titleH: 48 * f, actW: 68 * k, expW: Math.min(320 * Math.max(k, f * 0.8), size[0] * 0.24), tabH: 52 * f, ptabH: 48 * f, statusH: 26 * f,
+			ui: 22 * f, code: 24 * f, pitch: 36 * f, out: 24 * f, outPitch: 38 * f, gutter: 100 * f, pad: 28 * k,
 		};
 	}
 
@@ -27,7 +28,7 @@
 
 	function layout(desc, size) {
 		size = size || SIZE;
-		var W = size[0], H = size[1], m = metrics(size);
+		var W = size[0], H = size[1], m = metrics(size, desc._text);
 		var bodyY = m.titleH, bodyH = H - m.titleH - m.statusH, editX = m.actW + m.expW;
 		var panelH = Math.round(bodyH * 0.44), panelY = bodyY + bodyH - panelH;
 		return {
@@ -69,7 +70,7 @@
 
 	function codeRows(lay) {
 		var m = lay.m, ed = lay.regions.editor;
-		return Math.max(1, Math.floor((ed.h - 14 * m.k) / m.pitch));
+		return Math.max(1, Math.floor((ed.h - 14 * m.f) / m.pitch));
 	}
 
 	function state(desc, acts, t, size) {
@@ -115,7 +116,7 @@
 
 	function tabBoxes(desc, lay) {
 		var m = lay.m, tb = lay.regions.tabs, names = Object.keys(desc.files);
-		var ws = names.map(function (nm) { return (20 + 24 + 8 + 38 + 20) * m.k + textW(nm, m.ui); });
+		var ws = names.map(function (nm) { return (20 + 24 + 8 + 38 + 20) * m.f + textW(nm, m.ui); });
 		var room = tb.w - 200 * m.k, sum = ws.reduce(function (s, w) { return s + w; }, 0), f = sum > room ? room / sum : 1;
 		var x = tb.x, out = {};
 		names.forEach(function (nm, i) { out[nm] = R(x, tb.y, ws[i] * f, tb.h); x += ws[i] * f; });
@@ -124,7 +125,7 @@
 
 	function explorerRows(desc, lay) {
 		var m = lay.m, ex = lay.regions.explorer, names = desc.explorer || Object.keys(desc.files);
-		var top = ex.y + 100 * m.k, rp = Math.min(44 * m.k, (ex.h - 100 * m.k - 120 * m.k) / Math.max(1, names.length));
+		var top = ex.y + 100 * m.f, rp = Math.min(44 * m.f, (ex.h - 100 * m.f - 120 * m.k) / Math.max(1, names.length));
 		var out = {};
 		names.forEach(function (nm, i) { out[nm] = R(ex.x, top + i * rp, ex.w, rp); });
 		return out;
@@ -132,8 +133,8 @@
 
 	function menuBox(desc, lay, name) {
 		var m = lay.m, act = lay.regions.activity, rows = presetItems(desc, name).length;
-		var h = rows * 40 * m.k + 16 * m.k, bottom = act.y + act.h - 30 * m.k;
-		return R(act.x + act.w + 6 * m.k, bottom - h, 460 * m.k, h);
+		var h = rows * 40 * m.f + 16 * m.k, bottom = act.y + act.h - 30 * m.k;
+		return R(act.x + act.w + 6 * m.k, bottom - h, 460 * m.f, h);
 	}
 
 	function pageBox(lay) {
@@ -143,13 +144,13 @@
 
 	function pageParts(lay) {
 		var m = lay.m, pg = pageBox(lay);
-		var search = R(pg.x + 36 * m.k, pg.y + 70 * m.k, pg.w - 72 * m.k, 40 * m.k);
-		return { box: pg, head: R(pg.x, pg.y, pg.w, 50 * m.k), search: search, listX: pg.x + 340 * m.k, listY: search.y + search.h + 70 * m.k };
+		var search = R(pg.x + 36 * m.k, pg.y + 70 * m.f, pg.w - 72 * m.k, 40 * m.f);
+		return { box: pg, head: R(pg.x, pg.y, pg.w, 50 * m.f), search: search, listX: pg.x + 340 * m.k, listY: search.y + search.h + 70 * m.f };
 	}
 
 	function panelRows(lay) {
 		var m = lay.m, p = lay.regions.panel;
-		return Math.max(1, Math.floor((p.h - m.ptabH - 16 * m.k) / m.outPitch));
+		return Math.max(1, Math.floor((p.h - m.ptabH - 16 * m.f) / m.outPitch));
 	}
 
 	// 面板裡看得到的行：太多就只留最後幾行（終端機往上捲）
@@ -161,13 +162,14 @@
 	function anchors(desc, st, size) {
 		var lay = layout(desc, size), m = lay.m, rg = lay.regions, out = {};
 		var W = lay.w;
-		var runCx = W - 150 * m.k, runCy = rg.tabs.y + rg.tabs.h / 2;
+		// 離右側的分割、··· 鈕留一個圈的空間，畫圈才不會壓到它們
+		var runCx = W - 200 * m.k, runCy = rg.tabs.y + rg.tabs.h / 2;
 		out.run = R(runCx - 28 * m.k, runCy - 26 * m.k, 56 * m.k, 52 * m.k);
 		var gcy = rg.activity.y + rg.activity.h - 50 * m.k;
 		out.gear = R(rg.activity.w / 2 - 28 * m.k, gcy - 28 * m.k, 56 * m.k, 56 * m.k);
 		out.explorer = rg.explorer; out.editor = rg.editor; out.panel = rg.panel;
 
-		var ed = rg.editor, top = ed.y + 14 * m.k, V = codeRows(lay), right = ed.x + ed.w - m.pad;
+		var ed = rg.editor, top = ed.y + 14 * m.f, V = codeRows(lay), right = ed.x + ed.w - m.pad;
 		desc.files[st.open].forEach(function (ln, i) {
 			var row = i - st.scrollTop, x = ed.x + m.gutter;
 			var w = Math.min(Math.max(textW(ln, m.code, true), m.code), right - x);
@@ -184,20 +186,20 @@
 		var p = rg.panel, view = panelView(st, lay), k = Math.max(0, view.length - 1);
 		var px = p.x + m.pad, maxX = p.x + p.w - m.pad - m.out;
 		var endX = Math.min(px + textW(view[k] || '', m.out, true), maxX);
-		out['panel:end'] = R(endX, p.y + m.ptabH + 8 * m.k + k * m.outPitch, m.out, m.outPitch);
+		out['panel:end'] = R(endX, p.y + m.ptabH + 8 * m.f + k * m.outPitch, m.out, m.outPitch);
 
 		var parts = pageParts(lay);
 		out['settings:search'] = parts.search;
 		if (st.menu) {
 			var mb = menuBox(desc, lay, st.menu);
-			presetItems(desc, st.menu).forEach(function (it, i) { out[it.id] = R(mb.x + 8 * m.k, mb.y + 8 * m.k + i * 40 * m.k, mb.w - 16 * m.k, 40 * m.k); });
+			presetItems(desc, st.menu).forEach(function (it, i) { out[it.id] = R(mb.x + 8 * m.k, mb.y + 8 * m.k + i * 40 * m.f, mb.w - 16 * m.k, 40 * m.f); });
 		}
 		if (st.page) {
-			var pitch = st.page === 'settings' ? 120 * m.k : 110 * m.k;
+			var pitch = st.page === 'settings' ? 120 * m.f : 110 * m.f;
 			var x0 = st.page === 'settings' ? parts.listX : parts.search.x;
-			var y0 = st.page === 'settings' ? parts.listY : parts.search.y + parts.search.h + 24 * m.k;
+			var y0 = st.page === 'settings' ? parts.listY : parts.search.y + parts.search.h + 24 * m.f;
 			presetItems(desc, st.page).forEach(function (it, i) {
-				out[it.id] = R(x0, Math.min(y0 + i * pitch, parts.box.y + parts.box.h - pitch), parts.box.x + parts.box.w - 36 * m.k - x0, pitch - 10 * m.k);
+				out[it.id] = R(x0, Math.min(y0 + i * pitch, parts.box.y + parts.box.h - pitch), parts.box.x + parts.box.w - 36 * m.k - x0, pitch - 10 * m.f);
 			});
 		}
 		return out;

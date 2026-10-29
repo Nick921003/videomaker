@@ -13,6 +13,9 @@ import shutil
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNTIME = os.path.join(HERE, "runtime")
 THEMES = os.path.join(os.path.dirname(HERE), "themes")
+SHARED = os.path.join(os.path.dirname(HERE), "components")
+# 共用核心的載入順序：後面的檔用到前面的
+SHARED_ORDER = ("model.js", "paint.js")
 
 
 def build(timeline, out_dir, audio=None, theme="notebook"):
@@ -27,8 +30,14 @@ def build(timeline, out_dir, audio=None, theme="notebook"):
 	if os.path.exists(dst_runtime):
 		shutil.rmtree(dst_runtime)
 	shutil.copytree(RUNTIME, dst_runtime, ignore=shutil.ignore_patterns("player.html"))
+	# 跨風格共用的元件核心（video_engine/components/），要在手帳轉接之前載入
+	dst_shared = os.path.join(out_dir, "components")
+	if os.path.exists(dst_shared):
+		shutil.rmtree(dst_shared)
+	shutil.copytree(SHARED, dst_shared, ignore=shutil.ignore_patterns("*.py", "*.md", "__pycache__"))
+	shared = [f"components/{d}/{f}" for d in sorted(os.listdir(dst_shared)) for f in SHARED_ORDER if os.path.exists(os.path.join(dst_shared, d, f))]
 	comps = sorted(f for f in os.listdir(os.path.join(RUNTIME, "components")) if f.endswith(".js"))
-	tags = "\n".join(f'<script src="runtime/components/{c}"></script>' for c in comps)
+	tags = "\n".join([f'<script src="{c}"></script>' for c in shared] + [f'<script src="runtime/components/{c}"></script>' for c in comps])
 	with open(os.path.join(RUNTIME, "player.html"), encoding="utf-8") as f:
 		page = f.read().replace("<!-- COMPONENTS -->", tags)
 	with open(os.path.join(out_dir, "player.html"), "w", encoding="utf-8") as f:

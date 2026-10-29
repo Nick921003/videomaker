@@ -47,8 +47,17 @@
 					{"act": "circle", "target": "vs:run_in_terminal", "cue": "在終端機執行", "tone": "ok"},
 					{"act": "check", "target": "vs:run_in_terminal", "cue": "勾起"},
 					{"act": "page", "target": "vs", "name": "extensions", "cue": "延伸模組"},
-					{"act": "circle", "target": "vs:code_runner", "cue": "延伸模組"},
-					{"act": "close", "target": "vs"}
+					{"act": "circle", "target": "vs:code_runner", "cue": "延伸模組"}
+				]}
+			]
+		},
+		{
+			"id": "done",
+			"title": "回到程式",
+			"layout": {"stack": ["vs"]},
+			"beats": [
+				{"say": "關掉設定，回到程式。", "do": [
+					{"act": "close", "target": "vs", "cue": "關掉設定"}
 				]}
 			]
 		}

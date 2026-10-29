@@ -159,6 +159,32 @@ class TestPaint(unittest.TestCase):
 		for o in texts:
 			self.assertLessEqual(o["x"] + o["w"], p["x"] + p["w"] + 0.5, o)
 
+
+	def test_字級倍率放大字與行距但版面框不變(self):
+		desc, acts, _ = compiled()
+		big = dict(desc, _text=1.6)
+		a, b = probe("layout", desc, acts, [0])[0], probe("layout", big, acts, [0])[0]
+		self.assertEqual((a["w"], a["h"]), (b["w"], b["h"]))
+		self.assertAlmostEqual(b["m"]["ui"], a["m"]["ui"] * 1.6)
+		self.assertAlmostEqual(b["m"]["pitch"], a["m"]["pitch"] * 1.6)
+		ops = probe("ops", big, acts, [0])[0]
+		self.assertGreaterEqual(min(o["size"] for o in ops if o["op"] == "text" and not o.get("detail")), 20 * 1.6 - 0.01)
+
+	def test_頁面打開時底下的字不畫(self):
+		desc, acts, _ = compiled()
+		page = act_time(acts, "page")
+		ops = probe("ops", desc, acts, [page["t1"] + 0.01])[0]
+		self.assertFalse([o for o in ops if o["op"] == "text" and o["str"] == "score.c"])
+
+	def test_標題列選單字不壓到搜尋框(self):
+		desc, acts, _ = compiled()
+		ops = probe("ops", desc, acts, [0])[0]
+		box = [o for o in ops if o["op"] == "rect" and o.get("fill") == "titleBox"][0]
+		words = [o for o in ops if o["op"] == "text" and o["str"] in ("檔案", "編輯", "選取項目", "檢視", "移至", "執行", "終端機", "說明") and o["y"] < box["y"] + box["h"]]
+		self.assertTrue(words)
+		for o in words:
+			self.assertLessEqual(o["x"] + o["w"], box["x"], o["str"])
+
 	def test_svg決定性(self):
 		desc, acts, tl = compiled()
 		a, b = probe("svg", desc, acts, [tl["duration"] / 2, tl["duration"] / 2], theme=THEME)

@@ -34,6 +34,32 @@ class TestBuild(unittest.TestCase):
 			self.assertIsNone(data["audio"])
 			self.assertEqual(data["tones"]["board"]["accent"], "text.accent")
 
+
+	def test_產出目錄帶共用元件(self):
+		with open(os.path.join(BOARD, "fixtures", "vscode_min.scene.json"), encoding="utf-8") as f:
+			tl = BC.compile_scene(json.load(f), None, BC.load_catalog())
+		with tempfile.TemporaryDirectory() as d:
+			BB.build(tl, d)
+			self.assertTrue(os.path.exists(os.path.join(d, "components", "vscode", "model.js")))
+			self.assertTrue(os.path.exists(os.path.join(d, "components", "vscode", "paint.js")))
+			with open(os.path.join(d, "player.html"), encoding="utf-8") as f:
+				page = f.read()
+			self.assertLess(page.index('src="components/vscode/paint.js"'), page.index('src="runtime/components/vscode.js"'))
+
+	def test_vscode色鍵都對到手帳主題(self):
+		themes = os.path.join(ROOT, "video_engine", "themes")
+		with open(os.path.join(themes, "tones.json"), encoding="utf-8") as f:
+			mapping = json.load(f)["vscode_to_board"]
+		with open(os.path.join(themes, "vscode_dark.json"), encoding="utf-8") as f:
+			vs = json.load(f)
+		with open(os.path.join(themes, "notebook.json"), encoding="utf-8") as f:
+			nb = json.load(f)
+		keys = {k for k, v in vs.items() if isinstance(v, str) and k not in ("name", "label")} | {"ann." + k for k in vs["ann"]}
+		self.assertEqual(set(mapping), keys)
+		for k, v in mapping.items():
+			grp, _, leaf = v.partition(".")
+			self.assertIsInstance(nb.get(grp, {}).get(leaf), str, (k, v))
+
 	def test_runtime_不寫死任何色碼(self):
 		for dirpath, _, files in os.walk(os.path.join(BOARD, "runtime")):
 			for name in files:

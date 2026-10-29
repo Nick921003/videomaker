@@ -31,15 +31,21 @@
 		return a.join('') + '…';
 	}
 
+	function bbox(pts) {
+		var xs = pts.map(function (p) { return p[0]; }), ys = pts.map(function (p) { return p[1]; });
+		var x = Math.min.apply(null, xs), y = Math.min.apply(null, ys);
+		return { x: x, y: y, w: Math.max.apply(null, xs) - x, h: Math.max.apply(null, ys) - y };
+	}
+
 	function ops(desc, st, t, size) {
-		var lay = M.layout(desc, size), m = lay.m, k = m.k, rg = lay.regions, W = lay.w, H = lay.h, out = [];
+		var lay = M.layout(desc, size), m = lay.m, k = m.k, f = m.f, rg = lay.regions, W = lay.w, H = lay.h, out = [];
 		var an = M.anchors(desc, st, size);
 		var alpha = 1;
 		function rect(x, y, w, h, o) { out.push(Object.assign({ op: 'rect', x: x, y: y, w: w, h: h }, o, alpha < 1 ? { alpha: alpha } : {})); }
 		function text(str, x, y, sz, color, o) {
 			o = o || {};
 			var s = o.max ? fit(str, sz, o.mono, o.max) : String(str);
-			out.push(Object.assign({ op: 'text', str: s, x: x, y: y, size: sz, color: color, w: textW(s, sz, o.mono) }, o.mono ? { mono: true } : {}, o.bold ? { bold: true } : {}, o.align ? { align: o.align } : {}, alpha < 1 ? { alpha: alpha } : {}));
+			out.push(Object.assign({ op: 'text', str: s, x: x, y: y, size: sz, color: color, w: textW(s, sz, o.mono) }, o.mono ? { mono: true } : {}, o.bold ? { bold: true } : {}, o.align ? { align: o.align } : {}, o.detail ? { detail: true } : {}, alpha < 1 ? { alpha: alpha } : {}));
 			return textW(s, sz, o.mono);
 		}
 		function line(pts, color, width, o) { out.push(Object.assign({ op: 'line', pts: pts, color: color, width: width * k }, o, alpha < 1 ? { alpha: alpha } : {})); }
@@ -60,13 +66,14 @@
 		// ---------- 標題列 ----------
 		var tcy = rg.title.h / 2;
 		line([[22 * k, 18 * k], [32 * k, 12 * k], [28 * k, 24 * k], [38 * k, 22 * k], [20 * k, 36 * k], [24 * k, 26 * k], [16 * k, 28 * k], [22 * k, 18 * k]], 'accent', 2);
+		var bw = Math.min(560 * k, W * 0.3), bx = (W - bw) / 2, bh = Math.min(rg.title.h - 8 * k, 34 * f);
 		var mx = 48 * k;
 		['檔案', '編輯', '選取項目', '檢視', '移至', '執行', '終端機', '說明'].forEach(function (s) {
-			if (mx + textW(s, m.ui) < W * 0.42) mx += text(s, mx, tcy, m.ui, 'fg') + 22 * k;
+			if (mx + textW(s, m.ui) <= bx - 16 * k) mx += text(s, mx, tcy, m.ui, 'fg') + 22 * f;
+			else mx = Infinity;
 		});
-		var bw = Math.min(560 * k, W * 0.3), bx = (W - bw) / 2;
-		rect(bx, 7 * k, bw, 34 * k, { fill: 'titleBox', stroke: 'menuLine', rx: 6 * k });
-		text(desc.folder || 'workspace', bx + 32 * k, tcy, 20 * k, 'dim', { max: bw - 44 * k });
+		rect(bx, tcy - bh / 2, bw, bh, { fill: 'titleBox', stroke: 'menuLine', rx: 6 * k });
+		text(desc.folder || 'workspace', bx + 32 * k, tcy, 20 * f, 'dim', { max: bw - 44 * k });
 
 		// ---------- 活動列 ----------
 		var ax = rg.activity.w / 2, ay = rg.activity.y + 28 * k, ap = 56 * k;
@@ -92,34 +99,34 @@
 
 		// ---------- 檔案總管 ----------
 		var ex = rg.explorer;
-		text('檔案總管', ex.x + 22 * k, ex.y + 26 * k, m.ui, 'fg');
-		line([[ex.x + 24 * k, ex.y + 66 * k], [ex.x + 32 * k, ex.y + 74 * k], [ex.x + 40 * k, ex.y + 66 * k]], 'fg', 2);
-		text(String(desc.folder || 'workspace').toUpperCase(), ex.x + 52 * k, ex.y + 70 * k, m.ui, 'fg', { bold: true, max: ex.w - 64 * k });
+		text('檔案總管', ex.x + 22 * f, ex.y + 26 * f, m.ui, 'fg');
+		line([[ex.x + 24 * f, ex.y + 66 * f], [ex.x + 32 * f, ex.y + 74 * f], [ex.x + 40 * f, ex.y + 66 * f]], 'fg', 2);
+		text(String(desc.folder || 'workspace').toUpperCase(), ex.x + 52 * f, ex.y + 70 * f, m.ui, 'fg', { bold: true, max: ex.w - 64 * f });
 		var rows = M.explorerRows(desc, lay);
-		Object.keys(rows).forEach(function (f) {
-			var r = rows[f], cy = r.y + r.h / 2;
-			if (f === st.open) rect(r.x, r.y, r.w, r.h, { fill: 'sel' });
-			if (/\.c$/.test(f)) text('C', r.x + 34 * k, cy, m.ui, 'file', { bold: true });
-			else line([[r.x + 34 * k, cy - 7 * k], [r.x + 52 * k, cy - 7 * k]], 'dim', 2), line([[r.x + 34 * k, cy], [r.x + 52 * k, cy]], 'dim', 2), line([[r.x + 34 * k, cy + 7 * k], [r.x + 46 * k, cy + 7 * k]], 'dim', 2);
-			text(f, r.x + 66 * k, cy, m.ui, 'fg', { max: r.w - 80 * k });
+		Object.keys(rows).forEach(function (fn) {
+			var r = rows[fn], cy = r.y + r.h / 2;
+			if (fn === st.open) rect(r.x, r.y, r.w, r.h, { fill: 'sel' });
+			if (/\.c$/.test(fn)) text('C', r.x + 34 * f, cy, m.ui, 'file', { bold: true });
+			else line([[r.x + 34 * f, cy - 7 * f], [r.x + 52 * f, cy - 7 * f]], 'dim', 2), line([[r.x + 34 * f, cy], [r.x + 52 * f, cy]], 'dim', 2), line([[r.x + 34 * f, cy + 7 * f], [r.x + 46 * f, cy + 7 * f]], 'dim', 2);
+			text(fn, r.x + 66 * f, cy, m.ui, 'fg', { max: r.w - 80 * f });
 		});
 
 		// ---------- 分頁與執行鈕 ----------
 		var tabs = M.tabBoxes(desc, lay);
-		Object.keys(tabs).forEach(function (f) {
-			var b = tabs[f], on = f === st.open, cy = b.y + b.h / 2;
+		Object.keys(tabs).forEach(function (fn) {
+			var b = tabs[fn], on = fn === st.open, cy = b.y + b.h / 2;
 			rect(b.x, b.y, b.w, b.h, { fill: on ? 'edit' : 'tabOff' });
-			if (on) rect(b.x, b.y, b.w, 3 * k, { fill: 'accent' });
-			text('C', b.x + 20 * k, cy, m.ui, 'file', { bold: true });
-			text(f, b.x + 52 * k, cy, m.ui, on ? 'actOn' : 'dim', { max: b.w - (on ? 100 : 62) * k });
-			if (on) line([[b.x + b.w - 40 * k, cy - 8 * k], [b.x + b.w - 24 * k, cy + 8 * k]], 'fg', 2), line([[b.x + b.w - 24 * k, cy - 8 * k], [b.x + b.w - 40 * k, cy + 8 * k]], 'fg', 2);
+			if (on) rect(b.x, b.y, b.w, 3 * f, { fill: 'accent' });
+			text('C', b.x + 20 * f, cy, m.ui, 'file', { bold: true });
+			text(fn, b.x + 52 * f, cy, m.ui, on ? 'actOn' : 'dim', { max: b.w - (on ? 100 : 62) * f });
+			if (on) line([[b.x + b.w - 40 * f, cy - 8 * f], [b.x + b.w - 24 * f, cy + 8 * f]], 'fg', 2), line([[b.x + b.w - 24 * f, cy - 8 * f], [b.x + b.w - 40 * f, cy + 8 * f]], 'fg', 2);
 		});
 		var rb = an.run, rx = rb.x + rb.w / 2, ry = rb.y + rb.h / 2;
-		if (st.panel.running) rect(rx - 13 * k, ry - 13 * k, 26 * k, 26 * k, { stroke: 'stop', rx: 2 * k, width: 3 * k });
-		else line([[rx - 9 * k, ry - 13 * k], [rx + 12 * k, ry], [rx - 9 * k, ry + 13 * k], [rx - 9 * k, ry - 13 * k]], 'fg', 2.5);
-		rect(W - 108 * k, ry - 13 * k, 26 * k, 26 * k, { stroke: 'fg', rx: 3 * k, width: 2 * k });
-		line([[W - 95 * k, ry - 13 * k], [W - 95 * k, ry + 13 * k]], 'fg', 2);
-		text('···', W - 44 * k, ry, m.ui, 'fg', { align: 'middle' });
+		if (st.panel.running) rect(rx - 13 * f, ry - 13 * f, 26 * f, 26 * f, { stroke: 'stop', rx: 2 * f, width: 3 * f });
+		else line([[rx - 9 * f, ry - 13 * f], [rx + 12 * f, ry], [rx - 9 * f, ry + 13 * f], [rx - 9 * f, ry - 13 * f]], 'fg', 2.5);
+		rect(W - 108 * f, ry - 13 * f, 26 * f, 26 * f, { stroke: 'fg', rx: 3 * f, width: 2 * f });
+		line([[W - 95 * f, ry - 13 * f], [W - 95 * f, ry + 13 * f]], 'fg', 2);
+		text('···', W - 44 * f, ry, m.ui, 'fg', { align: 'middle' });
 
 		// ---------- 程式碼 ----------
 		var src = desc.files[st.open], ed = rg.editor, hl = st.highlight;
@@ -127,8 +134,8 @@
 			var b = an['L' + (i + 1)];
 			if (!b.h) return;
 			var cy = b.y + b.h / 2;
-			if (hl && hl.file === st.open && hl.lines.indexOf(i + 1) >= 0) rect(b.x - 4 * k, b.y + 2 * k, (b.w + 8 * k) * hl.p, b.h - 4 * k, { fill: 'hl', rx: 4 * k });
-			text(String(i + 1), ed.x + 66 * k, cy, m.code, 'lineNo', { mono: true, align: 'end' });
+			if (hl && hl.file === st.open && hl.lines.indexOf(i + 1) >= 0) rect(b.x - 4 * f, b.y + 2 * f, (b.w + 8 * f) * hl.p, b.h - 4 * f, { fill: 'hl', rx: 4 * f });
+			text(String(i + 1), ed.x + 66 * f, cy, m.code, 'lineNo', { mono: true, align: 'end' });
 			var x = b.x, right = ed.x + ed.w - m.pad;
 			tokens(ln.replace(/\t/g, '    ')).forEach(function (tk) {
 				if (x >= right || /^\s+$/.test(tk[0])) { x += textW(tk[0], m.code, true); return; }
@@ -139,74 +146,81 @@
 		// ---------- 下方面板 ----------
 		var p = rg.panel;
 		rect(p.x, p.y, p.w, p.h, { fill: 'side' });
-		rect(p.x, p.y, p.w, 1 * k, { fill: 'line' });
+		rect(p.x, p.y, p.w, 1 * f, { fill: 'line' });
 		var px = p.x + m.pad, pcy = p.y + m.ptabH / 2, on = st.panel.kind === 'terminal' ? '終端機' : '輸出';
 		['問題', '輸出', '偵錯主控台', '終端機'].forEach(function (s) {
 			var w = text(s, px, pcy, m.ui, s === on ? 'actOn' : 'dim');
-			if (s === on) rect(px, p.y + m.ptabH - 4 * k, w, 3 * k, { fill: 'accent' });
-			px += w + 44 * k;
+			if (s === on) rect(px, p.y + m.ptabH - 4 * f, w, 3 * f, { fill: 'accent' });
+			px += w + 44 * f;
 		});
 		var view = M.panelView(st, lay), maxW = p.w - 2 * m.pad - m.out;
-		view.forEach(function (s, i) { text(s, p.x + m.pad, p.y + m.ptabH + 8 * k + (i + 0.5) * m.outPitch, m.out, 'fg', { mono: true, max: maxW }); });
+		view.forEach(function (s, i) { text(s, p.x + m.pad, p.y + m.ptabH + 8 * f + (i + 0.5) * m.outPitch, m.out, 'fg', { mono: true, max: maxW }); });
 		// 終端機才有游標（輸出面板唯讀，這正是 printf 片要講的差別）
 		if (st.panel.kind === 'terminal' && Math.floor(t * 2) % 2 === 0) {
 			var e = an['panel:end'];
-			rect(e.x, e.y + 6 * k, m.out * 0.55, e.h - 12 * k, { fill: 'fg' });
+			rect(e.x, e.y + 6 * f, m.out * 0.55, e.h - 12 * f, { fill: 'fg' });
 		}
 
 		// ---------- 狀態列 ----------
-		text('Ln 1, Col 1    空格: 4    UTF-8    CRLF    C    Win32', W - 24 * k, rg.status.y + rg.status.h / 2, 16 * k, 'actOn', { align: 'end' });
+		// 細節：仿真版才畫，手帳的鉛筆版縮小後讀不到，略過
+		text('Ln 1, Col 1    空格: 4    UTF-8    CRLF    C    Win32', W - 24 * f, rg.status.y + rg.status.h / 2, 16 * f, 'actOn', { align: 'end', detail: true });
 
-		// ---------- 選單與頁面（疊在最上面） ----------
+		// ---------- 選單與頁面（疊在最上面）：被蓋住的字和線不畫，否則量測閘會當成互疊 ----------
+		var cover = st.page ? M.pageParts(lay).box : st.menu ? M.menuBox(desc, lay, st.menu) : null;
+		if (cover) out = out.filter(function (o) {
+			if (o.op === 'rect') return true;
+			var b = o.op === 'text' ? { x: o.x - (o.align === 'end' ? o.w : o.align === 'middle' ? o.w / 2 : 0), y: o.y - o.size / 2, w: o.w, h: o.size } : bbox(o.pts);
+			return b.x + b.w <= cover.x || b.x >= cover.x + cover.w || b.y + b.h <= cover.y || b.y >= cover.y + cover.h;
+		});
 		if (st.menu) {
 			alpha = st.fade;
 			var mb = M.menuBox(desc, lay, st.menu);
-			rect(mb.x, mb.y, mb.w, mb.h, { fill: 'menu', stroke: 'menuLine', rx: 6 * k });
+			rect(mb.x, mb.y, mb.w, mb.h, { fill: 'menu', stroke: 'menuLine', rx: 6 * f });
 			M.presetItems(desc, st.menu).forEach(function (it) {
 				var b = an[it.id], cy = b.y + b.h / 2;
-				text(it.text, b.x + 16 * k, cy, m.ui, 'fg', { max: b.w * 0.6 });
-				if (it.key) text(it.key, b.x + b.w - 12 * k, cy, 18 * k, 'dim', { align: 'end' });
+				text(it.text, b.x + 20 * f, cy, m.ui, 'fg', { max: b.w * 0.6 });
+				if (it.key) text(it.key, b.x + b.w - 12 * f, cy, 20 * f, 'dim', { align: 'end' });
 			});
 			alpha = 1;
 		}
 		if (st.page) {
 			alpha = st.fade;
 			var parts = M.pageParts(lay), pb = parts.box, hd = parts.head, se = parts.search, preset = desc._presets[st.page];
-			rect(pb.x, pb.y, pb.w, pb.h, { fill: 'win', stroke: 'menuLine', rx: 8 * k });
+			rect(pb.x, pb.y, pb.w, pb.h, { fill: 'win', stroke: 'menuLine', rx: 8 * f });
 			rect(hd.x, hd.y, hd.w, hd.h, { fill: 'winTitle' });
-			text(st.page === 'settings' ? '設定' : '延伸模組', hd.x + 28 * k, hd.y + hd.h / 2, m.ui, 'fg', { bold: true });
-			line([[hd.x + hd.w - 40 * k, hd.y + 17 * k], [hd.x + hd.w - 24 * k, hd.y + 33 * k]], 'fg', 2);
-			line([[hd.x + hd.w - 24 * k, hd.y + 17 * k], [hd.x + hd.w - 40 * k, hd.y + 33 * k]], 'fg', 2);
-			rect(se.x, se.y, se.w, se.h, { fill: 'input', stroke: 'inputLine', rx: 4 * k });
-			text(preset.search || '', se.x + 12 * k, se.y + se.h / 2, 20 * k, 'fg', { max: se.w * 0.6 });
-			if (preset.found) text(preset.found, se.x + se.w - 12 * k, se.y + se.h / 2, 16 * k, 'dim', { align: 'end' });
+			text(st.page === 'settings' ? '設定' : '延伸模組', hd.x + 28 * f, hd.y + hd.h / 2, m.ui, 'fg', { bold: true });
+			line([[hd.x + hd.w - 40 * f, hd.y + 17 * f], [hd.x + hd.w - 24 * f, hd.y + 33 * f]], 'fg', 2);
+			line([[hd.x + hd.w - 24 * f, hd.y + 17 * f], [hd.x + hd.w - 40 * f, hd.y + 33 * f]], 'fg', 2);
+			rect(se.x, se.y, se.w, se.h, { fill: 'input', stroke: 'inputLine', rx: 4 * f });
+			text(preset.search || '', se.x + 12 * f, se.y + se.h / 2, 20 * f, 'fg', { max: se.w * 0.6 });
+			if (preset.found) text(preset.found, se.x + se.w - 12 * f, se.y + se.h / 2, 20 * f, 'dim', { align: 'end' });
 			if (st.page === 'settings') {
-				text('使用者', se.x, se.y + se.h + 32 * k, 20 * k, 'link');
-				text('工作區', se.x + 90 * k, se.y + se.h + 32 * k, 20 * k, 'dim');
+				text('使用者', se.x, se.y + se.h + 32 * f, 20 * f, 'link');
+				text('工作區', se.x + 90 * f, se.y + se.h + 32 * f, 20 * f, 'dim');
 			}
 			M.presetItems(desc, st.page).forEach(function (it) {
 				var b = an[it.id], right = b.x + b.w;
 				if (st.page === 'settings') {
-					var w = text(it.group + ': ', b.x + 16 * k, b.y + 24 * k, 20 * k, 'link', { bold: true, max: b.w * 0.5 });
-					text(it.title, b.x + 16 * k + w, b.y + 24 * k, 20 * k, 'fg', { bold: true, max: right - b.x - 32 * k - w });
-					var dx = b.x + 16 * k;
+					var w = text(it.group + ': ', b.x + 20 * f, b.y + 24 * f, 20 * f, 'link', { bold: true, max: b.w * 0.5 });
+					text(it.title, b.x + 20 * f + w, b.y + 24 * f, 20 * f, 'fg', { bold: true, max: right - b.x - 32 * f - w });
+					var dx = b.x + 20 * f;
 					if (typeof it.check === 'boolean') {
-						rect(dx, b.y + 46 * k, 22 * k, 22 * k, { fill: 'input', stroke: 'inputLine', rx: 3 * k });
-						if (st.checks[it.id]) line([[dx + 5 * k, b.y + 57 * k], [dx + 10 * k, b.y + 63 * k], [dx + 18 * k, b.y + 50 * k]], 'fg', 2.5);
-						dx += 36 * k;
-						text(it.desc, dx, b.y + 57 * k, 18 * k, 'link', { max: right - dx - 16 * k });
+						rect(dx, b.y + 46 * f, 22 * f, 22 * f, { fill: 'input', stroke: 'inputLine', rx: 3 * f });
+						if (st.checks[it.id]) line([[dx + 5 * f, b.y + 57 * f], [dx + 10 * f, b.y + 63 * f], [dx + 20 * f, b.y + 50 * f]], 'fg', 2.5);
+						dx += 36 * f;
+						text(it.desc, dx, b.y + 57 * f, 20 * f, 'link', { max: right - dx - 20 * f });
 					} else {
-						text(it.desc, dx, b.y + 57 * k, 18 * k, 'fg', { max: right - dx - 16 * k });
-						rect(dx, b.y + 74 * k, Math.min(300 * k, b.w - 32 * k), 28 * k, { fill: 'input', stroke: 'inputLine', rx: 3 * k });
-						text(it.select || '', dx + 10 * k, b.y + 88 * k, 18 * k, 'fg');
+						text(it.desc, dx, b.y + 57 * f, 20 * f, 'fg', { max: right - dx - 20 * f });
+						rect(dx, b.y + 74 * f, Math.min(300 * f, b.w - 32 * f), 28 * f, { fill: 'input', stroke: 'inputLine', rx: 3 * f });
+						text(it.select || '', dx + 10 * f, b.y + 88 * f, 20 * f, 'fg');
 					}
 				} else {
-					rect(b.x, b.y, 64 * k, 64 * k, { fill: 'act', rx: 6 * k });
-					var nx = b.x + 84 * k;
-					var nw = text(it.name, nx, b.y + 16 * k, 20 * k, 'fg', { bold: true, max: b.w * 0.5 });
-					if (it.installed) text('已安裝', nx + nw + 16 * k, b.y + 16 * k, 16 * k, 'dim');
-					text(it.desc, nx, b.y + 44 * k, 18 * k, 'dim', { max: right - nx - 16 * k });
-					text(it.author, nx, b.y + 72 * k, 16 * k, 'fg', { max: right - nx - 16 * k });
+					rect(b.x, b.y, 64 * f, 64 * f, { fill: 'act', rx: 6 * f });
+					var nx = b.x + 84 * f;
+					var nw = text(it.name, nx, b.y + 20 * f, 20 * f, 'fg', { bold: true, max: b.w * 0.5 });
+					if (it.installed) text('已安裝', nx + nw + 20 * f, b.y + 20 * f, 20 * f, 'dim');
+					text(it.desc, nx, b.y + 44 * f, 20 * f, 'dim', { max: right - nx - 20 * f });
+					text(it.author, nx, b.y + 72 * f, 20 * f, 'fg', { max: right - nx - 20 * f });
 				}
 			});
 			alpha = 1;
