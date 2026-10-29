@@ -583,8 +583,12 @@
 				"editor",
 				"panel",
 				"panel:end",
+				"ptab:output",
+				"ptab:terminal",
+				"tip",
 				"settings:search",
 				"L{n}",
+				"P{n}",
 				"tab:{file}",
 				"file:{file}",
 				"{key}"
@@ -594,7 +598,8 @@
 					"dur": 0.5,
 					"req": [
 						"file"
-					]
+					],
+					"blocks": true
 				},
 				"highlight": {
 					"dur": 0.5,
@@ -632,25 +637,55 @@
 					"blocks": true
 				},
 				"stop": {
-					"dur": 0.5
+					"dur": 0.5,
+					"blocks": true
 				},
 				"menu": {
 					"dur": 0.5,
 					"req": [
 						"name"
-					]
+					],
+					"blocks": true
 				},
 				"page": {
 					"dur": 0.6,
 					"req": [
 						"name"
-					]
+					],
+					"blocks": true
 				},
 				"check": {
-					"dur": 0.3
+					"dur": 0.3,
+					"blocks": true
 				},
 				"close": {
-					"dur": 0.4
+					"dur": 0.4,
+					"blocks": true
+				},
+				"panel": {
+					"dur": 0.3,
+					"req": [
+						"name"
+					],
+					"blocks": true
+				},
+				"tip": {
+					"dur": 0.3,
+					"req": [
+						"text"
+					],
+					"blocks": true
+				},
+				"type": {
+					"seq": "chars",
+					"per": [
+						0.05,
+						0.1
+					],
+					"req": [
+						"text"
+					],
+					"blocks": true
 				}
 			}
 		}

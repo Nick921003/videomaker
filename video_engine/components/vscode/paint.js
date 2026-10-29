@@ -31,6 +31,17 @@
 		return a.join('') + '…';
 	}
 
+	// 輸出照實機上色：Code Runner 的 [Running]／[Done] 是藍字，非 0 結束碼與錯誤訊息是紅字
+	function outputRuns(s) {
+		var m = /^(\[(?:Running|Done)\])(.*)$/.exec(s);
+		if (m) {
+			var c = /^( exited with code=)(\d+)(.*)$/.exec(m[2]);
+			if (c) return [[m[1], 'link'], [c[1] + c[2], c[2] === '0' ? 'link' : 'stop'], [c[3], 'link']];
+			return [[m[1], 'link'], [m[2], 'fg']];
+		}
+		return [[s, /error|Permission denied/i.test(s) ? 'stop' : 'fg']];
+	}
+
 	function bbox(pts) {
 		var xs = pts.map(function (p) { return p[0]; }), ys = pts.map(function (p) { return p[1]; });
 		var x = Math.min.apply(null, xs), y = Math.min.apply(null, ys);
@@ -147,14 +158,23 @@
 		var p = rg.panel;
 		rect(p.x, p.y, p.w, p.h, { fill: 'side' });
 		rect(p.x, p.y, p.w, 1 * f, { fill: 'line' });
-		var px = p.x + m.pad, pcy = p.y + m.ptabH / 2, on = st.panel.kind === 'terminal' ? '終端機' : '輸出';
-		['問題', '輸出', '偵錯主控台', '終端機'].forEach(function (s) {
-			var w = text(s, px, pcy, m.ui, s === on ? 'actOn' : 'dim');
-			if (s === on) rect(px, p.y + m.ptabH - 4 * f, w, 3 * f, { fill: 'accent' });
-			px += w + 44 * f;
+		var ptabs = M.panelTabs(lay);
+		Object.keys(ptabs).forEach(function (key) {
+			var b = ptabs[key].box, on = key === st.panel.kind;
+			text(ptabs[key].label, b.x, p.y + m.ptabH / 2, m.ui, on ? 'actOn' : 'dim');
+			if (on) rect(b.x, p.y + m.ptabH - 4 * f, b.w, 3 * f, { fill: 'accent' });
 		});
-		var view = M.panelView(st, lay), maxW = p.w - 2 * m.pad - m.out;
-		view.forEach(function (s, i) { text(s, p.x + m.pad, p.y + m.ptabH + 8 * f + (i + 0.5) * m.outPitch, m.out, 'fg', { mono: true, max: maxW }); });
+		var view = M.panelView(st, lay), right = p.x + p.w - m.pad - m.out;
+		view.forEach(function (s, i) {
+			var x = p.x + m.pad, cy = p.y + m.ptabH + 8 * f + (i + 0.5) * m.outPitch;
+			outputRuns(s).forEach(function (r) { if (x < right && r[0]) x += text(r[0], x, cy, m.out, r[1], { mono: true, max: right - x }); });
+		});
+		if (st.tip) {
+			var tb = an.tip, tcy2 = tb.y + tb.h / 2;
+			rect(tb.x, tb.y, tb.w, tb.h, { fill: 'tip', stroke: 'dim', rx: 6 * f, width: 1.5 * k });
+			line([[tb.x, tcy2 - 10 * f], [tb.x - 16 * f, tcy2], [tb.x, tcy2 + 10 * f]], 'tip', 2);
+			text(st.tip, tb.x + 22 * f, tcy2, m.ui, 'tipFg', { max: tb.w - 30 * f });
+		}
 		// 終端機才有游標（輸出面板唯讀，這正是 printf 片要講的差別）
 		if (st.panel.kind === 'terminal' && Math.floor(t * 2) % 2 === 0) {
 			var e = an['panel:end'];
@@ -191,14 +211,17 @@
 			text(st.page === 'settings' ? '設定' : '延伸模組', hd.x + 28 * f, hd.y + hd.h / 2, m.ui, 'fg', { bold: true });
 			line([[hd.x + hd.w - 40 * f, hd.y + 17 * f], [hd.x + hd.w - 24 * f, hd.y + 33 * f]], 'fg', 2);
 			line([[hd.x + hd.w - 24 * f, hd.y + 17 * f], [hd.x + hd.w - 40 * f, hd.y + 33 * f]], 'fg', 2);
-			rect(se.x, se.y, se.w, se.h, { fill: 'input', stroke: 'inputLine', rx: 4 * f });
-			text(preset.search || '', se.x + 12 * f, se.y + se.h / 2, 20 * f, 'fg', { max: se.w * 0.6 });
-			if (preset.found) text(preset.found, se.x + se.w - 12 * f, se.y + se.h / 2, 20 * f, 'dim', { align: 'end' });
+			// 分鏡有打字就照打到哪顯示，打完整才出現結果；沒寫打字就當作已經搜好
+			var shown = st.searchTyped ? st.search : (preset.search || ''), done = shown === (preset.search || '');
+			rect(se.x, se.y, se.w, se.h, { fill: 'input', stroke: st.searchTyped && !done ? 'link' : 'inputLine', rx: 4 * f });
+			if (shown) text(shown, se.x + 12 * f, se.y + se.h / 2, 20 * f, 'fg', { max: se.w * 0.6 });
+			else text(st.page === 'settings' ? '搜尋設定' : '在 Marketplace 中搜尋延伸模組', se.x + 12 * f, se.y + se.h / 2, 20 * f, 'dim', { max: se.w * 0.6 });
+			if (preset.found && done) text(preset.found, se.x + se.w - 12 * f, se.y + se.h / 2, 20 * f, 'dim', { align: 'end' });
 			if (st.page === 'settings') {
 				text('使用者', se.x, se.y + se.h + 32 * f, 20 * f, 'link');
 				text('工作區', se.x + 90 * f, se.y + se.h + 32 * f, 20 * f, 'dim');
 			}
-			M.presetItems(desc, st.page).forEach(function (it) {
+			if (done) M.presetItems(desc, st.page).forEach(function (it) {
 				var b = an[it.id], right = b.x + b.w;
 				if (st.page === 'settings') {
 					var w = text(it.group + ': ', b.x + 20 * f, b.y + 24 * f, 20 * f, 'link', { bold: true, max: b.w * 0.5 });
@@ -228,6 +251,6 @@
 		return out;
 	}
 
-	var X = { ops: ops, tokens: tokens, fit: fit };
+	var X = { ops: ops, tokens: tokens, fit: fit, outputRuns: outputRuns };
 	if (typeof module !== 'undefined') module.exports = X; else g.VSCodePaint = X;
 })(this);

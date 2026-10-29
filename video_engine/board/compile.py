@@ -422,6 +422,8 @@ class Compiler:
 					raise ValueError(f"{where} lines 超出行數（1..{n}）：{args['lines']}")
 			elif act == "open" and args["file"] not in obj["files"]:
 				raise ValueError(f"{where} 開的檔不在 files：{args['file']}")
+			elif act == "panel" and args["name"] not in self.cat["types"]["vscode"]["panels"]:
+				raise ValueError(f"{where} 沒有這種面板：{args['name']}")
 			elif act in ("menu", "page") and args["name"] not in obj["_presets"]:
 				raise ValueError(f"{where} 沒在物件的 {act}s 宣告：{args['name']}")
 

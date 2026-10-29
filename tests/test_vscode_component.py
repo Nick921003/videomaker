@@ -234,6 +234,63 @@ class TestExport(unittest.TestCase):
 				self.assertEqual(im.size, (1280, 800))
 
 
+def mini(do, panel="output", pages=None):
+	"""一個場景、一句話的小描述，動作依序排；回傳 (desc, acts, tl)"""
+	def edit(doc):
+		doc["objects"][0]["panel"] = panel
+		if pages:
+			doc["objects"][0]["pages"] = pages
+		doc["scenes"][0]["beats"][0]["do"] = [{"act": "show", "target": "vs"}] + do
+	return compiled("vscode_min", edit)
+
+
+class TestMoreActions(unittest.TestCase):
+	def test_面板切換各自保留內容(self):
+		desc, acts, tl = mini([{"act": "run", "target": "vs", "output": ["[Running] a"]},
+			{"act": "panel", "target": "vs", "name": "terminal"}, {"act": "print", "target": "vs", "lines": ["PS> b"]},
+			{"act": "panel", "target": "vs", "name": "output"}])
+		sw = act_time(acts, "panel")
+		a, b, c = probe("state", desc, acts, [sw["t0"] - 0.01, act_time(acts, "print")["t1"] - 0.001, tl["duration"]])
+		self.assertEqual((a["panel"]["kind"], a["panel"]["lines"]), ("output", ["[Running] a"]))
+		self.assertEqual((b["panel"]["kind"], b["panel"]["lines"]), ("terminal", ["PS> b"]))
+		self.assertEqual(c["panel"]["lines"], ["[Running] a"])
+
+	def test_面板分頁與每行都有錨點(self):
+		desc, acts, tl = mini([{"act": "run", "target": "vs", "output": ["[Running] a", "請輸入成績: "]}])
+		an = probe("anchors", desc, acts, [tl["duration"]])[0]
+		for n in ("ptab:output", "ptab:terminal", "P1", "P2"):
+			self.assertIn(n, an)
+		self.assertLess(an["P1"]["y"], an["P2"]["y"])
+
+	def test_唯讀提示框到下一個動作就收(self):
+		desc, acts, tl = mini([{"act": "run", "target": "vs", "output": ["請輸入成績: "]},
+			{"act": "tip", "target": "vs", "text": "無法在唯讀編輯器中編輯"}, {"act": "stop", "target": "vs"}])
+		tip, stop = act_time(acts, "tip"), act_time(acts, "stop")
+		a, b = probe("state", desc, acts, [tip["t1"] - 0.001, stop["t0"] + 0.01])
+		self.assertEqual(a["tip"], "無法在唯讀編輯器中編輯")
+		self.assertIsNone(b["tip"])
+		self.assertIn("tip", probe("anchors", desc, acts, [tip["t1"] - 0.001])[0])
+
+	def test_設定搜尋框逐字打入(self):
+		desc, acts, _ = mini([{"act": "page", "target": "vs", "name": "settings"}, {"act": "type", "target": "vs", "text": "run in terminal"}], pages=["settings"])
+		ty = act_time(acts, "type")
+		a, b, c = probe("state", desc, acts, [ty["t0"] - 0.01, ty["t0"] + 0.01, ty["t1"]])
+		self.assertEqual(a["search"], "")
+		self.assertEqual(b["search"], "r")
+		self.assertEqual(c["search"], "run in terminal")
+		ops = probe("ops", desc, acts, [ty["t0"] + 0.01])[0]
+		self.assertFalse([o for o in ops if o["op"] == "text" and o["str"].startswith("Run In Terminal")])
+
+	def test_輸出照實機上色(self):
+		desc, acts, tl = mini([{"act": "run", "target": "vs", "output": ["[Running] cd x", "[Done] exited with code=1 in 2 seconds", "ld.exe: cannot open output file score.exe: Permission denied"]}])
+		ops = probe("ops", desc, acts, [tl["duration"]])[0]
+		color = {o["str"]: o["color"] for o in ops if o["op"] == "text"}
+		self.assertEqual(color["[Running]"], "link")
+		self.assertEqual(color["[Done]"], "link")
+		self.assertEqual(color[" exited with code=1"], "stop")
+		self.assertEqual(color["ld.exe: cannot open output file score.exe: Permission denied"], "stop")
+
+
 class TestChalkAdapter(unittest.TestCase):
 	def test_黑板轉接的動作時間取自逐字時間(self):
 		if not NODE:

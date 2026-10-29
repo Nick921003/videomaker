@@ -75,13 +75,18 @@
 
 	function state(desc, acts, t, size) {
 		var lay = layout(desc, size);
-		var st = { open: desc.open, highlight: null, scrollTop: 0, panel: { kind: desc.panel || 'output', lines: [], running: false }, menu: null, page: null, fade: 1, checks: {} };
+		// 輸出面板與終端機各有自己的內容，切換分頁時互不影響
+		var panels = { output: [], terminal: [] }, kind = desc.panel || 'output';
+		var st = { open: desc.open, highlight: null, scrollTop: 0, panel: { kind: kind, lines: panels[kind], running: false }, menu: null, page: null, fade: 1, checks: {},
+			tip: null, search: '', searchTyped: acts.some(function (a) { return a.obj === desc.id && a.act === 'type'; }) };
 		presetItems(desc, 'settings').forEach(function (it) { if (typeof it.check === 'boolean') st.checks[it.id] = it.check; });
 		var own = acts.filter(function (a) { return a.obj === desc.id; }).slice().sort(function (a, b) { return a.t0 - b.t0; });
-		var lines = st.panel.lines;
+		var MARK = { circle: 1, underline: 1, arrow: 1, show: 1, hide: 1, focus: 1 };
 		own.forEach(function (a) {
 			if (t < a.t0) return;
-			var x = a.args || {};
+			var x = a.args || {}, lines = st.panel.lines;
+			// 提示框到下一個操作就收（標記、鏡頭不算操作）
+			if (!MARK[a.act]) st.tip = null;
 			switch (a.act) {
 				case 'open': st.open = x.file; st.highlight = null; break;
 				case 'highlight':
@@ -100,8 +105,11 @@
 					lines[lines.length - 1] += Array.from(x.text).slice(0, seqCount(a, t)).join('');
 					break;
 				case 'stop': st.panel.running = false; break;
+				case 'panel': st.panel.kind = x.name; st.panel.lines = panels[x.name]; break;
+				case 'tip': st.tip = x.text; break;
+				case 'type': st.search += Array.from(x.text).slice(0, seqCount(a, t)).join(''); break;
 				case 'menu': st.menu = x.name; st.page = null; st.fade = prog(a, t); break;
-				case 'page': st.page = x.name; st.menu = null; st.fade = prog(a, t); break;
+				case 'page': st.page = x.name; st.menu = null; st.fade = prog(a, t); st.search = ''; break;
 				case 'close': st.menu = null; st.page = null; break;
 				case 'check': var id = a.target.split(':')[1]; st.checks[id] = !st.checks[id]; break;
 			}
@@ -159,6 +167,22 @@
 		return lines.slice(Math.max(0, lines.length - V));
 	}
 
+	function panelTabs(lay) {
+		var m = lay.m, p = lay.regions.panel, x = p.x + m.pad, out = {};
+		[['problems', '問題'], ['output', '輸出'], ['debug', '偵錯主控台'], ['terminal', '終端機']].forEach(function (tb) {
+			var w = textW(tb[1], m.ui);
+			out[tb[0]] = { label: tb[1], box: R(x, p.y + 8 * m.f, w, m.ptabH - 12 * m.f) };
+			x += w + 44 * m.f;
+		});
+		return out;
+	}
+
+	function tipBox(st, lay, end) {
+		var m = lay.m, p = lay.regions.panel, w = textW(st.tip, m.ui) + 44 * m.f, h = 48 * m.f;
+		var x = Math.min(end.x + 48 * m.f, p.x + p.w - m.pad - w);
+		return R(x, end.y + end.h / 2 - h / 2, w, h);
+	}
+
 	function anchors(desc, st, size) {
 		var lay = layout(desc, size), m = lay.m, rg = lay.regions, out = {};
 		var W = lay.w;
@@ -187,6 +211,10 @@
 		var px = p.x + m.pad, maxX = p.x + p.w - m.pad - m.out;
 		var endX = Math.min(px + textW(view[k] || '', m.out, true), maxX);
 		out['panel:end'] = R(endX, p.y + m.ptabH + 8 * m.f + k * m.outPitch, m.out, m.outPitch);
+		view.forEach(function (s, i) { out['P' + (i + 1)] = R(px, p.y + m.ptabH + 8 * m.f + i * m.outPitch, Math.min(Math.max(textW(s, m.out, true), m.out), maxX + m.out - px), m.outPitch); });
+		var pt = panelTabs(lay);
+		out['ptab:output'] = pt.output.box; out['ptab:terminal'] = pt.terminal.box;
+		if (st.tip) out.tip = tipBox(st, lay, out['panel:end']);
 
 		var parts = pageParts(lay);
 		out['settings:search'] = parts.search;
@@ -207,6 +235,6 @@
 
 	var X = { SIZE: SIZE, metrics: metrics, textW: textW, layout: layout, state: state, anchors: anchors,
 		presetItems: presetItems, codeRows: codeRows, panelView: panelView, tabBoxes: tabBoxes, explorerRows: explorerRows,
-		menuBox: menuBox, pageParts: pageParts };
+		menuBox: menuBox, pageParts: pageParts, panelTabs: panelTabs, tipBox: tipBox };
 	if (typeof module !== 'undefined') module.exports = X; else g.VSCodeModel = X;
 })(this);
