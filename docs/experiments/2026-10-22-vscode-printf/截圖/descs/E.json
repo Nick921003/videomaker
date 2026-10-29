@@ -1,0 +1,53 @@
+{
+	"_doc": "文章：加了 fflush 提示字出現，但一打字就顯示唯讀（取代 E_輸出面板_fflush後提示出現但唯讀.png）",
+	"object": {
+		"folder": "c_homework",
+		"panel": "output",
+		"open": "score_fflush.c",
+		"explorer": [
+			"score.c",
+			"score.exe",
+			"score_fflush.c",
+			"score_fflush.exe"
+		],
+		"files": {
+			"score.c": [
+				"#include <stdio.h>",
+				"",
+				"int main(void) {",
+				"\tint score;",
+				"\tprintf(\"請輸入成績: \");",
+				"\tscanf(\"%d\", &score);",
+				"\tprintf(\"你的成績是 %d\\n\", score);",
+				"\treturn 0;",
+				"}"
+			],
+			"score_fflush.c": [
+				"#include <stdio.h>",
+				"",
+				"int main(void) {",
+				"\tint score;",
+				"\tprintf(\"請輸入成績: \");",
+				"\tfflush(stdout);",
+				"\tscanf(\"%d\", &score);",
+				"\tprintf(\"你的成績是 %d\\n\", score);",
+				"\treturn 0;",
+				"}"
+			]
+		}
+	},
+	"do": [
+		{
+			"act": "run",
+			"output": [
+				"[Running] cd \"c:\\Users\\student\\c_homework\\\" && gcc score_fflush.c -o score_fflush && \"c:\\Users\\student\\c_homework\\\"score_fflush",
+				"",
+				"請輸入成績: "
+			]
+		},
+		{
+			"act": "tip",
+			"text": "無法在唯讀編輯器中編輯"
+		}
+	]
+}

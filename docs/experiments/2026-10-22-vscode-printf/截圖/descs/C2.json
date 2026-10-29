@@ -1,0 +1,62 @@
+{
+	"_doc": "文章：終端機分頁，提示字出現、可以輸入（取代 C2_終端機_s1與s3正常.png；成績版沒有 s3，圖說要改）",
+	"object": {
+		"folder": "c_homework",
+		"panel": "terminal",
+		"open": "score.c",
+		"explorer": [
+			"score.c",
+			"score.exe",
+			"score_fflush.c",
+			"score_fflush.exe"
+		],
+		"files": {
+			"score.c": [
+				"#include <stdio.h>",
+				"",
+				"int main(void) {",
+				"\tint score;",
+				"\tprintf(\"請輸入成績: \");",
+				"\tscanf(\"%d\", &score);",
+				"\tprintf(\"你的成績是 %d\\n\", score);",
+				"\treturn 0;",
+				"}"
+			],
+			"score_fflush.c": [
+				"#include <stdio.h>",
+				"",
+				"int main(void) {",
+				"\tint score;",
+				"\tprintf(\"請輸入成績: \");",
+				"\tfflush(stdout);",
+				"\tscanf(\"%d\", &score);",
+				"\tprintf(\"你的成績是 %d\\n\", score);",
+				"\treturn 0;",
+				"}"
+			]
+		}
+	},
+	"do": [
+		{
+			"act": "run",
+			"output": [
+				"PS C:\\Users\\student\\c_homework> cd \"c:\\Users\\student\\c_homework\\\" ; if ($?) { gcc score.c -o score } ; if ($?) { .\\score }",
+				"請輸入成績: "
+			]
+		},
+		{
+			"act": "input",
+			"text": "85"
+		},
+		{
+			"act": "print",
+			"lines": [
+				"你的成績是 85",
+				"PS C:\\Users\\student\\c_homework> "
+			]
+		},
+		{
+			"act": "stop"
+		}
+	]
+}

@@ -60,6 +60,7 @@ INCLUDE = [
 	"test_board_narrate.py", "test_board_voice_identity.py",
 	"test_tts_f5.py", "test_tts_pick.py", "test_f5_story.py", "test_storyboard.py", "test_sync_film.py", "test_narration_style.py",
 	"test_layout.py", "test_render_slides.py", "test_render_video.py", "test_render_explainer.py",
+	"test_vscode_component.py", "js/vscode_probe.js",
 )]
 
 # 路徑任何一段是這些就不帶：產出、課程教材、快取、渲染結果、音檔

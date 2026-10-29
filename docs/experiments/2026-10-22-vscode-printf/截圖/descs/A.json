@@ -1,0 +1,47 @@
+{
+	"_doc": "文章：輸出面板只有 [Running]，右上角紅色方塊亮著，程式卡住（取代 A_輸出面板_s1卡住.png）",
+	"object": {
+		"folder": "c_homework",
+		"panel": "output",
+		"open": "score.c",
+		"explorer": [
+			"score.c",
+			"score.exe",
+			"score_fflush.c",
+			"score_fflush.exe"
+		],
+		"files": {
+			"score.c": [
+				"#include <stdio.h>",
+				"",
+				"int main(void) {",
+				"\tint score;",
+				"\tprintf(\"請輸入成績: \");",
+				"\tscanf(\"%d\", &score);",
+				"\tprintf(\"你的成績是 %d\\n\", score);",
+				"\treturn 0;",
+				"}"
+			],
+			"score_fflush.c": [
+				"#include <stdio.h>",
+				"",
+				"int main(void) {",
+				"\tint score;",
+				"\tprintf(\"請輸入成績: \");",
+				"\tfflush(stdout);",
+				"\tscanf(\"%d\", &score);",
+				"\tprintf(\"你的成績是 %d\\n\", score);",
+				"\treturn 0;",
+				"}"
+			]
+		}
+	},
+	"do": [
+		{
+			"act": "run",
+			"output": [
+				"[Running] cd \"c:\\Users\\student\\c_homework\\\" && gcc score.c -o score && \"c:\\Users\\student\\c_homework\\\"score"
+			]
+		}
+	]
+}
