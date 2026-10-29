@@ -179,5 +179,34 @@ class TestPaint(unittest.TestCase):
 					self.assertIsNone(banned.search(src), name)
 
 
+PW_PY = os.path.expanduser("~/.local/share/pipx/venvs/webwright/bin/python")
+EXPORT = os.path.join(ROOT, "video_engine", "components", "vscode", "export_png.py")
+
+
+class TestExport(unittest.TestCase):
+	def test_png兩次輸出逐位元組相同(self):
+		if not os.path.exists(PW_PY):
+			self.skipTest("沒有 webwright 的 Playwright")
+		import hashlib
+		from PIL import Image
+		with open(os.path.join(ROOT, "video_engine", "board", "fixtures", "vscode_full.scene.json"), encoding="utf-8") as f:
+			doc = json.load(f)
+		desc = {"object": doc["objects"][0], "do": [a for a in doc["scenes"][0]["beats"][1]["do"] if a["act"] in ("run", "input")]}
+		with tempfile.TemporaryDirectory() as d:
+			src = os.path.join(d, "a.json")
+			with open(src, "w", encoding="utf-8") as f:
+				json.dump(desc, f, ensure_ascii=False)
+			outs = []
+			for k in range(2):
+				out = os.path.join(d, "%d.png" % k)
+				r = subprocess.run([PW_PY, EXPORT, src, out, "--size", "1280x800"], capture_output=True, text=True, timeout=120)
+				self.assertEqual(r.returncode, 0, r.stderr)
+				with open(out, "rb") as f:
+					outs.append(hashlib.md5(f.read()).hexdigest())
+			self.assertEqual(outs[0], outs[1])
+			with Image.open(os.path.join(d, "0.png")) as im:
+				self.assertEqual(im.size, (1280, 800))
+
+
 if __name__ == "__main__":
 	unittest.main()

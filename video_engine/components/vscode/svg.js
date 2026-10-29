@@ -12,7 +12,8 @@
 	var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
 	var n = function (v) { return (Math.round(v * 10) / 10).toString(); };
 
-	function render(ops, theme, size) {
+	function render(ops, theme, size, fonts) {
+		var sans = (fonts && fonts.sans) || SANS, mono = (fonts && fonts.mono) || MONO;
 		var out = ['<svg xmlns="http://www.w3.org/2000/svg" width="' + size[0] + '" height="' + size[1] + '" viewBox="0 0 ' + size[0] + ' ' + size[1] + '">'];
 		ops.forEach(function (o) {
 			var op = o.alpha != null && o.alpha < 1 ? ' opacity="' + n(Math.max(0, o.alpha)) + '"' : '';
@@ -23,7 +24,7 @@
 					(o.stroke ? ' stroke="' + color(theme, o.stroke) + '" stroke-width="' + n(o.width || 1) + '"' : '') + op + '/>');
 			} else if (o.op === 'text') {
 				var anchor = o.align === 'end' ? 'end' : o.align === 'middle' ? 'middle' : 'start';
-				out.push('<text x="' + n(o.x) + '" y="' + n(o.y) + '" font-size="' + n(o.size) + '" font-family="' + (o.mono ? MONO : SANS) + '"' +
+				out.push('<text x="' + n(o.x) + '" y="' + n(o.y) + '" font-size="' + n(o.size) + '" font-family="' + (o.mono ? mono : sans).replace(/"/g, "'") + '"' +
 					(o.bold ? ' font-weight="600"' : '') + ' text-anchor="' + anchor + '" dominant-baseline="central" fill="' + color(theme, o.color) + '"' +
 					' xml:space="preserve"' + op + '>' + esc(o.str) + '</text>');
 			} else if (o.op === 'line') {
