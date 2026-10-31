@@ -130,9 +130,36 @@ def verify_timing_identity(scene, timing, timing_path):
 		"master_sha256": identity["master"]["audio_sha256"], "speech_status": speech_status(identity, root)}
 
 
+def check_icon_catalog(cat):
+	"""意思必須唯一，否則同一句話會悄悄對到兩個圖。圖示名稱本身也算一個意思。"""
+	spec = cat["types"]["icon"]
+	if set(spec["means"]) != set(spec["names"]):
+		diff = sorted(set(spec["means"]) ^ set(spec["names"]))
+		raise ValueError(f"icon 的 means 鍵和 names 不一致：{diff}")
+	owner = {n: n for n in spec["names"]}
+	for name in spec["names"]:
+		for m in spec["means"][name]:
+			if m in owner and owner[m] != name:
+				raise ValueError(f"icon 的意思「{m}」同時屬於 {owner[m]} 和 {name}")
+			owner[m] = name
+
+
 def load_catalog(path=None):
 	with open(path or os.path.join(HERE, "catalog.json"), encoding="utf-8") as f:
-		return json.load(f)
+		cat = json.load(f)
+	check_icon_catalog(cat)
+	return cat
+
+
+def nearest_means(word, means, k=3):
+	"""字元集合 Jaccard 由大到小，同分比共同前綴，再同分照字串。重疊字數會讓長詞一直贏。"""
+	pool = [m for ms in means.values() for m in ms] if isinstance(means, dict) else list(means)
+
+	def key(m):
+		a, b = set(word), set(m)
+		prefix = len(os.path.commonprefix([word, m]))
+		return (-len(a & b) / len(a | b), -prefix, m)
+	return sorted(set(pool), key=key)[:k]
 
 
 def anchor_parts(target):
@@ -204,7 +231,9 @@ class Compiler:
 			for key in spec["req"]:
 				if key not in obj:
 					raise ValueError(f"{oid}（{obj['type']}）缺必填屬性 {key}")
-			if "names" in spec and obj.get("name") not in spec["names"]:
+			if obj["type"] == "icon":
+				self.check_icon(obj, spec)
+			elif "names" in spec and obj.get("name") not in spec["names"]:
 				raise ValueError(f"{oid}（{obj['type']}）的 name 只能是 {spec['names']}：{obj.get('name')}")
 			if obj["type"] == "vscode":
 				self.check_vscode(obj, spec)
@@ -223,6 +252,22 @@ class Compiler:
 						term_lines[oid] = term_lines.get(oid, 0) + len(a.get("lines") or [])
 		self.total_appends = appends
 		self.term_lines = term_lines
+
+	def check_icon(self, obj, spec):
+		oid, asked = obj["id"], obj["name"]
+		if asked not in spec["names"]:
+			hit = [n for n in spec["names"] if asked in spec["means"][n]]
+			if not hit:
+				near = "、".join(nearest_means(asked, spec["means"]))
+				raise ValueError(f"{oid}（icon）沒有「{asked}」這個意思，最接近：{near}")
+			obj["name"] = hit[0]
+		obj["_asked"] = asked
+		if obj["name"] == "keycap" and not obj.get("text"):
+			raise ValueError(f"{oid}（icon）keycap 要寫 text")
+		if obj.setdefault("size", "m") not in spec["sizes"]:
+			raise ValueError(f"{oid}（icon）size 只能是 {spec['sizes']}：{obj['size']}")
+		if obj.get("tone", "ink") not in TONES:
+			raise ValueError(f"{oid}（icon）的 tone {obj['tone']} 不在 {TONES}")
 
 	def check_vscode(self, obj, spec):
 		oid = obj["id"]

@@ -545,12 +545,251 @@
 				"name"
 			],
 			"opt": [
-				"caption"
+				"caption",
+				"tone",
+				"text",
+				"size"
+			],
+			"sizes": [
+				"s",
+				"m",
+				"l"
 			],
 			"names": [
-				"gear"
+				"keyboard",
+				"cross",
+				"checklist",
+				"branch",
+				"bulb",
+				"warning",
+				"scale",
+				"pencil",
+				"loop",
+				"question",
+				"check",
+				"play",
+				"stop",
+				"return",
+				"file",
+				"chat",
+				"clock",
+				"person",
+				"hourglass",
+				"tangle",
+				"magnifier",
+				"lock",
+				"gear",
+				"keycap",
+				"mic",
+				"headphones",
+				"wave",
+				"quote",
+				"heart",
+				"coin",
+				"phone"
 			],
-			"anchors": [],
+			"means": {
+				"keyboard": [
+					"輸入",
+					"打字",
+					"使用者輸入"
+				],
+				"cross": [
+					"錯誤",
+					"失敗",
+					"不對",
+					"陷阱"
+				],
+				"checklist": [
+					"驗證",
+					"測試",
+					"逐項檢查"
+				],
+				"branch": [
+					"判斷",
+					"決策",
+					"分支",
+					"選擇"
+				],
+				"bulb": [
+					"想到",
+					"提示",
+					"心法",
+					"原來如此"
+				],
+				"warning": [
+					"警告",
+					"小心",
+					"注意",
+					"危險"
+				],
+				"scale": [
+					"比較",
+					"對照",
+					"哪個比較好"
+				],
+				"pencil": [
+					"先手算",
+					"預測",
+					"動筆",
+					"寫下來"
+				],
+				"loop": [
+					"重複",
+					"循環",
+					"再一次"
+				],
+				"question": [
+					"想一想",
+					"疑問",
+					"為什麼"
+				],
+				"check": [
+					"正確",
+					"通過",
+					"完成",
+					"正常"
+				],
+				"play": [
+					"執行",
+					"開始",
+					"跑跑看"
+				],
+				"stop": [
+					"停止",
+					"跳出",
+					"結束",
+					"中止"
+				],
+				"return": [
+					"回傳",
+					"交回",
+					"回到原處"
+				],
+				"file": [
+					"檔案",
+					"原始碼",
+					"文件"
+				],
+				"chat": [
+					"AI 助手",
+					"問 AI",
+					"對話",
+					"留言"
+				],
+				"clock": [
+					"時間",
+					"很慢",
+					"效能",
+					"多久"
+				],
+				"person": [
+					"使用者",
+					"學生",
+					"人"
+				],
+				"hourglass": [
+					"等待",
+					"僵住",
+					"卡著不動",
+					"無限",
+					"很久"
+				],
+				"tangle": [
+					"卡住",
+					"無窮迴圈",
+					"出不去"
+				],
+				"magnifier": [
+					"除錯",
+					"查找",
+					"仔細看"
+				],
+				"lock": [
+					"固定",
+					"不變",
+					"沒有變化",
+					"不能改",
+					"唯讀",
+					"常數"
+				],
+				"gear": [
+					"設定",
+					"調整"
+				],
+				"keycap": [
+					"按鍵",
+					"快捷鍵"
+				],
+				"mic": [
+					"講話",
+					"錄音",
+					"Podcast"
+				],
+				"headphones": [
+					"聽",
+					"收聽"
+				],
+				"wave": [
+					"聲音",
+					"播放中"
+				],
+				"quote": [
+					"引用",
+					"有人說"
+				],
+				"heart": [
+					"喜歡",
+					"在乎",
+					"按讚"
+				],
+				"coin": [
+					"錢",
+					"花費",
+					"價格"
+				],
+				"phone": [
+					"手機",
+					"通知",
+					"滑手機"
+				]
+			},
+			"strokes": {
+				"keyboard": 8,
+				"cross": 2,
+				"checklist": 5,
+				"branch": 5,
+				"bulb": 5,
+				"warning": 3,
+				"scale": 7,
+				"pencil": 3,
+				"loop": 2,
+				"question": 2,
+				"check": 2,
+				"play": 2,
+				"stop": 2,
+				"return": 2,
+				"file": 5,
+				"chat": 3,
+				"clock": 3,
+				"person": 2,
+				"hourglass": 7,
+				"tangle": 2,
+				"magnifier": 3,
+				"lock": 4,
+				"gear": 2,
+				"keycap": 2,
+				"mic": 4,
+				"headphones": 3,
+				"wave": 5,
+				"quote": 2,
+				"heart": 2,
+				"coin": 3,
+				"phone": 3
+			},
+			"anchors": [
+				"caption"
+			],
 			"actions": {}
 		},
 		"vscode": {

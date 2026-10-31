@@ -179,6 +179,85 @@ class TestShapes(unittest.TestCase):
 			icon_probe("strokes", name="nope")
 
 
+class TestCatalog(unittest.TestCase):
+	@classmethod
+	def setUpClass(cls):
+		cls.cat = BC.load_catalog()
+		cls.spec = cls.cat["types"]["icon"]
+
+	def scene(self, **icon):
+		objects = [{"id": "i", "type": "icon", **icon}]
+		return {"version": 1, "id": "t", "objects": objects, "scenes": [{"id": "s", "layout": {"stack": ["i"]},
+			"beats": [{"say": "好", "do": [{"act": "show", "target": "i"}]}]}]}
+
+	def compile(self, **icon):
+		return BC.compile_scene(self.scene(**icon), None, self.cat)
+
+	def test_目錄筆畫數與形狀一致(self):
+		self.assertEqual(self.spec["names"], NAMES)
+		self.assertEqual(sorted(self.spec["strokes"]), sorted(NAMES))
+		for n in NAMES:
+			self.assertEqual(self.spec["strokes"][n], icon_probe("count", name=n, opts={"text": "Ctrl"}), n)
+
+	def test_意思解析(self):
+		tl = self.compile(name="唯讀")
+		self.assertEqual(tl["objects"]["i"]["name"], "lock")
+		self.assertEqual(tl["objects"]["i"]["_asked"], "唯讀")
+		self.assertEqual(self.compile(name="lock")["objects"]["i"]["name"], "lock")
+
+	def test_對不到意思要報錯(self):
+		with self.assertRaises(ValueError) as cm:
+			self.compile(name="等一下")
+		self.assertIn("等待", str(cm.exception))
+		self.assertIn("等一下", str(cm.exception))
+
+	def test_最接近排序(self):
+		means = [m for ms in self.spec["means"].values() for m in ms]
+		self.assertIn("等待", BC.nearest_means("等一下", means))
+		self.assertIn("錯誤", BC.nearest_means("錯了", means))
+		self.assertEqual(len(BC.nearest_means("等一下", means)), 3)
+
+	def test_重複意思載入就失敗(self):
+		bad = json.loads(json.dumps(self.cat))
+		bad["types"]["icon"]["means"]["clock"].append("等待")
+		with self.assertRaises(ValueError) as cm:
+			BC.check_icon_catalog(bad)
+		for w in ("等待", "hourglass", "clock"):
+			self.assertIn(w, str(cm.exception))
+
+	def test_意思等於別的圖示名稱也算重複(self):
+		bad = json.loads(json.dumps(self.cat))
+		bad["types"]["icon"]["means"]["clock"].append("lock")
+		with self.assertRaises(ValueError) as cm:
+			BC.check_icon_catalog(bad)
+		self.assertIn("lock", str(cm.exception))
+
+	def test_means的鍵要等於names(self):
+		bad = json.loads(json.dumps(self.cat))
+		del bad["types"]["icon"]["means"]["coin"]
+		with self.assertRaises(ValueError) as cm:
+			BC.check_icon_catalog(bad)
+		self.assertIn("coin", str(cm.exception))
+
+	def test_keycap_缺字(self):
+		with self.assertRaises(ValueError) as cm:
+			self.compile(name="keycap")
+		self.assertIn("text", str(cm.exception))
+		self.assertEqual(self.compile(name="keycap", text="Ctrl")["objects"]["i"]["name"], "keycap")
+
+	def test_size與tone要合法(self):
+		with self.assertRaises(ValueError) as cm:
+			self.compile(name="lock", size="xl")
+		self.assertIn("size", str(cm.exception))
+		with self.assertRaises(ValueError) as cm:
+			self.compile(name="lock", tone="red")
+		self.assertIn("tone", str(cm.exception))
+		self.compile(name="lock", size="l", tone="warn")
+
+	def test_既有fixture的gear還能編(self):
+		self.assertEqual(self.compile(name="gear")["objects"]["i"]["name"], "gear")
+
+
 if __name__ == "__main__":
 	if sys.argv[1:] == ["--regen"]:
 		os.makedirs(FIX, exist_ok=True)
