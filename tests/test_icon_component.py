@@ -3,7 +3,10 @@
 import hashlib
 import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -100,6 +103,80 @@ class TestBaseline(unittest.TestCase):
 
 	def test_printf_分鏡產物不變(self):
 		self.assertEqual(printf_storyboard_out(), load("printf_storyboard_out.json"))
+
+ICON_PROBE = os.path.join(ROOT, "tests", "js", "icon_probe.js")
+NAMES = ["keyboard", "cross", "checklist", "branch", "bulb", "warning", "scale", "pencil", "loop", "question",
+	"check", "play", "stop", "return", "file", "chat", "clock", "person", "hourglass", "tangle", "magnifier",
+	"lock", "gear", "keycap", "mic", "headphones", "wave", "quote", "heart", "coin", "phone"]
+
+
+def icon_probe(cmd, **q):
+	node = shutil.which("node")
+	if not node:
+		raise AssertionError("缺 node：圖示形狀測試需要 node，請安裝 node 22")
+	with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+		json.dump(q, f, ensure_ascii=False)
+	try:
+		r = subprocess.run([node, ICON_PROBE, cmd, f.name], capture_output=True, text=True, timeout=30)
+	finally:
+		os.unlink(f.name)
+	if r.returncode:
+		raise AssertionError(r.stderr)
+	return json.loads(r.stdout)
+
+
+class TestShapes(unittest.TestCase):
+	@classmethod
+	def setUpClass(cls):
+		cls.all = icon_probe("all")
+
+	def test_名稱清單(self):
+		names = icon_probe("names")
+		self.assertEqual(len(names), 31)
+		self.assertEqual(len(set(names)), 31)
+		self.assertEqual(names, NAMES)
+
+	def test_筆畫都在格子內(self):
+		for n, r in self.all.items():
+			for s in r["strokes"]:
+				for x, y in s["pts"]:
+					self.assertTrue(8 <= x <= 92 and 8 <= y <= 92, (n, s["part"], x, y))
+
+	def test_筆畫格式(self):
+		for n, r in self.all.items():
+			st = r["strokes"]
+			self.assertTrue(2 <= len(st) <= 12, (n, len(st)))
+			self.assertEqual(st[0]["w"], "main", n)
+			for s in st:
+				self.assertGreaterEqual(len(s["pts"]), 2, n)
+				self.assertIn(s["w"], ("main", "detail"), n)
+				self.assertIsInstance(s["arc"], bool, n)
+				self.assertTrue(isinstance(s["part"], str) and s["part"], n)
+			self.assertEqual(icon_probe("count", name=n, opts={"text": "Ctrl"}), len(st), n)
+
+	def test_弧線有取樣(self):
+		for n, r in self.all.items():
+			for s in r["strokes"]:
+				if not s["arc"]:
+					continue
+				p = s["pts"]
+				for a, b in zip(p, p[1:]):
+					self.assertLessEqual(((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5, 6.0001, (n, s["part"]))
+
+	def test_決定性(self):
+		for n in NAMES:
+			o = {"text": "Ctrl"} if n == "keycap" else None
+			self.assertEqual(icon_probe("strokes", name=n, opts=o), icon_probe("strokes", name=n, opts=o), n)
+
+	def test_keycap_帶字(self):
+		self.assertEqual(icon_probe("strokes", name="keycap", opts={"text": "Ctrl"})["text"], "Ctrl")
+		for bad in (None, {}, {"text": ""}):
+			with self.assertRaises(AssertionError):
+				icon_probe("strokes", name="keycap", opts=bad)
+
+	def test_未知名稱(self):
+		with self.assertRaises(AssertionError):
+			icon_probe("strokes", name="nope")
 
 
 if __name__ == "__main__":
