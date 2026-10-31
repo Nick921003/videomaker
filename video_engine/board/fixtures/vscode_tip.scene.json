@@ -1,0 +1,29 @@
+{
+	"version": 1,
+	"title": "VS Code 元件：tip",
+	"tag": "元件回歸",
+	"objects": [
+		{"id": "vs", "type": "vscode", "folder": "C_HOMEWORK", "panel": "terminal", "open": "score.c",
+			"explorer": ["score.c"],
+			"files": {
+				"score.c": ["#include <stdio.h>", "int main(void) {", "\tprintf(\"請輸入成績: \");", "\treturn 0;", "}"]
+			}}
+	],
+	"scenes": [
+		{
+			"id": "tip",
+			"title": "唯讀提示",
+			"layout": {"stack": ["vs"]},
+			"beats": [
+				{"say": "程式跑起來之後，終端機是唯讀的。", "do": [
+					{"act": "show", "target": "vs"},
+					{"act": "run", "target": "vs", "output": ["請輸入成績: "], "cue": "終端機"},
+					{"act": "tip", "target": "vs", "text": "無法在唯讀編輯器中編輯", "cue": "唯讀"}
+				]},
+				{"say": "停掉之後提示就收起來。", "do": [
+					{"act": "stop", "target": "vs", "cue": "停掉"}
+				]}
+			]
+		}
+	]
+}

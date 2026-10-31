@@ -1,0 +1,547 @@
+{
+	"vscode_full": {
+		"actions": [
+			{
+				"act": "show",
+				"args": {},
+				"beat": 0,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 0.4,
+				"t1": 0.8500000000000001,
+				"target": "vs"
+			},
+			{
+				"act": "highlight",
+				"args": {
+					"lines": [
+						5
+					]
+				},
+				"beat": 0,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 0.8700000000000001,
+				"t1": 1.37,
+				"target": "vs"
+			},
+			{
+				"act": "underline",
+				"args": {
+					"tone": "info"
+				},
+				"beat": 0,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 2.55,
+				"t1": 3.15,
+				"target": "vs:L6"
+			},
+			{
+				"act": "click",
+				"args": {
+					"on": "vs:run"
+				},
+				"beat": 1,
+				"n": null,
+				"obj": "cursor",
+				"scene": 0,
+				"t0": 4.1,
+				"t1": 5.1,
+				"target": "cursor"
+			},
+			{
+				"act": "circle",
+				"args": {
+					"tone": "warn"
+				},
+				"beat": 1,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 4.1,
+				"t1": 4.8,
+				"target": "vs:run"
+			},
+			{
+				"act": "run",
+				"args": {
+					"output": [
+						"請輸入成績: "
+					]
+				},
+				"beat": 1,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 5.299999999999999,
+				"t1": 6.099999999999999,
+				"target": "vs"
+			},
+			{
+				"act": "input",
+				"args": {
+					"text": "85"
+				},
+				"beat": 1,
+				"n": 2,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 6.499999999999999,
+				"t1": 6.819999999999999,
+				"target": "vs"
+			},
+			{
+				"act": "print",
+				"args": {
+					"lines": [
+						"你的成績是 85"
+					]
+				},
+				"beat": 1,
+				"n": 1,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 6.819999999999999,
+				"t1": 7.259999999999999,
+				"target": "vs"
+			},
+			{
+				"act": "click",
+				"args": {
+					"on": "vs:gear"
+				},
+				"beat": 2,
+				"n": null,
+				"obj": "cursor",
+				"scene": 1,
+				"t0": 8.919999999999998,
+				"t1": 9.919999999999998,
+				"target": "cursor"
+			},
+			{
+				"act": "menu",
+				"args": {
+					"name": "gear"
+				},
+				"beat": 2,
+				"n": null,
+				"obj": "vs",
+				"scene": 1,
+				"t0": 8.919999999999998,
+				"t1": 9.419999999999998,
+				"target": "vs"
+			},
+			{
+				"act": "click",
+				"args": {
+					"on": "vs:settings"
+				},
+				"beat": 2,
+				"n": null,
+				"obj": "cursor",
+				"scene": 1,
+				"t0": 9.879999999999999,
+				"t1": 10.879999999999999,
+				"target": "cursor"
+			},
+			{
+				"act": "page",
+				"args": {
+					"name": "settings"
+				},
+				"beat": 2,
+				"n": null,
+				"obj": "vs",
+				"scene": 1,
+				"t0": 10.879999999999999,
+				"t1": 11.479999999999999,
+				"target": "vs"
+			},
+			{
+				"act": "circle",
+				"args": {
+					"tone": "ok"
+				},
+				"beat": 3,
+				"n": null,
+				"obj": "vs",
+				"scene": 1,
+				"t0": 11.429999999999998,
+				"t1": 12.129999999999997,
+				"target": "vs:run_in_terminal"
+			},
+			{
+				"act": "check",
+				"args": {},
+				"beat": 3,
+				"n": null,
+				"obj": "vs",
+				"scene": 1,
+				"t0": 10.949999999999998,
+				"t1": 11.249999999999998,
+				"target": "vs:run_in_terminal"
+			},
+			{
+				"act": "page",
+				"args": {
+					"name": "extensions"
+				},
+				"beat": 3,
+				"n": null,
+				"obj": "vs",
+				"scene": 1,
+				"t0": 13.589999999999996,
+				"t1": 14.189999999999996,
+				"target": "vs"
+			},
+			{
+				"act": "circle",
+				"args": {
+					"tone": "accent"
+				},
+				"beat": 3,
+				"n": null,
+				"obj": "vs",
+				"scene": 1,
+				"t0": 13.589999999999996,
+				"t1": 14.289999999999996,
+				"target": "vs:code_runner"
+			},
+			{
+				"act": "close",
+				"args": {},
+				"beat": 4,
+				"n": null,
+				"obj": "vs",
+				"scene": 2,
+				"t0": 15.539999999999997,
+				"t1": 15.939999999999998,
+				"target": "vs"
+			}
+		]
+	},
+	"vscode_tip": {
+		"actions": [
+			{
+				"act": "show",
+				"args": {},
+				"beat": 0,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 0.4,
+				"t1": 0.8500000000000001,
+				"target": "vs"
+			},
+			{
+				"act": "run",
+				"args": {
+					"output": [
+						"請輸入成績: "
+					]
+				},
+				"beat": 0,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 2.0700000000000003,
+				"t1": 2.87,
+				"target": "vs"
+			},
+			{
+				"act": "tip",
+				"args": {
+					"text": "無法在唯讀編輯器中編輯"
+				},
+				"beat": 0,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 3.0300000000000002,
+				"t1": 3.33,
+				"target": "vs"
+			},
+			{
+				"act": "stop",
+				"args": {},
+				"beat": 1,
+				"n": null,
+				"obj": "vs",
+				"scene": 0,
+				"t0": 4.34,
+				"t1": 4.84,
+				"target": "vs"
+			}
+		],
+		"anchors": [
+			{
+				"L1": {
+					"h": 36,
+					"w": 259,
+					"x": 488,
+					"y": 114
+				},
+				"L2": {
+					"h": 36,
+					"w": 230,
+					"x": 488,
+					"y": 150
+				},
+				"L3": {
+					"h": 36,
+					"w": 365,
+					"x": 488,
+					"y": 186
+				},
+				"L4": {
+					"h": 36,
+					"w": 187,
+					"x": 488,
+					"y": 222
+				},
+				"L5": {
+					"h": 36,
+					"w": 24,
+					"x": 488,
+					"y": 258
+				},
+				"P1": {
+					"h": 38,
+					"w": 149,
+					"x": 416,
+					"y": 623
+				},
+				"editor": {
+					"h": 467,
+					"w": 1212,
+					"x": 388,
+					"y": 100
+				},
+				"explorer": {
+					"h": 926,
+					"w": 320,
+					"x": 68,
+					"y": 48
+				},
+				"file:score.c": {
+					"h": 44,
+					"w": 320,
+					"x": 68,
+					"y": 148
+				},
+				"gear": {
+					"h": 56,
+					"w": 56,
+					"x": 6,
+					"y": 896
+				},
+				"panel": {
+					"h": 407,
+					"w": 1212,
+					"x": 388,
+					"y": 567
+				},
+				"panel:end": {
+					"h": 38,
+					"w": 24,
+					"x": 565,
+					"y": 623
+				},
+				"ptab:output": {
+					"h": 36,
+					"w": 44,
+					"x": 504,
+					"y": 575
+				},
+				"ptab:terminal": {
+					"h": 36,
+					"w": 66,
+					"x": 746,
+					"y": 575
+				},
+				"run": {
+					"h": 52,
+					"w": 56,
+					"x": 1372,
+					"y": 48
+				},
+				"settings:search": {
+					"h": 40,
+					"w": 1380,
+					"x": 144,
+					"y": 148
+				},
+				"tab:score.c": {
+					"h": 52,
+					"w": 190,
+					"x": 388,
+					"y": 48
+				},
+				"tip": {
+					"h": 48,
+					"w": 286,
+					"x": 613,
+					"y": 618
+				}
+			},
+			{
+				"L1": {
+					"h": 36,
+					"w": 259,
+					"x": 488,
+					"y": 114
+				},
+				"L2": {
+					"h": 36,
+					"w": 230,
+					"x": 488,
+					"y": 150
+				},
+				"L3": {
+					"h": 36,
+					"w": 365,
+					"x": 488,
+					"y": 186
+				},
+				"L4": {
+					"h": 36,
+					"w": 187,
+					"x": 488,
+					"y": 222
+				},
+				"L5": {
+					"h": 36,
+					"w": 24,
+					"x": 488,
+					"y": 258
+				},
+				"P1": {
+					"h": 38,
+					"w": 149,
+					"x": 416,
+					"y": 623
+				},
+				"editor": {
+					"h": 467,
+					"w": 1212,
+					"x": 388,
+					"y": 100
+				},
+				"explorer": {
+					"h": 926,
+					"w": 320,
+					"x": 68,
+					"y": 48
+				},
+				"file:score.c": {
+					"h": 44,
+					"w": 320,
+					"x": 68,
+					"y": 148
+				},
+				"gear": {
+					"h": 56,
+					"w": 56,
+					"x": 6,
+					"y": 896
+				},
+				"panel": {
+					"h": 407,
+					"w": 1212,
+					"x": 388,
+					"y": 567
+				},
+				"panel:end": {
+					"h": 38,
+					"w": 24,
+					"x": 565,
+					"y": 623
+				},
+				"ptab:output": {
+					"h": 36,
+					"w": 44,
+					"x": 504,
+					"y": 575
+				},
+				"ptab:terminal": {
+					"h": 36,
+					"w": 66,
+					"x": 746,
+					"y": 575
+				},
+				"run": {
+					"h": 52,
+					"w": 56,
+					"x": 1372,
+					"y": 48
+				},
+				"settings:search": {
+					"h": 40,
+					"w": 1380,
+					"x": 144,
+					"y": 148
+				},
+				"tab:score.c": {
+					"h": 52,
+					"w": 190,
+					"x": 388,
+					"y": 48
+				},
+				"tip": {
+					"h": 48,
+					"w": 286,
+					"x": 613,
+					"y": 618
+				}
+			}
+		],
+		"probe_ts": [
+			3.18,
+			3.329
+		],
+		"state": [
+			{
+				"checks": {},
+				"fade": 1,
+				"highlight": null,
+				"menu": null,
+				"open": "score.c",
+				"page": null,
+				"panel": {
+					"kind": "terminal",
+					"lines": [
+						"請輸入成績: "
+					],
+					"running": true
+				},
+				"scrollTop": 0,
+				"search": "",
+				"searchTyped": false,
+				"tip": "無法在唯讀編輯器中編輯"
+			},
+			{
+				"checks": {},
+				"fade": 1,
+				"highlight": null,
+				"menu": null,
+				"open": "score.c",
+				"page": null,
+				"panel": {
+					"kind": "terminal",
+					"lines": [
+						"請輸入成績: "
+					],
+					"running": true
+				},
+				"scrollTop": 0,
+				"search": "",
+				"searchTyped": false,
+				"tip": "無法在唯讀編輯器中編輯"
+			}
+		]
+	}
+}

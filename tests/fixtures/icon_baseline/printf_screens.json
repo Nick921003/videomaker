@@ -1,0 +1,796 @@
+[
+	{
+		"do": {
+			"1": [
+				{
+					"act": "highlight",
+					"args": {
+						"lines": [
+							5
+						]
+					},
+					"blocks": false,
+					"cue": "輸入成績",
+					"dur": 0.5,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "highlight",
+					"args": {
+						"lines": [
+							5,
+							7
+						]
+					},
+					"blocks": false,
+					"cue": "印出來",
+					"dur": 0.5,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				}
+			],
+			"2": [
+				{
+					"act": "move",
+					"args": {
+						"to": "vs:run"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "circle",
+					"args": {
+						"tone": "warn"
+					},
+					"blocks": false,
+					"cue": "三角形",
+					"dur": 0.7,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:run"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:run"
+					},
+					"blocks": true,
+					"cue": "跑跑看",
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "run",
+					"args": {},
+					"blocks": true,
+					"cue": "跑跑看",
+					"dur": 0.8,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				}
+			],
+			"3": [
+				{
+					"act": "print",
+					"args": {
+						"lines": [
+							"[Running] cd \"c:\\Users\\student\\c_homework\\\" && gcc score.c -o score && \"c:\\Users\\student\\c_homework\\\"score"
+						]
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.4,
+					"n": 1,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "circle",
+					"args": {
+						"tone": "warn"
+					},
+					"blocks": false,
+					"cue": "Running",
+					"dur": 0.7,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:P1"
+				}
+			]
+		},
+		"kind": "vscode",
+		"lines": [
+			1,
+			2,
+			3,
+			4
+		],
+		"screen": {
+			"_presets": {},
+			"explorer": [
+				"score.c",
+				"hello.c"
+			],
+			"files": {
+				"hello.c": [
+					"#include <stdio.h>",
+					"",
+					"int main(void) {",
+					"\tprintf(\"hello\\n\");",
+					"\treturn 0;",
+					"}"
+				],
+				"score.c": [
+					"#include <stdio.h>",
+					"",
+					"int main(void) {",
+					"\tint score;",
+					"\tprintf(\"請輸入成績: \");",
+					"\tscanf(\"%d\", &score);",
+					"\tprintf(\"你的成績是 %d\\n\", score);",
+					"\treturn 0;",
+					"}"
+				]
+			},
+			"folder": "c_homework",
+			"id": "vs",
+			"open": "score.c",
+			"panel": "output",
+			"type": "vscode"
+		}
+	},
+	{
+		"do": {
+			"22": [
+				{
+					"act": "move",
+					"args": {
+						"to": "vs:run"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:run"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "run",
+					"args": {
+						"output": [
+							"[Running] cd \"c:\\Users\\student\\c_homework\\\" && gcc score_fflush.c -o score_fflush && \"c:\\Users\\student\\c_homework\\\"score_fflush",
+							"",
+							"請輸入成績: "
+						]
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "underline",
+					"args": {
+						"tone": "accent"
+					},
+					"blocks": false,
+					"cue": "提示字",
+					"dur": 0.6,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:P3"
+				}
+			],
+			"23": [
+				{
+					"act": "move",
+					"args": {
+						"to": "vs:panel:end"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:panel:end"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "tip",
+					"args": {
+						"text": "無法在唯讀編輯器中編輯"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.3,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "circle",
+					"args": {
+						"tone": "warn"
+					},
+					"blocks": false,
+					"cue": "唯讀",
+					"dur": 0.7,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:tip"
+				}
+			],
+			"25": [
+				{
+					"act": "move",
+					"args": {
+						"to": "vs:run"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "circle",
+					"args": {
+						"tone": "warn"
+					},
+					"blocks": false,
+					"cue": "紅色方塊",
+					"dur": 0.7,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:run"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:run"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "stop",
+					"args": {},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.5,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "print",
+					"args": {
+						"lines": [
+							"",
+							"[Done] exited with code=1 in 11.243 seconds"
+						]
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": 2,
+					"obj": "vs",
+					"target": "vs"
+				}
+			],
+			"29": [
+				{
+					"act": "underline",
+					"args": {
+						"tone": "accent"
+					},
+					"blocks": false,
+					"cue": "終端機",
+					"dur": 0.6,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:ptab:terminal"
+				}
+			],
+			"30": [
+				{
+					"act": "move",
+					"args": {
+						"to": "vs:gear"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "circle",
+					"args": {
+						"tone": "warn"
+					},
+					"blocks": false,
+					"cue": "齒輪",
+					"dur": 0.7,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:gear"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:gear"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "menu",
+					"args": {
+						"name": "gear"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.5,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:settings"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "page",
+					"args": {
+						"name": "settings"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.6,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				}
+			],
+			"31": [
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:settings:search"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "type",
+					"args": {
+						"text": "run in terminal"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.1250000000000002,
+					"n": 15,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "circle",
+					"args": {
+						"tone": "warn"
+					},
+					"blocks": false,
+					"cue": "搜尋框",
+					"dur": 0.7,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:settings:search"
+				}
+			],
+			"32": [
+				{
+					"act": "underline",
+					"args": {
+						"tone": "accent"
+					},
+					"blocks": false,
+					"cue": "Code Runner",
+					"dur": 0.6,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:run_in_terminal"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:run_in_terminal"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "check",
+					"args": {},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.3,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:run_in_terminal"
+				},
+				{
+					"act": "circle",
+					"args": {
+						"tone": "warn"
+					},
+					"blocks": false,
+					"cue": "打勾",
+					"dur": 0.7,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:run_in_terminal"
+				}
+			],
+			"34": [
+				{
+					"act": "close",
+					"args": {},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.4,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:tab:score.c"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				},
+				{
+					"act": "open",
+					"args": {
+						"file": "score.c"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.5,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "click",
+					"args": {
+						"on": "vs:run"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 1.0,
+					"n": null,
+					"obj": "cursor",
+					"target": "cursor"
+				}
+			],
+			"35": [
+				{
+					"act": "panel",
+					"args": {
+						"name": "terminal"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.3,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "run",
+					"args": {
+						"output": [
+							"PS C:\\Users\\student\\c_homework> cd \"c:\\Users\\student\\c_homework\\\" ; if ($?) { gcc score.c -o score } ; if ($?) { .\\score }",
+							"請輸入成績: "
+						]
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "underline",
+					"args": {
+						"tone": "accent"
+					},
+					"blocks": false,
+					"cue": "提示字",
+					"dur": 0.6,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:P2"
+				}
+			],
+			"36": [
+				{
+					"act": "input",
+					"args": {
+						"text": "85"
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.24,
+					"n": 2,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "print",
+					"args": {
+						"lines": [
+							"你的成績是 85",
+							"PS C:\\Users\\student\\c_homework> "
+						]
+					},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.8,
+					"n": 2,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "stop",
+					"args": {},
+					"blocks": true,
+					"cue": null,
+					"dur": 0.5,
+					"n": null,
+					"obj": "vs",
+					"target": "vs"
+				},
+				{
+					"act": "circle",
+					"args": {
+						"tone": "ok"
+					},
+					"blocks": false,
+					"cue": "結果",
+					"dur": 0.7,
+					"n": null,
+					"obj": "vs",
+					"target": "vs:P3"
+				}
+			]
+		},
+		"kind": "vscode",
+		"lines": [
+			22,
+			23,
+			24,
+			25,
+			26,
+			27,
+			28,
+			29,
+			30,
+			31,
+			32,
+			33,
+			34,
+			35,
+			36
+		],
+		"screen": {
+			"_presets": {
+				"gear": {
+					"body": [
+						{
+							"group": {
+								"body": [
+									{
+										"table": {
+											"columns": [
+												"選單",
+												"快速鍵"
+											],
+											"rows": [
+												{
+													"cells": [
+														"命令選擇區...",
+														"Ctrl+Shift+P"
+													],
+													"id": "cmd"
+												},
+												{
+													"cells": [
+														"設定檔",
+														""
+													],
+													"id": "profile"
+												},
+												{
+													"cells": [
+														"設定",
+														"Ctrl+,"
+													],
+													"id": "settings"
+												},
+												{
+													"cells": [
+														"延伸模組",
+														"Ctrl+Shift+X"
+													],
+													"id": "ext"
+												},
+												{
+													"cells": [
+														"鍵盤快速鍵",
+														"Ctrl+K Ctrl+S"
+													],
+													"id": "keys"
+												}
+											]
+										}
+									}
+								],
+								"id": "menu",
+								"title": "左下角齒輪"
+							}
+						}
+					],
+					"type": "window"
+				},
+				"settings": {
+					"found": "找到 15 項設置",
+					"items": [
+						{
+							"check": false,
+							"desc": "Whether to run code in Integrated Terminal.",
+							"group": "Code-runner",
+							"id": "run_in_terminal",
+							"title": "Run In Terminal"
+						},
+						{
+							"check": false,
+							"desc": "Whether to run code in Integrated Terminal.",
+							"group": "Verilog",
+							"id": "verilog_run_in_terminal",
+							"title": "Run In Terminal"
+						},
+						{
+							"desc": "控制是否在執行「終端機: 在使用中終端機中執行選取的文字」之後，將集中處理終端機、可存取的緩衝區或兩者。",
+							"group": "Terminal › Integrated",
+							"id": "focus_after_run",
+							"select": "none",
+							"title": "Focus After Run"
+						}
+					],
+					"search": "run in terminal"
+				}
+			},
+			"explorer": [
+				"score.c",
+				"score.exe",
+				"score_fflush.c",
+				"score_fflush.exe",
+				"hello.c"
+			],
+			"files": {
+				"hello.c": [
+					"#include <stdio.h>",
+					"",
+					"int main(void) {",
+					"\tprintf(\"hello\\n\");",
+					"\treturn 0;",
+					"}"
+				],
+				"score.c": [
+					"#include <stdio.h>",
+					"",
+					"int main(void) {",
+					"\tint score;",
+					"\tprintf(\"請輸入成績: \");",
+					"\tscanf(\"%d\", &score);",
+					"\tprintf(\"你的成績是 %d\\n\", score);",
+					"\treturn 0;",
+					"}"
+				],
+				"score_fflush.c": [
+					"#include <stdio.h>",
+					"",
+					"int main(void) {",
+					"\tint score;",
+					"\tprintf(\"請輸入成績: \");",
+					"\tfflush(stdout);",
+					"\tscanf(\"%d\", &score);",
+					"\tprintf(\"你的成績是 %d\\n\", score);",
+					"\treturn 0;",
+					"}"
+				]
+			},
+			"folder": "c_homework",
+			"id": "vs",
+			"menus": [
+				"gear"
+			],
+			"open": "score_fflush.c",
+			"pages": [
+				"settings"
+			],
+			"panel": "output",
+			"type": "vscode"
+		}
+	}
+]
