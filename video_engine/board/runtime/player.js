@@ -132,7 +132,8 @@
 		while (k + 1 < cams.length && cams[k + 1].t <= t) k++;
 		return {view: cameraEval(k, t), kind: cams[k].kind, settled: t >= cams[k].t + cams[k].dur};
 	}
-	function anchorAt(target, t, states) {
+	// at：用哪個時刻的元件狀態量錨點（預設 t）。游標要用動作當下的狀態：選單項目在選單關掉後就沒有框了
+	function anchorAt(target, t, states, at) {
 		if (typeof target !== 'string' || !target) return null;
 		const [id, name] = split(target);
 		const pl = placementAt(id, t);
@@ -140,7 +141,7 @@
 		const c = comp(id), o = objects[id];
 		let r = {x: 0, y: 0, w: sizes[id].w, h: sizes[id].h};
 		if (name) {
-			const st = states && id in states ? states[id] : c.state(o, acts[id], t, api);
+			const st = at == null && states && id in states ? states[id] : c.state(o, acts[id], at ?? t, api);
 			r = c.anchors(o, st, api)[name];
 			if (!r) return null;
 		}
@@ -459,7 +460,7 @@
 			comp(id).draw(api, objects[id], states[id], t);
 			ctx.restore();
 		}
-		const world = {anchor: target => anchorAt(target, t, states), alpha: id => alpha[id] ?? 0, placement: id => placed[id] || null};
+		const world = {anchor: (target, at) => anchorAt(target, t, states, at),alpha: id => alpha[id] ?? 0, placement: id => placed[id] || null};
 		const floating = id => D.catalog.types[objects[id].type].floating;
 		const overlay = id => {
 			api.setOwner(id);

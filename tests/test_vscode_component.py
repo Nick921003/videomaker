@@ -12,6 +12,8 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "video_engine", "board"))
 import compile as BC  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "video_engine", "explainer"))
+import storyboard as SB  # noqa: E402
 
 PROBE = os.path.join(ROOT, "tests", "js", "vscode_probe.js")
 NODE = shutil.which("node")
@@ -262,6 +264,16 @@ class TestMoreActions(unittest.TestCase):
 			self.assertIn(n, an)
 		self.assertLess(an["P1"]["y"], an["P2"]["y"])
 
+	def test_P是絕對行號各種字級都指同一行(self):
+		out = ["line %d" % i for i in range(1, 13)]
+		desc, acts, tl = mini([{"act": "run", "target": "vs", "output": out}])
+		for fs in (None, 1.6):
+			d = dict(desc, _text=fs) if fs else desc
+			an = probe("anchors", d, acts, [tl["duration"]])[0]
+			self.assertEqual(an["P12"]["y"], an["panel:end"]["y"], fs)
+			self.assertEqual(an["P1"]["h"], 0, fs)
+			self.assertGreater(an["P12"]["h"], 0, fs)
+
 	def test_唯讀提示框到下一個動作就收(self):
 		desc, acts, tl = mini([{"act": "run", "target": "vs", "output": ["請輸入成績: "]},
 			{"act": "tip", "target": "vs", "text": "無法在唯讀編輯器中編輯"}, {"act": "stop", "target": "vs"}])
@@ -291,6 +303,45 @@ class TestMoreActions(unittest.TestCase):
 		self.assertEqual(color["ld.exe: cannot open output file score.exe: Permission denied"], "stop")
 
 
+class TestCompileState(unittest.TestCase):
+	"""編譯時照書寫順序推演當下狀態：指到當下不存在的位置，執行期只會安靜地不畫"""
+
+	def compile(self, do, **obj):
+		def edit(doc):
+			doc["objects"][0].update({"files": {"a.c": ["x"] * 10, "b.c": ["y", "z"]}, "open": "a.c"}, **obj)
+			doc["scenes"][0]["beats"][0]["do"] = [{"act": "show", "target": "vs"}] + do
+		return compiled("vscode_min", edit)
+
+	def test_換檔後標的行要在當下開著的檔(self):
+		self.compile([{"act": "circle", "target": "vs:L5"}])
+		with self.assertRaisesRegex(ValueError, "b.c 只有 2 行"):
+			self.compile([{"act": "open", "target": "vs", "file": "b.c"}, {"act": "circle", "target": "vs:L5"}])
+
+	def test_highlight沒寫file就用當下開著的檔(self):
+		with self.assertRaisesRegex(ValueError, "lines 超出行數"):
+			self.compile([{"act": "open", "target": "vs", "file": "b.c"}, {"act": "highlight", "target": "vs", "lines": [5]}])
+		with self.assertRaisesRegex(ValueError, "不在 files"):
+			self.compile([{"act": "highlight", "target": "vs", "file": "nope.c", "lines": [1]}])
+
+	def test_P只到面板當下印出的行(self):
+		run = {"act": "run", "target": "vs", "output": ["[Running] a", "b"]}
+		self.compile([run, {"act": "circle", "target": "vs:P2"}])
+		with self.assertRaisesRegex(ValueError, "只有 2 行"):
+			self.compile([run, {"act": "circle", "target": "vs:P3"}])
+		with self.assertRaisesRegex(ValueError, "只有 0 行"):
+			self.compile([run, {"act": "panel", "target": "vs", "name": "terminal"}, {"act": "circle", "target": "vs:P1"}])
+
+	def test_選單項目只在選單開著時能指(self):
+		click = {"act": "click", "target": "cursor", "on": "vs:settings"}
+		self.compile([{"act": "menu", "target": "vs", "name": "gear"}, click], menus=["gear"], pages=["settings"])
+		with self.assertRaisesRegex(ValueError, "沒開 gear 選單"):
+			self.compile([click], menus=["gear"])
+		with self.assertRaisesRegex(ValueError, "沒開 gear 選單"):
+			self.compile([{"act": "menu", "target": "vs", "name": "gear"}, {"act": "page", "target": "vs", "name": "settings"}, click], menus=["gear"], pages=["settings"])
+		with self.assertRaisesRegex(ValueError, "設定頁沒開"):
+			self.compile([{"act": "click", "target": "cursor", "on": "vs:settings:search"}])
+
+
 class TestChalkAdapter(unittest.TestCase):
 	def test_黑板轉接的動作時間取自逐字時間(self):
 		if not NODE:
@@ -315,6 +366,45 @@ class TestChalkAdapter(unittest.TestCase):
 		self.assertEqual((run["t0"], run["t1"]), (1.0, 1.8))
 		self.assertAlmostEqual(inp["t0"], 1.8)
 		self.assertAlmostEqual(inp["t1"], 2.04)
+
+	def screen(self, do):
+		"""走分鏡的真流程（storyboard 交給手帳編譯器）做出一段電腦畫面，動作都不寫 cue、一個接一個"""
+		pg = {"screen": {"id": "vs", "files": {"a.c": ["int main(void) {", "}"]}, "menus": ["gear"], "pages": ["settings"]},
+			"lines": [{"say": "點齒輪再點設定。", "do": do}]}
+		obj, acts = SB.screen_actions(pg, 1)
+		return {"lines": [1], "screen": obj, "do": acts}
+
+	def chalk(self, cmd, screen, ts=None, spans=None):
+		return probe(cmd, None, None, ts, screen=screen, spans={"1": spans or {}}, starts={"1": 0.0})
+
+	def test_選單關掉後游標照樣走到下一個目標(self):
+		scr = self.screen([{"act": "click", "target": "cursor", "on": "vs:gear"}, {"act": "menu", "target": "vs", "name": "gear"},
+			{"act": "click", "target": "cursor", "on": "vs:settings"}, {"act": "page", "target": "vs", "name": "settings"},
+			{"act": "click", "target": "cursor", "on": "vs:settings:search"}])
+		end = 20.0
+		got = self.chalk("cursor", scr, ts=[end])
+		own = [a for a in got["acts"] if a["obj"] == "vs"]
+		box = probe("anchors", scr["screen"], own, [end])[0]["settings:search"]
+		p = got["pts"][0]["p"]
+		# 舊版每格重查：設定頁打開後 vs:settings 沒有框，游標就停在齒輪上
+		self.assertAlmostEqual(p[0], box["x"] + box["w"] / 2, delta=1)
+		self.assertAlmostEqual(p[1], box["y"] + box["h"] / 2, delta=1)
+
+	def test_時間軸錨點閘擋下選單沒開就點選單項目(self):
+		ok = self.screen([{"act": "menu", "target": "vs", "name": "gear"}, {"act": "click", "target": "cursor", "on": "vs:settings"}])
+		self.assertEqual(self.chalk("check", ok), [])
+		# 編譯照書寫順序看是「選單開了才圈」，但圈跟著 cue 提早到開口時，選單要等點完齒輪才開：只有照時間排才看得出來
+		bad = self.screen([{"act": "click", "target": "cursor", "on": "vs:gear"}, {"act": "menu", "target": "vs", "name": "gear"},
+			{"act": "circle", "target": "vs:settings", "cue": "點齒輪"}])
+		problems = self.chalk("check", bad, spans={"點齒輪": [0.0, 0.3]})
+		self.assertTrue(problems and all("vs:settings" in s for s in problems), problems)
+
+	def test_printf片的電腦畫面錨點都量得到(self):
+		if not NODE:
+			self.skipTest("沒有 node")
+		r = subprocess.run([NODE, os.path.join(ROOT, "video_engine", "explainer", "chalk", "screen_check.js"),
+			os.path.join(ROOT, "video_engine", "out", "vscode_printf_chalk")], capture_output=True, text=True, timeout=60)
+		self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
 if __name__ == "__main__":

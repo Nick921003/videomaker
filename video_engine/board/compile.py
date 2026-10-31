@@ -344,9 +344,64 @@ class Compiler:
 			return generic[act]
 		return self.cat["types"][obj["type"]]["actions"].get(act) if obj else None
 
+	def vscode_state(self, oid):
+		"""照書寫順序推演 VS Code 當下開哪個檔、哪個選單／頁面、面板有幾行（與 model.js 的 state 同規則）"""
+		obj = self.objects[oid]
+		return self.vs.setdefault(oid, {"open": obj["open"], "menu": None, "page": None, "tip": False,
+			"kind": obj["panel"], "out": {"output": 0, "terminal": 0}})
+
+	def check_vscode_ref(self, oid, name, ref, where):
+		"""錨點要在「當下」存在：開著的檔有那一行、面板印到那一行、選單／頁面開著才有它的項目。
+		寫錯時執行期只會安靜地不畫，所以在這裡擋"""
+		obj, st = self.objects[oid], self.vscode_state(oid)
+		m = re.fullmatch(r"([LP])(\d+)", name)
+		if m:
+			n = int(m.group(2))
+			hi = len(obj["files"][st["open"]]) if m.group(1) == "L" else st["out"][st["kind"]]
+			if not 1 <= n <= hi:
+				now = f"開著的 {st['open']} 只有 {hi} 行" if m.group(1) == "L" else f"{st['kind']} 面板當下只有 {hi} 行"
+				raise ValueError(f"{where} 指到 {ref}，但 {now}")
+			return
+		if name == "tip" and not st["tip"]:
+			raise ValueError(f"{where} 指到 {ref}，但當下沒有提示框")
+		if name == "settings:search" and st["page"] != "settings":
+			raise ValueError(f"{where} 指到 {ref}，但設定頁沒開")
+		for kind in ("menu", "page"):
+			for pname in obj.get(kind + "s", []):
+				if name in declared_keys(obj["_presets"][pname]) and st[kind] != pname:
+					raise ValueError(f"{where} 指到 {ref}，但當下沒開 {pname} {'選單' if kind == 'menu' else '頁面'}")
+
+	def track_vscode(self, act, args, obj):
+		st = self.vscode_state(obj["id"])
+		if act not in MARKS + ("show", "hide", "focus"):
+			st["tip"] = False
+		out = st["out"]
+		if act == "open":
+			st["open"] = args["file"]
+		elif act == "highlight":
+			st["open"] = args.get("file") or st["open"]
+		elif act == "run":
+			# 輸出面板每次執行會清掉；終端機往下接
+			out[st["kind"]] = (0 if st["kind"] == "output" else out[st["kind"]]) + len(args.get("output") or [])
+		elif act == "print":
+			out[st["kind"]] += len(args["lines"])
+		elif act == "input":
+			out[st["kind"]] = max(1, out[st["kind"]])
+		elif act == "panel":
+			st["kind"] = args["name"]
+		elif act == "tip":
+			st["tip"] = True
+		elif act == "menu":
+			st["menu"], st["page"] = args["name"], None
+		elif act == "page":
+			st["page"], st["menu"] = args["name"], None
+		elif act == "close":
+			st["menu"] = st["page"] = None
+
 	def collect_actions(self):
 		actions = []
 		appended = {}
+		self.vs = {}
 		for beat in self.beats:
 			raw_beat = self.doc["scenes"][beat["scene"]]["beats"][beat["i"]]
 			kept = 0
@@ -379,7 +434,15 @@ class Compiler:
 						self.check_anchor(args[key])
 				if raw.get("cue") is not None and raw["cue"] not in beat["say"]:
 					raise ValueError(f"{where} 的 cue「{raw['cue']}」不在句中：{beat['say']}")
+				refs = [target] if target and ":" in target else []
+				refs += [args[k] for k in spec.get("anchor_args", []) if isinstance(args.get(k), str)]
+				for ref in refs:
+					rid, name = anchor_parts(ref)
+					if name and self.objects[rid]["type"] == "vscode":
+						self.check_vscode_ref(rid, name, ref, where)
 				self.check_indices(act, args, obj, where)
+				if obj and obj["type"] == "vscode":
+					self.track_vscode(act, args, obj)
 				n = self.seq_count(spec, args, obj, appended, where)
 				if act == "append":
 					appended[obj["id"]] = appended.get(obj["id"], 0) + 1
@@ -417,7 +480,11 @@ class Compiler:
 			raise ValueError(f"{where} line 超出行數：{args['line']}")
 		elif obj["type"] == "vscode":
 			if act == "highlight":
-				n = len(obj["files"][args.get("file", obj["open"])])
+				# 沒寫 file 就是當下開著的檔（前面可能 open 過別的），不是一開始的 open
+				file = args.get("file") or self.vscode_state(obj["id"])["open"]
+				if file not in obj["files"]:
+					raise ValueError(f"{where} highlight 的檔不在 files：{file}")
+				n = len(obj["files"][file])
 				if not args["lines"] or not all(index_ok(v, 1, n + 1) for v in args["lines"]):
 					raise ValueError(f"{where} lines 超出行數（1..{n}）：{args['lines']}")
 			elif act == "open" and args["file"] not in obj["files"]:

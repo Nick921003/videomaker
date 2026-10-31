@@ -211,7 +211,13 @@
 		var px = p.x + m.pad, maxX = p.x + p.w - m.pad - m.out;
 		var endX = Math.min(px + textW(view[k] || '', m.out, true), maxX);
 		out['panel:end'] = R(endX, p.y + m.ptabH + 8 * m.f + k * m.outPitch, m.out, m.outPitch);
-		view.forEach(function (s, i) { out['P' + (i + 1)] = R(px, p.y + m.ptabH + 8 * m.f + i * m.outPitch, Math.min(Math.max(textW(s, m.out, true), m.out), maxX + m.out - px), m.outPitch); });
+		// P{n} 是面板的第 n 行（絕對行號），不是看得到的第 n 行：可見行數隨字級倍率不同，用可見序號會讓同一份描述在各風格圈到不同行。
+		// 捲出畫面的行與 L{n} 一樣給零高的框
+		var lines = st.panel.lines, first = lines.length - view.length, py = p.y + m.ptabH + 8 * m.f;
+		lines.forEach(function (s, i) {
+			var row = i - first, w = Math.min(Math.max(textW(s, m.out, true), m.out), maxX + m.out - px);
+			out['P' + (i + 1)] = row < 0 ? R(px, py, w, 0) : R(px, py + row * m.outPitch, w, m.outPitch);
+		});
 		var pt = panelTabs(lay);
 		out['ptab:output'] = pt.output.box; out['ptab:terminal'] = pt.terminal.box;
 		if (st.tip) out.tip = tipBox(st, lay, out['panel:end']);

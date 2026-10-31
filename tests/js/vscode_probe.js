@@ -14,6 +14,14 @@ if (cmd === 'schedule') {
 	process.stdout.write(JSON.stringify(CH.schedule(q.screen, span, (l) => q.starts[l])));
 	return;
 }
+if (cmd === 'cursor' || cmd === 'check') {
+	const span = (l, s) => ({ start: q.spans[l][s][0], end: q.spans[l][s][1] });
+	if (cmd === 'check') { process.stdout.write(JSON.stringify(CH.check([q.screen], span, (l) => q.starts[l], M, size))); return; }
+	const acts = CH.schedule(q.screen, span, (l) => q.starts[l]), id = q.screen.screen.id;
+	const own = acts.filter((a) => a.obj === id), track = CH.cursorTrack(M, q.screen.screen, own, acts.filter((a) => a.obj === 'cursor'), [0, 0], size);
+	process.stdout.write(JSON.stringify({ acts, pts: q.ts.map((t) => track(t)) }));
+	return;
+}
 const out = (q.ts || [q.t]).map((t) => {
 	const st = M.state(q.desc, q.acts || [], t, size);
 	if (cmd === 'layout') return M.layout(q.desc, size);

@@ -180,9 +180,12 @@ def main():
 			# 錨點必須能只靠 state 算出（不靠 draw 的副作用），否則鏡頭預算與跨物件標記會靜默失效
 			for act in tl["actions"]:
 				targets = [act["target"]] if act["target"] and ":" in act["target"] else []
-				targets += [v for k, v in act["args"].items() if k in ("to", "from") and isinstance(v, str) and ":" in v]
+				# 哪些參數是錨點照目錄宣告的 anchor_args，不自己列（曾漏掉游標 click 的 on）
+				spec = catalog["generic_actions"].get(act["act"]) or catalog["types"][tl["objects"][act["obj"]]["type"]]["actions"].get(act["act"], {})
+				targets += [act["args"][k] for k in spec.get("anchor_args", []) if isinstance(act["args"].get(k), str) and ":" in act["args"][k]]
 				for target in targets:
-					for t in (act["t0"] + 0.01, act["t1"]):
+					# 只查動作期間內：下一個擋路的動作剛好在 t1 開始（例：點完設定才開設定頁）不算
+					for t in (act["t0"] + 0.01, max(act["t0"] + 0.01, act["t1"] - 0.01)):
 						if page.evaluate("([g, t]) => board.anchor(g, t)", [target, t]) is None:
 							problems.append(f"t={t:.2f} 場景 {tl['scenes'][act['scene']]['id']} 的錨點 {target} 無法由 anchors() 解析（{act['act']}）")
 			for t in sample_times(tl):

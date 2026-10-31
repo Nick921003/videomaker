@@ -47,9 +47,15 @@
 
 ## 錨點
 
-`run`（執行鈕）、`gear`、`explorer`、`editor`、`panel`、`panel:end`（面板最後一行的行尾）、`P1`…（面板第幾行）、
+`run`（執行鈕）、`gear`、`explorer`、`editor`、`panel`、`panel:end`（面板最後一行的行尾）、`P1`…（面板第幾行，絕對行號；捲出畫面的行框高為 0）、
 `ptab:output`、`ptab:terminal`、`tip`、`settings:search`、`L1`…（程式第幾行）、`tab:score.c`、`file:score.c`，
 以及選單、頁面項目的 id（例：`settings`、`run_in_terminal`、`code_runner`，只在打開時存在）。
+
+錨點要在**當下**存在，寫錯畫面只會安靜地不畫，所以有三道檢查：
+
+- 編譯（`board/compile.py`，黑板分鏡也走它）照書寫順序推演狀態：`L{n}` 要在當下開著的檔裡、`P{n}` 要已經印出來、選單／頁面項目要在它打開時、`tip` 要有提示框。
+- 手帳量測閘 `board/check.py`、黑板 `node video_engine/explainer/chalk/screen_check.js <影片專案>`：照實際時間排好，查每個標記與游標的目標在動作期間都量得到（cue 讓動作提早、選單還沒開就圈，只有這裡看得出來）。
+- 游標的目標在動作開始那一刻量好就固定，選單關掉後游標照樣走到下一個目標。
 
 ## 三種用法
 

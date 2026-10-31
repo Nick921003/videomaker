@@ -33,6 +33,12 @@ class TestSyncFilm(unittest.TestCase):
 		self.assertEqual(s["screens"][0]["do"], {"1": []})
 		self.assertNotIn("screen", s["screens"][1])
 
+	def test_merge_screens句號對不上就報錯(self):
+		# 分鏡改過句號沒重產 story：以前會安靜丟掉整段畫面，螢幕變空的
+		with self.assertRaisesRegex(ValueError, r"\[1, 2, 3\]"):
+			merge_screens({"screens": [{"lines": [1, 2], "kind": "vscode"}]},
+				[{"lines": [1, 2, 3], "kind": "vscode", "screen": {"id": "vs"}, "do": {}}])
+
 	def test_copy_components(self):
 		with tempfile.TemporaryDirectory() as d:
 			copy_components(d)

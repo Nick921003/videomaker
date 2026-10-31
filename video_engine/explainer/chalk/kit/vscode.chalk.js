@@ -41,6 +41,57 @@
 	}
 	var seedOf = function (s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 9973; return h; };
 
+	// 元件在 t 時刻的某個錨點；整個元件（沒有冒號）回 null，由呼叫端決定怎麼框
+	function boxAt(M, desc, own, target, t, size) {
+		var name = target.split(':').slice(1).join(':');
+		return name ? M.anchors(desc, M.state(desc, own, t, size), size)[name] || null : null;
+	}
+
+	// 游標路徑：回傳 t → {p: 位置, click: 最近一次按下的時刻}。
+	// 目標在動作開始那一刻量好就固定：選單項目在選單關掉後就沒有框，每格重查會讓游標卡住
+	function cursorTrack(M, desc, own, cur, start, size) {
+		var to = cur.map(function (a) { return boxAt(M, desc, own, a.args.on || a.args.to, a.t0, size); });
+		return function (t) {
+			var p = start, clickT = null;
+			for (var i = 0; i < cur.length; i++) {
+				var a = cur[i];
+				if (t < a.t0) break;
+				if (!to[i]) continue;
+				// 游標已經在目標上（前面先 move 過去）就直接按，不再空等移動時間
+				var q = center(to[i]), near = Math.abs(q[0] - p[0]) + Math.abs(q[1] - p[1]) < 4;
+				var arrive = near ? a.t0 : a.t0 + (a.t1 - a.t0) * 0.6;
+				if (t < arrive) { var u = io2((t - a.t0) / (arrive - a.t0)); return { p: [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u], click: null }; }
+				p = q;
+				if (a.act === 'click') clickT = arrive;
+			}
+			return { p: p, click: clickT };
+		};
+	}
+
+	// 時間軸上的錨點閘：每個標記、游標動作指到的位置，在動作開始與結束時都要量得到。
+	// 指到不存在的位置時畫面只會安靜地不畫（或游標停住），所以要在出片前擋下來
+	function check(screens, span, drawAt, M, size) {
+		var out = [];
+		(screens || []).forEach(function (data) {
+			if (!data || !data.screen) return;
+			var desc = data.screen, acts = schedule(data, span, drawAt);
+			var own = acts.filter(function (a) { return a.obj === desc.id; });
+			acts.forEach(function (a) {
+				var refs = [];
+				if (MARKS[a.act] && a.target !== desc.id) refs.push(a.target);
+				['on', 'to'].forEach(function (k) { if (a.args && typeof a.args[k] === 'string') refs.push(a.args[k]); });
+				refs.forEach(function (r) {
+					if (r.split(':')[0] !== desc.id) return;
+					// 只查動作期間內：下一個擋路的動作剛好在 t1 開始（例：點完設定才開設定頁）不算
+					[a.t0 + 0.01, a.t1 - 0.01].forEach(function (t) {
+						if (!boxAt(M, desc, own, r, t, size)) out.push('第 ' + a.line + ' 句 ' + a.act + ' 的 ' + r + ' 在 t=' + t.toFixed(2) + ' 量不到');
+					});
+				});
+			});
+		});
+		return out;
+	}
+
 	function el(tag, attrs, parent) {
 		var e = document.createElementNS(NS, tag);
 		for (var k in attrs) e.setAttribute(k, attrs[k]);
@@ -85,20 +136,7 @@
 		var lastSvg = null, lastOp = null;
 		var start = [scr.w * 0.62, scr.h * 0.62];
 
-		function cursorAt(t, an) {
-			var p = start, clickT = null;
-			for (var i = 0; i < cur.length; i++) {
-				var a = cur[i], to = an[(a.args.on || a.args.to).split(':').slice(1).join(':')];
-				if (!to || t < a.t0) break;
-				// 游標已經在目標上（前面先 move 過去）就直接按，不再空等移動時間
-				var q = center(to), near = Math.abs(q[0] - p[0]) + Math.abs(q[1] - p[1]) < 4;
-				var arrive = near ? a.t0 : a.t0 + (a.t1 - a.t0) * 0.6;
-				if (t < arrive) { var u = io2((t - a.t0) / (arrive - a.t0)); return { p: [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u], click: null }; }
-				p = q;
-				if (a.act === 'click') clickT = arrive;
-			}
-			return { p: p, click: clickT };
-		}
+		var cursorAt = cursorTrack(M, desc, own, cur, start, size);
 
 		return function (t) {
 			var op = t < tGone ? (tShow <= 0 ? 1 : clamp((t - tShow) / 0.3)) : 0;
@@ -125,7 +163,7 @@
 				e.setAttribute('opacity', f1(fade));
 			});
 			if (cur.length) {
-				var c = cursorAt(t, an), press = c.click != null && t - c.click >= 0 && t - c.click < 0.16 ? 0.88 : 1;
+				var c = cursorAt(t), press = c.click != null && t - c.click >= 0 && t - c.click < 0.16 ? 0.88 : 1;
 				curG.setAttribute('opacity', 1);
 				curPath.setAttribute('transform', 'translate(' + f1(c.p[0]) + ',' + f1(c.p[1]) + ') scale(' + press + ')');
 				var u = c.click == null ? -1 : (t - c.click) / 0.4;
@@ -145,6 +183,6 @@
 		return function (t) { for (var i = 0; i < fns.length; i++) fns[i](t); };
 	}
 
-	var X = { schedule: schedule, mount: mount, mountAll: mountAll };
+	var X = { schedule: schedule, cursorTrack: cursorTrack, check: check, mount: mount, mountAll: mountAll };
 	if (typeof module !== 'undefined') module.exports = X; else g.ChalkVSCode = X;
 })(this);

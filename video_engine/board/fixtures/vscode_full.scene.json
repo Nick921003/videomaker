@@ -41,7 +41,7 @@
 					{"act": "click", "target": "cursor", "on": "vs:gear", "cue": "齒輪"},
 					{"act": "menu", "target": "vs", "name": "gear", "cue": "齒輪"},
 					{"act": "click", "target": "cursor", "on": "vs:settings", "cue": "設定"},
-					{"act": "page", "target": "vs", "name": "settings", "cue": "設定"}
+					{"act": "page", "target": "vs", "name": "settings"}
 				]},
 				{"say": "勾起在終端機執行，再看延伸模組。", "do": [
 					{"act": "circle", "target": "vs:run_in_terminal", "cue": "在終端機執行", "tone": "ok"},

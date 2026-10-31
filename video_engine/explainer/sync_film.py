@@ -31,6 +31,11 @@ ENGINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def merge_screens(story, screens):
 	"""分鏡寫的電腦畫面描述（screens.json 的 screen／do）併進 story：改畫面不用重跑語音合成"""
 	extra = {tuple(sc["lines"]): sc for sc in screens if sc.get("screen")}
+	have = {tuple(sc["lines"]) for sc in story.get("screens", [])}
+	lost = [list(k) for k in extra if k not in have]
+	if lost:
+		# 對不上就整段畫面不見（beats.js 也不再畫它），螢幕會是空的，不能安靜略過
+		raise ValueError("screens.json 的電腦畫面句號對不上 story.json：%s（分鏡改過句號，story.json 也要跟著重新產生）" % lost)
 	for sc in story.get("screens", []):
 		hit = extra.get(tuple(sc["lines"]))
 		if hit:

@@ -7,34 +7,36 @@
 			const objActs = (acts || []).filter(a => a.obj === obj.id && (a.act === 'move' || a.act === 'click'));
 			let pos = null;
 			let ripple = null;
-			
+			// 目標連同動作開始的時刻一起記：位置要用那一刻的狀態量（選單項目在選單關掉後就沒有框）
+			const ref = a => ({ id: a.args.on || a.args.to, at: a.t0 });
+
 			let firstT0 = Infinity;
 			let firstTarget = null;
 			for (const a of objActs) {
 				if (a.t0 < firstT0) {
 					firstT0 = a.t0;
-					firstTarget = a.args.on || a.args.to;
+					firstTarget = ref(a);
 				}
 			}
-			
+
 			let lastTarget = null;
 			for (const a of objActs) {
 				if (t >= a.t0) {
 					if (t >= a.t1) {
-						lastTarget = a.args.on || a.args.to;
+						lastTarget = ref(a);
 						pos = lastTarget;
 					} else {
 						const p = (t - a.t0) / (a.t1 - a.t0);
 						const prev = lastTarget;
 						if (a.act === 'click') {
 							if (p < 0.65) {
-								pos = { prev, next: a.args.on, p: p / 0.65 };
+								pos = { prev, next: ref(a), p: p / 0.65 };
 							} else {
-								pos = a.args.on;
+								pos = ref(a);
 								ripple = { p: (p - 0.65) / 0.35 };
 							}
 						} else if (a.act === 'move') {
-							pos = { prev, next: a.args.to, p };
+							pos = { prev, next: ref(a), p };
 						}
 						break;
 					}
@@ -49,8 +51,8 @@
 			let x = 0, y = 0;
 			let alpha = 1;
 
-			function getCenter(id) {
-				const a = world.anchor(id);
+			function getCenter(r) {
+				const a = world.anchor(r.id, r.at);
 				if (a) return { x: a.x + a.w / 2, y: a.y + a.h / 2 };
 				return { x: 0, y: 0 };
 			}
@@ -77,7 +79,7 @@
 				} else {
 					alpha = 0;
 				}
-			} else if (typeof st.pos === 'string') {
+			} else if (st.pos.id) {
 				const c = getCenter(st.pos);
 				x = c.x; y = c.y;
 			} else {

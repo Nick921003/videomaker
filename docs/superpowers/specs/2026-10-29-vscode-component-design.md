@@ -148,3 +148,8 @@ video_engine/components/vscode/
 ## 參考
 
 見 `docs/參考紀錄.md`「VS Code 畫面元件（2026-10-29 設計前調查）」：Remotion 生態的 VS Code 區塊與終端機模擬元件（取「畫面由狀態決定」「終端機獨立」兩個做法，不用 React），Carbon／Ray.so 只產程式碼框、不適用。
+
+## 狀態
+
+- 2026-10-29 階段0 十個任務完成並提交（`6516613`..`3fb0e3c`）。
+- 2026-10-31 後續修正：整支審查抓到游標在選單關掉後卡住（改成動作開始時量好目標就固定）；量測閘漏查 `on`、黑板缺時間軸錨點閘（新增 `explainer/chalk/screen_check.js`）、編譯不看當下狀態、`P{n}` 依可見序號、`merge_screens` 對不上靜默略過，一併修正（commit 待補 hash）。
