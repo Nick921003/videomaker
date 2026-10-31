@@ -9,7 +9,7 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests"))
-from test_vscode_component import BC, SB, probe  # noqa: E402
+from test_vscode_component import BC, SB, probe as _probe  # noqa: E402
 
 FIX = os.path.join(ROOT, "tests", "fixtures", "icon_baseline")
 SCENES = ("vscode_full", "vscode_tip")
@@ -24,13 +24,22 @@ def scene_actions(name):
 	return tl, acts
 
 
-def vscode_actions():
-	out = {}
-	for name in SCENES:
-		tl, acts = scene_actions(name)
-		out[name] = {"actions": acts}
+def probe(*a, **kw):
+	# 基準不准因為缺 node 而略過，原版 probe 會 skip
+	try:
+		return _probe(*a, **kw)
+	except unittest.SkipTest:
+		raise AssertionError("缺 node：圖示基準需要 node 跑 VS Code 元件的 state／anchors，請安裝 node 22")
+
+
+def vscode_compiled():
+	return {name: {"actions": scene_actions(name)[1]} for name in SCENES}
+
+
+def vscode_probed():
+	out = {"vscode_tip": {}}
 	# tip 動作中點的 state／anchors
-	tl, acts = scene_actions("vscode_tip")
+	tl, _ = scene_actions("vscode_tip")
 	desc = tl["objects"]["vs"]
 	vs = [a for a in tl["actions"] if a["obj"] == "vs"]
 	tip = [a for a in vs if a["act"] == "tip"][0]
@@ -38,6 +47,12 @@ def vscode_actions():
 	out["vscode_tip"]["probe_ts"] = ts
 	out["vscode_tip"]["state"] = probe("state", desc, vs, ts)
 	out["vscode_tip"]["anchors"] = probe("anchors", desc, vs, ts)
+	return out
+
+
+def vscode_actions():
+	out = vscode_compiled()
+	out["vscode_tip"].update(vscode_probed()["vscode_tip"])
 	return out
 
 
@@ -68,8 +83,17 @@ def norm(o):
 
 
 class TestBaseline(unittest.TestCase):
-	def test_vscode_動作與錨點不變(self):
-		self.assertEqual(norm(vscode_actions()), load("vscode_actions.json"))
+	def test_vscode_編譯後動作不變(self):
+		want = load("vscode_actions.json")
+		got = norm(vscode_compiled())
+		for name in SCENES:
+			self.assertEqual(got[name]["actions"], want[name]["actions"], name)
+
+	def test_vscode_tip_state與錨點不變(self):
+		want = load("vscode_actions.json")["vscode_tip"]
+		got = norm(vscode_probed())["vscode_tip"]
+		for k in ("probe_ts", "state", "anchors"):
+			self.assertEqual(got[k], want[k], k)
 
 	def test_printf_screens_不變(self):
 		self.assertEqual(norm(printf_screens()), load("printf_screens.json"))
@@ -82,8 +106,11 @@ if __name__ == "__main__":
 	if sys.argv[1:] == ["--regen"]:
 		os.makedirs(FIX, exist_ok=True)
 		for fn, gen in GEN.items():
-			with open(os.path.join(FIX, fn), "w", encoding="utf-8") as f:
-				json.dump(gen(), f, ensure_ascii=False, indent="\t", sort_keys=True)
-				f.write("\n")
+			path = os.path.join(FIX, fn)
+			old = open(path, encoding="utf-8").read() if os.path.exists(path) else None
+			text = json.dumps(gen(), ensure_ascii=False, indent="\t", sort_keys=True) + "\n"
+			with open(path, "w", encoding="utf-8") as f:
+				f.write(text)
+			print(("未變 " if old == text else "已改 ") + fn)
 	else:
 		unittest.main()
