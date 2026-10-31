@@ -1,0 +1,42 @@
+{
+	"version": 1,
+	"title": "通用標註框：四邊都塞滿",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"expect_problem": "四邊都放不下",
+	"objects": [
+		{"id": "n1", "type": "note", "text": "左上角字卡"},
+		{"id": "n2", "type": "note", "text": "正上方字卡"},
+		{"id": "n3", "type": "note", "text": "右上角字卡"},
+		{"id": "n4", "type": "note", "text": "左邊的字卡"},
+		{"id": "mid", "type": "icon", "name": "bulb"},
+		{"id": "n6", "type": "note", "text": "右邊的字卡"},
+		{"id": "n7", "type": "note", "text": "左下角字卡"},
+		{"id": "n8", "type": "note", "text": "正下方字卡"},
+		{"id": "n9", "type": "note", "text": "右下角字卡"}
+	],
+	"scenes": [
+		{
+			"id": "full",
+			"title": "四邊都擠滿",
+			"label": "本機測試",
+			"layout": {"stack": [{"row": ["n1", "n2", "n3"]}, {"row": ["n4", "mid", "n6"]}, {"row": ["n7", "n8", "n9"]}]},
+			"beats": [
+				{"say": "中間的燈泡被八張字卡圍住。", "do": [
+					{"act": "show", "target": "n1"},
+					{"act": "show", "target": "n2", "with": "prev"},
+					{"act": "show", "target": "n3", "with": "prev"},
+					{"act": "show", "target": "n4", "with": "prev"},
+					{"act": "draw", "target": "mid", "with": "prev"},
+					{"act": "show", "target": "n6", "with": "prev"},
+					{"act": "show", "target": "n7", "with": "prev"},
+					{"act": "show", "target": "n8", "with": "prev"},
+					{"act": "show", "target": "n9", "with": "prev"}
+				]},
+				{"say": "替燈泡掛一個很長的提示，四邊都放不下。", "do": [
+					{"act": "callout", "target": "mid", "text": "這是一段很長很長的提示文字，哪一邊都塞不進去", "cue": "提示"}
+				]}
+			]
+		}
+	]
+}

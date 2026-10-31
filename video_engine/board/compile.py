@@ -418,7 +418,7 @@ class Compiler:
 
 	def track_vscode(self, act, args, obj):
 		st = self.vscode_state(obj["id"])
-		if act not in MARKS + ("show", "hide", "focus"):
+		if act not in MARKS + ("show", "hide", "focus", "callout"):
 			st["tip"] = False
 		out = st["out"]
 		if act == "open":
@@ -467,9 +467,9 @@ class Compiler:
 					# 動作缺口：改成單純顯示目標，至少讓保底內容出現在畫面上
 					self.gaps.append({"kind": "action", "object": obj["id"], "wanted": f"{obj.get('_fallback_of') or obj['type']}.{act}", "fallback": "show", "where": where})
 					act, spec, args = "show", self.cat["generic_actions"]["show"], {}
-				if act in MARKS:
+				if act in MARKS or act == "callout":
 					# 分鏡只寫語氣，顏色由各風格的主題決定
-					args.setdefault("tone", "accent")
+					args.setdefault("tone", "ink" if act == "callout" else "accent")
 					if args["tone"] not in TONES:
 						raise ValueError(f"{where} 的語氣 {args['tone']} 不在 {TONES}")
 				for key in spec.get("req", []):
@@ -492,7 +492,7 @@ class Compiler:
 					if act not in ("draw", "show"):
 						raise ValueError(f"{where} 是 {obj['id']} 的第一個動作：圖示要先 draw 再 blink／erase")
 					drawn.add(obj["id"])
-				if spec.get("span") == "until" and "until" in args:
+				if (spec.get("span") == "until" or act == "callout") and "until" in args:
 					args["until_beat"] = self.until_beat(beat, args["until"], where)
 				if obj and obj["type"] == "vscode":
 					self.track_vscode(act, args, obj)
@@ -647,16 +647,22 @@ class Compiler:
 					start = a["t0"] = max(limit - dur, scene_start[a["scene"]])
 					self.warnings.append(f"{self.where(a)} 句尾前收不完，往前挪到 {start:.2f}s")
 			a["t1"] = start + dur
+			if a["act"] == "callout" and "until_beat" in a["args"]:
+				# 標註框只有進場 0.3s 算進動作；何時收由執行期依 until_t 決定
+				until = min(self.until_time(a), scene_end[a["scene"]])
+				if until < a["t1"] - 1e-6:
+					self.warnings.append(f"{self.where(a)} 進場結束 {a['t1']:.2f}s 已過 until 的時刻，不會出現")
+				a["args"]["until_t"] = until
 			prev = a
 
 	def chain_start(self, idx):
-		"""until 類一路持續到後面，不能當 prev 拖住後面的動作；同句只剩它們時跟著它起跑"""
+		"""until 類與標註框一路持續到後面，不能當 prev 拖住後面的動作；同句只剩它們時跟著它起跑"""
 		me = self.actions[idx]
 		for j in range(idx - 1, -1, -1):
 			a = self.actions[j]
 			if a["beat"] != me["beat"]:
 				break
-			if a["spec"].get("span") != "until":
+			if a["spec"].get("span") != "until" and a["act"] != "callout":
 				return a["t1"]
 		return self.actions[idx - 1]["t0"]
 

@@ -3,7 +3,7 @@
 
 用法：.venv/bin/python video_engine/board/selftest.py [--quick] [--force]
 
-- fixtures/*.scene.json、examples/*.scene.json：必須完整通過量測閘。
+- fixtures/*.scene.json、examples/*.scene.json：必須完整通過量測閘；寫了 expect_problem 的負向分鏡則必須出現該問題。
 - out/check_crashes/*.timeline.json：曾讓量測閘崩潰的時間軸，量測閘必須能跑完（版面問題可以有）。
 - out/author_*/ 裡 AI 寫過的分鏡（--quick 略過）：同上，只要求不崩潰、沒有 JS 錯誤。
 - 對照 catalog.json 列出測試分鏡庫還沒涵蓋的動作與選填參數（只提醒，不算失敗）。
@@ -85,6 +85,10 @@ def run_one(item, catalog):
 			problems = json.load(f)["problems"]
 	if kind == "history":
 		problems = [p for p in problems if any(k in p for k in BROKEN)]
+	elif form == "scene" and doc.get("expect_problem"):
+		# 負向分鏡：量測閘必須抓到指定的問題，抓不到才算失敗
+		want = doc["expect_problem"]
+		problems = [] if any(want in p for p in problems) else [f"應該要有「{want}」的問題卻沒有：{problems[:3]}"]
 	return (name, kind, problems, None)
 
 

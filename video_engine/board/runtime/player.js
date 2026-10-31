@@ -20,7 +20,8 @@
 	const split = target => { const i = target.indexOf(':'); return i < 0 ? [target, ''] : [target.slice(0, i), target.slice(i + 1)]; };
 	const acts = Object.fromEntries(ids.map(id => [id, []]));
 	for (const a of TL.actions) {
-		if (!a.obj) continue;
+		// 標註框由播放器畫，不進元件的 state（vscode 會把沒見過的動作當成收起自己的 tip）
+		if (!a.obj || a.act === 'callout') continue;
 		const refs = new Set([a.obj, ...anchorArgs(a).filter(k => a.args[k]).map(k => split(a.args[k])[0])]);
 		for (const id of refs) acts[id].push(a);
 	}
@@ -33,7 +34,8 @@
 	const nextEnter = si => si + 1 < sceneEnter.length ? sceneEnter[si + 1] : Infinity;
 	api.setSceneEnds(sceneEnter.map((_, si) => nextEnter(si)));
 
-	let sizes, plan, cams, marks;
+	let sizes, plan, cams, marks, callouts;
+	const reported = new Set();
 
 	function prepare() {
 		sizes = Object.fromEntries(ids.map(id => [id, comp(id).measure(objects[id], api, acts[id])]));
@@ -105,6 +107,8 @@
 			}
 			return {...a, tEnd};
 		});
+		callouts = TL.actions.map((a, i) => ({a, i})).filter(({a}) => a.act === 'callout')
+			.map(({a, i}) => ({...a, tEnd: Callout.endTime(TL.actions, i, a.args.until_t ?? null, nextEnter(a.scene))}));
 	}
 
 	function epochIndex(t) { let k = 0; while (k + 1 < plan.length && plan[k + 1].t <= t) k++; return k; }
@@ -409,6 +413,45 @@
 			ctx.restore();
 		}
 	}
+	function roundRect(b, rad) {
+		const pts = [], arc = (cx, cy, a0) => { for (let i = 0; i <= 4; i++) { const q = a0 + i / 4 * Math.PI / 2; pts.push([cx + Math.cos(q) * rad, cy + Math.sin(q) * rad]); } };
+		arc(b.x + b.w - rad, b.y + rad, -Math.PI / 2); arc(b.x + b.w - rad, b.y + b.h - rad, 0); arc(b.x + rad, b.y + b.h - rad, Math.PI / 2); arc(b.x + rad, b.y + rad, Math.PI);
+		pts.push(pts[0]);
+		return pts;
+	}
+	// 標註框：位置每格依當下版面重算；四邊都放不下就報錯，不硬畫到區域外
+	function drawCallouts(t, world, states, still) {
+		const drawn = drawnBoxes(), taken = [];
+		for (const c of callouts) {
+			if (t < c.t0) continue;
+			const a = world.alpha(c.obj) * phase(t, c.t0, c.t1) * (1 - phase(t, c.tEnd, c.tEnd + MARK_FADE));
+			if (a < .004) continue;
+			const r = world.anchor(c.target);
+			if (!r) continue;
+			const style = {size: 30, color: api.color(D.tones.board[c.args.tone || 'ink'])};
+			const size = Callout.size(c.args.text, (s, o) => api.measure(s, o), style);
+			const p = Callout.place(r, size, markBounds(c.scene), obstaclesFor([{id: c.obj, rect: r}], t, states, drawn).concat(taken));
+			if (!p) {
+				const msg = `${c.obj} 的 callout 四邊都放不下：${c.args.text}`;
+				if (still && !reported.has(msg)) { reported.add(msg); errors.push(msg); }
+				continue;
+			}
+			taken.push(p.box);
+			const b = p.box, f = size.f;
+			api.setOwner(c.obj);
+			ctx.save(); ctx.globalAlpha *= a;
+			const outline = roundRect(b, Callout.RADIUS * f);
+			ctx.fillStyle = api.color('card.fill'); ctx.beginPath();
+			outline.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+			ctx.fill();
+			api.ink(outline, 1, {color: style.color, width: 2.4, seed: Board.seed(c.target)});
+			api.ink(Callout.arrowPts(p), 1, {color: style.color, width: 2.4, seed: Board.seed(c.target) + 1});
+			api.record(b.x, b.y, b.w, b.h, 'label', {value: c.args.text});
+			// 字的框已由外框代表；記成 label 以外的角色，免得被當成同物件內文字互疊
+			api.text(c.args.text, b.x + Callout.PAD * f, b.y + b.h / 2, {...style, role: 'callout-text'});
+			ctx.restore();
+		}
+	}
 	function wrap(str, width, o) {
 		const rows = [];
 		let line = '';
@@ -468,6 +511,7 @@
 		};
 		for (const id of ids) if (comp(id).overlay && placed[id] && !floating(id)) overlay(id);
 		drawMarks(t, world, states);
+		drawCallouts(t, world, states, !(k > 0 && t < plan[k].t + MOVE));
 		// 浮動物件（游標）沒有版位，最後畫，永遠在最上層
 		for (const id of ids) if (comp(id).overlay && floating(id) && alpha[id] >= .004) overlay(id);
 		ctx.restore();

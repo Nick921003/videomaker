@@ -361,6 +361,166 @@ class TestActions(unittest.TestCase):
 		self.compile([{"say": "鍵盤", "do": [{"act": "draw", "target": "a"}, {"act": "erase", "target": "a"}]}])
 
 
+CALLOUT_PROBE = os.path.join(ROOT, "tests", "js", "callout_probe.js")
+PW_PY = os.path.expanduser("~/.local/share/pipx/venvs/webwright/bin/python")
+CHECK = os.path.join(ROOT, "video_engine", "board", "check.py")
+
+
+def callout_probe(cmd, **q):
+	node = shutil.which("node")
+	if not node:
+		raise AssertionError("缺 node：標註框測試需要 node，請安裝 node 22")
+	with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+		json.dump(q, f, ensure_ascii=False)
+	try:
+		r = subprocess.run([node, CALLOUT_PROBE, cmd, f.name], capture_output=True, text=True, timeout=30)
+	finally:
+		os.unlink(f.name)
+	if r.returncode:
+		raise AssertionError(r.stderr)
+	return json.loads(r.stdout)
+
+
+def board_check(case, name):
+	"""分鏡 → compile → build → check.py；沒瀏覽器時 skip，但 E2E_GEOM=1 必須真的跑（不准檢查自己壞掉卻顯示通過）"""
+	import build as BB
+	strict = os.environ.get("E2E_GEOM") == "1"
+	if not os.path.exists(PW_PY):
+		if strict:
+			case.fail("E2E_GEOM=1 但沒有 webwright 的 Playwright：" + PW_PY)
+		case.skipTest("沒有 webwright 的 Playwright")
+	with open(os.path.join(ROOT, "video_engine", "board", "fixtures", name + ".scene.json"), encoding="utf-8") as f:
+		doc = json.load(f)
+	tl = BC.compile_scene(doc, None, BC.load_catalog())
+	with tempfile.TemporaryDirectory() as d:
+		BB.build(tl, d)
+		r = subprocess.run([PW_PY, CHECK, d], capture_output=True, text=True, timeout=600)
+		report = os.path.join(d, "check.json")
+		if not os.path.exists(report):
+			if not strict and "Executable doesn't exist" in r.stderr:
+				case.skipTest("Playwright 沒裝 chromium")
+			case.fail("量測閘沒有跑完：" + r.stderr[-600:])
+		with open(report, encoding="utf-8") as f:
+			return r.returncode, r.stdout, json.load(f)
+
+
+class TestCallout(unittest.TestCase):
+	SIZE = {"w": 200, "h": 48, "f": 1}
+
+	def place(self, anchor, bounds, obstacles=(), size=None):
+		return callout_probe("place", anchor=anchor, size=size or self.SIZE, bounds=bounds, obstacles=list(obstacles))
+
+	def test_常數照抄vscode(self):
+		self.assertEqual(callout_probe("consts"), {"PAD": 22, "ARROW": 16})
+
+	def test_size(self):
+		s = callout_probe("size", text="abcd", charW=10, style={"size": 22})
+		self.assertEqual((s["w"], s["h"]), (40 + 44, 48))
+		s = callout_probe("size", text="abcd", charW=10, style={"size": 44})
+		self.assertEqual((s["w"], s["h"]), (40 + 88, 96))
+
+	def test_place_四邊(self):
+		wide = {"x": 0, "y": 0, "w": 1000, "h": 600}
+		mid = {"x": 400, "y": 280, "w": 100, "h": 40}
+		p = self.place(mid, wide)
+		self.assertEqual(p["side"], "right")
+		self.assertGreaterEqual(p["box"]["x"], mid["x"] + mid["w"])
+		self.assertTrue(mid["x"] + mid["w"] <= p["tip"][0] <= p["box"]["x"])
+		# 錨點貼著右緣：右邊放不下，換左
+		edge = {"x": 900, "y": 280, "w": 100, "h": 40}
+		p = self.place(edge, wide)
+		self.assertEqual(p["side"], "left")
+		self.assertLessEqual(p["box"]["x"] + p["box"]["w"], edge["x"])
+		self.assertTrue(p["box"]["x"] + p["box"]["w"] <= p["tip"][0] <= edge["x"])
+		# 很窄：左右都放不下，換上
+		narrow = {"x": 0, "y": 0, "w": 300, "h": 600}
+		a = {"x": 100, "y": 280, "w": 100, "h": 40}
+		p = self.place(a, narrow)
+		self.assertEqual(p["side"], "top")
+		self.assertLessEqual(p["box"]["y"] + p["box"]["h"], a["y"])
+		self.assertTrue(p["box"]["y"] + p["box"]["h"] <= p["tip"][1] <= a["y"])
+		above = {"x": 0, "y": 0, "w": 300, "h": 270}
+		below = {"x": 0, "y": 330, "w": 300, "h": 270}
+		self.assertEqual(self.place(a, narrow, [above])["side"], "bottom")
+		# 右邊被擋：換左
+		self.assertEqual(self.place(mid, wide, [{"x": 520, "y": 200, "w": 400, "h": 200}])["side"], "left")
+		# 四邊都塞住
+		self.assertIsNone(self.place(a, narrow, [above, below]))
+		for p in (self.place(mid, wide), self.place(edge, wide), self.place(a, narrow)):
+			b = p["box"]
+			self.assertTrue(b["x"] >= 0 and b["y"] >= 0 and b["x"] + b["w"] <= 1000 and b["y"] + b["h"] <= 600, p)
+
+	def test_place_貼邊時沿邊滑進來(self):
+		bounds = {"x": 0, "y": 0, "w": 1000, "h": 600}
+		a = {"x": 10, "y": 280, "w": 60, "h": 40}
+		p = self.place(a, bounds, [{"x": 100, "y": 250, "w": 800, "h": 100}])
+		self.assertEqual(p["side"], "top")
+		self.assertEqual(p["box"]["x"], 0)
+		self.assertTrue(p["box"]["x"] < p["tip"][0] < p["box"]["x"] + p["box"]["w"])
+		self.assertEqual(p["tip"][0], 40)
+
+	def test_endTime(self):
+		acts = [{"act": "callout", "obj": "a", "t0": 1.0}, {"act": "draw", "obj": "b", "t0": 2.0},
+			{"act": "blink", "obj": "a", "t0": 3.0}]
+		self.assertEqual(callout_probe("endTime", acts=acts, i=0, untilT=None, sceneEnd=10.0), 3.0)
+		self.assertEqual(callout_probe("endTime", acts=acts, i=0, untilT=5.0, sceneEnd=10.0), 5.0)
+		self.assertEqual(callout_probe("endTime", acts=acts, i=0, untilT=None, sceneEnd=2.5), 2.5)
+		self.assertEqual(callout_probe("endTime", acts=acts[:2], i=0, untilT=None, sceneEnd=10.0), 10.0)
+		# 同時起跑的（with: prev）不算「下一個」
+		same = [acts[0], {"act": "circle", "obj": "a", "t0": 1.0}, acts[2]]
+		self.assertEqual(callout_probe("endTime", acts=same, i=0, untilT=None, sceneEnd=10.0), 3.0)
+
+	def compile(self, beats, icons=("a", "b")):
+		objects = [{"id": i, "type": "icon", "name": "keyboard"} for i in icons]
+		doc = {"version": 1, "id": "t", "objects": objects, "scenes": [{"id": "s", "layout": {"row": list(icons)}, "beats": beats}]}
+		return BC.compile_scene(doc, None, BC.load_catalog())
+
+	def test_目錄(self):
+		self.assertEqual(BC.load_catalog()["generic_actions"]["callout"],
+			{"dur": 0.3, "req": ["text"], "opt": ["tone", "until"], "blocks": True})
+
+	def test_編譯_until與不當prev(self):
+		beats = [{"say": "先畫鍵盤，旁邊掛一個提示，再畫第二個鍵盤，這句話要夠長", "do": [
+			{"act": "draw", "target": "a"}, {"act": "callout", "target": "a", "text": "輸入", "until": "收起來"},
+			{"act": "draw", "target": "b"}]},
+			{"say": "講到這裡提示就收起來", "do": []}]
+		tl = self.compile(beats)
+		da, co, db = [a for a in tl["actions"] if a["act"] in ("draw", "callout")]
+		self.assertAlmostEqual(co["t1"] - co["t0"], 0.3)
+		self.assertAlmostEqual(db["t0"], da["t1"])
+		self.assertEqual(co["args"]["until_beat"], 1)
+		second = tl["beats"][1]
+		want = second["t0"] + (second["t1"] - second["t0"]) * second["say"].index("收起來") / len(second["say"])
+		self.assertAlmostEqual(co["args"]["until_t"], want)
+		beats[0]["do"][1].pop("until")
+		self.assertNotIn("until_t", [a for a in self.compile(beats)["actions"] if a["act"] == "callout"][0]["args"])
+		bad = json.loads(json.dumps(beats))
+		bad[0]["do"][1]["until"] = "不存在的字"
+		with self.assertRaises(ValueError) as cm:
+			self.compile(bad)
+		self.assertIn("until", str(cm.exception))
+		bad[0]["do"][1].pop("until")
+		bad[0]["do"][1]["tone"] = "red"
+		with self.assertRaises(ValueError) as cm:
+			self.compile(bad)
+		self.assertIn("red", str(cm.exception))
+		bad[0]["do"][1].pop("tone")
+		bad[0]["do"][1].pop("text")
+		with self.assertRaises(ValueError) as cm:
+			self.compile(bad)
+		self.assertIn("text", str(cm.exception))
+
+	def test_callout_邊緣_過閘(self):
+		code, out, report = board_check(self, "callout_edges")
+		self.assertEqual(code, 0, out + json.dumps(report["problems"], ensure_ascii=False))
+		self.assertTrue(report["ok"])
+
+	def test_callout_塞不下要失敗(self):
+		code, out, report = board_check(self, "callout_full")
+		self.assertEqual(code, 1, out)
+		self.assertTrue(any("四邊都放不下" in p for p in report["problems"]), report["problems"])
+
+
 if __name__ == "__main__":
 	if sys.argv[1:] == ["--regen"]:
 		os.makedirs(FIX, exist_ok=True)

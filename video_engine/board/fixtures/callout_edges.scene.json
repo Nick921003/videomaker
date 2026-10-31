@@ -1,0 +1,56 @@
+{
+	"version": 1,
+	"title": "通用標註框：貼邊",
+	"tag": "元件回歸",
+	"corner_note": "本機測試示意",
+	"objects": [
+		{"id": "left", "type": "icon", "name": "keyboard"},
+		{"id": "wide", "type": "note", "text": "中間這張字卡很長很長，把左右兩個圖示推到版面的兩側邊緣"},
+		{"id": "right", "type": "icon", "name": "lock"},
+		{"id": "top", "type": "icon", "name": "clock"},
+		{"id": "tall", "type": "note", "text": "上下兩個圖示\n被這張字卡\n推到頂端\n與底端\n貼著邊緣\n再多一行"},
+		{"id": "bottom", "type": "icon", "name": "gear"}
+	],
+	"scenes": [
+		{
+			"id": "lr",
+			"title": "左右貼邊",
+			"label": "本機測試",
+			"layout": {"row": ["left", "wide", "right"]},
+			"beats": [
+				{"say": "左右兩個圖示都貼著邊緣。", "do": [
+					{"act": "show", "target": "wide"},
+					{"act": "draw", "target": "left", "with": "prev"},
+					{"act": "draw", "target": "right", "with": "prev"}
+				]},
+				{"say": "左邊的鍵盤掛一個提示，一直到我說收起來。", "do": [
+					{"act": "callout", "target": "left", "text": "使用者輸入", "tone": "accent", "until": "收起來", "cue": "提示"}
+				]},
+				{"say": "右邊的鎖也掛一個提示。", "do": [
+					{"act": "callout", "target": "right", "text": "唯讀", "cue": "提示"}
+				]},
+				{"say": "好，現在把它們收起來。", "do": []}
+			]
+		},
+		{
+			"id": "tb",
+			"title": "上下貼邊",
+			"label": "本機測試",
+			"layout": {"stack": ["top", "tall", "bottom"]},
+			"beats": [
+				{"say": "上下兩個圖示都貼著邊緣。", "do": [
+					{"act": "show", "target": "tall"},
+					{"act": "draw", "target": "top", "with": "prev"},
+					{"act": "draw", "target": "bottom", "with": "prev"}
+				]},
+				{"say": "上面的時鐘掛一個提示。", "do": [
+					{"act": "callout", "target": "top", "text": "等一下", "tone": "info", "cue": "提示"}
+				]},
+				{"say": "下面的齒輪也掛一個提示，然後閃一下。", "do": [
+					{"act": "callout", "target": "bottom", "text": "設定", "tone": "warn", "cue": "提示"},
+					{"act": "blink", "target": "bottom", "cue": "閃"}
+				]}
+			]
+		}
+	]
+}

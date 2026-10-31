@@ -33,6 +33,17 @@
 				"to"
 			]
 		},
+		"callout": {
+			"dur": 0.3,
+			"req": [
+				"text"
+			],
+			"opt": [
+				"tone",
+				"until"
+			],
+			"blocks": true
+		},
 		"focus": {
 			"dur": 0.9
 		},
