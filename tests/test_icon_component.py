@@ -258,6 +258,109 @@ class TestCatalog(unittest.TestCase):
 		self.assertEqual(self.compile(name="gear")["objects"]["i"]["name"], "gear")
 
 
+class TestActions(unittest.TestCase):
+	@classmethod
+	def setUpClass(cls):
+		cls.cat = BC.load_catalog()
+
+	def compile(self, beats, icons=("a",), names=None, scenes=None):
+		names = names or {}
+		objects = [{"id": i, "type": "icon", "name": names.get(i, "keyboard")} for i in icons]
+		scenes = scenes or [{"id": "s", "layout": {"stack": list(icons)}, "beats": beats}]
+		doc = {"version": 1, "id": "t", "objects": objects, "scenes": scenes}
+		return BC.compile_scene(doc, None, self.cat)
+
+	def acts(self, tl, act, obj=None):
+		return [a for a in tl["actions"] if a["act"] == act and (obj is None or a["obj"] == obj)]
+
+	def scene_end(self, tl, scene=0):
+		return [b for b in tl["beats"] if b["scene"] == scene][-1]["t1"] - BC.END_MARGIN
+
+	def test_draw_時長依筆畫(self):
+		strokes = self.cat["types"]["icon"]["strokes"]
+		tl = self.compile([{"say": "先畫一個勾，再畫一個鍵盤，這句話要夠長才不會被句尾夾住", "do": [
+			{"act": "draw", "target": "c"}, {"act": "draw", "target": "k"}]}],
+			icons=("c", "k"), names={"c": "check", "k": "keyboard"})
+		c, k = self.acts(tl, "draw", "c")[0], self.acts(tl, "draw", "k")[0]
+		self.assertAlmostEqual(c["t1"] - c["t0"], 0.5)
+		self.assertAlmostEqual(k["t1"] - k["t0"], min(strokes["keyboard"] * 0.12, 1.6))
+		self.assertAlmostEqual(k["t0"], c["t1"])
+
+	def test_blink_until(self):
+		beats = [{"say": "鍵盤在這裡一直閃", "do": [{"act": "draw", "target": "a"}, {"act": "blink", "target": "a", "until": "停下來"}]},
+			{"say": "等到我說停下來為止", "do": []}]
+		tl = self.compile(beats)
+		b = self.acts(tl, "blink")[0]
+		second = tl["beats"][1]
+		self.assertTrue(second["t0"] < b["t1"] < second["t1"], (b["t1"], second))
+		want = second["t0"] + (second["t1"] - second["t0"]) * second["say"].index("停下來") / len(second["say"])
+		self.assertAlmostEqual(b["t1"], want)
+		self.assertEqual(b["args"]["until_beat"], 1)
+		self.assertEqual(b["args"]["until"], "停下來")
+		beats[0]["do"][1].pop("until")
+		tl = self.compile(beats)
+		self.assertAlmostEqual(self.acts(tl, "blink")[0]["t1"], self.scene_end(tl))
+
+	def test_blink後面的動作不被拖住(self):
+		tl = self.compile([{"say": "先畫鍵盤讓它閃，接著再畫第二個鍵盤出來，這句也要夠長", "do": [
+			{"act": "draw", "target": "a"}, {"act": "blink", "target": "a"}, {"act": "draw", "target": "b"}]}],
+			icons=("a", "b"))
+		da, bl, db = self.acts(tl, "draw", "a")[0], self.acts(tl, "blink")[0], self.acts(tl, "draw", "b")[0]
+		self.assertAlmostEqual(db["t0"], da["t1"])
+		self.assertNotAlmostEqual(db["t0"], self.scene_end(tl))
+		self.assertAlmostEqual(bl["t1"], self.scene_end(tl))
+
+	def test_with_prev接在blink後面跟著blink起跑(self):
+		tl = self.compile([{"say": "先畫鍵盤讓它閃，同時畫第二個鍵盤出來，這句也要夠長", "do": [
+			{"act": "draw", "target": "a"}, {"act": "blink", "target": "a"}, {"act": "draw", "target": "b", "with": "prev"}]}],
+			icons=("a", "b"))
+		self.assertAlmostEqual(self.acts(tl, "draw", "b")[0]["t0"], self.acts(tl, "blink")[0]["t0"])
+
+	def test_until_不在這場(self):
+		def doc(word, where):
+			first = {"say": "鍵盤一直閃", "do": [{"act": "draw", "target": "a"}]}
+			blink = {"act": "blink", "target": "a", "until": word}
+			second = {"say": "第二句在這裡", "do": []}
+			if where == "first":
+				first["do"].append(blink)
+			else:
+				second["do"] = [blink]
+			return [first, second]
+		with self.assertRaises(ValueError) as cm:
+			self.compile(doc("不存在的字", "first"))
+		self.assertIn("不存在的字", str(cm.exception))
+		self.assertIn("until", str(cm.exception))
+		# 寫成上一句的字
+		with self.assertRaises(ValueError) as cm:
+			self.compile(doc("一直閃", "second"))
+		self.assertIn("一直閃", str(cm.exception))
+		self.assertIn("until", str(cm.exception))
+		# 同一句自己的字也不行，要在這句之後
+		with self.assertRaises(ValueError) as cm:
+			self.compile(doc("鍵盤", "first"))
+		self.assertIn("until", str(cm.exception))
+		# 下一場的字也不行
+		scenes = [{"id": "s1", "layout": {"stack": ["a"]}, "beats": [{"say": "鍵盤一直閃", "do": [
+			{"act": "draw", "target": "a"}, {"act": "blink", "target": "a", "until": "下一場"}]}]},
+			{"id": "s2", "layout": {"stack": ["a"]}, "beats": [{"say": "這是下一場", "do": []}]}]
+		with self.assertRaises(ValueError) as cm:
+			self.compile(None, scenes=scenes)
+		self.assertIn("下一場", str(cm.exception))
+
+	def test_第一個動作要是draw(self):
+		for first in ("blink", "erase"):
+			with self.assertRaises(ValueError) as cm:
+				self.compile([{"say": "鍵盤", "do": [{"act": first, "target": "a"}]}])
+			self.assertIn("先 draw", str(cm.exception))
+		# 跨句也算：第一句畫 a，第二句才第一次動 b 就 blink
+		with self.assertRaises(ValueError) as cm:
+			self.compile([{"say": "畫鍵盤", "do": [{"act": "draw", "target": "a"}]},
+				{"say": "另一個閃", "do": [{"act": "blink", "target": "b"}]}], icons=("a", "b"))
+		self.assertIn("先 draw", str(cm.exception))
+		self.compile([{"say": "鍵盤", "do": [{"act": "show", "target": "a"}, {"act": "blink", "target": "a"}]}])
+		self.compile([{"say": "鍵盤", "do": [{"act": "draw", "target": "a"}, {"act": "erase", "target": "a"}]}])
+
+
 if __name__ == "__main__":
 	if sys.argv[1:] == ["--regen"]:
 		os.makedirs(FIX, exist_ok=True)

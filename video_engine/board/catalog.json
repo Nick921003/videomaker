@@ -790,7 +790,25 @@
 			"anchors": [
 				"caption"
 			],
-			"actions": {}
+			"actions": {
+				"draw": {
+					"per_stroke": 0.12,
+					"min": 0.5,
+					"max": 1.6,
+					"blocks": true
+				},
+				"blink": {
+					"period": 0.5,
+					"opt": [
+						"until"
+					],
+					"span": "until"
+				},
+				"erase": {
+					"dur": 0.4,
+					"blocks": true
+				}
+			}
 		},
 		"vscode": {
 			"req": [

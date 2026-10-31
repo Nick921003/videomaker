@@ -446,6 +446,7 @@ class Compiler:
 	def collect_actions(self):
 		actions = []
 		appended = {}
+		drawn = set()
 		self.vs = {}
 		for beat in self.beats:
 			raw_beat = self.doc["scenes"][beat["scene"]]["beats"][beat["i"]]
@@ -486,6 +487,13 @@ class Compiler:
 					if name and self.objects[rid]["type"] == "vscode":
 						self.check_vscode_ref(rid, name, ref, where)
 				self.check_indices(act, args, obj, where)
+				if obj and obj["type"] == "icon" and obj["id"] not in drawn:
+					# 還沒畫出來就閃或擦，執行期只會對著空白動
+					if act not in ("draw", "show"):
+						raise ValueError(f"{where} 是 {obj['id']} 的第一個動作：圖示要先 draw 再 blink／erase")
+					drawn.add(obj["id"])
+				if spec.get("span") == "until" and "until" in args:
+					args["until_beat"] = self.until_beat(beat, args["until"], where)
 				if obj and obj["type"] == "vscode":
 					self.track_vscode(act, args, obj)
 				n = self.seq_count(spec, args, obj, appended, where)
@@ -499,6 +507,20 @@ class Compiler:
 				})
 				kept += 1
 		self.actions = actions
+
+	def until_beat(self, beat, text, where):
+		"""until 的字要在同一場、這句之後的某句；回傳第一個對到的全片句號"""
+		for gi in range(self.beats.index(beat) + 1, len(self.beats)):
+			later = self.beats[gi]
+			if later["scene"] != beat["scene"]:
+				break
+			if isinstance(text, str) and text and text in later["say"]:
+				return gi
+		raise ValueError(f"{where} 的 until「{text}」不在同一場這句之後的任何一句")
+
+	def until_time(self, a):
+		b = self.beats[a["args"]["until_beat"]]
+		return b["t0"] + (b["t1"] - b["t0"]) * b["say"].index(a["args"]["until"]) / len(b["say"])
 
 	def check_indices(self, act, args, obj, where):
 		def index_ok(v, lo, hi):
@@ -592,9 +614,17 @@ class Compiler:
 			else:
 				start = self.anchored_start(a)
 				if start is None:
-					start = prev["t1"]
+					start = self.chain_start(idx)
 			a["t0"] = start
 			spec = a["spec"]
+			if spec.get("span") == "until":
+				end = self.until_time(a) if "until_beat" in a["args"] else scene_end[a["scene"]]
+				end = min(end, scene_end[a["scene"]])
+				if end < start + 1e-6:
+					self.warnings.append(f"{self.where(a)} 起點 {start:.2f}s 已過 until 的時刻，不會出現")
+				a["t1"] = max(end, start)
+				prev = a
+				continue
 			if a["n"] is not None:
 				lo, hi = spec["per"]
 				window = self.window_end(idx, scene_end[a["scene"]]) - start - SEQ_MARGIN
@@ -604,6 +634,9 @@ class Compiler:
 			elif "per_char" in spec:
 				text = self.objects[a["obj"]]["text"]
 				dur = min(max(len(text) * spec["per_char"], spec["min"]), spec["max"])
+			elif "per_stroke" in spec:
+				strokes = self.cat["types"]["icon"]["strokes"][self.objects[a["obj"]]["name"]]
+				dur = min(max(strokes * spec["per_stroke"], spec["min"]), spec["max"])
 			else:
 				dur = spec["dur"]
 			limit = scene_end[a["scene"]]
@@ -615,6 +648,17 @@ class Compiler:
 					self.warnings.append(f"{self.where(a)} 句尾前收不完，往前挪到 {start:.2f}s")
 			a["t1"] = start + dur
 			prev = a
+
+	def chain_start(self, idx):
+		"""until 類一路持續到後面，不能當 prev 拖住後面的動作；同句只剩它們時跟著它起跑"""
+		me = self.actions[idx]
+		for j in range(idx - 1, -1, -1):
+			a = self.actions[j]
+			if a["beat"] != me["beat"]:
+				break
+			if a["spec"].get("span") != "until":
+				return a["t1"]
+		return self.actions[idx - 1]["t0"]
 
 	def window_end(self, idx, scene_end):
 		me = self.actions[idx]
