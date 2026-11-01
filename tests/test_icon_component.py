@@ -759,6 +759,16 @@ class TestChalk(unittest.TestCase):
 			self.assertNotIn("style.opacity", src, fn)
 			self.assertNotRegex(src, r"Math\.random|Date\.now|performance\.now|new Date\(", fn)
 
+	def test_總表不借成品資料夾(self):
+		# out/ 底下是各支片的成品，搬動或重產就會讓總表壞掉；字型子集也只含那支片的字
+		sheet = os.path.join(CHALK_KIT, "..", "tools", "icon_sheet.html")
+		with open(sheet, encoding="utf-8") as f:
+			src = f.read()
+		self.assertNotIn("out/", src)
+		for ref in __import__("re").findall(r'(?:src|href)="([^"]+)"|url\("([^"]+)"\)', src):
+			path = ref[0] or ref[1]
+			self.assertTrue(os.path.exists(os.path.join(os.path.dirname(sheet), path)), path)
+
 
 if __name__ == "__main__":
 	if sys.argv[1:] == ["--regen"]:

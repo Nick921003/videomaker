@@ -3,14 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <title>粉筆圖示總表</title>
-<!-- 直接借 printf 片的 lib 與字型（只讀），不複製；?t=end 直接畫最後一刻，?t=秒數 看過程 -->
-<link rel="stylesheet" href="../../../out/vscode_printf_chalk/lib/kit/kit.css">
+<!-- 用黑板 kit 正本與自己的字型子集（fonts.json，重產跑 fonts.py .）；?t=end 直接畫最後一刻，?t=秒數 看過程 -->
+<link rel="stylesheet" href="../kit/kit.css">
 <style>
-@font-face { font-family: "LXGW WenKai TC"; src: url("../../../out/vscode_printf_chalk/assets/fonts/lxgw-wenkai-tc.woff2") format("woff2"); font-display: block; }
-@font-face { font-family: "Huninn"; src: url("../../../out/vscode_printf_chalk/assets/fonts/huninn.woff2") format("woff2"); font-display: block; }
-@font-face { font-family: "Patrick Hand"; src: url("../../../out/vscode_printf_chalk/assets/fonts/patrick-hand.woff2") format("woff2"); font-display: block; }
-@font-face { font-family: "Long Cang"; src: url("../../../out/vscode_printf_chalk/assets/fonts/long-cang.woff2") format("woff2"); font-display: block; }
-@font-face { font-family: "ZCOOL KuaiLe"; src: url("../../../out/vscode_printf_chalk/assets/fonts/zcool-kuaile.woff2") format("woff2"); font-display: block; }
+/* fonts:begin */
+@font-face { font-family: "LXGW WenKai TC"; src: url("assets/fonts/lxgw-wenkai-tc.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: "Huninn"; src: url("assets/fonts/huninn.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: "Patrick Hand"; src: url("assets/fonts/patrick-hand.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: "Long Cang"; src: url("assets/fonts/long-cang.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: "ZCOOL KuaiLe"; src: url("assets/fonts/zcool-kuaile.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: block; }
+/* fonts:end */
 :root {
 	--kit-font-display: "Huninn", "LXGW WenKai TC", cursive;
 	--kit-font-body: "LXGW WenKai TC", "Huninn", cursive;
@@ -23,8 +25,8 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; }
 </head>
 <body>
 <div id="stage" class="clip"></div>
-<script src="../../../out/vscode_printf_chalk/lib/core.js"></script>
-<script src="../../../out/vscode_printf_chalk/lib/kit/kit.js"></script>
+<script src="../core/core.js"></script>
+<script src="../kit/kit.js"></script>
 <script src="../../../components/icon/shapes.js"></script>
 <script src="../kit/icon.chalk.js"></script>
 <script>
