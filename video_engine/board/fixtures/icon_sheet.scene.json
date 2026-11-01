@@ -1,0 +1,445 @@
+{
+	"version": 1,
+	"title": "圖示總表",
+	"tag": "元件回歸",
+	"corner_note": "31 個圖示",
+	"objects": [
+		{
+			"id": "keyboard",
+			"type": "icon",
+			"name": "keyboard",
+			"caption": "keyboard",
+			"size": "s"
+		},
+		{
+			"id": "cross",
+			"type": "icon",
+			"name": "cross",
+			"caption": "cross",
+			"size": "s"
+		},
+		{
+			"id": "checklist",
+			"type": "icon",
+			"name": "checklist",
+			"caption": "checklist",
+			"size": "s"
+		},
+		{
+			"id": "branch",
+			"type": "icon",
+			"name": "branch",
+			"caption": "branch",
+			"size": "s"
+		},
+		{
+			"id": "bulb",
+			"type": "icon",
+			"name": "bulb",
+			"caption": "bulb",
+			"size": "s"
+		},
+		{
+			"id": "warning",
+			"type": "icon",
+			"name": "warning",
+			"caption": "warning",
+			"size": "s"
+		},
+		{
+			"id": "scale",
+			"type": "icon",
+			"name": "scale",
+			"caption": "scale",
+			"size": "s"
+		},
+		{
+			"id": "pencil",
+			"type": "icon",
+			"name": "pencil",
+			"caption": "pencil",
+			"size": "s"
+		},
+		{
+			"id": "loop",
+			"type": "icon",
+			"name": "loop",
+			"caption": "loop",
+			"size": "s"
+		},
+		{
+			"id": "question",
+			"type": "icon",
+			"name": "question",
+			"caption": "question",
+			"size": "s"
+		},
+		{
+			"id": "check",
+			"type": "icon",
+			"name": "check",
+			"caption": "check",
+			"size": "s"
+		},
+		{
+			"id": "play",
+			"type": "icon",
+			"name": "play",
+			"caption": "play",
+			"size": "s"
+		},
+		{
+			"id": "stop",
+			"type": "icon",
+			"name": "stop",
+			"caption": "stop",
+			"size": "s"
+		},
+		{
+			"id": "return",
+			"type": "icon",
+			"name": "return",
+			"caption": "return",
+			"size": "s"
+		},
+		{
+			"id": "file",
+			"type": "icon",
+			"name": "file",
+			"caption": "file",
+			"size": "s"
+		},
+		{
+			"id": "chat",
+			"type": "icon",
+			"name": "chat",
+			"caption": "chat",
+			"size": "s"
+		},
+		{
+			"id": "clock",
+			"type": "icon",
+			"name": "clock",
+			"caption": "clock",
+			"size": "s"
+		},
+		{
+			"id": "person",
+			"type": "icon",
+			"name": "person",
+			"caption": "person",
+			"size": "s"
+		},
+		{
+			"id": "hourglass",
+			"type": "icon",
+			"name": "hourglass",
+			"caption": "hourglass",
+			"size": "s"
+		},
+		{
+			"id": "tangle",
+			"type": "icon",
+			"name": "tangle",
+			"caption": "tangle",
+			"size": "s"
+		},
+		{
+			"id": "magnifier",
+			"type": "icon",
+			"name": "magnifier",
+			"caption": "magnifier",
+			"size": "s"
+		},
+		{
+			"id": "lock",
+			"type": "icon",
+			"name": "lock",
+			"caption": "lock",
+			"size": "s"
+		},
+		{
+			"id": "gear",
+			"type": "icon",
+			"name": "gear",
+			"caption": "gear",
+			"size": "s"
+		},
+		{
+			"id": "keycap",
+			"type": "icon",
+			"name": "keycap",
+			"caption": "keycap",
+			"size": "s",
+			"text": "Ctrl"
+		},
+		{
+			"id": "mic",
+			"type": "icon",
+			"name": "mic",
+			"caption": "mic",
+			"size": "s"
+		},
+		{
+			"id": "headphones",
+			"type": "icon",
+			"name": "headphones",
+			"caption": "headphones",
+			"size": "s"
+		},
+		{
+			"id": "wave",
+			"type": "icon",
+			"name": "wave",
+			"caption": "wave",
+			"size": "s"
+		},
+		{
+			"id": "quote",
+			"type": "icon",
+			"name": "quote",
+			"caption": "quote",
+			"size": "s"
+		},
+		{
+			"id": "heart",
+			"type": "icon",
+			"name": "heart",
+			"caption": "heart",
+			"size": "s"
+		},
+		{
+			"id": "coin",
+			"type": "icon",
+			"name": "coin",
+			"caption": "coin",
+			"size": "s"
+		},
+		{
+			"id": "phone",
+			"type": "icon",
+			"name": "phone",
+			"caption": "phone",
+			"size": "s"
+		}
+	],
+	"scenes": [
+		{
+			"id": "sheet",
+			"title": "總表",
+			"label": "圖示",
+			"layout": {
+				"stack": [
+					{
+						"row": [
+							"keyboard",
+							"cross",
+							"checklist",
+							"branch",
+							"bulb",
+							"warning",
+							"scale",
+							"pencil"
+						]
+					},
+					{
+						"row": [
+							"loop",
+							"question",
+							"check",
+							"play",
+							"stop",
+							"return",
+							"file",
+							"chat"
+						]
+					},
+					{
+						"row": [
+							"clock",
+							"person",
+							"hourglass",
+							"tangle",
+							"magnifier",
+							"lock",
+							"gear",
+							"keycap"
+						]
+					},
+					{
+						"row": [
+							"mic",
+							"headphones",
+							"wave",
+							"quote",
+							"heart",
+							"coin",
+							"phone"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "三十一個圖示一次全部畫出來，每個下面標上它的名字，慢慢看清楚。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "keyboard"
+						},
+						{
+							"act": "draw",
+							"target": "cross",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "checklist",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "branch",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "bulb",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "warning",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "scale",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "pencil",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "loop",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "question",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "check",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "play",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "stop",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "return",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "file",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "chat",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "clock",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "person",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "hourglass",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "tangle",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "magnifier",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "lock",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "gear",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "keycap",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "mic",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "headphones",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "wave",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "quote",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "heart",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "coin",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "phone",
+							"with": "prev"
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,557 @@
+{
+	"version": 1,
+	"title": "圖示全集",
+	"tag": "元件回歸",
+	"corner_note": "31 個圖示、三個動作",
+	"objects": [
+		{
+			"id": "keyboard",
+			"type": "icon",
+			"name": "keyboard",
+			"caption": "輸入"
+		},
+		{
+			"id": "cross",
+			"type": "icon",
+			"name": "cross",
+			"tone": "warn"
+		},
+		{
+			"id": "checklist",
+			"type": "icon",
+			"name": "checklist",
+			"caption": "逐項檢查"
+		},
+		{
+			"id": "branch",
+			"type": "icon",
+			"name": "branch"
+		},
+		{
+			"id": "bulb",
+			"type": "icon",
+			"name": "bulb",
+			"caption": "想到了",
+			"tone": "accent"
+		},
+		{
+			"id": "warning",
+			"type": "icon",
+			"name": "warning",
+			"tone": "warn"
+		},
+		{
+			"id": "scale",
+			"type": "icon",
+			"name": "scale",
+			"caption": "比較"
+		},
+		{
+			"id": "pencil",
+			"type": "icon",
+			"name": "pencil"
+		},
+		{
+			"id": "loop",
+			"type": "icon",
+			"name": "loop"
+		},
+		{
+			"id": "question",
+			"type": "icon",
+			"name": "question",
+			"tone": "info"
+		},
+		{
+			"id": "check",
+			"type": "icon",
+			"name": "check",
+			"tone": "ok"
+		},
+		{
+			"id": "play",
+			"type": "icon",
+			"name": "play"
+		},
+		{
+			"id": "stop",
+			"type": "icon",
+			"name": "stop",
+			"caption": "停止"
+		},
+		{
+			"id": "return",
+			"type": "icon",
+			"name": "return"
+		},
+		{
+			"id": "file",
+			"type": "icon",
+			"name": "file"
+		},
+		{
+			"id": "chat",
+			"type": "icon",
+			"name": "chat"
+		},
+		{
+			"id": "clock",
+			"type": "icon",
+			"name": "clock"
+		},
+		{
+			"id": "person",
+			"type": "icon",
+			"name": "person"
+		},
+		{
+			"id": "hourglass",
+			"type": "icon",
+			"name": "hourglass",
+			"caption": "等待"
+		},
+		{
+			"id": "tangle",
+			"type": "icon",
+			"name": "tangle"
+		},
+		{
+			"id": "magnifier",
+			"type": "icon",
+			"name": "magnifier"
+		},
+		{
+			"id": "lock",
+			"type": "icon",
+			"name": "lock",
+			"caption": "不能改"
+		},
+		{
+			"id": "gear",
+			"type": "icon",
+			"name": "gear"
+		},
+		{
+			"id": "keycap",
+			"type": "icon",
+			"name": "keycap",
+			"text": "Ctrl"
+		},
+		{
+			"id": "mic",
+			"type": "icon",
+			"name": "mic",
+			"caption": "錄音",
+			"size": "s"
+		},
+		{
+			"id": "headphones",
+			"type": "icon",
+			"name": "headphones",
+			"size": "s"
+		},
+		{
+			"id": "wave",
+			"type": "icon",
+			"name": "wave",
+			"size": "s"
+		},
+		{
+			"id": "quote",
+			"type": "icon",
+			"name": "quote",
+			"size": "s"
+		},
+		{
+			"id": "heart",
+			"type": "icon",
+			"name": "heart",
+			"size": "s"
+		},
+		{
+			"id": "coin",
+			"type": "icon",
+			"name": "coin",
+			"size": "s"
+		},
+		{
+			"id": "phone",
+			"type": "icon",
+			"name": "phone",
+			"size": "s"
+		}
+	],
+	"scenes": [
+		{
+			"id": "a",
+			"title": "第一組",
+			"label": "圖示",
+			"layout": {
+				"row": [
+					"keyboard",
+					"cross",
+					"checklist",
+					"branch",
+					"bulb",
+					"warning"
+				]
+			},
+			"beats": [
+				{
+					"say": "先把這一排圖示畫出來，看看它們的筆順。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "keyboard"
+						},
+						{
+							"act": "draw",
+							"target": "cross",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "checklist",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "branch",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "bulb",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "warning",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "鍵盤旁邊掛一個提示，警告也一直閃。",
+					"do": [
+						{
+							"act": "callout",
+							"target": "keyboard",
+							"text": "使用者輸入",
+							"tone": "accent",
+							"until": "收起來",
+							"cue": "提示"
+						},
+						{
+							"act": "blink",
+							"target": "warning",
+							"until": "好為止",
+							"cue": "閃"
+						}
+					]
+				},
+				{
+					"say": "提示講到這裡就收起來，警告還在閃。",
+					"do": []
+				},
+				{
+					"say": "警告閃到這裡好為止，這個叉也擦掉。",
+					"do": [
+						{
+							"act": "erase",
+							"target": "cross",
+							"cue": "擦掉"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "b",
+			"title": "第二組",
+			"label": "圖示",
+			"layout": {
+				"stack": [
+					{
+						"row": [
+							"scale",
+							"pencil",
+							"loop"
+						]
+					},
+					{
+						"row": [
+							"question",
+							"check",
+							"play"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "第二組分成上下兩排，一次畫出來。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "scale"
+						},
+						{
+							"act": "draw",
+							"target": "pencil",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "loop",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "question",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "check",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "play",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "天秤旁邊掛一個提示。",
+					"do": [
+						{
+							"act": "callout",
+							"target": "scale",
+							"text": "哪個比較好",
+							"cue": "提示"
+						}
+					]
+				},
+				{
+					"say": "打勾閃一下，然後擦掉。",
+					"do": [
+						{
+							"act": "blink",
+							"target": "check",
+							"cue": "閃"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c",
+			"title": "第三組",
+			"label": "圖示",
+			"layout": {
+				"stack": [
+					{
+						"row": [
+							"stop",
+							"return",
+							"file"
+						]
+					},
+					{
+						"row": [
+							"chat",
+							"clock",
+							"person"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "第三組同樣分兩排畫出來。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "stop"
+						},
+						{
+							"act": "draw",
+							"target": "return",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "file",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "chat",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "clock",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "person",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "停止牌擦掉，換成別的。",
+					"do": [
+						{
+							"act": "erase",
+							"target": "stop",
+							"cue": "擦掉"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "d",
+			"title": "第四組",
+			"label": "圖示",
+			"layout": {
+				"stack": [
+					{
+						"row": [
+							"hourglass",
+							"tangle",
+							"magnifier"
+						]
+					},
+					{
+						"row": [
+							"lock",
+							"gear",
+							"keycap"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "第四組有沙漏、鎖，還有一個帶字的鍵帽。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "hourglass"
+						},
+						{
+							"act": "draw",
+							"target": "tangle",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "magnifier",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "lock",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "gear",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "keycap",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "沙漏一直閃，表示還在等。",
+					"do": [
+						{
+							"act": "blink",
+							"target": "hourglass",
+							"cue": "閃"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "e",
+			"title": "第五組",
+			"label": "圖示",
+			"layout": {
+				"row": [
+					"mic",
+					"headphones",
+					"wave",
+					"quote",
+					"heart",
+					"coin",
+					"phone"
+				]
+			},
+			"beats": [
+				{
+					"say": "最後一組縮小一點，七個放在同一排。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "mic"
+						},
+						{
+							"act": "draw",
+							"target": "headphones",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "wave",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "quote",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "heart",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "coin",
+							"with": "prev"
+						},
+						{
+							"act": "draw",
+							"target": "phone",
+							"with": "prev"
+						}
+					]
+				},
+				{
+					"say": "麥克風旁邊掛一個提示。",
+					"do": [
+						{
+							"act": "callout",
+							"target": "mic",
+							"text": "錄音中",
+							"tone": "warn",
+							"cue": "提示"
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -244,9 +244,12 @@ S=$(mktemp -d)
 - 字級與尺寸在世界座標，**不隨版面縮放**；游標永遠畫在所有物件與標記之上。
 
 ### icon（圖示）
-- 屬性：`name`（目前只有 `gear`，其他值編譯報錯）、`caption`（選填，圖下方小字）。純繪製，沒有自己的動作，只吃通用的 show／hide／circle 等。
-- 外觀：140×140 的鉛筆齒輪（8 齒外形＋中心圓，`text.body` 色，抖動 seed 取自物件 id）；有 `caption` 時下方空 8px 加一行 muted 32 置中小字，寬取 max(140, 字寬 + 24)。
-- 錨點：沒有子錨點，指物件本身（`gear_icon`）就是整個圖示的框，例：`cursor` 的 `click` 用 `on: "gear_icon"`。
+- 屬性：`name`（31 個圖示名稱或任何一個意思，對不到編譯報錯）、`caption`（選填，圖下方小字）、`tone`（六語氣，預設 `ink`）、`text`（`keycap` 必填，印在鍵帽上）、`size`（`s` 96／`m` 140 預設／`l` 200）。
+- 筆畫來自共用的 `video_engine/components/icon/shapes.js`（建置時自動載入）；手帳轉接只把筆畫縮放進框、依筆畫長度分配進度，交給 `api.ink`（`main` 寬 5、`detail` 寬 3.5，隨 size 等比）。
+- 動作：`draw`（照筆順；`show` 也走這個畫法）、`blink`（每 `period` 秒一次亮暗，暗時 25% 透明，到 t1 為止）、`erase`（筆畫倒著收回去，之後不畫）。
+- 外觀：有 `caption` 時下方空 8px 加一行 muted 32 置中小字，寬取 max(圖寬, 字寬 + 24)。
+- 錨點：指物件本身（`gear_icon`）就是整個圖示的框；`{id}:caption` 是說明文字的框。量測閘看到的 `panel` 框是圖示本體（擦掉後仍會記，版位還在）。
+- 仿真皮膚與總表：`components/icon/svg.js`、`export_png.py`（`--sheet`／`--name`、`--skin flat|pencil|chalk`），見 `components/icon/README.md`。
 
 ## vscode（跨風格共用元件）
 

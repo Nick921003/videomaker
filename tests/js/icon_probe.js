@@ -7,6 +7,7 @@ const q = JSON.parse(require('fs').readFileSync(file, 'utf8'));
 if (cmd === 'names') process.stdout.write(JSON.stringify(S.NAMES));
 else if (cmd === 'strokes') process.stdout.write(JSON.stringify(S.strokes(q.name, q.opts)));
 else if (cmd === 'count') process.stdout.write(JSON.stringify(S.count(q.name, q.opts)));
+else if (cmd === 'svg') process.stdout.write(JSON.stringify(require(path.join(__dirname, '..', '..', 'video_engine', 'components', 'icon', 'svg.js')).render(q.name, q.opts, q.color, q.px)));
 else if (cmd === 'all') {
 	const o = {};
 	S.NAMES.forEach((n) => { o[n] = S.strokes(n, n === 'keycap' ? { text: 'Ctrl' } : undefined); });

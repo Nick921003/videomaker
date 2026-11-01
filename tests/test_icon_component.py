@@ -521,6 +521,117 @@ class TestCallout(unittest.TestCase):
 		self.assertTrue(any("四邊都放不下" in p for p in report["problems"]), report["problems"])
 
 
+EXPORT = os.path.join(ROOT, "video_engine", "components", "icon", "export_png.py")
+BOXES = """
+import json, os, sys
+sys.path.insert(0, os.path.join(%r, "video_engine", "board"))
+from playwright.sync_api import sync_playwright
+d, times = sys.argv[1], json.loads(sys.argv[2])
+out = {}
+with sync_playwright() as p:
+	b = p.chromium.launch()
+	pg = b.new_page(viewport={"width": 1920, "height": 1080})
+	pg.goto("file://" + os.path.join(d, "player.html") + "?export")
+	pg.wait_for_function("window.boardReady === true", timeout=60000)
+	for oid, t, cap in times:
+		info = pg.evaluate("t => board.seek(t)", t)
+		out[oid] = {"panel": [x for x in info["boxes"] if x["owner"] == oid and x["role"] == "panel"],
+			"caption": pg.evaluate("([g, t]) => board.anchor(g, t)", [oid + ":caption", t]) if cap else None}
+	b.close()
+print(json.dumps(out))
+""" % ROOT
+
+
+def need_browser(case):
+	strict = os.environ.get("E2E_GEOM") == "1"
+	if not os.path.exists(PW_PY):
+		if strict:
+			case.fail("E2E_GEOM=1 但沒有 webwright 的 Playwright：" + PW_PY)
+		case.skipTest("沒有 webwright 的 Playwright")
+
+
+def load_scene(name):
+	with open(os.path.join(ROOT, "video_engine", "board", "fixtures", name + ".scene.json"), encoding="utf-8") as f:
+		return json.load(f)
+
+
+class TestSkins(unittest.TestCase):
+	def test_icon_full_涵蓋全部圖示與動作(self):
+		doc = load_scene("icon_full")
+		icons = [o for o in doc["objects"] if o["type"] == "icon"]
+		tl = BC.compile_scene(doc, None, BC.load_catalog())
+		self.assertEqual(sorted(tl["objects"][o["id"]]["name"] for o in icons), sorted(NAMES))
+		acts = {a["act"] for a in tl["actions"]}
+		self.assertTrue({"draw", "blink", "erase", "callout"} <= acts, acts)
+		self.assertTrue(any(o.get("caption") for o in icons))
+		self.assertTrue(any(tl["objects"][o["id"]]["name"] == "keycap" for o in icons))
+
+	def test_icon_sheet_三十一格(self):
+		doc = load_scene("icon_sheet")
+		tl = BC.compile_scene(doc, None, BC.load_catalog())
+		icons = [o for o in tl["objects"].values() if o["type"] == "icon"]
+		self.assertEqual(sorted(o["name"] for o in icons), sorted(NAMES))
+		self.assertTrue(all(o.get("caption") for o in icons))
+
+	def test_每個圖示都有框(self):
+		need_browser(self)
+		import build as BB
+		doc = load_scene("icon_full")
+		tl = BC.compile_scene(doc, None, BC.load_catalog())
+		times = []
+		for o in doc["objects"]:
+			if o["type"] != "icon":
+				continue
+			first = [a for a in tl["actions"] if a["obj"] == o["id"] and a["act"] in ("draw", "show")][0]
+			times.append([o["id"], first["t1"] + 0.05, bool(o.get("caption"))])
+		with tempfile.TemporaryDirectory() as d:
+			BB.build(tl, d)
+			r = subprocess.run([PW_PY, "-c", BOXES, d, json.dumps(times)], capture_output=True, text=True, timeout=300)
+			self.assertEqual(r.returncode, 0, r.stderr[-800:])
+		got = json.loads(r.stdout)
+		for oid, _, cap in times:
+			self.assertTrue(got[oid]["panel"], oid + " 沒有 panel 框")
+			if cap:
+				self.assertIsNotNone(got[oid]["caption"], oid + " 沒有 :caption 框")
+			else:
+				self.assertIsNone(got[oid]["caption"], oid)
+
+	def test_icon_full_過量測閘(self):
+		code, out, report = board_check(self, "icon_full")
+		self.assertEqual(code, 0, out + json.dumps(report["problems"], ensure_ascii=False))
+		self.assertTrue(report["ok"])
+
+	def test_icon_sheet_過量測閘(self):
+		code, out, report = board_check(self, "icon_sheet")
+		self.assertEqual(code, 0, out + json.dumps(report["problems"], ensure_ascii=False))
+
+	def test_svg_格式(self):
+		svg = icon_probe("svg", name="keycap", opts={"text": "Ctrl"}, color="var(--ink)", px=64)
+		for want in ('stroke-linecap="round"', 'stroke-linejoin="round"', 'stroke="var(--ink)"', 'width="64"', ">Ctrl<"):
+			self.assertIn(want, svg)
+		self.assertEqual(svg, icon_probe("svg", name="keycap", opts={"text": "Ctrl"}, color="var(--ink)", px=64))
+		for n in NAMES:
+			self.assertTrue(icon_probe("svg", name=n, opts={"text": "Ctrl"}, color="red", px=32).startswith("<svg"), n)
+
+	def test_svg_決定性(self):
+		need_browser(self)
+		with tempfile.TemporaryDirectory() as d:
+			sums = []
+			for i in range(2):
+				out = os.path.join(d, f"s{i}.png")
+				r = subprocess.run([PW_PY, EXPORT, out, "--sheet", "--skin", "flat"], capture_output=True, text=True, timeout=300)
+				self.assertEqual(r.returncode, 0, r.stderr[-800:])
+				with open(out, "rb") as f:
+					sums.append(hashlib.md5(f.read()).hexdigest())
+			self.assertEqual(sums[0], sums[1])
+
+	def test_不寫色碼(self):
+		import re
+		for rel in ("components/icon/svg.js", "components/icon/shapes.js", "board/runtime/components/icon.js"):
+			with open(os.path.join(ROOT, "video_engine", rel), encoding="utf-8") as f:
+				self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,6}\b", f.read()), rel)
+
+
 if __name__ == "__main__":
 	if sys.argv[1:] == ["--regen"]:
 		os.makedirs(FIX, exist_ok=True)

@@ -15,7 +15,7 @@ RUNTIME = os.path.join(HERE, "runtime")
 THEMES = os.path.join(os.path.dirname(HERE), "themes")
 SHARED = os.path.join(os.path.dirname(HERE), "components")
 # 共用核心的載入順序：後面的檔用到前面的
-SHARED_ORDER = ("model.js", "paint.js", "callout.js")
+SHARED_ORDER = ("shapes.js", "model.js", "paint.js", "callout.js")
 
 
 def build(timeline, out_dir, audio=None, theme="notebook"):
