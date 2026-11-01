@@ -87,5 +87,74 @@ class TestScreenPage(unittest.TestCase):
 		self.assertEqual(json.loads(build(sample())["screens.json"]), [{"lines": [3], "kind": "vscode"}])
 
 
+def board_sample(template="center", objects=None, do=None, lines=None):
+	sb = sample()
+	sb["chapters"][0]["pages"][0] = {"template": template, "spine": "骨甲", "objects": objects if objects is not None else [
+		{"type": "icon", "id": "i1", "name": "警告"}, {"type": "icon", "id": "i2", "name": "check"}],
+		"lines": lines or [{"say": "小心這裡。", "do": do if do is not None else [{"act": "draw", "target": "i1"}]}, {"say": "二。"}]}
+	return sb
+
+
+def icon(i, **kw):
+	return {"type": "icon", "id": "i%d" % i, "name": "check"} | kw
+
+
+class TestBoardPage(unittest.TestCase):
+	def test_objects頁產出(self):
+		out = build(board_sample())
+		bd = json.loads(out["objects.json"])
+		self.assertEqual(len(bd), 1)
+		self.assertEqual(bd[0]["lines"], [1, 2])
+		self.assertEqual(bd[0]["template"], "center")
+		a = bd[0]["do"]["1"][0]
+		self.assertEqual(a["act"], "draw")
+		self.assertGreater(a["dur"], 0)
+		self.assertEqual([o["id"] for o in bd[0]["objects"]], ["i1", "i2"])
+		self.assertEqual(json.loads(out["pages.json"]), [[1, 2], [4]])
+
+	def test_until動作dur是null且換成全片句號(self):
+		sb = board_sample(do=[{"act": "draw", "target": "i1"}, {"act": "blink", "target": "i1", "until": "二"}], lines=None)
+		sb["chapters"][0]["pages"][0]["lines"][0]["do"][1]["until"] = "二"
+		a = json.loads(build(sb)["objects.json"])[0]["do"]["1"][1]
+		self.assertIsNone(a["dur"])
+		self.assertEqual(a["args"]["until_line"], 2)
+		self.assertNotIn("until_beat", a["args"])
+
+	def test_置中最多三個(self):
+		with self.assertRaisesRegex(ValueError, "3"):
+			build(board_sample(objects=[icon(i) for i in range(4)], do=[]))
+
+	def test_雙欄每欄最多兩個(self):
+		objs = [icon(i, col="left") for i in range(3)]
+		with self.assertRaisesRegex(ValueError, "2"):
+			build(board_sample("two-col", objs, do=[]))
+
+	def test_雙欄缺col(self):
+		with self.assertRaisesRegex(ValueError, "col"):
+			build(board_sample("two-col", [icon(0, col="left"), icon(1)], do=[]))
+
+	def test_雙欄正常(self):
+		bd = json.loads(build(board_sample("two-col", [icon(0, col="left"), icon(1, col="right")], do=[{"act": "draw", "target": "i0"}]))["objects.json"])
+		self.assertEqual(bd[0]["template"], "two-col")
+
+	def test_黑板沒有粉筆皮膚的元件(self):
+		for t in ("list", "foo"):
+			with self.assertRaisesRegex(ValueError, t):
+				build(board_sample(objects=[{"type": t, "id": "x"}], do=[]))
+
+	def test_意思對不到也在分鏡階段擋(self):
+		with self.assertRaises(ValueError):
+			build(board_sample(objects=[{"type": "icon", "id": "i1", "name": "等一下"}], do=[]))
+
+	def test_note第一個動作要write或show(self):
+		objs = [{"type": "note", "id": "n1", "text": "字"}]
+		with self.assertRaisesRegex(ValueError, "n1"):
+			build(board_sample(objects=objs, do=[{"act": "circle", "target": "n1"}]))
+		build(board_sample(objects=objs, do=[{"act": "write", "target": "n1"}]))
+
+	def test_沒有objects頁就不產objects檔(self):
+		self.assertNotIn("objects.json", build(sample()))
+
+
 if __name__ == "__main__":
 	unittest.main()

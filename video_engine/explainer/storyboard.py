@@ -20,6 +20,31 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 import compile as BC  # noqa: E402
 
 TEMPLATES = ("center", "two-col", "screen")
+BOARD_TYPES = ("icon", "note")  # 黑板已有粉筆皮膚的元件；其他型別不准悄悄換成別的畫法
+CENTER_MAX, COL_MAX = 3, 2
+KEEP = ("act", "target", "obj", "args", "n", "cue")
+
+
+def action_dur(a):
+	"""動作時長照編譯器排出來的 t1−t0；until 類沒有固定長度，填 None 讓黑板端換算。
+	逐項動作（per）的長度取決於真實的句長視窗，假時間軸算不準，維持取區間中點（舊基準）。"""
+	spec = a["spec"]
+	if spec.get("span") == "until":
+		return None
+	if "per" in spec:
+		return (a["n"] or 1) * sum(spec["per"]) / 2
+	d = a["t1"] - a["t0"]
+	if "dur" in spec and abs(d - spec["dur"]) < 1e-6:
+		return spec["dur"]  # 沒被句尾壓縮就是 catalog 原值，避免浮點雜訊
+	return round(d, 6)
+
+
+def action_out(a, first):
+	"""編譯後的動作 → 分鏡檔格式；until_beat 是頁內序號、until_t 是假時間軸算的，換成全片句號"""
+	args = {k: v for k, v in a["args"].items() if k not in ("until_beat", "until_t")}
+	if "until_beat" in a["args"]:
+		args["until_line"] = first + a["args"]["until_beat"]
+	return {k: (args if k == "args" else a[k]) for k in KEEP} | {"dur": action_dur(a), "blocks": a["blocks"]}
 
 
 def screen_actions(pg, first):
@@ -34,15 +59,59 @@ def screen_actions(pg, first):
 	do = {}
 	for a in c.actions:
 		spec = a["spec"]
-		dur = spec["dur"] if "dur" in spec else (a["n"] or 1) * sum(spec["per"]) / 2
-		do.setdefault(str(first + a["beat"]), []).append({k: a[k] for k in ("act", "target", "obj", "args", "n", "cue")} | {"dur": dur, "blocks": a["blocks"]})
+		do.setdefault(str(first + a["beat"]), []).append(action_out(a, first))
 	return c.objects[obj["id"]], do
+
+
+def board_layout(pg):
+	"""置中／雙欄頁的版面文法；超過就是教材寫太滿，明確報錯"""
+	objs = pg["objects"]
+	for o in objs:
+		if o.get("type") not in BOARD_TYPES:
+			raise ValueError("黑板還沒有 %s 的粉筆皮膚（%s）：目前只有 %s" % (o.get("type"), o.get("id"), "、".join(BOARD_TYPES)))
+	ids = [o["id"] for o in objs]
+	if pg["template"] == "center":
+		if len(objs) > CENTER_MAX:
+			raise ValueError("置中頁最多 %d 個物件，這頁有 %d 個：%s" % (CENTER_MAX, len(objs), ids))
+		return {"stack": ids}
+	cols = {"left": [], "right": []}
+	for o in objs:
+		if o.get("col") not in cols:
+			raise ValueError("雙欄頁的物件 %s 要寫 col: left 或 right" % o["id"])
+		cols[o["col"]].append(o["id"])
+	for side, got in cols.items():
+		if len(got) > COL_MAX:
+			raise ValueError("雙欄頁每欄最多 %d 個物件，%s 欄有 %d 個：%s" % (COL_MAX, side, len(got), got))
+	return {"row": [{"stack": cols["left"]}, {"stack": cols["right"]}]}
+
+
+def board_actions(pg, first):
+	"""置中／雙欄頁的物件與每句的 do 交給手帳編譯器驗證，回傳 (補齊預設的物件, {句號: [動作]})"""
+	layout = board_layout(pg)
+	cols = {o["id"]: o.get("col") for o in pg["objects"]}
+	objs = [{k: v for k, v in o.items() if k != "col"} for o in pg["objects"]]
+	doc = {"version": 1, "objects": objs, "scenes": [{"id": "board", "layout": layout, "beats": [{"say": ln["say"], "do": ln.get("do", [])} for ln in pg["lines"]]}]}
+	c = BC.Compiler(doc, None, BC.load_catalog())
+	c.run()
+	firsts = {}
+	do = {}
+	for a in c.actions:
+		firsts.setdefault(a["obj"], a)
+		do.setdefault(str(first + a["beat"]), []).append(action_out(a, first))
+	for o in pg["objects"]:
+		if o["type"] == "note" and o["id"] in firsts and firsts[o["id"]]["act"] not in ("write", "show"):
+			raise ValueError("%s（note）的第一個動作是 %s：文字要先 write 或 show" % (o["id"], firsts[o["id"]]["act"]))
+	out = []
+	for o in pg["objects"]:
+		x = c.objects[o["id"]]
+		out.append(x | {"col": cols[o["id"]]} if cols[o["id"]] else x)
+	return out, do
 
 
 def build(sb):
 	"""回傳 {檔名: 內容字串}；句號從 1 起算，結語句接在最後。"""
 	md = ["---", "title: " + sb["title"], "subtitle: " + sb["subtitle"], "---", ""]
-	pages, screens, leads, holds, keys = [], [], {}, {}, {}
+	pages, screens, boards, leads, holds, keys = [], [], [], {}, {}, {}
 	spine = ["# " + sb["title"] + "：骨架", ""]
 	review = []
 	n = 0
@@ -73,6 +142,9 @@ def build(sb):
 				screens.append(scr)
 			else:
 				pages.append(nums)
+				if pg.get("objects") is not None:
+					objs, do = board_actions(pg, nums[0])
+					boards.append({"lines": nums, "template": pg["template"], "objects": objs, "do": do})
 			review.append("")
 		md += ["> " + x for x in ch.get("notes", [])]
 		md.append("")
@@ -83,7 +155,8 @@ def build(sb):
 	md += ["## recap", "center: " + rc["center"], "tagline: " + rc["tagline"], "length: %s" % rc["length"]]
 	md += ["- " + x for x in rc["items"]]
 	dump = lambda o: json.dumps(o, ensure_ascii=False)
-	return {
+	extra = {"objects.json": dump(boards)} if boards else {}
+	return extra | {
 		"script.md": "\n".join(md) + "\n",
 		"pages.json": dump(pages),
 		"screens.json": dump(screens),

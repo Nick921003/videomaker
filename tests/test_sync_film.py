@@ -3,7 +3,7 @@ import unittest
 import os
 import tempfile
 
-from video_engine.explainer.sync_film import copy_components, merge_keys, merge_screens, srt
+from video_engine.explainer.sync_film import copy_components, merge_keys, merge_objects, merge_screens, srt
 
 
 class TestSyncFilm(unittest.TestCase):
@@ -39,10 +39,22 @@ class TestSyncFilm(unittest.TestCase):
 			merge_screens({"screens": [{"lines": [1, 2], "kind": "vscode"}]},
 				[{"lines": [1, 2, 3], "kind": "vscode", "screen": {"id": "vs"}, "do": {}}])
 
+	def test_merge_objects(self):
+		s = merge_objects({"pages": [[1, 2], [4]]}, [{"lines": [1, 2], "template": "center", "objects": [{"id": "i1"}], "do": {}}])
+		self.assertEqual(s["boards"][0]["objects"], [{"id": "i1"}])
+		self.assertEqual(s["boards"][0]["lines"], [1, 2])
+
+	def test_merge_objects對不上(self):
+		with self.assertRaisesRegex(ValueError, r"\[1, 3\]"):
+			merge_objects({"pages": [[1, 2]]}, [{"lines": [1, 3], "template": "center", "objects": [], "do": {}}])
+
+	def test_merge_objects空的不寫boards(self):
+		self.assertNotIn("boards", merge_objects({"pages": [[1, 2]]}, []))
+
 	def test_copy_components(self):
 		with tempfile.TemporaryDirectory() as d:
 			copy_components(d)
-			for rel in ("lib/components/vscode/model.js", "lib/components/vscode/paint.js", "lib/components/vscode/svg.js", "lib/kit/vscode.chalk.js", "lib/themes.js"):
+			for rel in ("lib/components/vscode/model.js", "lib/components/vscode/paint.js", "lib/components/vscode/svg.js", "lib/kit/vscode.chalk.js", "lib/kit/icon.chalk.js", "lib/kit/note.chalk.js", "lib/themes.js"):
 				self.assertTrue(os.path.exists(os.path.join(d, rel)), rel)
 			with open(os.path.join(d, "lib/themes.js"), encoding="utf-8") as f:
 				js = f.read()
