@@ -94,6 +94,25 @@ core.track Hermite), `render(t)` (call every frame), `onRender(fn)` (per-frame f
 the in-panel badge (`Kit.chapter`) — both re-time from the story. `.kit-cap` / `.kit-chap` are styled too, so
 `core.Captions` / `core.Chapters` work on a board if a film ever needs a bottom bar.
 
+## Icons and notes (`icon.chalk.js`, `note.chalk.js`)
+
+Plain scripts (load after `lib/kit/kit.js`; icons also need `components/icon/shapes.js`), exported as `window.ChalkIcon` /
+`window.ChalkNote`. They only call the primitives above, so erasing, fading and the chalk sounds work unchanged.
+
+- `ChalkIcon.SIZE = {s: 120, m: 180, l: 260}` — 1080p panel pixels (compare the type scale above).
+- `ChalkIcon.paths(name, opts, box)` → `[{d, w, len}]`: strokes scaled into `box = {x, y, w, h}`; `main` is 6 px chalk, `detail` 4.5.
+- `ChalkIcon.perform(api, P, obj, box, acts, tone)` → `{els}`, `api = {S, T, X, seq, K}`. `draw` / `show` split `t0..t1` by stroke
+  length (`kind: "draw"`); a `keycap` label is written by `T` in the last 40 %. `blink` is a run of `K.fade` (dim, then back; never
+  touches `style.opacity`). `erase` is `X(P, els, box, t0, 0.4)`. Tones are the six semantic ones (`ink muted accent warn ok info`).
+- `ChalkNote.STYLES = {headline: 60, body: 46, accent: 46, code: 46, small: 38}`, `MIN = 30`.
+- `ChalkNote.layout(text, style, maxW, maxH, measure)` → `{size, lines}`: CJK breaks per character, Latin per word; height
+  is `lines × size × 1.3`; too tall shrinks 4 px at a time down to `MIN`, then throws (the message contains the text).
+  `perform` also pushes that message to `window.__boardProblems` when the array exists.
+- `ChalkNote.perform(api, P, obj, box, acts)` — `write` runs `api.seq` line by line; `accent` uses the accent tone, `code` the Latin face.
+
+`tools/icon_sheet.html` draws all 31 icons on one panel (`?t=end` renders the last moment); it borrows the printf film's
+`lib/` and fonts read-only. Export: `components/icon/export_png.py <out.png> --sheet --skin chalk`.
+
 ## A new topic: the starter
 
 `tools/new_film.sh v8-chalkboard <story> <project>` builds a playable film from `starter/` (board laid out from the chapters,

@@ -632,6 +632,134 @@ class TestSkins(unittest.TestCase):
 				self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,6}\b", f.read()), rel)
 
 
+CHALK_PROBE = os.path.join(ROOT, "tests", "js", "chalk_probe.js")
+CHALK_KIT = os.path.join(ROOT, "video_engine", "explainer", "chalk", "kit")
+
+
+def chalk_probe(cmd, **q):
+	node = shutil.which("node")
+	if not node:
+		raise AssertionError("缺 node：粉筆皮膚測試需要 node，請安裝 node 22")
+	with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+		json.dump(q, f, ensure_ascii=False)
+	try:
+		r = subprocess.run([node, CHALK_PROBE, cmd, f.name], capture_output=True, text=True, timeout=30)
+	finally:
+		os.unlink(f.name)
+	if r.returncode:
+		raise AssertionError(r.stderr)
+	return json.loads(r.stdout)
+
+
+class TestChalk(unittest.TestCase):
+	BOX = {"x": 40, "y": 60, "w": 180, "h": 180}
+
+	def test_常數(self):
+		c = chalk_probe("consts")
+		self.assertEqual(c["SIZE"], {"s": 120, "m": 180, "l": 260})
+		self.assertEqual(c["STYLES"], {"headline": 60, "body": 46, "accent": 46, "code": 46, "small": 38})
+		self.assertEqual(c["MIN"], 30)
+
+	def test_粉筆路徑在框內(self):
+		import re
+		b = self.BOX
+		allp = chalk_probe("paths", box=b)
+		self.assertEqual(len(allp), 31)
+		for name, ps in allp.items():
+			self.assertTrue(ps, name)
+			for p in ps:
+				nums = [float(v) for v in re.findall(r"-?\d+(?:\.\d+)?", p["d"])]
+				for x, y in zip(nums[0::2], nums[1::2]):
+					self.assertTrue(b["x"] <= x <= b["x"] + b["w"] and b["y"] <= y <= b["y"] + b["h"], (name, x, y))
+				self.assertIn(p["w"], (6, 4.5), name)
+				self.assertGreater(p["len"], 0, name)
+
+	def test_筆畫長度分配時間(self):
+		acts = [{"act": "draw", "t0": 2.0, "t1": 3.2}]
+		r = chalk_probe("perform", obj={"name": "magnifier"}, box=self.BOX, acts=acts)
+		strokes = [e for e in r["log"] if e["kind"] == "S"]
+		paths = chalk_probe("paths", box=self.BOX)["magnifier"]
+		self.assertEqual(len(strokes), len(paths))
+		self.assertAlmostEqual(sum(s["dur"] for s in strokes), 1.2, places=6)
+		self.assertAlmostEqual(strokes[0]["t"], 2.0, places=6)
+		for a, b in zip(strokes, strokes[1:]):
+			self.assertAlmostEqual(a["t"] + a["dur"], b["t"], places=6)
+		total = sum(p["len"] for p in paths)
+		for s, p in zip(strokes, paths):
+			self.assertEqual(s["d"], p["d"])
+			self.assertAlmostEqual(s["dur"], 1.2 * p["len"] / total, places=6)
+			self.assertEqual(s["opt"]["kind"], "draw")
+
+	def test_keycap_字用T寫(self):
+		r = chalk_probe("perform", obj={"name": "keycap", "text": "Ctrl"}, box=self.BOX, acts=[{"act": "draw", "t0": 0, "t1": 1}])
+		self.assertEqual(len([e for e in r["log"] if e["kind"] == "T"]), 1)
+
+	def test_blink與erase走套件(self):
+		acts = [{"act": "draw", "t0": 0, "t1": 1}, {"act": "blink", "t0": 2, "t1": 4}, {"act": "erase", "t0": 5, "t1": 5.4}]
+		r = chalk_probe("perform", obj={"name": "bulb"}, box=self.BOX, acts=acts)
+		fades = [e for e in r["log"] if e["kind"] == "fade"]
+		self.assertEqual([f["t0"] for f in fades], [2.5, 3.5])
+		self.assertTrue(all(f["to"] == 0 and f["back"] in (3.0, 4.0) for f in fades))
+		x = [e for e in r["log"] if e["kind"] == "X"]
+		self.assertEqual(len(x), 1)
+		self.assertEqual((x[0]["t0"], x[0]["dur"]), (5, 0.4))
+
+	def test_note_換行(self):
+		text = "這是一句大約四十個字的測試句子用來檢查斷行是否會超出指定的寬度範圍而且要夠長才行啦"[:40]
+		r = chalk_probe("layout", text=text, style="body", maxW=600, maxH=300)
+		self.assertNotIn("error", r)
+		self.assertGreaterEqual(r["size"], 30)
+		self.assertLessEqual(len(r["lines"]) * r["size"] * 1.3, 300)
+		self.assertEqual("".join(r["lines"]), text)
+		for ln in r["lines"]:
+			self.assertLessEqual(len(ln) * r["size"], 600)
+
+	def test_note_英文以詞斷行(self):
+		r = chalk_probe("layout", text="printf prints the formatted text to screen", style="small", maxW=300, maxH=400)
+		for ln in r["lines"]:
+			self.assertFalse(ln.startswith(" "))
+		self.assertEqual(" ".join(r["lines"]).split(), "printf prints the formatted text to screen".split())
+
+	def test_note_放不下要報錯(self):
+		text = "放不下" * 67
+		r = chalk_probe("layout", text=text, style="body", maxW=300, maxH=200)
+		self.assertIn("error", r)
+		self.assertIn(text, r["error"])
+
+	def test_note_縮字級(self):
+		r = chalk_probe("layout", text="粉筆" * 20, style="headline", maxW=600, maxH=130)
+		self.assertLess(r["size"], 60)
+		self.assertEqual((60 - r["size"]) % 4, 0)
+
+	def test_note_write用seq逐字(self):
+		obj = {"text": "請輸入成績", "style": "accent"}
+		r = chalk_probe("note", obj=obj, box={"x": 10, "y": 20, "w": 600, "h": 200}, acts=[{"act": "write", "t0": 1, "t1": 3}])
+		seqs = [e for e in r["log"] if e["kind"] == "seq"]
+		self.assertTrue(seqs)
+		self.assertEqual(seqs[0]["parts"][0][1], "cy")
+
+	def test_粉筆總表_寫得出來且決定性(self):
+		need_browser(self)
+		with tempfile.TemporaryDirectory() as d:
+			sums = []
+			for i in range(2):
+				out = os.path.join(d, f"c{i}.png")
+				r = subprocess.run([PW_PY, EXPORT, out, "--sheet", "--skin", "chalk"], capture_output=True, text=True, timeout=300)
+				self.assertEqual(r.returncode, 0, r.stderr[-800:])
+				with open(out, "rb") as f:
+					sums.append(hashlib.md5(f.read()).hexdigest())
+			self.assertEqual(sums[0], sums[1])
+
+	def test_不寫色碼與不用opacity(self):
+		import re
+		for fn in ("icon.chalk.js", "note.chalk.js"):
+			with open(os.path.join(CHALK_KIT, fn), encoding="utf-8") as f:
+				src = f.read()
+			self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,6}\b", src), fn)
+			self.assertNotIn("style.opacity", src, fn)
+			self.assertNotRegex(src, r"Math\.random|Date\.now|performance\.now|new Date\(", fn)
+
+
 if __name__ == "__main__":
 	if sys.argv[1:] == ["--regen"]:
 		os.makedirs(FIX, exist_ok=True)

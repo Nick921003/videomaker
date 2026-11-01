@@ -94,11 +94,16 @@ def render_pencil(out, doc):
 def render_chalk(out):
 	from playwright.sync_api import sync_playwright
 	if not os.path.exists(CHALK_SHEET):
-		raise SystemExit("找不到黑板總表頁（Task 6 的 icon_sheet.html）：" + CHALK_SHEET)
+		raise SystemExit("找不到黑板總表頁（icon_sheet.html）：" + CHALK_SHEET)
 	with sync_playwright() as p:
 		b = p.chromium.launch()
 		pg = b.new_page(viewport={"width": 1920, "height": 1080}, device_scale_factor=1)
+		errors = []
+		pg.on("pageerror", lambda e: errors.append(str(e)))
 		pg.goto("file://" + CHALK_SHEET + "?t=end")
+		pg.wait_for_function("window.sheetReady === true", timeout=60000)
+		if errors:
+			raise SystemExit("黑板總表頁出錯：" + errors[0])
 		shot(pg, out)
 		b.close()
 

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>粉筆圖示總表</title>
+<!-- 直接借 printf 片的 lib 與字型（只讀），不複製；?t=end 直接畫最後一刻，?t=秒數 看過程 -->
+<link rel="stylesheet" href="../../../out/vscode_printf_chalk/lib/kit/kit.css">
+<style>
+@font-face { font-family: "LXGW WenKai TC"; src: url("../../../out/vscode_printf_chalk/assets/fonts/lxgw-wenkai-tc.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Huninn"; src: url("../../../out/vscode_printf_chalk/assets/fonts/huninn.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Patrick Hand"; src: url("../../../out/vscode_printf_chalk/assets/fonts/patrick-hand.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "Long Cang"; src: url("../../../out/vscode_printf_chalk/assets/fonts/long-cang.woff2") format("woff2"); font-display: block; }
+@font-face { font-family: "ZCOOL KuaiLe"; src: url("../../../out/vscode_printf_chalk/assets/fonts/zcool-kuaile.woff2") format("woff2"); font-display: block; }
+:root {
+	--kit-font-display: "Huninn", "LXGW WenKai TC", cursive;
+	--kit-font-body: "LXGW WenKai TC", "Huninn", cursive;
+	--kit-font-hand: "LXGW WenKai TC", cursive;
+	--kit-font-mono: "Patrick Hand", "LXGW WenKai TC", cursive;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; }
+</style>
+</head>
+<body>
+<div id="stage" class="clip"></div>
+<script src="../../../out/vscode_printf_chalk/lib/core.js"></script>
+<script src="../../../out/vscode_printf_chalk/lib/kit/kit.js"></script>
+<script src="../../../components/icon/shapes.js"></script>
+<script src="../kit/icon.chalk.js"></script>
+<script>
+(function () {
+	'use strict';
+	var K = window.Kit, CI = window.ChalkIcon, COLS = 7, ROWS = 5, DUR = 14;
+	var PW = 1840, PH = 1020, GAP = 60, CELL_W = 250, CELL_H = 190, ICON = CI.SIZE.s, LABEL = 32, STEP = 0.35, DRAW = 0.9;
+	var B = K.board({ stage: document.getElementById('stage'), cols: 1, rows: 1, panelW: PW, panelH: PH, gap: GAP });
+	var P = K.panel('sheet', 0, 0);
+	var x0 = (PW - COLS * CELL_W) / 2, y0 = (PH - ROWS * CELL_H) / 2;
+	var api = { S: K.S, T: K.T, X: K.X, seq: K.seq, K: K };
+	// 31 格，每格一個圖示加名稱；keycap 帶字，寫不出來的直接讓頁面報錯
+	CI.NAMES.forEach(function (name, i) {
+		var c = i % COLS, r = Math.floor(i / COLS), t0 = 0.3 + i * STEP;
+		var box = { x: x0 + c * CELL_W + (CELL_W - ICON) / 2, y: y0 + r * CELL_H + 6, w: ICON, h: ICON };
+		CI.perform(api, P, { name: name, text: 'Ctrl' }, box, [{ act: 'draw', t0: t0, t1: t0 + DRAW }], 'ink');
+		var lw = K.wlen(name) * LABEL;
+		K.T(P, box.x + ICON / 2 - lw / 2, box.y + ICON + 8, LABEL, [[name, t0 + DRAW, t0 + DRAW + 0.3, 'cm']], { sprite: false });
+	});
+	var q = new URLSearchParams(location.search).get('t');
+	var t = q === 'end' || q == null ? DUR : parseFloat(q);
+	window.renderAt = function (s) { K.render(s); };
+	document.fonts.ready.then(function () { K.render(t); window.sheetReady = true; });
+})();
+</script>
+</body>
+</html>

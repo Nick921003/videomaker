@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | 鉛筆（手帳） | `board/runtime/components/icon.js` | 筆畫縮放進元件框，依筆畫長度分配進度，交給 `api.ink` |
 | 仿真（文章 PNG） | `svg.js` | `IconSVG.render(name, opts, color, px)`：等粗線、圓頭圓角，顏色由呼叫端傳入 |
-| 粉筆（黑板） | `explainer/chalk/kit/icon.chalk.js` | 另一階段 |
+| 粉筆（黑板） | `explainer/chalk/kit/icon.chalk.js` | 筆畫依長度分配時間，交給 `api.S`；文字另有 `note.chalk.js` |
 
 ## 形狀
 
@@ -26,7 +26,7 @@ $PY video_engine/components/icon/export_png.py out.png --name 等待 --skin flat
 - `--name` 可以寫圖示名稱或任何一個意思，對不到會列出最接近的三個。
 - `flat` 的顏色取手帳主題（`themes/notebook.json`）經 `tones.json` 對到的語氣色，`--tone` 選語氣。
 - `pencil` 把分鏡編譯、build 到暫存目錄，開播放器跳到最後一刻截一張；`board/export.py` 輸出的是影片，不能拿來出單張圖。
-- `chalk` 只出總表，開 `explainer/chalk/tools/icon_sheet.html?t=end`；那一頁還沒做時會明確報錯。
+- `chalk` 只出總表，開 `explainer/chalk/tools/icon_sheet.html?t=end`。
 
 ## 測試
 
