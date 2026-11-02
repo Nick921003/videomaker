@@ -78,6 +78,6 @@
 		return { els: els, size: lay.size, lines: lay.lines };
 	}
 
-	var X = { STYLES: STYLES, MIN: MIN, layout: layout, perform: perform };
+	var X = { STYLES: STYLES, MIN: MIN, LEADING: LEADING, layout: layout, perform: perform };
 	if (typeof module !== 'undefined') module.exports = X; else g.ChalkNote = X;
 })(this);

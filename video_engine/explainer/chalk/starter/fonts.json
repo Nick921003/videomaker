@@ -1,0 +1,32 @@
+{
+  "extra": {
+    "patrick-hand": {
+      "family": "Patrick Hand",
+      "css": "Patrick+Hand",
+      "weight": 400
+    },
+    "lxgw-wenkai-tc": {
+      "family": "LXGW WenKai TC",
+      "css": "LXGW+WenKai+TC",
+      "weight": 400
+    },
+    "huninn": {
+      "family": "Huninn",
+      "css": "Huninn",
+      "weight": 400
+    },
+    "jetbrains-mono": {
+      "family": "JetBrains Mono",
+      "css": "JetBrains+Mono",
+      "weight": 400
+    }
+  },
+  "index.html": [
+    "lxgw-wenkai-tc",
+    "huninn",
+    "patrick-hand",
+    "long-cang",
+    "zcool-kuaile",
+    "jetbrains-mono"
+  ]
+}

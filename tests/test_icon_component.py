@@ -770,6 +770,285 @@ class TestChalk(unittest.TestCase):
 			self.assertTrue(os.path.exists(os.path.join(os.path.dirname(sheet), path)), path)
 
 
+BOARD_PROBE = os.path.join(ROOT, "tests", "js", "board_probe.js")
+CHALK = os.path.join(ROOT, "video_engine", "explainer", "chalk")
+STARTER = os.path.join(CHALK, "starter")
+BOARD_CHECK = os.path.join(CHALK, "board_check.py")
+PRINTF_FILM = os.path.join(ROOT, "video_engine", "out", "vscode_printf_chalk")
+STARTER_FILES = ("index.html", "beats.js", "hyperframes.json", "package.json", "meta.json", "fonts.json", "AGENTS.md",
+	"CLAUDE.md", "STARTER.md", "tools/sfx.sh", "tools/sfx.py", "tools/anchor_check.py")
+# printf 片一頁粉筆頁的 area（PAD 48、標題下 104、圖區高 668），拿來比格子
+PRINTF_AREA = {"P": "P", "x": 48, "y": 104, "w": 1744, "h": 668}
+
+
+def board_probe(cmd, **q):
+	node = shutil.which("node")
+	if not node:
+		raise AssertionError("缺 node：黑板轉接測試需要 node，請安裝 node 22")
+	with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+		json.dump(q, f, ensure_ascii=False)
+	try:
+		r = subprocess.run([node, BOARD_PROBE, cmd, f.name], capture_output=True, text=True, timeout=30)
+	finally:
+		os.unlink(f.name)
+	if r.returncode:
+		raise AssertionError(r.stderr)
+	return json.loads(r.stdout)
+
+
+def mini_story():
+	"""兩句、逐字時間的小 story：第 1 句 1.0 秒開口（lead 0.5），第 2 句 4.0 秒"""
+	def line(i, text, start, lead=0):
+		words = [[c, round(start + 0.2 * k, 3)] for k, c in enumerate(text)]
+		return {"i": i, "text": text, "start": start, "end": round(start + 0.2 * len(text), 3), "words": words, "lead": lead}
+	return {"title": "t", "duration": 8, "lines": [line(1, "小心這裡要等一下", 1.0, 0.5), line(2, "二號句子在這", 4.0)]}
+
+
+def board_page(objects, do1, do2=(), template="center", st=None):
+	"""用分鏡的 board_actions 編出真正的 objects.json 一頁（格式與 Task 7 的產物相同）"""
+	st = st or mini_story()
+	pg = {"template": template, "objects": objects, "lines": [{"say": st["lines"][0]["text"], "do": list(do1)}, {"say": st["lines"][1]["text"], "do": list(do2)}]}
+	objs, do = SB.board_actions(pg, 1)
+	return {"lines": [1, 2], "template": template, "objects": objs, "do": do}
+
+
+def m_icons(n, col=None, size="m"):
+	return [{"type": "icon", "id": "i%d" % k, "name": "check", "size": size} | ({"col": col} if col else {}) for k in range(n)]
+
+
+def inside(b, box):
+	return b["x"] >= box["x"] and b["y"] >= box["y"] and b["x"] + b["w"] <= box["x"] + box["w"] and b["y"] + b["h"] <= box["y"] + box["h"]
+
+
+def make_film(d, boards):
+	"""從 starter 開一支片：printf 的 story（含電腦畫面）加上指定的 boards，字型借 printf 片的子集"""
+	sys.path.insert(0, os.path.join(ROOT, "video_engine", "explainer"))
+	import sync_film as SF
+	shutil.copytree(STARTER, d, dirs_exist_ok=True)
+	SF.copy_components(d)
+	with open(os.path.join(STORY, "story.json"), encoding="utf-8") as f:
+		story = json.load(f)
+	for name, merge in (("keys.json", SF.merge_keys), ("screens.json", SF.merge_screens)):
+		with open(os.path.join(STORY, name), encoding="utf-8") as f:
+			merge(story, json.load(f))
+	story["boards"] = boards
+	with open(os.path.join(d, "lib", "story.js"), "w", encoding="utf-8") as f:
+		f.write("window.STORY = " + json.dumps(story, ensure_ascii=False) + ";\n")
+	shutil.copytree(os.path.join(PRINTF_FILM, "assets", "fonts"), os.path.join(d, "assets", "fonts"), dirs_exist_ok=True)
+
+
+def printf_board(note_text="請輸入成績"):
+	"""printf 片第 5、6 句那頁改成置中頁：鍵盤圖示＋一句粉筆字，閃到「空的」，callout 掛在圖示旁"""
+	with open(os.path.join(STORY, "story.json"), encoding="utf-8") as f:
+		lines = {L["i"]: L["text"] for L in json.load(f)["lines"]}
+	pg = {"template": "center", "objects": [{"type": "icon", "id": "kb", "name": "輸入"}, {"type": "note", "id": "n1", "text": note_text}],
+		"lines": [{"say": lines[5], "do": [{"act": "draw", "target": "kb"}, {"act": "write", "target": "n1", "cue": "請輸入成績"},
+			{"act": "callout", "target": "kb", "text": "等你打字"}, {"act": "blink", "target": "kb", "until": "空的"}]},
+			{"say": lines[6], "do": []}]}
+	objs, do = SB.board_actions(pg, 5)
+	return {"lines": [5, 6], "template": "center", "objects": objs, "do": do}
+
+
+def run_board_check(case, film):
+	need_browser(case)
+	r = subprocess.run([PW_PY, BOARD_CHECK, film], capture_output=True, text=True, timeout=300)
+	if not os.environ.get("E2E_GEOM") == "1" and "Executable doesn't exist" in r.stderr:
+		case.skipTest("Playwright 沒裝 chromium")
+	return r
+
+
+class TestBoardChalk(unittest.TestCase):
+	def test_tpl_與printf相同(self):
+		with open(os.path.join(PRINTF_FILM, "index.html"), encoding="utf-8") as f:
+			src = f.read()
+		head = "tpl: function (li, kind) {"
+		body = src[src.index(head) + len(head): src.index("\n          head: head,")]
+		body = body[:body.rindex("}")]
+		for area in (PRINTF_AREA, {"P": "P", "x": 47, "y": 103, "w": 1745, "h": 667}):
+			for kind in ("center", "two-col", "other"):
+				self.assertEqual(board_probe("tpl", area=area, kind=kind), board_probe("printf_tpl", body=body, area=area, kind=kind), (area, kind))
+
+	def test_place_置中(self):
+		tpl = {"P": "P", "x": 100, "y": 50, "w": 1200, "h": 800, "cx": 700, "cy": 450}
+		bd = {"template": "center", "objects": m_icons(3)}
+		got = board_probe("place", board=bd, tpl=tpl, sizes={"i%d" % k: {"w": 180, "h": 180} for k in range(3)})
+		boxes = [got["i%d" % k] for k in range(3)]
+		for b in boxes:
+			self.assertTrue(inside(b, tpl), b)
+			self.assertLessEqual(abs(b["x"] + b["w"] / 2 - tpl["cx"]), 1, b)
+			self.assertEqual((b["w"], b["h"]), (180, 180))
+		for a, b in zip(boxes, boxes[1:]):
+			self.assertEqual(b["y"] - (a["y"] + a["h"]), 40)
+		top, bottom = boxes[0]["y"] - tpl["y"], tpl["y"] + tpl["h"] - (boxes[-1]["y"] + boxes[-1]["h"])
+		self.assertLessEqual(abs(top - bottom), 1)
+
+	def test_place_太高就等比縮小(self):
+		tpl = board_probe("tpl", area=PRINTF_AREA, kind="center")
+		got = board_probe("place", board={"template": "center", "objects": m_icons(3)}, tpl=tpl, sizes={"i%d" % k: {"w": 180, "h": 180} for k in range(3)})
+		boxes = [got["i%d" % k] for k in range(3)]
+		self.assertTrue(all(inside(b, tpl) for b in boxes), boxes)
+		self.assertTrue(all(b["w"] == b["h"] == boxes[0]["w"] < 180 for b in boxes), boxes)
+
+	def test_place_雙欄(self):
+		tpl = board_probe("tpl", area=PRINTF_AREA, kind="two-col")
+		objs = m_icons(2, "left") + [{"type": "icon", "id": "r0", "name": "check", "col": "right"}]
+		sizes = {o["id"]: {"w": 180, "h": 180} for o in objs}
+		got = board_probe("place", board={"template": "two-col", "objects": objs}, tpl=tpl, sizes=sizes)
+		for oid in ("i0", "i1"):
+			self.assertTrue(inside(got[oid], tpl["left"]), got[oid])
+		self.assertTrue(inside(got["r0"], tpl["right"]), got["r0"])
+		self.assertEqual(got["i1"]["y"] - (got["i0"]["y"] + got["i0"]["h"]), 40)
+
+	def test_place_放不下要報錯(self):
+		tpl = {"P": "P", "x": 0, "y": 0, "w": 1200, "h": 300, "cx": 600, "cy": 150}
+		got = board_probe("place", board={"template": "center", "objects": m_icons(3, size="l")}, tpl=tpl, sizes={"i%d" % k: {"w": 260, "h": 260} for k in range(3)})
+		self.assertIn("error", got)
+
+	def test_checkSchedule_抓到until(self):
+		st = mini_story()
+		good = board_page(m_icons(1), [{"act": "draw", "target": "i0"}, {"act": "blink", "target": "i0", "until": "句子"}])
+		self.assertEqual(board_probe("checkSchedule", boards=[good], story=st), [])
+		bad = json.loads(json.dumps(good))
+		bad["do"]["1"][1]["args"]["until"] = "沒有這幾個字"
+		self.assertTrue(board_probe("checkSchedule", boards=[bad], story=st))
+		cue = json.loads(json.dumps(good))
+		cue["do"]["1"][0]["cue"] = "不在句子裡"
+		self.assertTrue(board_probe("checkSchedule", boards=[cue], story=st))
+		stray = json.loads(json.dumps(good))
+		stray["do"]["3"] = stray["do"].pop("1")
+		self.assertTrue(board_probe("checkSchedule", boards=[stray], story=st))
+
+	def test_mountAll_照逐字時間畫(self):
+		st = mini_story()
+		objs = [{"type": "icon", "id": "i0", "name": "keyboard"}, {"type": "note", "id": "n1", "text": "請輸入成績"}]
+		bd = board_page(objs, [{"act": "draw", "target": "i0"}, {"act": "write", "target": "n1", "cue": "等一下"},
+			{"act": "blink", "target": "i0", "until": "句子"}, {"act": "callout", "target": "i0", "text": "看這裡", "until": "在這"}])
+		r = board_probe("mountAll", story=st, area=PRINTF_AREA, boards=[bd])
+		self.assertEqual(r["problems"], [])
+		self.assertEqual(r["render"], "function")
+		span = lambda li, text: [w[1] for w in st["lines"][li - 1]["words"]][st["lines"][li - 1]["text"].index(text)]
+		strokes = [e for e in r["log"] if e["kind"] == "S"]
+		icon = [s for s in strokes if s["w"] in (6, 4.5)]
+		# 沒有 cue 的 draw 從開口前 lead 秒起畫；在那之前什麼都不出現
+		self.assertAlmostEqual(min(e["t"] for e in strokes), 0.5)
+		self.assertAlmostEqual(icon[0]["t"], 0.5)
+		seqs = [e for e in r["log"] if e["kind"] == "seq"]
+		self.assertAlmostEqual(seqs[0]["t0"], span(1, "等一下"))
+		fades = [e for e in r["log"] if e["kind"] == "fade"]
+		blink = [f for f in fades if f.get("back") is not None]
+		self.assertTrue(blink)
+		self.assertTrue(all(f["t0"] < span(2, "句子") for f in blink), blink)
+		# callout 收在 until 那幾個字開口時
+		gone = [f for f in fades if f.get("back") is None and f["to"] == 0]
+		self.assertEqual(len(gone), 1)
+		self.assertAlmostEqual(gone[0]["t0"], span(2, "在這"))
+		# 所有粉筆都在這頁的區域內
+		import re
+		a = PRINTF_AREA
+		for s in strokes:
+			nums = [float(v) for v in re.findall(r"-?\d+(?:\.\d+)?", s["d"])]
+			for x, y in zip(nums[0::2], nums[1::2]):
+				self.assertTrue(a["x"] <= x <= a["x"] + a["w"] and a["y"] <= y <= a["y"] + a["h"], (x, y))
+
+	def test_mountAll_放不下收進problems(self):
+		st = mini_story()
+		long = board_page([{"type": "note", "id": "n1", "text": "放不下" * 200}], [{"act": "write", "target": "n1"}])
+		ok = board_page(m_icons(1), [{"act": "draw", "target": "i0"}])
+		r =board_probe("mountAll", story=st, area=PRINTF_AREA, boards=[long, ok])
+		self.assertEqual(len(r["problems"]), 1, r["problems"])
+		self.assertIn("放不下", r["problems"][0])
+		# 一頁出錯不中斷整片：另一頁照畫
+		self.assertTrue([e for e in r["log"] if e["kind"] == "S"])
+		tall = board_page(m_icons(3, size="l"), [{"act": "draw", "target": "i0"}])
+		low = dict(PRINTF_AREA, h=200)
+		self.assertTrue(board_probe("mountAll", story=st, area=low, boards=[tall])["problems"])
+
+	def test_mountAll_黑板不會畫的動作要報(self):
+		st = mini_story()
+		bd = board_page(m_icons(1), [{"act": "draw", "target": "i0"}, {"act": "circle", "target": "i0"}])
+		r = board_probe("mountAll", story=st, area=PRINTF_AREA, boards=[bd])
+		self.assertTrue(any("circle" in p for p in r["problems"]), r["problems"])
+
+	def test_starter_beats是空樣板(self):
+		import re
+		with open(os.path.join(STARTER, "beats.js"), encoding="utf-8") as f:
+			src = f.read()
+		# 字串裡的空白（"use strict"）要留著，其餘空白與註解都去掉
+		parts = re.split(r'("[^"]*")', re.sub(r"/\*.*?\*/|//[^\n]*", "", src, flags=re.S))
+		code = "".join(x if x.startswith('"') else re.sub(r"\s", "", x) for x in parts)
+		self.assertEqual(code, 'window.Beats=function(api){"use strict";};')
+
+	def test_starter_檔案齊全(self):
+		for rel in STARTER_FILES:
+			self.assertTrue(os.path.isfile(os.path.join(STARTER, rel)), rel)
+
+	def test_starter_掛上黑板轉接(self):
+		with open(os.path.join(STARTER, "index.html"), encoding="utf-8") as f:
+			src = f.read()
+		order = ["lib/components/icon/shapes.js", "lib/components/callout/callout.js", "lib/kit/board_tpl.js",
+			"lib/kit/icon.chalk.js", "lib/kit/note.chalk.js", "lib/kit/board.chalk.js", "beats.js"]
+		at = [src.index('src="%s"' % s) for s in order]
+		self.assertEqual(at, sorted(at))
+		self.assertIn("ChalkBoard.mountAll(API, D.boards)", src)
+		self.assertIn("window.__boardProblems = boards ? boards.problems : [];", src)
+		self.assertIn("boards && boards.render(t)", src)
+		self.assertIn("BoardTpl.tpl(API.area(li), kind)", src)
+
+	def test_sync_film_帶上黑板轉接與kit(self):
+		sys.path.insert(0, os.path.join(ROOT, "video_engine", "explainer"))
+		import sync_film as SF
+		with tempfile.TemporaryDirectory() as d:
+			SF.copy_components(d)
+			for rel in ("lib/kit/board.chalk.js", "lib/kit/board_tpl.js", "lib/core.js", "lib/sfxlib.py", "lib/kit/kit.js",
+				"lib/kit/kit.css", "lib/kit/chalk-mask.png", "lib/kit/grain.svg", "lib/kit/chalklog.mjs",
+				"lib/components/icon/shapes.js", "lib/components/callout/callout.js"):
+				self.assertTrue(os.path.exists(os.path.join(d, rel)), rel)
+
+	def test_不寫色碼與純函式(self):
+		import re
+		for fn in ("board.chalk.js", "board_tpl.js"):
+			with open(os.path.join(CHALK_KIT, fn), encoding="utf-8") as f:
+				src = f.read()
+			self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,6}\b", src), fn)
+			self.assertNotIn("style.opacity", src, fn)
+			self.assertNotRegex(src, r"Math\.random|Date\.now|performance\.now|new Date\(", fn)
+		with open(os.path.join(CHALK_KIT, "board_tpl.js"), encoding="utf-8") as f:
+			self.assertNotIn("document", f.read())
+
+	def test_screen_check_也查黑板頁(self):
+		node = shutil.which("node")
+		if not node:
+			raise AssertionError("缺 node")
+		with tempfile.TemporaryDirectory() as d:
+			make_film(d, [printf_board()])
+			r = subprocess.run([node, os.path.join(CHALK, "screen_check.js"), d], capture_output=True, text=True, timeout=60)
+			self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+			self.assertIn("黑板頁", r.stdout)
+			bad = printf_board()
+			[a for a in bad["do"]["5"] if a["act"] == "blink"][0]["args"]["until"] = "沒有這幾個字"
+			make_film(d, [bad])
+			r = subprocess.run([node, os.path.join(CHALK, "screen_check.js"), d], capture_output=True, text=True, timeout=60)
+			self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+
+	def test_board_check_沒掛上要失敗(self):
+		with tempfile.TemporaryDirectory() as d:
+			with open(os.path.join(d, "index.html"), "w", encoding="utf-8") as f:
+				f.write("<!doctype html><meta charset='utf-8'><body>沒有黑板轉接</body>")
+			r = run_board_check(self, d)
+			self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+
+	def test_board_check_starter片(self):
+		with tempfile.TemporaryDirectory() as d:
+			make_film(d, [printf_board()])
+			r = run_board_check(self, d)
+			self.assertEqual(r.returncode, 0, r.stdout + r.stderr[-800:])
+		with tempfile.TemporaryDirectory() as d:
+			make_film(d, [printf_board("放不下" * 200)])
+			r = run_board_check(self, d)
+			self.assertEqual(r.returncode, 1, r.stdout + r.stderr[-800:])
+			self.assertIn("放不下", r.stdout)
+
+
 if __name__ == "__main__":
 	if sys.argv[1:] == ["--regen"]:
 		os.makedirs(FIX, exist_ok=True)
