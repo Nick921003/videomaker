@@ -379,6 +379,19 @@ class Compiler:
 				prev_scene = si
 		self.beats = [{"scene": si, "i": bi, "t0": t0, "t1": t1, "say": b["say"], "spoken": b.get("spoken"), "layout": b.get("layout")}
 			for (si, bi, b), (t0, t1) in zip(flat, spans)]
+		for k, x in enumerate(self.timing or []):
+			if "draw" not in x:
+				continue
+			# 先畫後講：該句第一個動作從 draw 起跑，句子本身的 t0 不動，字幕和 cue 仍對著聲音
+			beat, prev = self.beats[k], self.beats[k - 1] if k else None
+			draw = float(x["draw"])
+			floor = prev["t1"] if prev else 0.0
+			if not floor - 1e-6 <= draw <= beat["t0"] + 1e-6:
+				raise ValueError(f"timing 第 {k} 筆的 draw {draw} 要在上一句講完（{floor}）和這句開口（{beat['t0']}）之間")
+			if prev and prev["scene"] != beat["scene"]:
+				# 換場第一句等鏡頭到位才畫
+				draw = min(max(draw, prev["t1"] - SCENE_CAM_EARLY + SCENE_CAM_DUR), beat["t0"])
+			beat["draw"] = draw
 		self.duration = round(self.beats[-1]["t1"] + TAIL, 3)
 
 	# ── 動作 ──
@@ -599,14 +612,14 @@ class Compiler:
 			floor = prev["t1"] if prev and prev["scene"] == beat["scene"] else beat["t0"]
 			return max(t - CUE_LEAD, floor)
 		if a["first"]:
-			return beat["t0"]
+			return beat.get("draw", beat["t0"])
 		return None
 
 	def time_actions(self):
 		scene_end, scene_start = {}, {}
 		for b in self.beats:
 			scene_end[b["scene"]] = b["t1"] - END_MARGIN
-			scene_start.setdefault(b["scene"], b["t0"])
+			scene_start.setdefault(b["scene"], b.get("draw", b["t0"]))
 		prev = None
 		for idx, a in enumerate(self.actions):
 			if a["with"] == "prev" and prev is not None and not a["first"]:

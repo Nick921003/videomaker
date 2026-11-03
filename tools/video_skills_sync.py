@@ -58,7 +58,7 @@ INCLUDE = [
 	"__init__.py",
 	"test_board_author.py", "test_board_build.py", "test_board_check.py", "test_board_compile.py", "test_board_compose.py",
 	"test_board_narrate.py", "test_board_voice_identity.py",
-	"test_tts_f5.py", "test_tts_pick.py", "test_f5_story.py", "test_pages.py", "test_storyboard.py", "test_sync_film.py", "test_narration_style.py",
+	"test_tts_f5.py", "test_tts_pick.py", "test_f5_story.py", "test_pages.py", "test_storyboard.py", "test_storyboard_to_scene.py", "test_sync_film.py", "test_narration_style.py",
 	"test_layout.py", "test_render_slides.py", "test_render_video.py", "test_render_explainer.py",
 	"test_vscode_component.py", "js/vscode_probe.js",
 )]
