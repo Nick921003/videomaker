@@ -23,6 +23,9 @@ node video_engine/explainer/chalk/screen_check.js <片子>             # 電腦�
 
 `sync_film.py` 會複製 story 的 `audio/narration.wav`；還沒配音的草稿要先放一個靜音檔。
 
+還沒配音的草稿片，`sync_film.py` 之前先跑 `python3 video_engine/explainer/pages.py <story 資料夾>`：照 `pages.json`／`screens.json`
+分頁、留換頁時間、套 `leads.json`／`holds.json`，本機就能看排版和先畫後講的節奏。配音版由 `f5_story.py` 用同一套規則排。
+
 ## 檔案分三類
 
 盤點來源：`git ls-files video_engine/out/vscode_printf_chalk` 與它的 `lib/`。
