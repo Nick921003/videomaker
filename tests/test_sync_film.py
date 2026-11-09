@@ -1,9 +1,11 @@
 import unittest
 
+import json
 import os
+import shutil
 import tempfile
 
-from video_engine.explainer.sync_film import copy_components, merge_keys, merge_objects, merge_screens, srt
+from video_engine.explainer.sync_film import copy_components, main, merge_keys, merge_objects, merge_screens, srt
 
 
 class TestSyncFilm(unittest.TestCase):
@@ -50,6 +52,22 @@ class TestSyncFilm(unittest.TestCase):
 
 	def test_merge_objects空的不寫boards(self):
 		self.assertNotIn("boards", merge_objects({"pages": [[1, 2]]}, []))
+
+	def test_從starter開新片能同步(self):
+		# starter 沒附 assets/audio/，以前複製旁白會 FileNotFoundError
+		root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+		starter = os.path.join(root, "video_engine", "explainer", "chalk", "starter")
+		with tempfile.TemporaryDirectory() as d:
+			story, film = os.path.join(d, "story"), os.path.join(d, "film")
+			os.makedirs(os.path.join(story, "audio"))
+			with open(os.path.join(story, "story.json"), "w", encoding="utf-8") as f:
+				json.dump({"lines": [{"i": 1, "text": "一句。", "start": 0.0, "end": 1.0}]}, f)
+			with open(os.path.join(story, "audio", "narration.wav"), "wb") as f:
+				f.write(b"RIFF")
+			shutil.copytree(starter, film)
+			main(story, film)
+			for rel in ("lib/story.js", "assets/audio/narration.wav", "captions.srt"):
+				self.assertTrue(os.path.exists(os.path.join(film, rel)), rel)
 
 	def test_copy_components(self):
 		with tempfile.TemporaryDirectory() as d:
