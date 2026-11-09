@@ -29,9 +29,8 @@
 							"say": "題目就寫在這份檔案裡，我們先把它看完。",
 							"do": [
 								{
-									"act": "callout",
+									"act": "circle",
 									"target": "doc",
-									"text": "題目",
 									"cue": "檔案"
 								}
 							]
@@ -72,6 +71,11 @@
 								{
 									"act": "write",
 									"target": "ex"
+								},
+								{
+									"act": "underline",
+									"target": "ex",
+									"cue": "答案"
 								}
 							]
 						}
@@ -576,11 +580,10 @@
 							"key": "用大於等於",
 							"do": [
 								{
-									"act": "callout",
+									"act": "underline",
 									"target": "op",
-									"text": "60 算及格",
-									"tone": "ok",
-									"cue": "大於等於"
+									"cue": "大於等於",
+									"tone": "ok"
 								}
 							]
 						}
@@ -667,6 +670,12 @@
 								{
 									"act": "draw",
 									"target": "back"
+								},
+								{
+									"act": "circle",
+									"target": "back",
+									"cue": "交回去",
+									"tone": "ok"
 								}
 							]
 						}

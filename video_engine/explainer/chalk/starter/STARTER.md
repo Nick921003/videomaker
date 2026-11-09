@@ -52,5 +52,6 @@ node video_engine/explainer/chalk/screen_check.js <片子>             # 電腦�
   縮到 0.6 還放不下就報錯。
 - 時間：`ChalkVSCode.schedule`（有 cue 從那幾個字開口起跑，沒有的從開口前 lead 開始畫）；`until` 類動作畫到 until 那幾個字開口，
   沒寫就到這頁最後一句講完。物件在第一個 `draw`／`show`／`write` 之前不出現。
-- 會畫的動作：圖示 `draw` `show` `blink` `erase`、文字 `write` `show` `erase`、`callout`（圖示旁的標註框）。其他動作、圖示的
+- 會畫的動作：圖示 `draw` `show` `blink` `erase`、文字 `write` `show` `erase`、`callout`（圖示旁的標註框）、`circle`／`underline`
+  （照物件的框畫圈或波浪底線，目標被擦掉時跟著淡出）。其他動作（`arrow`、`focus`…）、圖示的
   `caption` 黑板還不會畫，會收進 `window.__boardProblems`，`board_check.py` 擋下。

@@ -10,10 +10,13 @@
 	var CO = node ? require('../../../components/callout/callout.js') : g.Callout;
 
 	var GAP = 40, MIN_SCALE = 0.6;
-	// 黑板會畫的動作；其他動作（circle、arrow…）還沒有粉筆畫法，要報出來，不能安靜略過
+	// 黑板會畫的動作；其他動作（arrow、focus…）還沒有粉筆畫法，要報出來，不能安靜略過
 	var ACTS = { icon: { draw: 1, show: 1, blink: 1, erase: 1 }, note: { write: 1, show: 1, erase: 1 } };
+	var MARKS = { circle: 1, underline: 1 };
 	var CLS = { ink: 'cw', muted: 'cm', accent: 'cy', warn: 'cp', ok: 'cg', info: 'cb' };
 	var CALLOUT_SIZE = 38, CALLOUT_W = 3, CALLOUT_CPS = 12, CALLOUT_FADE = 0.3;
+	// 圈與底線的粗細、留白比照 printf 片手寫的 ring／underline
+	var MARK_W = 4.5, RING_PAD = 22, RING_TURN = 1.12, RING_GROW = 0.05, UNDER_GAP = 12, UNDER_AMP = 5, UNDER_PER = 30, MARK_FADE = 0.4;
 
 	var where = function (bd) { return '第 ' + bd.lines.join('、') + ' 句的黑板頁'; };
 
@@ -83,6 +86,38 @@
 			' L ' + p(x0 + r, y1) + ' Q ' + p(x0, y1) + ' ' + p(x0, y1 - r) + ' L ' + p(x0, y0 + r) + ' Q ' + p(x0, y0) + ' ' + p(x0 + r, y0);
 	}
 
+	var f1 = function (v) { return (Math.round(v * 10) / 10).toString(); };
+
+	// 繞框一圈多一點、半徑微微變大的手畫圈；碰到頁面邊就收小，不畫出這頁
+	function ringPath(b, A) {
+		var cx = b.x + b.w / 2, cy = b.y + b.h / 2, k = 1 + RING_GROW;
+		var rx = Math.min(b.w / 2 + RING_PAD, (cx - A.x) / k, (A.x + A.w - cx) / k);
+		var ry = Math.min(b.h / 2 + RING_PAD, (cy - A.y) / k, (A.y + A.h - cy) / k);
+		var n = 44, a0 = -Math.PI * 0.6, d = '';
+		for (var i = 0; i <= n; i++) {
+			var a = a0 + (i / n) * RING_TURN * Math.PI * 2, r = 1 + RING_GROW * (i / n);
+			d += (i ? ' L ' : 'M ') + f1(cx + Math.cos(a) * rx * r) + ' ' + f1(cy + Math.sin(a) * ry * r);
+		}
+		return d;
+	}
+
+	// 框底下一條波浪線；框貼著頁底時往上收，不畫出這頁
+	function underPath(b, A) {
+		var y = Math.min(b.y + b.h + UNDER_GAP, A.y + A.h - UNDER_AMP), x1 = b.x + b.w, d = 'M ' + f1(b.x) + ' ' + f1(y);
+		for (var x = b.x + UNDER_PER / 2, j = 1; x <= x1 + 0.1; x += UNDER_PER / 2, j++) {
+			d += ' Q ' + f1(x - UNDER_PER / 4) + ' ' + f1(y + (j % 2 ? -UNDER_AMP : UNDER_AMP)) + ' ' + f1(x) + ' ' + f1(y);
+		}
+		return d;
+	}
+
+	// 圈與底線留到這頁換掉；目標之後被擦掉的話跟著淡出，不留一個圈著空白的圈
+	function mark(api, P, A, box, a, acts) {
+		var el = api.S(P, a.act === 'circle' ? ringPath(box, A) : underPath(box, A), (a.args && a.args.tone) || 'accent', MARK_W, a.t0, a.t1 - a.t0, { sprite: false });
+		var er = acts.filter(function (b) { return b.obj === a.obj && b.act === 'erase' && b.t0 >= a.t0; })[0];
+		if (er) api.K.fade([el], er.t0, MARK_FADE, 0);
+		return el;
+	}
+
 	// 標註框：框與三角在動作時間內畫完，字隨後以穩定手速寫上，到 until（或同物件下一個動作、這頁講完）擦淡
 	function callout(api, P, p, size, a, tone, tEnd) {
 		var b = p.box, f = size.f, half = (a.t1 - a.t0) / 2, fs = CALLOUT_SIZE;
@@ -102,13 +137,16 @@
 		var acts = timed(api, bd), end = api.lineEnd(last);
 		bd.objects.forEach(function (o) {
 			if (o.caption) report(here + '：' + o.id + ' 的 caption 黑板還不畫');
-			var own = acts.filter(function (a) { return a.obj === o.id && a.act !== 'callout'; });
+			var own = acts.filter(function (a) { return a.obj === o.id && a.act !== 'callout' && !MARKS[a.act]; });
 			var ok = own.filter(function (a) { return ACTS[o.type] && ACTS[o.type][a.act]; });
 			own.filter(function (a) { return ok.indexOf(a) < 0; }).forEach(function (a) { report(here + '：' + o.id + ' 的 ' + a.act + ' 黑板還不會畫'); });
 			try {
 				if (o.type === 'icon') CI.perform(api, tpl.P, o, boxes[o.id], ok, o.tone);
 				else CN.perform(api, tpl.P, o, boxes[o.id], ok);
 			} catch (e) { report(here + '：' + e.message); }
+		});
+		acts.forEach(function (a) {
+			if (MARKS[a.act]) mark(api, tpl.P, A, boxes[a.obj], a, acts);
 		});
 		var taken = [];
 		acts.forEach(function (a, i) {

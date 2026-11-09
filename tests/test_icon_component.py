@@ -965,9 +965,50 @@ class TestBoardChalk(unittest.TestCase):
 
 	def test_mountAll_黑板不會畫的動作要報(self):
 		st = mini_story()
-		bd = board_page(m_icons(1), [{"act": "draw", "target": "i0"}, {"act": "circle", "target": "i0"}])
+		bd = board_page(m_icons(1), [{"act": "draw", "target": "i0"}, {"act": "focus", "target": "i0"}])
 		r = board_probe("mountAll", story=st, area=PRINTF_AREA, boards=[bd])
-		self.assertTrue(any("circle" in p for p in r["problems"]), r["problems"])
+		self.assertTrue(any("focus" in p for p in r["problems"]), r["problems"])
+
+	def test_mountAll_圈選與底線(self):
+		import re
+		st = mini_story()
+		objs = [{"type": "icon", "id": "i0", "name": "keyboard"}, {"type": "note", "id": "n1", "text": "請輸入成績"}]
+		bd = board_page(objs, [{"act": "draw", "target": "i0"}, {"act": "write", "target": "n1"}],
+			[{"act": "circle", "target": "i0", "cue": "二號"}, {"act": "underline", "target": "n1", "cue": "句子", "tone": "ok"}])
+		r = board_probe("mountAll", story=st, area=PRINTF_AREA, boards=[bd])
+		self.assertEqual(r["problems"], [])
+		span = lambda li, text: [w[1] for w in st["lines"][li - 1]["words"]][st["lines"][li - 1]["text"].index(text)]
+		pts = lambda d: [(float(x), float(y)) for x, y in re.findall(r"(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)", d)]
+		strokes = [e for e in r["log"] if e["kind"] == "S"]
+		# 分鏡沒寫語氣時編譯器補 accent；圈和底線在 cue 那幾個字開口時畫
+		ring = [s for s in strokes if s["tone"] == "accent"]
+		under = [s for s in strokes if s["tone"] == "ok"]
+		self.assertEqual((len(ring), len(under)), (1, 1), strokes)
+		self.assertAlmostEqual(ring[0]["t"], span(2, "二號"))
+		self.assertAlmostEqual(under[0]["t"], span(2, "句子"))
+		# 圈把圖示整個圍住：圖示每一筆都落在圈的外接框裡
+		icon = [p for s in strokes if s["tone"] == "ink" for p in pts(s["d"])]
+		rp = pts(ring[0]["d"])
+		rx0, rx1, ry0, ry1 = min(x for x, _ in rp), max(x for x, _ in rp), min(y for _, y in rp), max(y for _, y in rp)
+		for x, y in icon:
+			self.assertTrue(rx0 < x < rx1 and ry0 < y < ry1, (x, y))
+		# 底線在字的下面
+		note = [e for e in r["log"] if e["kind"] == "seq"][0]
+		self.assertGreater(min(y for _, y in pts(under[0]["d"])), note["y"] + note["size"])
+		a = PRINTF_AREA
+		for x, y in rp + pts(under[0]["d"]):
+			self.assertTrue(a["x"] <= x <= a["x"] + a["w"] and a["y"] <= y <= a["y"] + a["h"], (x, y))
+
+	def test_mountAll_圖示擦掉時圈也收掉(self):
+		st = mini_story()
+		bd = board_page(m_icons(1), [{"act": "draw", "target": "i0"}],
+			[{"act": "circle", "target": "i0", "cue": "二號"}, {"act": "erase", "target": "i0", "cue": "在這"}])
+		r = board_probe("mountAll", story=st, area=PRINTF_AREA, boards=[bd])
+		self.assertEqual(r["problems"], [])
+		t = [w[1] for w in st["lines"][1]["words"]][st["lines"][1]["text"].index("在這")]
+		gone = [f for f in r["log"] if f["kind"] == "fade" and f["to"] == 0 and f.get("back") is None]
+		self.assertEqual(len(gone), 1, gone)
+		self.assertAlmostEqual(gone[0]["t0"], t)
 
 	def test_starter_beats是空樣板(self):
 		import re
