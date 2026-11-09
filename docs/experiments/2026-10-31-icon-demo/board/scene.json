@@ -1,0 +1,945 @@
+{
+	"version": 1,
+	"title": "一支作業從寫到交出去",
+	"objects": [
+		{
+			"type": "icon",
+			"id": "who",
+			"name": "學生"
+		},
+		{
+			"type": "icon",
+			"id": "doc",
+			"name": "file"
+		},
+		{
+			"type": "icon",
+			"id": "pen",
+			"name": "先手算"
+		},
+		{
+			"type": "note",
+			"id": "ex",
+			"text": "85 → 及格　42 → 不及格",
+			"style": "body"
+		},
+		{
+			"type": "icon",
+			"id": "br",
+			"name": "branch"
+		},
+		{
+			"type": "icon",
+			"id": "lp",
+			"name": "loop"
+		},
+		{
+			"type": "icon",
+			"id": "kb",
+			"name": "keyboard",
+			"size": "l"
+		},
+		{
+			"type": "icon",
+			"id": "run",
+			"name": "play"
+		},
+		{
+			"type": "icon",
+			"id": "wait",
+			"name": "等待"
+		},
+		{
+			"type": "icon",
+			"id": "ro",
+			"name": "唯讀"
+		},
+		{
+			"type": "icon",
+			"id": "set",
+			"name": "gear"
+		},
+		{
+			"type": "icon",
+			"id": "knot",
+			"name": "無窮迴圈"
+		},
+		{
+			"type": "note",
+			"id": "stuck",
+			"text": "停不下來",
+			"style": "headline"
+		},
+		{
+			"type": "icon",
+			"id": "k1",
+			"name": "快捷鍵",
+			"text": "Ctrl"
+		},
+		{
+			"type": "icon",
+			"id": "k2",
+			"name": "keycap",
+			"text": "C"
+		},
+		{
+			"type": "icon",
+			"id": "halt",
+			"name": "stop"
+		},
+		{
+			"type": "icon",
+			"id": "q",
+			"name": "question"
+		},
+		{
+			"type": "icon",
+			"id": "look",
+			"name": "magnifier"
+		},
+		{
+			"type": "icon",
+			"id": "ai",
+			"name": "問 AI"
+		},
+		{
+			"type": "icon",
+			"id": "idea",
+			"name": "原來如此"
+		},
+		{
+			"type": "note",
+			"id": "why",
+			"text": "人數沒有加一",
+			"style": "body"
+		},
+		{
+			"type": "icon",
+			"id": "ok",
+			"name": "check",
+			"size": "l"
+		},
+		{
+			"type": "icon",
+			"id": "bad",
+			"name": "cross"
+		},
+		{
+			"type": "icon",
+			"id": "careful",
+			"name": "warning"
+		},
+		{
+			"type": "icon",
+			"id": "cmp",
+			"name": "scale"
+		},
+		{
+			"type": "note",
+			"id": "op",
+			"text": "大於　／　大於等於",
+			"style": "body"
+		},
+		{
+			"type": "icon",
+			"id": "list",
+			"name": "checklist"
+		},
+		{
+			"type": "note",
+			"id": "cases",
+			"text": "高分　低分　60　0　100",
+			"style": "body"
+		},
+		{
+			"type": "icon",
+			"id": "time",
+			"name": "clock"
+		},
+		{
+			"type": "icon",
+			"id": "back",
+			"name": "return"
+		},
+		{
+			"type": "icon",
+			"id": "ear",
+			"name": "headphones"
+		},
+		{
+			"type": "icon",
+			"id": "snd",
+			"name": "wave"
+		},
+		{
+			"type": "icon",
+			"id": "ph",
+			"name": "phone"
+		},
+		{
+			"type": "icon",
+			"id": "like",
+			"name": "heart"
+		},
+		{
+			"type": "icon",
+			"id": "qt",
+			"name": "quote"
+		},
+		{
+			"type": "icon",
+			"id": "talk",
+			"name": "mic"
+		},
+		{
+			"type": "icon",
+			"id": "cost",
+			"name": "coin",
+			"size": "l"
+		},
+		{
+			"id": "recap",
+			"type": "list",
+			"rows": [
+				"先想 | 手算例子，看出判斷和重複",
+				"跑跑看 | 在等輸入就改到終端機跑",
+				"停不下來 | 按 Ctrl 加 C 先停",
+				"找原因 | 看每圈有沒有往結束靠近",
+				"及格線 | 60 分用大於等於",
+				"交之前 | 高、低、60、0、100 都測"
+			],
+			"title": "一支作業從寫到交出去"
+		}
+	],
+	"scenes": [
+		{
+			"id": "c1_p1",
+			"title": "拿到作業，先想再寫",
+			"layout": {
+				"stack": [
+					"who",
+					"doc"
+				]
+			},
+			"beats": [
+				{
+					"say": "你拿到一份作業：輸入全班的成績，印出誰及格。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "who"
+						},
+						{
+							"act": "draw",
+							"target": "doc"
+						}
+					]
+				},
+				{
+					"say": "題目就寫在這份檔案裡，我們先把它看完。",
+					"do": [
+						{
+							"act": "callout",
+							"target": "doc",
+							"text": "題目",
+							"cue": "檔案"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c1_p2",
+			"title": "拿到作業，先想再寫",
+			"layout": {
+				"stack": [
+					"pen",
+					"ex"
+				]
+			},
+			"beats": [
+				{
+					"say": "先別急著打程式，拿筆手算兩個例子。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "pen"
+						}
+					]
+				},
+				{
+					"say": "85 分及格，42 分不及格，這就是程式該印出來的答案。",
+					"do": [
+						{
+							"act": "write",
+							"target": "ex"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c1_p3",
+			"title": "拿到作業，先想再寫",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"br"
+						]
+					},
+					{
+						"stack": [
+							"lp"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "手算的時候會發現，每個分數都要判斷一次，看有沒有到 60。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "br"
+						}
+					]
+				},
+				{
+					"say": "然後全班不只一個人，同一個判斷要重複做很多次。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "lp"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c2_p1",
+			"title": "跑跑看，卡住了",
+			"layout": {
+				"stack": [
+					"kb"
+				]
+			},
+			"beats": [
+				{
+					"say": "想清楚要做什麼，再開始打程式。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "kb"
+						}
+					]
+				},
+				{
+					"say": "這樣打的時候，比較不會寫到一半才改方向。",
+					"do": []
+				}
+			]
+		},
+		{
+			"id": "c2_p2",
+			"title": "跑跑看，卡住了",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"run"
+						]
+					},
+					{
+						"stack": [
+							"wait"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "那我們按下執行，跑跑看。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "run"
+						}
+					]
+				},
+				{
+					"say": "結果一直沒有東西出來，程式停在這裡。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "wait"
+						},
+						{
+							"act": "blink",
+							"target": "wait",
+							"until": "等你"
+						}
+					]
+				},
+				{
+					"say": "為什麼？因為它在等你輸入成績。",
+					"do": [
+						{
+							"act": "callout",
+							"target": "wait",
+							"text": "在等輸入",
+							"cue": "等你"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c2_p3",
+			"title": "跑跑看，卡住了",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"ro"
+						]
+					},
+					{
+						"stack": [
+							"set"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "可是輸出面板只能看，不能打字。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "ro"
+						}
+					]
+				},
+				{
+					"say": "所以我們改一個設定，讓程式在終端機跑，就能打字了。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "set"
+						},
+						{
+							"act": "erase",
+							"target": "ro",
+							"cue": "就能打字"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c2_p4",
+			"title": "跑跑看，卡住了",
+			"layout": {
+				"stack": [
+					"knot",
+					"stuck"
+				]
+			},
+			"beats": [
+				{
+					"say": "成績打完了，可是程式一直印，停不下來。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "knot"
+						},
+						{
+							"act": "blink",
+							"target": "knot",
+							"until": "無窮"
+						}
+					]
+				},
+				{
+					"say": "這就是卡在無窮迴圈裡了。",
+					"do": [
+						{
+							"act": "write",
+							"target": "stuck"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c2_p5",
+			"title": "跑跑看，卡住了",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"k1",
+							"k2"
+						]
+					},
+					{
+						"stack": [
+							"halt"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "先讓它停下來：點一下終端機，按 Ctrl 加 C。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "k1"
+						},
+						{
+							"act": "draw",
+							"target": "k2"
+						}
+					]
+				},
+				{
+					"say": "程式停了，我們再來找原因。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "halt"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c3_p1",
+			"title": "為什麼停不下來",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"q"
+						]
+					},
+					{
+						"stack": [
+							"look"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "為什麼會停不下來呢？",
+					"do": [
+						{
+							"act": "draw",
+							"target": "q"
+						}
+					]
+				},
+				{
+					"say": "把迴圈拿出來仔細看，每跑一圈，有沒有往結束靠近一步。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "look"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c3_p2",
+			"title": "為什麼停不下來",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"ai"
+						]
+					},
+					{
+						"stack": [
+							"idea",
+							"why"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "看不出來的話，可以問 AI 助手，請它給提示就好，不要直接給答案。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "ai"
+						}
+					]
+				},
+				{
+					"say": "照著提示一看，原來是算人數的變數忘了加一。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "idea"
+						},
+						{
+							"act": "write",
+							"target": "why"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c4_p1",
+			"title": "跑出來了，但對嗎",
+			"layout": {
+				"stack": [
+					"ok"
+				]
+			},
+			"beats": [
+				{
+					"say": "加上去再跑一次，程式正常結束，結果印出來了。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "ok"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c4_p2",
+			"title": "跑出來了，但對嗎",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"bad"
+						]
+					},
+					{
+						"stack": [
+							"careful"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "可是你看，60 分被判成不及格。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "bad"
+						},
+						{
+							"act": "callout",
+							"target": "bad",
+							"text": "60 分",
+							"tone": "warn",
+							"cue": "60 分"
+						}
+					]
+				},
+				{
+					"say": "剛好落在及格線上的分數，最容易出錯，要特別小心。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "careful"
+						},
+						{
+							"act": "blink",
+							"target": "careful"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c4_p3",
+			"title": "跑出來了，但對嗎",
+			"layout": {
+				"stack": [
+					"cmp",
+					"op"
+				]
+			},
+			"beats": [
+				{
+					"say": "把大於和大於等於放在一起比。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "cmp"
+						},
+						{
+							"act": "write",
+							"target": "op"
+						}
+					]
+				},
+				{
+					"say": "60 分要算及格，所以要用大於等於。",
+					"do": [
+						{
+							"act": "callout",
+							"target": "op",
+							"text": "60 算及格",
+							"tone": "ok",
+							"cue": "大於等於"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c5_p1",
+			"title": "交出去之前",
+			"layout": {
+				"stack": [
+					"list",
+					"cases"
+				]
+			},
+			"beats": [
+				{
+					"say": "交出去之前，逐項測一遍。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "list"
+						}
+					]
+				},
+				{
+					"say": "高分、低分、剛好 60，還有 0 分和 100 分，都要試。",
+					"do": [
+						{
+							"act": "write",
+							"target": "cases"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c5_p2",
+			"title": "交出去之前",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"time"
+						]
+					},
+					{
+						"stack": [
+							"back"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "全部都對了，看一下時間，離截止還來得及。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "time"
+						}
+					]
+				},
+				{
+					"say": "那就把檔案交回去，這份作業就完成了。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "back"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c6_p1",
+			"title": "聊聊：寫作業的時候",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"ear"
+						]
+					},
+					{
+						"stack": [
+							"snd"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "最後聊聊。很多人寫作業的時候，會戴耳機聽音樂。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "ear"
+						}
+					]
+				},
+				{
+					"say": "有聲音陪著，你覺得會比較專心嗎？",
+					"do": [
+						{
+							"act": "draw",
+							"target": "snd"
+						},
+						{
+							"act": "blink",
+							"target": "snd"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c6_p2",
+			"title": "聊聊：寫作業的時候",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"ph"
+						]
+					},
+					{
+						"stack": [
+							"like"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "可是手機一響，看個通知，順手按個讚。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "ph"
+						},
+						{
+							"act": "draw",
+							"target": "like"
+						}
+					]
+				},
+				{
+					"say": "回來的時候，常常就忘了寫到哪裡。",
+					"do": [
+						{
+							"act": "erase",
+							"target": "like"
+						},
+						{
+							"act": "erase",
+							"target": "ph",
+							"cue": "忘了"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c6_p3",
+			"title": "聊聊：寫作業的時候",
+			"layout": {
+				"row": [
+					{
+						"stack": [
+							"qt"
+						]
+					},
+					{
+						"stack": [
+							"talk"
+						]
+					}
+				]
+			},
+			"beats": [
+				{
+					"say": "有學長說過：卡住的時候，把問題講出來。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "qt"
+						}
+					]
+				},
+				{
+					"say": "對著自己講一遍，常常講到一半就想通了。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "talk"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "c6_p4",
+			"title": "聊聊：寫作業的時候",
+			"layout": {
+				"stack": [
+					"cost"
+				]
+			},
+			"beats": [
+				{
+					"say": "今天用到的工具都不用花錢，回家就能裝起來練習。",
+					"do": [
+						{
+							"act": "draw",
+							"target": "cost"
+						}
+					]
+				},
+				{
+					"say": "所以記得，作業寫完先測過，再交出去。",
+					"do": []
+				}
+			]
+		},
+		{
+			"id": "recap",
+			"title": "一支作業從寫到交出去",
+			"layout": {
+				"stack": [
+					"recap"
+				]
+			},
+			"beats": [
+				{
+					"say": "下次寫作業，就照這個順序走一遍。",
+					"do": [
+						{
+							"act": "show",
+							"target": "recap"
+						}
+					]
+				}
+			]
+		}
+	]
+}
