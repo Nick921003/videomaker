@@ -3,8 +3,8 @@
 	'use strict';
 	var IS = typeof module !== 'undefined' ? require('../../../components/icon/shapes.js') : g.IconShapes;
 	// 黑板 1080p 面板上的像素，對照 KIT.md 的字級
-	var SIZE = { s: 120, m: 180, l: 260 };
-	var WIDTH = { main: 6, detail: 4.5 };
+	var SIZE = { s: 180, m: 270, l: 390 };
+	var WIDTH = { main: 9, detail: 6.75 };
 	// 語氣 → 粉筆的文字色類（筆畫直接收語氣，文字要色類）
 	var CLS = { ink: 'cw', muted: 'cm', accent: 'cy', warn: 'cp', ok: 'cg', info: 'cb' };
 	// 鍵帽面板在 100 格內的位置（見 shapes.js 的 keycap）

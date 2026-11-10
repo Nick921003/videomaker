@@ -670,9 +670,9 @@ class TestChalk(unittest.TestCase):
 
 	def test_常數(self):
 		c = chalk_probe("consts")
-		self.assertEqual(c["SIZE"], {"s": 120, "m": 180, "l": 260})
-		self.assertEqual(c["STYLES"], {"headline": 60, "body": 46, "accent": 46, "code": 46, "small": 38})
-		self.assertEqual(c["MIN"], 30)
+		self.assertEqual(c["SIZE"], {"s": 180, "m": 270, "l": 390})
+		self.assertEqual(c["STYLES"], {"headline": 90, "body": 69, "accent": 69, "code": 69, "small": 57})
+		self.assertEqual(c["MIN"], 45)
 
 	def test_粉筆路徑在框內(self):
 		import re
@@ -685,7 +685,7 @@ class TestChalk(unittest.TestCase):
 				nums = [float(v) for v in re.findall(r"-?\d+(?:\.\d+)?", p["d"])]
 				for x, y in zip(nums[0::2], nums[1::2]):
 					self.assertTrue(b["x"] <= x <= b["x"] + b["w"] and b["y"] <= y <= b["y"] + b["h"], (name, x, y))
-				self.assertIn(p["w"], (6, 4.5), name)
+				self.assertIn(p["w"], (9, 6.75), name)
 				self.assertGreater(p["len"], 0, name)
 
 	def test_筆畫長度分配時間(self):
@@ -741,9 +741,9 @@ class TestChalk(unittest.TestCase):
 		self.assertIn(text, r["error"])
 
 	def test_note_縮字級(self):
-		r = chalk_probe("layout", text="粉筆" * 20, style="headline", maxW=600, maxH=130)
-		self.assertLess(r["size"], 60)
-		self.assertEqual((60 - r["size"]) % 4, 0)
+		r = chalk_probe("layout", text="粉筆" * 20, style="headline", maxW=900, maxH=200)
+		self.assertLess(r["size"], 90)
+		self.assertEqual((90 - r["size"]) % 6, 0)
 
 	def test_note_write用seq逐字(self):
 		obj = {"text": "請輸入成績", "style": "accent"}
@@ -882,6 +882,17 @@ class TestBoardChalk(unittest.TestCase):
 			for kind in ("center", "two-col", "other"):
 				self.assertEqual(board_probe("tpl", area=area, kind=kind), board_probe("printf_tpl", body=body, area=area, kind=kind), (area, kind))
 
+	def test_grid_置中頁用黑板自己的大格子(self):
+		# 置中頁比 printf 的格子大、仍在圖區內且置中；雙欄照 BoardTpl
+		for area in (PRINTF_AREA, {"P": "P", "x": 47, "y": 103, "w": 1745, "h": 667}):
+			g, t = board_probe("grid", area=area, kind="center"), board_probe("tpl", area=area, kind="center")
+			self.assertGreater(g["w"], t["w"])
+			self.assertGreater(g["h"], t["h"])
+			self.assertTrue(inside(g, area), g)
+			self.assertLessEqual(abs(g["cx"] - t["cx"]), 1)
+			self.assertLessEqual(abs(g["cy"] - t["cy"]), 1)
+			self.assertEqual(board_probe("grid", area=area, kind="two-col"), board_probe("tpl", area=area, kind="two-col"))
+
 	def test_place_置中(self):
 		tpl = {"P": "P", "x": 100, "y": 50, "w": 1200, "h": 800, "cx": 700, "cy": 450}
 		bd = {"template": "center", "objects": m_icons(3)}
@@ -892,7 +903,7 @@ class TestBoardChalk(unittest.TestCase):
 			self.assertLessEqual(abs(b["x"] + b["w"] / 2 - tpl["cx"]), 1, b)
 			self.assertEqual((b["w"], b["h"]), (180, 180))
 		for a, b in zip(boxes, boxes[1:]):
-			self.assertEqual(b["y"] - (a["y"] + a["h"]), 40)
+			self.assertEqual(b["y"] - (a["y"] + a["h"]), 60)
 		top, bottom = boxes[0]["y"] - tpl["y"], tpl["y"] + tpl["h"] - (boxes[-1]["y"] + boxes[-1]["h"])
 		self.assertLessEqual(abs(top - bottom), 1)
 
@@ -911,7 +922,7 @@ class TestBoardChalk(unittest.TestCase):
 		for oid in ("i0", "i1"):
 			self.assertTrue(inside(got[oid], tpl["left"]), got[oid])
 		self.assertTrue(inside(got["r0"], tpl["right"]), got["r0"])
-		self.assertEqual(got["i1"]["y"] - (got["i0"]["y"] + got["i0"]["h"]), 40)
+		self.assertEqual(got["i1"]["y"] - (got["i0"]["y"] + got["i0"]["h"]), 60)
 
 	def test_place_圖示少就放大(self):
 		# 黑板自己的風格：圖示佔不到圖區一半時放大（sizes 標 grow 的才放大，文字不放大）
@@ -927,7 +938,7 @@ class TestBoardChalk(unittest.TestCase):
 		got = board_probe("place", board={"template": "center", "objects": objs}, tpl=tpl, sizes={"i0": {"w": 180, "h": 180, "grow": True}, "n1": {"w": 400, "h": 60}})
 		self.assertEqual((got["n1"]["w"], got["n1"]["h"]), (400, 60))
 		self.assertGreater(got["i0"]["h"], 180)
-		self.assertEqual(got["n1"]["y"] - (got["i0"]["y"] + got["i0"]["h"]), 40)
+		self.assertEqual(got["n1"]["y"] - (got["i0"]["y"] + got["i0"]["h"]), 60)
 		# 雙欄：兩邊圖示放大到同一個大小
 		tpl2 = board_probe("tpl", area=PRINTF_AREA, kind="two-col")
 		objs = [{"type": "icon", "id": "a", "name": "check", "col": "left"}, {"type": "icon", "id": "b", "name": "check", "col": "right"},
@@ -988,6 +999,15 @@ class TestBoardChalk(unittest.TestCase):
 		stray["do"]["3"] = stray["do"].pop("1")
 		self.assertTrue(board_probe("checkSchedule", boards=[stray], story=st))
 
+	def test_mountAll_標註框放不下就收小圖示(self):
+		# 雙欄各一個圖示放到最大時，標註框四邊都沒位置；圖示要讓出空間，不能報放不下
+		st = mini_story()
+		objs = [{"type": "icon", "id": "a", "name": "play", "col": "left"}, {"type": "icon", "id": "b", "name": "hourglass", "col": "right"}]
+		bd = board_page(objs, [{"act": "draw", "target": "a"}, {"act": "draw", "target": "b"}, {"act": "callout", "target": "b", "text": "在等輸入"}])
+		bd["template"] = "two-col"
+		r = board_probe("mountAll", story=st, area=PRINTF_AREA, boards=[bd])
+		self.assertEqual(r["problems"], [])
+
 	def test_mountAll_照逐字時間畫(self):
 		st = mini_story()
 		objs = [{"type": "icon", "id": "i0", "name": "keyboard"}, {"type": "note", "id": "n1", "text": "請輸入成績"}]
@@ -998,7 +1018,7 @@ class TestBoardChalk(unittest.TestCase):
 		self.assertEqual(r["render"], "function")
 		span = lambda li, text: [w[1] for w in st["lines"][li - 1]["words"]][st["lines"][li - 1]["text"].index(text)]
 		strokes = [e for e in r["log"] if e["kind"] == "S"]
-		icon = [s for s in strokes if s["w"] in (6, 4.5)]
+		icon = [s for s in strokes if s["w"] in (9, 6.75)]
 		# 沒有 cue 的 draw 從開口前 lead 秒起畫；在那之前什麼都不出現
 		self.assertAlmostEqual(min(e["t"] for e in strokes), 0.5)
 		self.assertAlmostEqual(icon[0]["t"], 0.5)

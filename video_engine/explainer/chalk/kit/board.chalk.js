@@ -9,23 +9,27 @@
 	var CN = node ? require('./note.chalk.js') : g.ChalkNote;
 	var CO = node ? require('../../../components/callout/callout.js') : g.Callout;
 
-	var GAP = 40, ROW_GAP = 80, MIN_SCALE = 0.6;
-	// 圖示放大：整組最多佔格子寬 80%、高 70%，單一圖示最多放大到 1.85 倍
-	var FILL_W = 0.8, FILL_H = 0.7, GROW_MAX = 1.85;
+	var GAP = 60, ROW_GAP = 120, MIN_SCALE = 0.6;
+	// 圖示放大：整組最多佔格子寬高的 90%，單一圖示最多放大到 1.85 倍
+	var FILL_W = 0.9, FILL_H = 0.9, GROW_MAX = 1.85;
+	// 置中頁用黑板自己的大格子（圖區的 90%×96%）；BoardTpl 的 72%×86% 是 printf 片定稿的數值，不動它
+	var CENTER_W = 0.9, CENTER_H = 0.96;
+	// 標註框放不下時，圖示放大倍率每次收小成 0.85 倍再試
+	var GROW_BACK = 0.85;
 	// 黑板會畫的動作；其他動作（arrow、focus…）還沒有粉筆畫法，要報出來，不能安靜略過
 	var ACTS = { icon: { draw: 1, show: 1, blink: 1, erase: 1 }, note: { write: 1, show: 1, erase: 1 } };
 	var MARKS = { circle: 1, underline: 1 };
 	var CLS = { ink: 'cw', muted: 'cm', accent: 'cy', warn: 'cp', ok: 'cg', info: 'cb' };
-	var CALLOUT_SIZE = 38, CALLOUT_W = 3, CALLOUT_CPS = 12, CALLOUT_FADE = 0.3;
-	// 圈與底線的粗細、留白比照 printf 片手寫的 ring／underline
-	var MARK_W = 4.5, RING_PAD = 22, RING_TURN = 1.12, RING_GROW = 0.05, UNDER_GAP = 12, UNDER_AMP = 5, UNDER_PER = 30, MARK_FADE = 0.4;
+	var CALLOUT_SIZE = 57, CALLOUT_W = 4.5, CALLOUT_CPS = 12, CALLOUT_FADE = 0.3;
+	// 圈與底線的粗細、留白：printf 片手寫的 ring／underline 乘 1.5，跟放大後的圖示與字相稱
+	var MARK_W = 6.75, RING_PAD = 33, RING_TURN = 1.12, RING_GROW = 0.05, UNDER_GAP = 18, UNDER_AMP = 7.5, UNDER_PER = 45, MARK_FADE = 0.4;
 
 	var where = function (bd) { return '第 ' + bd.lines.join('、') + ' 句的黑板頁'; };
 
-	// 物件由上而下排（間距 40），置中頁寫 dir: row 時左右並排（間距 80）。
+	// 物件由上而下排（間距 60），置中頁寫 dir: row 時左右並排（間距 120）。
 	// 圖示少的頁先把圖示放大（黑板自己的風格：粉筆畫要大才看得清楚，文字不跟著放大）；
 	// 整組太高或太寬就把物件等比縮小，縮到 0.6 還放不下就報錯
-	function place(board, tpl, sizeOf) {
+	function place(board, tpl, sizeOf, growMax) {
 		var cols, row = board.dir === 'row';
 		if (board.dir != null && (!row || board.template !== 'center')) throw new Error(where(board) + '：dir 只能在置中頁寫 row');
 		if (board.template === 'center') cols = [{ box: tpl, objs: board.objects }];
@@ -42,7 +46,7 @@
 		var fill = { w: FILL_W, h: FILL_H };
 		var sum = function (list, key) { return list.reduce(function (n, s) { return n + s[key]; }, 0); };
 		var most = function (list, key) { return Math.max.apply(null, list.map(function (s) { return s[key]; })); };
-		var g = GROW_MAX;
+		var g = growMax == null ? GROW_MAX : growMax;
 		cols.forEach(function (c) {
 			c.sizes = c.objs.map(function (o) { return sizeOf(o, c.box); });
 			var big = c.sizes.filter(function (s) { return s.grow; }), rest = c.sizes.filter(function (s) { return !s.grow; });
@@ -70,6 +74,15 @@
 			});
 		});
 		return out;
+	}
+
+	// 黑板頁的格子：雙欄照 BoardTpl，置中頁放寬成黑板自己的大格子
+	function grid(A, kind) {
+		var t = BT.tpl(A, kind);
+		if (kind !== 'center' || !t) return t;
+		var w = Math.round(A.w * CENTER_W), h = Math.round(A.h * CENTER_H);
+		var x = Math.round(A.x + (A.w - w) / 2), y = Math.round(A.y + (A.h - h) / 2);
+		return { P: A.P, x: x, y: y, w: w, h: h, cx: Math.round(x + w / 2), cy: Math.round(y + h / 2) };
 	}
 
 	// 寫字的寬度用套件的估算；高度＝行數 × 字級 × 行距。往上取整，縮放前排進去的框不會比字窄
@@ -151,9 +164,16 @@
 		var first = bd.lines[0], last = bd.lines[bd.lines.length - 1], here = where(bd);
 		var A = api.area(first);
 		if (!A) throw new Error(here + '：這頁不在粉筆區（找不到圖區）');
-		var tpl = BT.tpl(A, bd.template);
-		var boxes = place(bd, tpl, function (o, box) { return sizeOf(api, o, box); });
+		var tpl = grid(A, bd.template);
 		var acts = timed(api, bd), end = api.lineEnd(last);
+		// 圖示放到最大時標註框可能四邊都沒位置：先把放大倍率一步步收小讓出空間，收到不放大還放不下才報錯
+		var boxes, plan, grow = GROW_MAX;
+		for (;;) {
+			boxes = place(bd, tpl, function (o, box) { return sizeOf(api, o, box); }, grow);
+			plan = callouts(api, A, boxes, acts);
+			if (!plan.fails.length || grow <= 1) break;
+			grow = Math.max(1, grow * GROW_BACK);
+		}
 		bd.objects.forEach(function (o) {
 			if (o.caption) report(here + '：' + o.id + ' 的 caption 黑板還不畫');
 			var own = acts.filter(function (a) { return a.obj === o.id && a.act !== 'callout' && !MARKS[a.act]; });
@@ -167,19 +187,27 @@
 		acts.forEach(function (a) {
 			if (MARKS[a.act]) mark(api, tpl.P, A, boxes[a.obj], a, acts);
 		});
-		var taken = [];
+		plan.fails.forEach(function (m) { report(here + '：' + m); });
+		plan.ok.forEach(function (c) {
+			callout(api, tpl.P, c.p, c.size, c.a, (c.a.args && c.a.args.tone) || 'ink', CO.endTime(acts, c.i, c.a.untilT, end));
+		});
+	}
+
+	// 只算標註框的位置，不畫：回傳放得下的（ok）與放不下的訊息（fails）
+	function callouts(api, A, boxes, acts) {
+		var taken = [], ok = [], fails = [];
 		acts.forEach(function (a, i) {
 			if (a.act !== 'callout') return;
 			var anchor = boxes[a.target];
-			if (!anchor) { report(here + '：callout 指到 ' + a.target + '，黑板量不到這個位置'); return; }
-			var tone = (a.args && a.args.tone) || 'ink';
+			if (!anchor) { fails.push('callout 指到 ' + a.target + '，黑板量不到這個位置'); return; }
 			var size = CO.size(a.args.text, function (s, st) { return { w: api.K.wlen(s) * st.size }; }, { size: CALLOUT_SIZE });
 			var obstacles = Object.keys(boxes).filter(function (id) { return id !== a.target; }).map(function (id) { return boxes[id]; }).concat(taken);
 			var p = CO.place(anchor, size, A, obstacles);
-			if (!p) { report(here + '：' + a.obj + ' 的 callout 四邊都放不下：' + a.args.text); return; }
+			if (!p) { fails.push(a.obj + ' 的 callout 四邊都放不下：' + a.args.text); return; }
 			taken.push(p.box);
-			callout(api, tpl.P, p, size, a, tone, CO.endTime(acts, i, a.untilT, end));
+			ok.push({ a: a, i: i, p: p, size: size });
 		});
+		return { ok: ok, fails: fails };
 	}
 
 	// 一頁出錯（放不下、排不到時間）收進 problems，其他頁照畫；starter 把它掛成 window.__boardProblems 給 board_check.py 讀
@@ -215,6 +243,6 @@
 		return out;
 	}
 
-	var X = { GAP: GAP, MIN_SCALE: MIN_SCALE, place: place, mountAll: mountAll, checkSchedule: checkSchedule };
+	var X = { GAP: GAP, MIN_SCALE: MIN_SCALE, grid: grid, place: place, mountAll: mountAll, checkSchedule: checkSchedule };
 	if (typeof module !== 'undefined') module.exports = X; else g.ChalkBoard = X;
 })(this);

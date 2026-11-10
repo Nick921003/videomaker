@@ -32,6 +32,8 @@ function fake(st, area, log) {
 let out;
 if (cmd === 'tpl') {
 	out = require(path.join(KIT, 'board_tpl.js')).tpl(q.area, q.kind);
+} else if (cmd === 'grid') {
+	out = require(path.join(KIT, 'board.chalk.js')).grid(q.area, q.kind);
 } else if (cmd === 'printf_tpl') {
 	// printf 片 index.html 原文裡的 api.tpl，換一個只會回 area 的假 API 來跑
 	const f = new Function('API', 'return function (li, kind) {' + q.body + '};')({ area: () => q.area });

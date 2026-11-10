@@ -1,8 +1,8 @@
 // 黑板文字：在框內斷行、放不下就縮字級，再放不下明確報錯；寫出來走套件的 seq 逐字寫。
 (function (g) {
 	'use strict';
-	var STYLES = { headline: 60, body: 46, accent: 46, code: 46, small: 38 };
-	var MIN = 30, STEP = 4, LEADING = 1.3, CPS = 8;
+	var STYLES = { headline: 90, body: 69, accent: 69, code: 69, small: 57 };
+	var MIN = 45, STEP = 6, LEADING = 1.3, CPS = 8;
 	var CLS = { ink: 'cw', muted: 'cm', accent: 'cy', warn: 'cp', ok: 'cg', info: 'cb' };
 
 	var wide = function (c) { return c.charCodeAt(0) > 255; };
