@@ -9,7 +9,9 @@
 	var CN = node ? require('./note.chalk.js') : g.ChalkNote;
 	var CO = node ? require('../../../components/callout/callout.js') : g.Callout;
 
-	var GAP = 40, MIN_SCALE = 0.6;
+	var GAP = 40, ROW_GAP = 80, MIN_SCALE = 0.6;
+	// 圖示放大：整組最多佔格子寬 80%、高 70%，單一圖示最多放大到 1.85 倍
+	var FILL_W = 0.8, FILL_H = 0.7, GROW_MAX = 1.85;
 	// 黑板會畫的動作；其他動作（arrow、focus…）還沒有粉筆畫法，要報出來，不能安靜略過
 	var ACTS = { icon: { draw: 1, show: 1, blink: 1, erase: 1 }, note: { write: 1, show: 1, erase: 1 } };
 	var MARKS = { circle: 1, underline: 1 };
@@ -20,9 +22,12 @@
 
 	var where = function (bd) { return '第 ' + bd.lines.join('、') + ' 句的黑板頁'; };
 
-	// 物件由上而下排，間距固定 40；整組太高（或太寬）就把物件等比縮小，縮到 0.6 還放不下就報錯
+	// 物件由上而下排（間距 40），置中頁寫 dir: row 時左右並排（間距 80）。
+	// 圖示少的頁先把圖示放大（黑板自己的風格：粉筆畫要大才看得清楚，文字不跟著放大）；
+	// 整組太高或太寬就把物件等比縮小，縮到 0.6 還放不下就報錯
 	function place(board, tpl, sizeOf) {
-		var cols;
+		var cols, row = board.dir === 'row';
+		if (board.dir != null && (!row || board.template !== 'center')) throw new Error(where(board) + '：dir 只能在置中頁寫 row');
 		if (board.template === 'center') cols = [{ box: tpl, objs: board.objects }];
 		else if (board.template === 'two-col') {
 			cols = ['left', 'right'].map(function (side) {
@@ -32,22 +37,36 @@
 				if (o.col !== 'left' && o.col !== 'right') throw new Error(where(board) + '：雙欄頁的 ' + o.id + ' 沒寫 col');
 			});
 		} else throw new Error(where(board) + '：黑板還不會排 ' + board.template + ' 模板');
-		var k = 1;
+		// 主軸＝排列方向：直排是高、橫排是寬
+		var main = row ? 'w' : 'h', cross = row ? 'h' : 'w', gap = row ? ROW_GAP : GAP;
+		var fill = { w: FILL_W, h: FILL_H };
+		var sum = function (list, key) { return list.reduce(function (n, s) { return n + s[key]; }, 0); };
+		var most = function (list, key) { return Math.max.apply(null, list.map(function (s) { return s[key]; })); };
+		var g = GROW_MAX;
 		cols.forEach(function (c) {
 			c.sizes = c.objs.map(function (o) { return sizeOf(o, c.box); });
+			var big = c.sizes.filter(function (s) { return s.grow; }), rest = c.sizes.filter(function (s) { return !s.grow; });
+			if (!big.length) return;
+			g = Math.min(g, (c.box[main] * fill[main] - gap * (c.sizes.length - 1) - sum(rest, main)) / sum(big, main), c.box[cross] * fill[cross] / most(big, cross));
+		});
+		g = Math.max(1, g);
+		var k = 1;
+		cols.forEach(function (c) {
+			// 整頁用同一個放大倍率，左右兩欄的圖示才一樣大
+			c.sizes = c.sizes.map(function (s) { return s.grow ? { w: Math.floor(s.w * g + 1e-6), h: Math.floor(s.h * g + 1e-6) } : s; });
 			if (!c.objs.length) return;
-			var sumH = c.sizes.reduce(function (n, s) { return n + s.h; }, 0), maxW = Math.max.apply(null, c.sizes.map(function (s) { return s.w; }));
-			k = Math.min(k, (c.box.h - GAP * (c.objs.length - 1)) / sumH, c.box.w / maxW);
+			k = Math.min(k, (c.box[main] - gap * (c.objs.length - 1)) / sum(c.sizes, main), c.box[cross] / most(c.sizes, cross));
 		});
 		if (k < MIN_SCALE) throw new Error(where(board) + '放不下：要縮到 ' + Math.max(0, k).toFixed(2) + ' 倍（下限 ' + MIN_SCALE + '），請減少物件或改小尺寸');
 		var out = {};
 		cols.forEach(function (c) {
 			var sz = c.sizes.map(function (s) { return { w: Math.floor(s.w * k + 1e-6), h: Math.floor(s.h * k + 1e-6) }; });
-			var total = sz.reduce(function (n, s) { return n + s.h; }, 0) + GAP * Math.max(0, sz.length - 1);
-			var y = c.box.y + Math.floor((c.box.h - total) / 2);
-			c.objs.forEach(function (o, i) {
-				out[o.id] = { x: c.box.x + Math.floor((c.box.w - sz[i].w) / 2), y: y, w: sz[i].w, h: sz[i].h };
-				y += sz[i].h + GAP;
+			var total = sum(sz, main) + gap * Math.max(0, sz.length - 1);
+			var at = c.box[row ? 'x' : 'y'] + Math.floor((c.box[main] - total) / 2);
+			c.objs.forEach(function (o, n) {
+				var mid = c.box[row ? 'y' : 'x'] + Math.floor((c.box[cross] - sz[n][cross]) / 2);
+				out[o.id] = row ? { x: at, y: mid, w: sz[n].w, h: sz[n].h } : { x: mid, y: at, w: sz[n].w, h: sz[n].h };
+				at += sz[n][main] + gap;
 			});
 		});
 		return out;
@@ -55,7 +74,7 @@
 
 	// 寫字的寬度用套件的估算；高度＝行數 × 字級 × 行距。往上取整，縮放前排進去的框不會比字窄
 	function sizeOf(api, o, box) {
-		if (o.type === 'icon') { var s = CI.SIZE[o.size || 'm']; return { w: s, h: s }; }
+		if (o.type === 'icon') { var s = CI.sizeOf(o); return { w: s.w, h: s.h, grow: true }; }
 		if (o.type === 'note') {
 			var measure = function (s, size) { return api.K.wlen(s) * size; };
 			var lay = CN.layout(o.text, o.style || 'body', box.w, box.h, measure);

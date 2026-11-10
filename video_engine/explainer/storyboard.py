@@ -66,6 +66,9 @@ def screen_actions(pg, first):
 def board_layout(pg):
 	"""置中／雙欄頁的版面文法；超過就是教材寫太滿，明確報錯"""
 	objs = pg["objects"]
+	# dir: row＝置中頁的物件左右並排（預設由上往下）；雙欄頁本身就是左右兩欄，不再開橫排
+	if pg.get("dir") is not None and (pg["dir"] != "row" or pg["template"] != "center"):
+		raise ValueError("dir 只能在置中頁寫 row（這頁是 %s、dir=%r）" % (pg["template"], pg["dir"]))
 	for o in objs:
 		if o.get("type") not in BOARD_TYPES:
 			raise ValueError("黑板還沒有 %s 的粉筆皮膚（%s）：目前只有 %s" % (o.get("type"), o.get("id"), "、".join(BOARD_TYPES)))
@@ -73,7 +76,7 @@ def board_layout(pg):
 	if pg["template"] == "center":
 		if len(objs) > CENTER_MAX:
 			raise ValueError("置中頁最多 %d 個物件，這頁有 %d 個：%s" % (CENTER_MAX, len(objs), ids))
-		return {"stack": ids}
+		return {"row" if pg.get("dir") == "row" else "stack": ids}
 	cols = {"left": [], "right": []}
 	for o in objs:
 		if o.get("col") not in cols:
@@ -144,7 +147,7 @@ def build(sb):
 				pages.append(nums)
 				if pg.get("objects") is not None:
 					objs, do = board_actions(pg, nums[0])
-					boards.append({"lines": nums, "template": pg["template"], "objects": objs, "do": do})
+					boards.append({"lines": nums, "template": pg["template"], "objects": objs, "do": do} | ({"dir": pg["dir"]} if pg.get("dir") else {}))
 			review.append("")
 		md += ["> " + x for x in ch.get("notes", [])]
 		md.append("")

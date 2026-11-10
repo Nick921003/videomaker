@@ -10,7 +10,7 @@
 
 ## 形狀
 
-`IconShapes.strokes(name, opts) → {strokes: [{pts, w, part, arc}], text?}`。座標在 100×100 格內，四周留邊 8，只畫線不填色；陣列順序就是筆順。`keycap` 必須帶 `opts.text`。
+`IconShapes.strokes(name, opts) → {strokes: [{pts, w, part, arc}], text?}`。座標在 100×100 格內，四周留邊 8，只畫線不填色；陣列順序就是筆順。`keycap` 必須帶 `opts.text`。`text` 寫組合鍵（`Ctrl+C`）時回傳 `{strokes, texts: [{text, cx}], w}`：鍵帽往右排、中間加號，格子高仍是 100、寬是 `w`（每多一顆加 130），各皮膚照 `w` 把圖示變寬。
 
 ## 匯出單張圖
 

@@ -48,8 +48,10 @@ node video_engine/explainer/chalk/screen_check.js <片子>             # 電腦�
 ## 黑板頁怎麼畫（`ChalkBoard`）
 
 - 格子：`BoardTpl.tpl(api.area(第一句), template)`，數值照抄 printf 片的 `api.tpl`。
-- 置中：物件由上而下、間距 40，整組在格子裡置中；雙欄：照 `col` 分左右，兩欄各自置中。整組太高或太寬就等比縮小物件（間距不縮），
-  縮到 0.6 還放不下就報錯。
+- 置中：物件由上而下、間距 40，整組在格子裡置中；分鏡的頁寫 `"dir": "row"` 就改成左右並排（間距 80，只有置中頁可以）。
+  雙欄：照 `col` 分左右，兩欄各自置中。
+- 圖示少的頁會把圖示放大（黑板自己的風格，手帳不跟）：整組最多佔格子寬 80%、高 70%，最多 1.85 倍，整頁同一個倍率；文字不放大。
+  整組太高或太寬就等比縮小物件（間距不縮），縮到 0.6 還放不下就報錯。
 - 時間：`ChalkVSCode.schedule`（有 cue 從那幾個字開口起跑，沒有的從開口前 lead 開始畫）；`until` 類動作畫到 until 那幾個字開口，
   沒寫就到這頁最後一句講完。物件在第一個 `draw`／`show`／`write` 之前不出現。
 - 會畫的動作：圖示 `draw` `show` `blink` `erase`、文字 `write` `show` `erase`、`callout`（圖示旁的標註框）、`circle`／`underline`

@@ -137,6 +137,24 @@ class TestBoardPage(unittest.TestCase):
 		bd = json.loads(build(board_sample("two-col", [icon(0, col="left"), icon(1, col="right")], do=[{"act": "draw", "target": "i0"}]))["objects.json"])
 		self.assertEqual(bd[0]["template"], "two-col")
 
+	def test_置中橫排(self):
+		sb = board_sample("center", [icon(0), icon(1)], do=[{"act": "draw", "target": "i0"}])
+		sb["chapters"][0]["pages"][0]["dir"] = "row"
+		bd = json.loads(build(sb)["objects.json"])
+		self.assertEqual(bd[0]["dir"], "row")
+		# 沒寫 dir 的頁不多出欄位（舊產物不變）
+		self.assertNotIn("dir", json.loads(build(board_sample())["objects.json"])[0])
+
+	def test_橫排只准置中頁且只准row(self):
+		sb = board_sample("two-col", [icon(0, col="left"), icon(1, col="right")], do=[])
+		sb["chapters"][0]["pages"][0]["dir"] = "row"
+		with self.assertRaisesRegex(ValueError, "dir"):
+			build(sb)
+		sb = board_sample("center", [icon(0)], do=[])
+		sb["chapters"][0]["pages"][0]["dir"] = "diagonal"
+		with self.assertRaisesRegex(ValueError, "dir"):
+			build(sb)
+
 	def test_黑板沒有粉筆皮膚的元件(self):
 		for t in ("list", "foo"):
 			with self.assertRaisesRegex(ValueError, t):

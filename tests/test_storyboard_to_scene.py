@@ -64,6 +64,13 @@ class TestToScene(unittest.TestCase):
 		self.assertEqual(objs[sc["scenes"][3]["layout"]["stack"][0]]["rows"], ["小心 | 先停", "打勾 | 完成"])
 		BC.Compiler(sc, None, BC.load_catalog()).run()
 
+	def test_置中橫排變成row(self):
+		sb = sb3()
+		pg = sb["chapters"][0]["pages"][0]
+		pg["objects"].append({"type": "icon", "id": "ok2", "name": "check"})
+		pg["dir"] = "row"
+		self.assertEqual(to_scene(sb)["scenes"][0]["layout"], {"row": ["warn", "ok2"]})
+
 	def test_同一份分鏡兩邊都驗過(self):
 		sb = sb3()
 		out = build(sb)

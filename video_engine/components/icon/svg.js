@@ -20,12 +20,16 @@
 			var pts = s.pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' ');
 			return '<polyline points="' + pts + '"/>';
 		}).join('');
-		if (shape.text) {
-			var size = Math.min(FACE.h * 0.6, FACE.w * 0.84 / em(shape.text));
-			body += '<text x="' + FACE.cx + '" y="' + FACE.cy + '" font-size="' + Math.round(size * 100) / 100 +
-				'" text-anchor="middle" dominant-baseline="central" stroke="none" fill="' + esc(color) + '">' + esc(shape.text) + '</text>';
+		// 組合鍵（Ctrl+C）：格子比 100 寬，每顆鍵帽各一個字，字級取最長那顆的
+		var texts = shape.texts || (shape.text ? [{ text: shape.text, cx: FACE.cx }] : []), gw = shape.w || 100;
+		if (texts.length) {
+			var size = Math.min(FACE.h * 0.6, FACE.w * 0.84 / Math.max.apply(null, texts.map(function (x) { return em(x.text); })));
+			texts.forEach(function (x) {
+				body += '<text x="' + x.cx + '" y="' + FACE.cy + '" font-size="' + Math.round(size * 100) / 100 +
+					'" text-anchor="middle" dominant-baseline="central" stroke="none" fill="' + esc(color) + '">' + esc(x.text) + '</text>';
+			});
 		}
-		return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="' + px + '" height="' + px +
+		return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + gw + ' 100" width="' + Math.round(px * gw / 100) + '" height="' + px +
 			'" fill="none" stroke="' + esc(color) + '" stroke-width="' + STROKE + '" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
 	}
 

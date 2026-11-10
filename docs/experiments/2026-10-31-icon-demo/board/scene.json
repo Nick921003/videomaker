@@ -72,15 +72,9 @@
 		},
 		{
 			"type": "icon",
-			"id": "k1",
+			"id": "keys",
 			"name": "快捷鍵",
-			"text": "Ctrl"
-		},
-		{
-			"type": "icon",
-			"id": "k2",
-			"name": "keycap",
-			"text": "C"
+			"text": "Ctrl+C"
 		},
 		{
 			"type": "icon",
@@ -216,7 +210,7 @@
 			"id": "c1_p1",
 			"title": "拿到作業，先想再寫",
 			"layout": {
-				"stack": [
+				"row": [
 					"who",
 					"doc"
 				]
@@ -483,8 +477,7 @@
 				"row": [
 					{
 						"stack": [
-							"k1",
-							"k2"
+							"keys"
 						]
 					},
 					{
@@ -500,11 +493,7 @@
 					"do": [
 						{
 							"act": "draw",
-							"target": "k1"
-						},
-						{
-							"act": "draw",
-							"target": "k2"
+							"target": "keys"
 						}
 					]
 				},

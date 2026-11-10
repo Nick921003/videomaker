@@ -169,7 +169,21 @@ class TestShapes(unittest.TestCase):
 			self.assertEqual(icon_probe("strokes", name=n, opts=o), icon_probe("strokes", name=n, opts=o), n)
 
 	def test_keycap_帶字(self):
-		self.assertEqual(icon_probe("strokes", name="keycap", opts={"text": "Ctrl"})["text"], "Ctrl")
+		one = icon_probe("strokes", name="keycap", opts={"text": "Ctrl"})
+		self.assertEqual(one["text"], "Ctrl")
+		self.assertNotIn("w", one)
+		# 組合鍵：每顆鍵帽一組筆畫、中間一個加號，整體比 100 寬；單顆的筆畫原封不動排在最前面
+		combo = icon_probe("strokes", name="keycap", opts={"text": "Ctrl+Alt+M"})
+		self.assertEqual([t["text"] for t in combo["texts"]], ["Ctrl", "Alt", "M"])
+		self.assertNotIn("text", combo)
+		self.assertEqual(len(combo["strokes"]), 3 * len(one["strokes"]) + 2 * 2)
+		self.assertEqual(combo["strokes"][:len(one["strokes"])], one["strokes"])
+		xs = [p[0] for s in combo["strokes"] for p in s["pts"]]
+		self.assertTrue(0 <= min(xs) and max(xs) <= combo["w"] and combo["w"] > 300, (min(xs), max(xs), combo["w"]))
+		self.assertEqual([t["cx"] for t in combo["texts"]], sorted(t["cx"] for t in combo["texts"]))
+		for bad in ("Ctrl+", "+C", "A++B"):
+			with self.assertRaises(AssertionError):
+				icon_probe("strokes", name="keycap", opts={"text": bad})
 		for bad in (None, {}, {"text": ""}):
 			with self.assertRaises(AssertionError):
 				icon_probe("strokes", name="keycap", opts=bad)
@@ -898,6 +912,62 @@ class TestBoardChalk(unittest.TestCase):
 			self.assertTrue(inside(got[oid], tpl["left"]), got[oid])
 		self.assertTrue(inside(got["r0"], tpl["right"]), got["r0"])
 		self.assertEqual(got["i1"]["y"] - (got["i0"]["y"] + got["i0"]["h"]), 40)
+
+	def test_place_圖示少就放大(self):
+		# 黑板自己的風格：圖示佔不到圖區一半時放大（sizes 標 grow 的才放大，文字不放大）
+		tpl = board_probe("tpl", area=PRINTF_AREA, kind="center")
+		one = board_probe("place", board={"template": "center", "objects": m_icons(1)}, tpl=tpl, sizes={"i0": {"w": 180, "h": 180, "grow": True}})["i0"]
+		self.assertEqual(one["w"], one["h"])
+		self.assertGreaterEqual(one["h"], 300)
+		self.assertLessEqual(one["h"], tpl["h"] * 0.7)
+		self.assertTrue(inside(one, tpl), one)
+		self.assertLessEqual(abs(one["x"] + one["w"] / 2 - tpl["cx"]), 1)
+		# 旁邊有文字時文字不放大，圖示仍比原本大
+		objs = m_icons(1) + [{"type": "note", "id": "n1", "text": "字"}]
+		got = board_probe("place", board={"template": "center", "objects": objs}, tpl=tpl, sizes={"i0": {"w": 180, "h": 180, "grow": True}, "n1": {"w": 400, "h": 60}})
+		self.assertEqual((got["n1"]["w"], got["n1"]["h"]), (400, 60))
+		self.assertGreater(got["i0"]["h"], 180)
+		self.assertEqual(got["n1"]["y"] - (got["i0"]["y"] + got["i0"]["h"]), 40)
+		# 雙欄：兩邊圖示放大到同一個大小
+		tpl2 = board_probe("tpl", area=PRINTF_AREA, kind="two-col")
+		objs = [{"type": "icon", "id": "a", "name": "check", "col": "left"}, {"type": "icon", "id": "b", "name": "check", "col": "right"},
+			{"type": "note", "id": "n", "text": "字", "col": "right"}]
+		got = board_probe("place", board={"template": "two-col", "objects": objs}, tpl=tpl2,
+			sizes={"a": {"w": 180, "h": 180, "grow": True}, "b": {"w": 180, "h": 180, "grow": True}, "n": {"w": 300, "h": 60}})
+		self.assertEqual(got["a"]["h"], got["b"]["h"])
+		self.assertGreater(got["a"]["h"], 180)
+		self.assertTrue(inside(got["a"], tpl2["left"]) and inside(got["b"], tpl2["right"]) and inside(got["n"], tpl2["right"]), got)
+
+	def test_place_置中橫排(self):
+		tpl = board_probe("tpl", area=PRINTF_AREA, kind="center")
+		bd = {"template": "center", "dir": "row", "objects": m_icons(2)}
+		got = board_probe("place", board=bd, tpl=tpl, sizes={"i%d" % k: {"w": 180, "h": 180, "grow": True} for k in range(2)})
+		a, b = got["i0"], got["i1"]
+		self.assertEqual(a["y"], b["y"])
+		self.assertGreater(b["x"], a["x"] + a["w"])
+		self.assertTrue(inside(a, tpl) and inside(b, tpl), got)
+		# 整組左右置中
+		self.assertLessEqual(abs((a["x"] + b["x"] + b["w"]) / 2 - tpl["cx"]), 1)
+		self.assertLessEqual(abs(a["y"] + a["h"] / 2 - tpl["cy"]), 1)
+		bad = board_probe("place", board={"template": "two-col", "dir": "row", "objects": m_icons(1, "left")}, tpl=board_probe("tpl", area=PRINTF_AREA, kind="two-col"), sizes={"i0": {"w": 180, "h": 180}})
+		self.assertIn("error", bad)
+
+	def test_mountAll_組合鍵橫排(self):
+		import re
+		st = mini_story()
+		bd = board_page([{"type": "icon", "id": "k", "name": "keycap", "text": "Ctrl+C"}], [{"act": "draw", "target": "k"}])
+		r = board_probe("mountAll", story=st, area=PRINTF_AREA, boards=[bd])
+		self.assertEqual(r["problems"], [])
+		texts = [e for e in r["log"] if e["kind"] == "T"]
+		self.assertEqual([t["segs"][0][0] for t in texts], ["Ctrl", "C"])
+		# 兩顆鍵帽左右排：字同高、C 在 Ctrl 右邊
+		self.assertAlmostEqual(texts[0]["y"] + texts[0]["size"] * 0.65, texts[1]["y"] + texts[1]["size"] * 0.65, delta=1)
+		self.assertGreater(texts[1]["x"], texts[0]["x"])
+		xs = [float(x) for s in r["log"] if s["kind"] == "S" for x, _ in re.findall(r"(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)", s["d"])]
+		ys = [float(y) for s in r["log"] if s["kind"] == "S" for _, y in re.findall(r"(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)", s["d"])]
+		self.assertGreater(max(xs) - min(xs), 1.8 * (max(ys) - min(ys)))
+		a = PRINTF_AREA
+		self.assertTrue(a["x"] <= min(xs) and max(xs) <= a["x"] + a["w"] and a["y"] <= min(ys) and max(ys) <= a["y"] + a["h"])
 
 	def test_place_放不下要報錯(self):
 		tpl = {"P": "P", "x": 0, "y": 0, "w": 1200, "h": 300, "cx": 600, "cy": 150}

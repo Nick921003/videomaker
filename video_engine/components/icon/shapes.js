@@ -217,9 +217,28 @@
 		var out = { strokes: DRAW[name]() };
 		if (name === 'keycap') {
 			if (!opts || typeof opts.text !== 'string' || !opts.text) throw new Error('keycap 必須帶 opts.text（非空字串）');
-			out.text = opts.text;
+			var keys = opts.text === '+' ? ['+'] : opts.text.split('+');
+			if (keys.length === 1) { out.text = opts.text; return out; }
+			return combo(keys, out.strokes);
 		}
 		return out;
+	}
+	// 組合鍵（Ctrl+C）：鍵帽一顆顆往右排，中間一個加號；格子高仍是 100、寬放在 w，字各自記中心 x
+	var KEY_STEP = 130, PLUS_HALF = 9;
+	function combo(keys, cap) {
+		if (keys.some(function (k) { return !k; })) throw new Error('keycap 的組合鍵寫法是 Ctrl+C：加號兩邊都要有字');
+		var all = [], texts = [];
+		var shift = function (pts, dx) { return pts.map(function (p) { return [p[0] + dx, p[1]]; }); };
+		keys.forEach(function (key, i) {
+			var dx = i * KEY_STEP;
+			if (i) {
+				var px = dx - (KEY_STEP - 100) / 2;
+				all.push(D('plus-h-' + i, line(px - PLUS_HALF, 50, px + PLUS_HALF, 50)), D('plus-v-' + i, line(px, 50 - PLUS_HALF, px, 50 + PLUS_HALF)));
+			}
+			cap.forEach(function (s) { all.push({ pts: shift(s.pts, dx), w: s.w, arc: s.arc, part: i ? s.part + '-' + (i + 1) : s.part }); });
+			texts.push({ text: key, cx: dx + 50 });
+		});
+		return { strokes: all, texts: texts, w: (keys.length - 1) * KEY_STEP + 100 };
 	}
 	// keycap 的筆畫與字無關，沒給字也能數筆數
 	function count(name, opts) {

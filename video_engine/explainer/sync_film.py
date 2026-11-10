@@ -51,7 +51,7 @@ def merge_objects(story, objects):
 	lost = [b["lines"] for b in objects if tuple(b["lines"]) not in have]
 	if lost:
 		raise ValueError("objects.json 的黑板頁句號對不上 story.json：%s（分鏡改過句號，story.json 也要跟著重新產生）" % lost)
-	story["boards"] = [{k: b[k] for k in ("lines", "template", "objects", "do")} for b in objects]
+	story["boards"] = [{k: b[k] for k in ("lines", "template", "objects", "do", "dir") if k in b} for b in objects]
 	return story
 
 

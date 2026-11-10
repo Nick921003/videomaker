@@ -47,7 +47,7 @@ def to_scene(sb):
 					side = lambda c: [o["id"] for o in objs if o.get("col") == c]
 					layout = {"row": [{"stack": side("left")}, {"stack": side("right")}]}
 				else:
-					layout = {"stack": [o["id"] for o in objs]}
+					layout = {"row" if pg.get("dir") == "row" else "stack": [o["id"] for o in objs]}
 			beats = [{"say": ln["say"], "do": ln.get("do", [])} for ln in pg["lines"]]
 			scenes.append({"id": "%s_p%d" % (ch["id"], n), "title": ch["title"], "layout": layout, "beats": beats})
 	end = sb["end"]

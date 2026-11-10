@@ -13,6 +13,9 @@
 	const FACE = {cx: 50, cy: 45, w: 56, h: 46};
 
 	const px = obj => SIZES[obj.size || 'm'];
+	// 組合鍵（Ctrl+C）的格子比 100 寬，圖示跟著變寬；其餘都是正方形
+	const shapeOf = obj => S.strokes(obj.name, {text: obj.text});
+	const pxW = obj => Math.round(px(obj) * (shapeOf(obj).w || 100) / 100);
 	const capStyle = api => ({size: CAP.size, weight: 400, color: api.color('text.muted'), align: 'center'});
 	const toneColor = (obj, api) => api.color(window.BOARD_DATA.tones.board[obj.tone || 'ink']);
 	const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -21,9 +24,9 @@
 
 	Board.register('icon', {
 		measure(obj, api) {
-			const size = px(obj);
-			if (!obj.caption) return {w: size, h: size};
-			return {w: Math.max(size, api.measure(obj.caption, capStyle(api)).w + 24), h: size + CAP.gap + capH};
+			const size = px(obj), iw = pxW(obj);
+			if (!obj.caption) return {w: iw, h: size};
+			return {w: Math.max(iw, api.measure(obj.caption, capStyle(api)).w + 24), h: size + CAP.gap + capH};
 		},
 		state(obj, acts, t) {
 			const own = acts.filter(a => a.obj === obj.id);
@@ -43,12 +46,12 @@
 			return {p, blinkOn, erased};
 		},
 		draw(api, obj, st) {
-			const size = px(obj), w = this.measure(obj, api).w, ox = (w - size) / 2, k = size / 100, ctx = api.ctx;
+			const size = px(obj), iw = pxW(obj), w = this.measure(obj, api).w, ox = (w - iw) / 2, k = size / 100, ctx = api.ctx;
 			// 框一律記：擦掉之後版位還在，量測也要看得到
-			api.record(ox, 0, size, size, 'panel');
+			api.record(ox, 0, iw, size, 'panel');
 			if (obj.caption) api.write(obj.caption, w / 2, size + CAP.gap + capH / 2, 1, capStyle(api));
 			if (st.erased || st.p <= 0) return;
-			const shape = S.strokes(obj.name, {text: obj.text}), color = toneColor(obj, api), seed = Board.seed(obj.id);
+			const shape = shapeOf(obj), color = toneColor(obj, api), seed = Board.seed(obj.id);
 			const lens = shape.strokes.map(s => length(s.pts)), total = lens.reduce((a, b) => a + b, 0);
 			ctx.save();
 			if (!st.blinkOn) ctx.globalAlpha *= DIM;
@@ -59,11 +62,12 @@
 				done += lens[i];
 				api.ink(s.pts.map(([x, y]) => [ox + x * k, y * k]), pi, {color, width: WIDTH[s.w] * size / 140, seed: seed + i});
 			});
-			if (shape.text) {
-				// 字要塞進鍵帽內面板；字太長縮不下的由量測閘的最小字級擋
-				const unit = api.measure(shape.text, {size: 100, weight: 500}).w / 100;
+			const texts = shape.texts || (shape.text ? [{text: shape.text, cx: FACE.cx}] : []);
+			if (texts.length) {
+				// 字要塞進鍵帽內面板；字太長縮不下的由量測閘的最小字級擋。組合鍵用最長那顆的字級，幾顆字才一樣大
+				const unit = Math.max(...texts.map(x => api.measure(x.text, {size: 100, weight: 500}).w / 100));
 				const fs = Math.min(FACE.h * k * .8 / 1.25, FACE.w * k * .84 / unit);
-				api.write(shape.text, ox + FACE.cx * k, FACE.cy * k, api.clamp((st.p - .6) / .4), {size: fs, weight: 500, color, align: 'center'});
+				for (const x of texts) api.write(x.text, ox + x.cx * k, FACE.cy * k, api.clamp((st.p - .6) / .4), {size: fs, weight: 500, color, align: 'center'});
 			}
 			ctx.restore();
 		},

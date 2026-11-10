@@ -47,7 +47,8 @@
 							"id": "doc",
 							"name": "file"
 						}
-					]
+					],
+					"dir": "row"
 				},
 				{
 					"template": "center",
@@ -331,11 +332,7 @@
 							"do": [
 								{
 									"act": "draw",
-									"target": "k1"
-								},
-								{
-									"act": "draw",
-									"target": "k2"
+									"target": "keys"
 								}
 							]
 						},
@@ -353,17 +350,10 @@
 					"objects": [
 						{
 							"type": "icon",
-							"id": "k1",
+							"id": "keys",
 							"name": "快捷鍵",
 							"col": "left",
-							"text": "Ctrl"
-						},
-						{
-							"type": "icon",
-							"id": "k2",
-							"name": "keycap",
-							"col": "left",
-							"text": "C"
+							"text": "Ctrl+C"
 						},
 						{
 							"type": "icon",
